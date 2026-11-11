@@ -294,11 +294,11 @@ class WaitlistServiceTest {
         when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
                 .thenReturn(Optional.of(policyVersion));
 
-        // Capacity check: exploitable(5) - busy(2) - unassigned(1) = 2 > 0 -> OK
+        // Capacity check: exploitable(5) - busy(2) - unassigned(0) = 3 > 0 -> OK, không có đơn đặt trước chưa gán
         when(storageUnitRepository.countExploitableUnits(eq(1L), eq(5L), any())).thenReturn(5L);
         when(storageUnitRepository.countBusyUnits(eq(1L), eq(5L), any(), any(), anyInt())).thenReturn(2L);
         when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(5L), any(), any(), any(), anyInt()))
-                .thenReturn(1L);
+                .thenReturn(0L);
 
         FacilityUnitTypePrice price = new FacilityUnitTypePrice();
         price.setMonthlyPrice(500000L);
@@ -362,7 +362,45 @@ class WaitlistServiceTest {
     }
 
     @Test
-    @DisplayName("convertToContract: Thành công khi FM tạo hợp đồng trực tiếp từ đơn chờ")
+    @DisplayName("convertToReservation: Thất bại khi còn đơn đặt trước chưa gán ô kho (Ưu tiên Reservation)")
+    void convertToReservation_UnassignedReservationsExist_ThrowsConflict() {
+        Waitlist waitlist = Waitlist.builder()
+                .customerId(10L)
+                .facilityId(1L)
+                .unitTypeId(5L)
+                .targetStartDate(LocalDate.now().plusDays(2))
+                .rentalMonths(3)
+                .status(WaitlistStatus.CONTACTING)
+                .assignedFmId(20L)
+                .build();
+        waitlist.setId(99L);
+
+        when(waitlistRepository.findById(99L)).thenReturn(Optional.of(waitlist));
+        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
+                .thenReturn(Optional.of(policyVersion));
+
+        // Còn 2 đơn đặt trước chưa gán ô kho -> Chặn phân bổ Waitlist
+        when(storageUnitRepository.countExploitableUnits(eq(1L), eq(5L), any())).thenReturn(5L);
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(5L), any(), any(), anyInt())).thenReturn(1L);
+        when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(5L), any(), any(), any(), anyInt()))
+                .thenReturn(2L);
+
+        ConvertWaitlistRequest convertReq = ConvertWaitlistRequest.builder()
+                .startDate(LocalDate.now().plusDays(2))
+                .rentalMonths(3)
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                waitlistService.convertToReservation(99L, convertReq, fmUser));
+
+        assertEquals(ErrorCode.CAPACITY_NOT_AVAILABLE, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("Theo quy chế ưu tiên"));
+        assertEquals(WaitlistStatus.CONTACTING, waitlist.getStatus());
+        verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    @Test
+    @DisplayName("convertToContract: Thành công khi FM tạo hợp đồng trực tiếp từ đơn chờ và không có đơn đặt trước chưa gán")
     void convertToContract_Success() {
         Waitlist waitlist = Waitlist.builder()
                 .customerId(10L)
@@ -376,6 +414,12 @@ class WaitlistServiceTest {
         waitlist.setId(99L);
 
         when(waitlistRepository.findById(99L)).thenReturn(Optional.of(waitlist));
+        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
+                .thenReturn(Optional.of(policyVersion));
+        when(storageUnitRepository.countExploitableUnits(eq(1L), eq(5L), any())).thenReturn(5L);
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(5L), any(), any(), anyInt())).thenReturn(2L);
+        when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(5L), any(), any(), any(), anyInt()))
+                .thenReturn(0L);
         when(contractService.createDirectContract(any(), eq(fmUser))).thenReturn(new ContractResponse());
 
         ConvertWaitlistToContractRequest convertReq = ConvertWaitlistToContractRequest.builder()
@@ -388,6 +432,43 @@ class WaitlistServiceTest {
         WaitlistResponse response = waitlistService.convertToContract(99L, convertReq, fmUser);
         assertNotNull(response);
         verify(contractService).createDirectContract(any(), eq(fmUser));
+    }
+
+    @Test
+    @DisplayName("convertToContract: Thất bại khi còn đơn đặt trước chưa gán ô kho (Chặn ưu tiên Waitlist)")
+    void convertToContract_UnassignedReservationsExist_ThrowsConflict() {
+        Waitlist waitlist = Waitlist.builder()
+                .customerId(10L)
+                .facilityId(1L)
+                .unitTypeId(5L)
+                .targetStartDate(LocalDate.now().plusDays(2))
+                .rentalMonths(3)
+                .status(WaitlistStatus.CONTACTING)
+                .assignedFmId(20L)
+                .build();
+        waitlist.setId(99L);
+
+        when(waitlistRepository.findById(99L)).thenReturn(Optional.of(waitlist));
+        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
+                .thenReturn(Optional.of(policyVersion));
+        when(storageUnitRepository.countExploitableUnits(eq(1L), eq(5L), any())).thenReturn(5L);
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(5L), any(), any(), anyInt())).thenReturn(2L);
+        when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(5L), any(), any(), any(), anyInt()))
+                .thenReturn(2L);
+
+        ConvertWaitlistToContractRequest convertReq = ConvertWaitlistToContractRequest.builder()
+                .startDate(LocalDate.now().plusDays(2))
+                .rentalMonths(3)
+                .paymentMethod("CASH")
+                .notes("Đã chốt hợp đồng trực tiếp tại quầy")
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                waitlistService.convertToContract(99L, convertReq, fmUser));
+
+        assertEquals(ErrorCode.CAPACITY_NOT_AVAILABLE, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("Theo quy chế ưu tiên"));
+        verify(contractService, never()).createDirectContract(any(), any());
     }
 
     @Test

@@ -52,6 +52,11 @@ public class WaitlistResponse {
     private Long availableCapacity;
 
     /**
+     * Số đơn đặt chỗ trước của khách chưa được gán ô kho (dùng để chặn phân bổ Waitlist sai quy chế ưu tiên)
+     */
+    private Long unassignedReservationCount;
+
+    /**
      * Số giây còn lại của thời gian khóa độc quyền tư vấn (dùng cho Countdown Timer trên giao diện FM)
      */
     private Long remainingTimeoutSeconds;

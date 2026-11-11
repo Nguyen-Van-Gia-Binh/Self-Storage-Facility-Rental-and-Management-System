@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Phone,
   PhoneCall,
@@ -24,6 +25,7 @@ import { useCurrentUser } from '@/utils/useCurrentUser';
 
 export const WaitlistInboxPage: React.FC = () => {
   const user = useCurrentUser();
+  const navigate = useNavigate();
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
   const [selectedFacilityId, setSelectedFacilityId] = useState<number | null>(null);
   const [waitlists, setWaitlists] = useState<WaitlistResponse[]>([]);
@@ -155,6 +157,10 @@ export const WaitlistInboxPage: React.FC = () => {
   const countFollowUp = safeWaitlists.filter((w) => w.status === 'PENDING_FOLLOW_UP').length;
   const countConverted = safeWaitlists.filter((w) => w.status === 'CONVERTED').length;
 
+  // Priority rule check: Check if unassigned reservations exist
+  const hasUnassignedReservations = safeWaitlists.some((w) => (w.unassignedReservationCount ?? 0) > 0);
+  const totalUnassignedCount = safeWaitlists.reduce((max, w) => Math.max(max, w.unassignedReservationCount ?? 0), 0);
+
   return (
     <div className="space-y-6 p-6">
       {/* Toast Alert */}
@@ -204,6 +210,35 @@ export const WaitlistInboxPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Priority Alert Banner if unassigned reservations exist */}
+      {hasUnassignedReservations && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-200 text-amber-800 font-bold text-sm shrink-0 mt-0.5">
+                ⚠️
+              </span>
+              <div>
+                <h4 className="font-bold text-sm text-amber-900">
+                  CẢNH BÁO QUY CHẾ ƯU TIÊN: Đang có {totalUnassignedCount} đơn đặt chỗ online chờ gán ô kho
+                </h4>
+                <p className="mt-0.5 text-xs text-amber-800 leading-relaxed">
+                  Cơ sở đang có khách hàng đã thanh toán cọc giữ chỗ trước nhưng chưa được gán ô kho vật lý.
+                  Hệ thống tạm khóa phân bổ Danh sách chờ (Waitlist) nhằm bảo đảm ô kho cho khách đặt trước theo đúng quy chuẩn nghiệp vụ.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate(`/manager/allocation?facilityId=${selectedFacilityId}`)}
+              className="shrink-0 rounded-lg bg-amber-700 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-800 transition flex items-center gap-1.5"
+            >
+              Đi đến Gán ô kho cho khách đặt trước →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -319,7 +354,7 @@ export const WaitlistInboxPage: React.FC = () => {
                       {/* Unit Type & Available Capacity Badge */}
                       <td className="px-4 py-3">
                         <div className="font-medium text-gray-800">{item.unitTypeName}</div>
-                        <div className="mt-1 flex items-center gap-2">
+                        <div className="mt-1 flex items-center gap-2 flex-wrap">
                           <span
                             className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
                               (item.availableCapacity ?? 0) > 0
@@ -331,6 +366,11 @@ export const WaitlistInboxPage: React.FC = () => {
                               ? `Còn ${item.availableCapacity} ô trống`
                               : 'Hết công suất (0)'}
                           </span>
+                          {(item.unassignedReservationCount ?? 0) > 0 && (
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 border border-amber-200">
+                              ⚠️ Ưu tiên {item.unassignedReservationCount} đơn đặt trước
+                            </span>
+                          )}
                           <span className="text-xs text-gray-400">Thuê {item.rentalMonths} tháng</span>
                         </div>
                       </td>
@@ -423,15 +463,30 @@ export const WaitlistInboxPage: React.FC = () => {
                           </button>
                         ) : item.status === 'CONTACTING' && isLockedByMe ? (
                           /* Case 3: Locked by me -> Direct contract or Reservation */
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => openDirectContractModal(item)}
-                              disabled={actionLoading}
-                              className="rounded-lg bg-teal-700 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-teal-800"
-                              title="Tạo hợp đồng trực tiếp tại quầy / chốt khách đặt trước dài hạn"
-                            >
-                              Tạo HĐ trực tiếp
-                            </button>
+                          <div className="flex items-center justify-end gap-2 flex-wrap">
+                            {(item.unassignedReservationCount ?? 0) > 0 ? (
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/manager/allocation?facilityId=${selectedFacilityId}`)}
+                                className="rounded-lg bg-amber-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-700 flex items-center gap-1 shrink-0"
+                                title={`Đang có ${item.unassignedReservationCount} khách đặt trước chưa gán ô kho. Theo quy chế ưu tiên, cần hoàn tất gán ô kho cho khách đặt trước tại mục "Gán ô kho"!`}
+                              >
+                                Gán ô kho ({item.unassignedReservationCount})
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => openDirectContractModal(item)}
+                                disabled={actionLoading || (item.availableCapacity ?? 0) <= 0}
+                                className="rounded-lg bg-teal-700 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-teal-800 disabled:opacity-50"
+                                title={
+                                  (item.availableCapacity ?? 0) <= 0
+                                    ? 'Cơ sở đã hết ô kho trống khả dụng'
+                                    : 'Tạo hợp đồng trực tiếp tại quầy / chốt khách đặt trước dài hạn'
+                                }
+                              >
+                                Tạo HĐ trực tiếp
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 setFollowUpModalItem(item);

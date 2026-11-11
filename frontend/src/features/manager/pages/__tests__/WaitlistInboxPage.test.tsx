@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
+import { MemoryRouter } from 'react-router-dom';
 import { WaitlistInboxPage } from '../WaitlistInboxPage';
 import * as facilityApi from '@/api/facility';
 import * as waitlistApi from '@/api/waitlist';
@@ -69,7 +70,11 @@ describe('WaitlistInboxPage (FM Telesales CRM)', () => {
     vi.mocked(facilityApi.fetchMyAssignedFacilities).mockResolvedValue(mockFacilities);
     vi.mocked(waitlistApi.fetchFacilityWaitlists).mockResolvedValue(mockWaitlists);
 
-    render(<WaitlistInboxPage />);
+    render(
+      <MemoryRouter>
+        <WaitlistInboxPage />
+      </MemoryRouter>
+    );
 
     expect(screen.getByText(/Danh sách Chờ & Hộp thư Tư vấn/i)).toBeDefined();
 
@@ -86,11 +91,51 @@ describe('WaitlistInboxPage (FM Telesales CRM)', () => {
     vi.mocked(facilityApi.fetchMyAssignedFacilities).mockResolvedValue(mockFacilities);
     vi.mocked(waitlistApi.fetchFacilityWaitlists).mockResolvedValue([]);
 
-    render(<WaitlistInboxPage />);
+    render(
+      <MemoryRouter>
+        <WaitlistInboxPage />
+      </MemoryRouter>
+    );
 
     await waitFor(() => {
       const emptyMessages = screen.getAllByText(/Không có khách hàng nào trong danh sách chờ/i);
       expect(emptyMessages.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('displays reservation priority warning banner and action when unassigned reservations exist', async () => {
+    const priorityWaitlists: WaitlistResponse[] = [
+      {
+        id: 103,
+        facilityId: 1,
+        unitTypeId: 5,
+        unitTypeName: 'Kho Lớn (15m2)',
+        customerName: 'Khách Chờ Ưu Tiên',
+        customerPhone: '0933445566',
+        targetStartDate: '2026-12-05',
+        rentalMonths: 2,
+        status: 'CONTACTING',
+        assignedFmId: 99,
+        assignedFmName: 'FM Test',
+        availableCapacity: 0,
+        unassignedReservationCount: 2,
+        createdAt: '2026-11-05T10:00:00Z',
+      },
+    ];
+
+    vi.mocked(facilityApi.fetchMyAssignedFacilities).mockResolvedValue(mockFacilities);
+    vi.mocked(waitlistApi.fetchFacilityWaitlists).mockResolvedValue(priorityWaitlists);
+
+    render(
+      <MemoryRouter>
+        <WaitlistInboxPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/CẢNH BÁO QUY CHẾ ƯU TIÊN/i)).toBeDefined();
+      expect(screen.getByText(/Ưu tiên 2 đơn đặt trước/i)).toBeDefined();
+      expect(screen.getByRole('button', { name: /Gán ô kho \(2\)/i })).toBeDefined();
     });
   });
 });

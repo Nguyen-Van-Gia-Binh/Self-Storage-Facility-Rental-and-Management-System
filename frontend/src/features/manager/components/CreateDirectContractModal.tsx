@@ -277,10 +277,22 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
   };
   const endDate = calculateEndDate(startDate, rentalMonths);
 
+  // Quy chế ưu tiên: Chặn tạo hợp đồng từ Waitlist nếu còn đơn đặt cọc trước chưa gán ô kho
+  const isBlockedByPriority = Boolean(
+    initialWaitlist && (initialWaitlist.unassignedReservationCount ?? 0) > 0
+  );
+
   // Submit Handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+
+    if (isBlockedByPriority) {
+      showError(
+        `Quy chế ưu tiên: Không thể tạo hợp đồng cho khách từ Danh sách chờ khi còn ${initialWaitlist?.unassignedReservationCount} đơn đặt trước chưa được gán ô kho. Vui lòng vào mục "Gán ô kho" để xử lý trước!`
+      );
+      return;
+    }
 
     let cleanPhone = '';
     let customerId: number | undefined = undefined;
@@ -403,6 +415,32 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
 
         {/* Modal Body */}
         <form ref={formRef} onSubmit={handleSubmit} noValidate className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+          {/* Priority Alert Banner if unassigned reservations exist for this waitlist */}
+          {isBlockedByPriority && (
+            <div className="p-4 bg-amber-50 border border-amber-300 rounded-2xl text-xs text-amber-900 shadow-sm">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                <div className="space-y-1.5 flex-1">
+                  <h4 className="font-bold text-sm text-amber-900">
+                    QUY CHẾ ƯU TIÊN: Đang có {initialWaitlist?.unassignedReservationCount} khách đặt trước chưa gán ô kho
+                  </h4>
+                  <p className="text-xs text-amber-800 leading-relaxed">
+                    Theo quy chế phân bổ hệ thống, khách hàng đã thanh toán cọc giữ chỗ trước online được ưu tiên bảo đảm ô kho. 
+                    Quản lý cơ sở (FM) bắt buộc phải hoàn tất gán ô kho cho các khách đặt trước này tại mục <strong>Gán ô kho</strong> trước khi phân bổ hoặc tạo hợp đồng cho khách trong Danh sách chờ (Waitlist).
+                  </p>
+                  <div className="pt-1">
+                    <a
+                      href={`/manager/allocation?facilityId=${selectedFacilityId}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white font-bold rounded-lg transition-colors shadow-2xs"
+                    >
+                      Chuyển sang màn hình Gán ô kho ngay →
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {errorMessage && (
             <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-2.5 text-xs text-rose-700">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
@@ -910,6 +948,7 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
                 type="submit"
                 disabled={
                   submitting ||
+                  isBlockedByPriority ||
                   (customerMode === 'search'
                     ? !selectedCustomer
                     : !walkinFullName.trim() || !walkinPhone.trim())
@@ -920,6 +959,11 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
                   <>
                     <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     <span>Đang khởi tạo...</span>
+                  </>
+                ) : isBlockedByPriority ? (
+                  <>
+                    <AlertCircle className="w-4 h-4 text-amber-300" />
+                    <span>Bị khóa: Cần gán ô kho cho khách đặt trước</span>
                   </>
                 ) : (
                   <>
