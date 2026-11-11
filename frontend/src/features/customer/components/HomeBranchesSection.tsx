@@ -29,10 +29,13 @@ export const HomeBranchesSection: React.FC<HomeBranchesSectionProps> = ({
   const hasActiveFilter = selectedCity !== 'Tất cả thành phố';
 
   return (
-    <section className="py-14 sm:py-16 bg-white border-b border-slate-200" id="branches">
+    <section
+      className="py-14 sm:py-16 bg-white border-b border-slate-200 scroll-mt-16"
+      id="branches"
+    >
       <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-7">
-          <span className="font-mono text-[#0c5a8a] text-xs font-bold uppercase tracking-wider block mb-1.5">
+          <span className="font-pixel text-[#0c5a8a] text-[13px] font-medium uppercase tracking-wider block mb-1.5">
             Hệ Thống Chi Nhánh
           </span>
           <h2 className="text-2xl sm:text-4xl font-bold text-[#0a1614] tracking-tight">

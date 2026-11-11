@@ -67,7 +67,7 @@ export const HomeFooter: React.FC<HomeFooterProps> = ({ facilities, onScrollToId
             </p>
             <div className="flex items-center gap-2 text-xs text-sky-100">
               <ShieldCheck className="w-4 h-4 text-sky-300 shrink-0" />
-              <span>Bảo vệ hàng hóa 10tr · Mở rộng 50tr</span>
+              <span>Camera an ninh 24/7 · Hoàn 100% cọc</span>
             </div>
           </div>
 

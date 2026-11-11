@@ -3,15 +3,12 @@ import { fetchFacilities } from '@/api/facility';
 
 export interface DisplayFacility {
   id: number | string;
-  code: string;
   name: string;
   address: string;
-  district: string;
   city: string;
   startingPrice: number | null;
   openingHours: string;
   image: string;
-  phone: string;
 }
 
 // Bộ ảnh cơ sở nội bộ tải tức thì, ổn định 100% khi demo
@@ -49,15 +46,6 @@ export function parseCity(address: string): string {
 }
 
 /**
- * Trích xuất Quận/Huyện từ địa chỉ
- */
-export function parseDistrict(address: string): string {
-  if (!address) return 'Khu vực trung tâm';
-  const match = address.match(/(Quận\s[\wÀ-ỹ0-9]+|Huyện\s[\wÀ-ỹ0-9]+|TP\.\s[\wÀ-ỹ0-9]+|Thị xã\s[\wÀ-ỹ0-9]+|Cầu Giấy|Đống Đa|Thanh Xuân|Hai Bà Trưng|Hải Châu|Bình Thạnh|Thủ Đức|Ninh Kiều|Hải An|Yên Phong|Vĩnh Nguyên|Dĩ An)/u);
-  return match ? match[0] : 'Khu vực trung tâm';
-}
-
-/**
  * Custom Hook tải và ánh xạ danh mục cơ sở kho từ Backend API
  */
 export function useFacilityDirectory() {
@@ -71,15 +59,12 @@ export function useFacilityDirectory() {
         if (!ignore && data) {
           const mapped: DisplayFacility[] = data.map((f, idx) => ({
             id: f.id,
-            code: f.code || `FAC-${f.id}`,
             name: f.name,
             address: f.address,
             city: parseCity(f.address),
-            district: parseDistrict(f.address),
             startingPrice: f.lowestMonthlyPrice && f.lowestMonthlyPrice > 0 ? f.lowestMonthlyPrice : null,
             openingHours: f.openingHours || 'Mở cửa 24/7',
             image: FACILITY_IMAGES[idx % FACILITY_IMAGES.length],
-            phone: f.phone || '',
           }));
           setFacilities(mapped);
           setIsLoading(false);

@@ -29,27 +29,21 @@ vi.mock('../../hooks/useFacilityDirectory', () => ({
     facilities: [
       {
         id: 1,
-        code: 'FAC-CG',
         name: 'Cơ sở Cầu Giấy - Hà Nội',
         address: 'Số 19 Duy Tân, Cầu Giấy, Hà Nội',
-        district: 'Cầu Giấy',
         city: 'Hà Nội',
         startingPrice: 500000,
         openingHours: '06:00–22:00',
         image: '/assets/landing/hero-green.jpg',
-        phone: '024-3795-8888',
       },
       {
         id: 5,
-        code: 'FAC-Q1',
         name: 'Cơ sở Quận 1 - TP.HCM',
         address: 'Số 12 Nguyễn Huệ, Quận 1, TP.HCM',
-        district: 'Quận 1',
         city: 'TP. Hồ Chí Minh',
         startingPrice: 650000,
         openingHours: '24/7',
         image: '/assets/landing/facility.jpg',
-        phone: '028-3822-9999',
       },
     ],
   }),
@@ -61,12 +55,24 @@ afterEach(() => {
 });
 
 describe('HomePage Redesign (3D Sizing, Real Data & Section Order)', () => {
-  it('mọi nút CTA đặt kho đều gắn kèm ?facility= hợp lệ, không bị đá ngược về trang chủ', () => {
-    render(
+  it('nút Đặt kho ngay trên Hero cuộn tới chọn chi nhánh (không nhảy thẳng vào facility mặc định), các thẻ cơ sở gắn ?facility= hợp lệ', () => {
+    const scrollSpy = vi.fn();
+    Element.prototype.scrollIntoView = scrollSpy;
+
+    const { container } = render(
       <MemoryRouter>
         <HomePage />
       </MemoryRouter>
     );
+
+    const hero = container.querySelector('section') as HTMLElement;
+    const bookNowBtn = within(hero).getByRole('button', { name: /Đặt kho ngay/i });
+    expect(bookNowBtn).toBeInTheDocument();
+    expect(bookNowBtn).toHaveClass('btn-tactile');
+    expect(within(hero).queryByRole('link', { name: /Đặt kho ngay/i })).not.toBeInTheDocument();
+
+    fireEvent.click(bookNowBtn);
+    expect(scrollSpy).toHaveBeenCalled();
 
     const links = screen.getAllByRole('link');
     const unitLinks = links.filter((l) => l.getAttribute('href')?.startsWith('/customer/units'));
@@ -96,7 +102,7 @@ describe('HomePage Redesign (3D Sizing, Real Data & Section Order)', () => {
     }
   });
 
-  it('mô hình 3D ước lượng kích thước thật (V16) hỗ trợ nhiều cỡ thùng, nút Đặt lại làm trống kho 100% và bỏ thanh giá/CTA dưới card', () => {
+  it('mô hình 3D ước lượng kích thước thật (V16) giữ nguyên size người dùng chọn khi thêm/giảm đồ, nút Đặt lại làm trống kho 100%', () => {
     const { container } = render(
       <MemoryRouter>
         <HomePage />
@@ -106,43 +112,49 @@ describe('HomePage Redesign (3D Sizing, Real Data & Section Order)', () => {
     const hero = container.querySelector('section') as HTMLElement;
     expect(within(hero).queryByText(/Xe máy/i)).not.toBeInTheDocument();
     expect(within(hero).queryByRole('link', { name: /Tìm ô kho cỡ/i })).not.toBeInTheDocument();
+    expect(hero.querySelector('[data-testid="hero-text-scrim"]')).toBeInTheDocument();
+    expect(hero.querySelector('[data-testid="hero-ambient-motion"]')).toBeInTheDocument();
 
-    // Khi mới tải có bộ đồ mẫu đồng bộ với bộ đếm, bấm Đặt lại hàng hóa -> kho trống hoàn toàn (0 đồ)
+    // Mặc định đang ở cỡ M (6 m²); giảm đồ đạc không được tự thu nhỏ sang S hoặc XS
+    fireEvent.click(within(hero).getByRole('button', { name: 'Giảm Sofa / Nệm' }));
+    fireEvent.click(within(hero).getByRole('button', { name: 'Giảm Tủ lạnh / Giặt' }));
+    expect(within(hero).getByRole('button', { name: /M\s*6 m²/i })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+
+    // Khi mới tải có bộ đồ mẫu đồng bộ với bộ đếm, bấm Đặt lại hàng hóa -> kho trống hoàn toàn (0 đồ), vẫn giữ cỡ M
     fireEvent.click(within(hero).getByRole('button', { name: /Đặt lại hàng hóa/i }));
     const emptySvg = within(hero).getByRole('img', { name: /Mô hình 3D kho cỡ M/i });
     expect(emptySvg).toHaveAttribute('data-item-count', '0');
     expect(within(hero).queryByText(/Lấp đầy ~/i)).not.toBeInTheDocument();
 
-    // Chuyển sang XL (3.0m x 5.0m x 3.0m) -> kiểm tra nhãn SVG vẫn trống
+    // Chuyển sang XL (3.0m x 5.0m x 3.0m) và thêm 3 cỡ thùng S/M/L -> vẫn giữ nguyên XL (không tự thu nhỏ về XS)
     fireEvent.click(within(hero).getByRole('button', { name: /XL\s*15 m²/i }));
     const xlSvg = within(hero).getByRole('img', {
       name: /Mô hình 3D kho cỡ XL kích thước 5m x 3m x 3m/i,
     });
     expect(xlSvg).toHaveAttribute('data-item-count', '0');
 
-    // Chọn 3 cỡ thùng khác nhau S/M/L -> vừa gọn cỡ XS (1 m²)
     fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Thùng nhỏ (S)' }));
     fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Thùng vừa (M)' }));
     fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Thùng lớn (L)' }));
+    expect(within(hero).getByRole('button', { name: /XL\s*15 m²/i })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    expect(within(hero).getByTestId('xp-capacity-bar')).toBeInTheDocument();
+    expect(within(hero).getByText(/Lấp đầy/i)).toBeInTheDocument();
+
+    // Chọn XS rồi thêm Sofa & Tủ lạnh -> vẫn giữ nguyên XS và báo Chưa vừa hết + nút gợi ý thủ công
+    fireEvent.click(within(hero).getByRole('button', { name: /XS\s*1 m²/i }));
+    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Sofa / Nệm' }));
+    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Tủ lạnh / Giặt' }));
     expect(within(hero).getByRole('button', { name: /XS\s*1 m²/i })).toHaveAttribute(
       'aria-pressed',
       'true'
     );
-
-    // Thêm Sofa & Tủ lạnh -> tự nâng lên S rồi M khi thêm đồ lớn
-    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Sofa / Nệm' }));
-    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Tủ lạnh / Giặt' }));
-    expect(within(hero).getByRole('button', { name: /S\s*3 m²/i })).toHaveAttribute(
-      'aria-pressed',
-      'true'
-    );
-
-    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Sofa / Nệm' }));
-    expect(within(hero).getByRole('button', { name: /M\s*6 m²/i })).toHaveAttribute(
-      'aria-pressed',
-      'true'
-    );
-    expect(within(hero).getByText(/Lấp đầy ~/i)).toBeInTheDocument();
+    expect(within(hero).getByText(/Chưa vừa hết/i)).toBeInTheDocument();
   });
 
   it('ô tìm kiếm chỉ giữ khu vực tìm kho nằm dưới tiêu đề Hệ thống chi nhánh (bỏ Loại kho và Kích thước dự kiến)', () => {
@@ -168,7 +180,7 @@ describe('HomePage Redesign (3D Sizing, Real Data & Section Order)', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/customer/units?facility=1');
   });
 
-  it('thẻ chi nhánh hiển thị gọn thông tin, link bản đồ, bỏ số lượng ô trống và nhãn placeholder lặp', () => {
+  it('thẻ chi nhánh hiển thị gọn thông tin, link bản đồ, bỏ nút Gọi và bỏ số lượng ô trống lặp', () => {
     const { container } = render(
       <MemoryRouter>
         <HomePage />
@@ -179,6 +191,8 @@ describe('HomePage Redesign (3D Sizing, Real Data & Section Order)', () => {
     expect(branches.innerHTML).not.toContain('Tình trạng ô kho hiện tại');
     expect(branches.innerHTML).not.toContain('hạng kho đang mở');
     expect(branches.innerHTML).not.toMatch(/\b(XS|S|M|L|XL):\s*\d+\s*trống/i);
+    expect(within(branches).queryByRole('link', { name: /Gọi/i })).not.toBeInTheDocument();
+    expect(branches.innerHTML).not.toContain('tel:');
     const mapLinks = within(branches)
       .getAllByRole('link', { name: /Bản đồ/i })
       .map((a) => a.getAttribute('href'));
@@ -199,7 +213,12 @@ describe('HomePage Redesign (3D Sizing, Real Data & Section Order)', () => {
     expect(screen.queryByText(/Chọn kho Máy lạnh/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Xem ô kho Tiêu chuẩn/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Xem các ô kho phù hợp/i)).not.toBeInTheDocument();
-    expect(container.innerHTML).not.toMatch(/0[1-6]\s*·/);
+    expect(screen.queryByText(/Mã PIN 6 số riêng tư/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/cơ sở tại Hà Nội/i)).not.toBeInTheDocument();
+    const headingTexts = Array.from(container.querySelectorAll('h2')).map((h) => h.textContent ?? '');
+    for (const txt of headingTexts) {
+      expect(txt).not.toMatch(/0[1-6]\s*·/);
+    }
     expect(container.innerHTML).not.toMatch(/BƯỚC\s*0[1-3]/i);
     expect(container.innerHTML).not.toMatch(/NHU CẦU\s*0[1-3]/i);
     expect(container.innerHTML).not.toContain('lh3.googleusercontent.com');
@@ -214,16 +233,51 @@ describe('HomePage Redesign (3D Sizing, Real Data & Section Order)', () => {
     );
     expect(screen.getByText(/Kinh doanh & Lưu hồ sơ/i)).toBeInTheDocument();
     expect(screen.getByText(/Tại sao chọn SmartStorage/i)).toBeInTheDocument();
+    expect(screen.getByText(/MÀN 01 · CHỌN KHO/i)).toHaveClass('font-pixel');
+    expect(screen.getByText(/MÀN 02 · THANH TOÁN/i)).toHaveClass('font-pixel');
+    expect(screen.getByText(/MÀN 03 · NHẬN KHO/i)).toHaveClass('font-pixel');
+    expect(screen.getByText(/500\.000\s*₫\/tháng/i)).not.toHaveClass('font-pixel');
+    expect(screen.getByText(/06:00–22:00/i)).not.toHaveClass('font-pixel');
+    expect(screen.getByText(/Gọn hơn thuê kho lẻ bên ngoài/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Tiện gọn hơn tự thuê nhà kho rời bên ngoài/i)).not.toBeInTheDocument();
     expect(
       screen.getByAltText(/Không gian lưu trữ tự quản SmartStorage tại công viên xanh/i)
     ).toBeInTheDocument();
     expect(
       screen.getByAltText(/Không gian giải đáp câu hỏi thường gặp SmartStorage/i)
     ).toBeInTheDocument();
+    const standardUnitImg = screen.getByAltText(/Minh họa kho tiêu chuẩn SmartStorage/i);
+    expect(standardUnitImg).toHaveClass('object-contain');
+    expect(standardUnitImg).not.toHaveClass('object-cover');
+    expect(standardUnitImg).not.toHaveClass('max-h-[144px]');
+    expect(screen.queryByText(/Tích hợp sẵn gói bảo vệ cơ bản 10 triệu/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Tùy chọn bảo vệ tài sản tới 50 triệu/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Bảo vệ cơ bản 10 triệu \(miễn phí\)/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/50\.000đ\/tháng/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Bảo vệ hàng hóa 10tr/i)).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: /Trách nhiệm bảo quản hàng hóa và quy định an toàn ra sao\?/i })
+    );
+    expect(screen.getByText(/lỗi kỹ thuật hạ tầng cơ sở/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Bảo vệ cơ bản 10 triệu \(miễn phí\)/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/50\.000đ\/tháng/i)).not.toBeInTheDocument();
     expect(screen.getByAltText(/Minh họa Chuyển nhà & Sửa nhà/i)).toBeInTheDocument();
+
+    const scrollSpy = vi.fn();
+    Element.prototype.scrollIntoView = scrollSpy;
+    const closingCta = container.querySelector('#closing-cta') as HTMLElement;
+    expect(closingCta).toBeInTheDocument();
+    expect(within(closingCta).getByText(/Bắt đầu lưu trữ hôm nay/i)).toBeInTheDocument();
+    const closingBtn = within(closingCta).getByRole('button', { name: /Chọn cơ sở & Đặt kho/i });
+    expect(closingBtn).toHaveClass('btn-tactile');
+    fireEvent.click(closingBtn);
+    expect(scrollSpy).toHaveBeenCalled();
     expect(screen.getByAltText(/Minh họa Kinh doanh & Lưu hồ sơ/i)).toBeInTheDocument();
     expect(screen.getByAltText(/Minh họa Đồ giá trị, nhạy ẩm/i)).toBeInTheDocument();
-    expect(screen.getByAltText(/Ảnh đại diện Chị Minh Thư/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Chị Minh Thư/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Anh Quốc Bảo/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Bạn Hoàng Nam/i)).not.toBeInTheDocument();
+    expect(screen.queryByAltText(/Ảnh đại diện/i)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Chính sách hủy & hoàn tiền cọc' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();

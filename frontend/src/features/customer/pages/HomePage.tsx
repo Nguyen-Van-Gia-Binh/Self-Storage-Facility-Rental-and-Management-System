@@ -48,10 +48,6 @@ export const HomePage: React.FC = () => {
     });
   }, [facilities, selectedCity]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedCity]);
-
   const totalPages = Math.max(1, Math.ceil(filteredFacilities.length / pageSize));
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedFacilities = useMemo(() => {
@@ -97,8 +93,14 @@ export const HomePage: React.FC = () => {
     scrollToId('branches-grid');
   };
 
+  const handleSelectCity = (city: string) => {
+    setSelectedCity(city);
+    setCurrentPage(1);
+  };
+
   const handleResetFilters = () => {
     setSelectedCity('Tất cả thành phố');
+    setCurrentPage(1);
   };
 
   return (
@@ -108,8 +110,6 @@ export const HomePage: React.FC = () => {
     >
       {/* 1. Hero Phong cách Cofounder + Công cụ Ước lượng 3D */}
       <HomeHeroSection
-        primaryFacilityId={primaryFacilityId}
-        facilitiesCount={facilities.length}
         unitTypes={unitTypes}
         onScrollToId={scrollToId}
       />
@@ -121,7 +121,7 @@ export const HomePage: React.FC = () => {
         cityFacilityCounts={cityFacilityCounts}
         totalFacilitiesCount={facilities.length}
         selectedCity={selectedCity}
-        onSelectCity={setSelectedCity}
+        onSelectCity={handleSelectCity}
         onSearchSubmit={handleSearchSubmit}
         onResetFilters={handleResetFilters}
         paginatedFacilities={paginatedFacilities}
@@ -136,8 +136,8 @@ export const HomePage: React.FC = () => {
       {/* 3. Hai dòng kho & Nhu cầu */}
       <HomeSizeGuideSection unitTypes={unitTypes} />
 
-      {/* 4. Quy trình, Lý do chọn SmartStorage, Feedback & FAQ */}
-      <HomeProcessAndFaqSection policy={policy} />
+      {/* 4. Quy trình, Lý do chọn SmartStorage & FAQ + CTA cuối trang */}
+      <HomeProcessAndFaqSection policy={policy} onScrollToId={scrollToId} />
 
       {/* 5. Footer */}
       <HomeFooter facilities={facilities} onScrollToId={scrollToId} />
