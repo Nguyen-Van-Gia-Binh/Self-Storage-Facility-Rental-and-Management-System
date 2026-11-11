@@ -331,102 +331,124 @@ function generateFlow2Checkin() {
 // 3. Flow 3: Checkout Return & Final Settlement
 function generateFlow3Return() {
   const lanes = ['Storage Customer', 'Facility Staff', 'Facility Manager', 'Finance Ledger System'];
-  const width = 900;
-  const height = 650;
-  const laneW = width / 4;
-  const elements = `
-    <circle cx="${laneW / 2}" cy="80" r="10" fill="#000000" />
-    <path d="M ${laneW / 2} 90 L ${laneW / 2} 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+  const width = 1040;
+  const height = 760;
+  const c0 = 130, c1 = 390, c2 = 650, c3 = 910;
+  const nw = 200, nh = 60;
 
-    <rect x="20" y="115" width="180" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="110" y="135" class="act-text">Schedule Return Date</text>
-    <text x="110" y="150" class="act-desc">(Normal / Early Return)</text>
+  const elements = `
+    <!-- Start -->
+    <circle cx="${c0}" cy="80" r="10" fill="#000000" />
+    <path d="M ${c0} 90 L ${c0} 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+
+    <!-- 1. Customer: Schedule Return -->
+    <rect x="${c0 - nw/2}" y="115" width="${nw}" height="${nh}" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="${c0}" y="140" class="act-title">1. Schedule Return Date</text>
+    <text x="${c0}" y="158" class="act-desc">(Normal or Win-Win Early Return)</text>
 
     <!-- To Staff Inspection -->
-    <path d="M 200 137 L ${laneW + 20} 137" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="210" y="130" class="edge-label">Check-out Day</text>
+    <path d="M ${c0 + nw/2} 145 L ${c1} 145 L ${c1} 200" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    ${edgeLabelBox('Check-out Request', (c0 + nw/2 + c1) / 2, 145, 125)}
 
-    <rect x="${laneW + 20}" y="115" width="180" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="${laneW + 110}" y="135" class="act-text">Exit Inspection &amp; Photos</text>
-    <text x="${laneW + 110}" y="150" class="act-desc">(Assess Damage &amp; Trash)</text>
+    <!-- 2. Staff: Exit Inspection -->
+    <rect x="${c1 - nw/2}" y="200" width="${nw}" height="${nh}" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="${c1}" y="225" class="act-title">2. Exit Inspection &amp; Photos</text>
+    <text x="${c1}" y="243" class="act-desc">(Assess Damage, Trash &amp; Lock)</text>
 
     <!-- To Unit CLEANING -->
-    <path d="M ${laneW + 110} 160 L ${laneW + 110} 200" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <path d="M ${c1} 260 L ${c1} 315" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    ${edgeLabelBox('Inspection Logged', c1, 286, 120)}
 
-    <rect x="${laneW + 20}" y="200" width="180" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="${laneW + 110}" y="220" class="act-text">Set Unit: CLEANING</text>
-    <text x="${laneW + 110}" y="235" class="act-desc">(BR-RET-09 Sanitization)</text>
+    <!-- 3. Staff: Set CLEANING -->
+    <rect x="${c1 - nw/2}" y="315" width="${nw}" height="${nh}" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="${c1}" y="340" class="act-title">3. Set Unit: CLEANING</text>
+    <text x="${c1}" y="358" class="act-desc">(Sanitization Queue, BR-RET-09)</text>
 
     <!-- To FM Approval -->
-    <path d="M ${laneW + 200} 137 L ${2 * laneW + 20} 137" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="${2 * laneW - 20}" y="130" class="edge-label">Damage Protocol</text>
+    <path d="M ${c1 + nw/2} 345 L ${c2} 345 L ${c2} 400" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    ${edgeLabelBox('Damage Protocol', (c1 + nw/2 + c2) / 2, 345, 120)}
 
-    <rect x="${2 * laneW + 20}" y="115" width="180" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="${2 * laneW + 110}" y="135" class="act-text">Review &amp; Approve Voucher</text>
-    <text x="${2 * laneW + 110}" y="150" class="act-desc">(Net Balance Formula)</text>
+    <!-- 4. FM: Approve Voucher -->
+    <rect x="${c2 - nw/2}" y="400" width="${nw}" height="${nh}" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="${c2}" y="425" class="act-title">4. Review &amp; Approve Voucher</text>
+    <text x="${c2}" y="443" class="act-desc">(Net Settlement Formula)</text>
 
     <!-- To Ledger System -->
-    <path d="M ${2 * laneW + 200} 137 L ${3 * laneW + 20} 137" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="${3 * laneW - 20}" y="130" class="edge-label">Authorize</text>
+    <path d="M ${c2 + nw/2} 430 L ${c3} 430 L ${c3} 485" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    ${edgeLabelBox('Authorize Ledger', (c2 + nw/2 + c3) / 2, 430, 115)}
 
-    <rect x="${3 * laneW + 20}" y="115" width="180" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="${3 * laneW + 110}" y="135" class="act-text">Record Double-Entry Ledger</text>
-    <text x="${3 * laneW + 110}" y="150" class="act-desc">(LedgerEntry Immutable)</text>
+    <!-- 5. Ledger System: Double Entry -->
+    <rect x="${c3 - nw/2}" y="485" width="${nw}" height="${nh}" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="${c3}" y="510" class="act-title">5. Record Double-Entry Ledger</text>
+    <text x="${c3}" y="528" class="act-desc">(LedgerEntry Immutable Audit)</text>
 
     <!-- Refund Disbursed to Customer -->
-    <path d="M ${3 * laneW + 110} 160 L ${3 * laneW + 110} 290 L 110 290 L 110 320" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="${2 * laneW}" y="280" class="edge-label">Disburse Net Refund (3-5 days)</text>
+    <path d="M ${c3 - nw/2} 515 L ${c0} 515 L ${c0} 570" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    ${edgeLabelBox('Disburse Net Refund (3-5 days)', (c3 - nw/2 + c0) / 2, 515, 190)}
 
-    <rect x="20" y="320" width="180" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="110" y="340" class="act-text">Receive Deposit Refund</text>
-    <text x="110" y="355" class="act-desc">(Contract CLOSED)</text>
+    <!-- 6. Customer: Receive Refund -->
+    <rect x="${c0 - nw/2}" y="570" width="${nw}" height="${nh}" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="${c0}" y="595" class="act-title">6. Receive Deposit Refund</text>
+    <text x="${c0}" y="613" class="act-desc">(Contract CLOSED, Unit Available)</text>
 
-    <circle cx="110" cy="410" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <circle cx="110" cy="410" r="7" fill="#000000" />
-    <path d="M 110 365 L 110 397" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <!-- End -->
+    <circle cx="${c0}" cy="675" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <circle cx="${c0}" cy="675" r="7" fill="#000000" />
+    <path d="M ${c0} 630 L ${c0} 662" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
   `;
   return buildSwimlaneSvg(width, height, lanes, elements, 'Swimlane 3: Flow_3_Checkout_Return_And_Final_Settlement');
 }
 
 // 4. Flow 4: BOM Catalog Pricing & Policy
 function generateFlow4BOM() {
-  const lanes = ['Business Operations Manager (BOM)', 'Policy & Pricing Engine', 'Branch Operations'];
-  const width = 850;
-  const height = 550;
-  const laneW = width / 3;
+  const lanes = ['Business Operations Manager', 'Policy &amp; Pricing Engine', 'Branch Operations'];
+  const width = 840;
+  const height = 650;
+  const c0 = 140, c1 = 420, c2 = 700;
+  const nw = 200, nh = 60;
+
   const elements = `
-    <circle cx="140" cy="80" r="10" fill="#000000" />
-    <path d="M 140 90 L 140 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <!-- Start -->
+    <circle cx="${c0}" cy="80" r="10" fill="#000000" />
+    <path d="M ${c0} 90 L ${c0} 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
 
-    <rect x="40" y="115" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="135" class="act-text">Configure Master Types</text>
-    <text x="140" y="150" class="act-desc">(Dimensions, Base Rates)</text>
+    <!-- 1. BOM: Configure Master Types -->
+    <rect x="${c0 - nw/2}" y="115" width="${nw}" height="${nh}" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="${c0}" y="140" class="act-title">1. Configure Master Types</text>
+    <text x="${c0}" y="158" class="act-desc">(Dimensions &amp; Base Monthly Rates)</text>
 
-    <path d="M 140 160 L 140 200" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <!-- Vertical Link -->
+    <path d="M ${c0} 175 L ${c0} 230" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    ${edgeLabelBox('Catalog Defined', c0, 201, 110)}
 
-    <rect x="40" y="200" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="220" class="act-text">Set Regional Surcharges</text>
-    <text x="140" y="235" class="act-desc">(Prime Location / Tier)</text>
+    <!-- 2. BOM: Regional Surcharges -->
+    <rect x="${c0 - nw/2}" y="230" width="${nw}" height="${nh}" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="${c0}" y="255" class="act-title">2. Set Regional Surcharges</text>
+    <text x="${c0}" y="273" class="act-desc">(Prime Location / Branch Tier)</text>
 
     <!-- To Policy Engine -->
-    <path d="M 240 222 L ${laneW + 40} 222" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="280" y="215" class="edge-label">Publish</text>
+    <path d="M ${c0 + nw/2} 260 L ${c1} 260 L ${c1} 315" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    ${edgeLabelBox('Publish Pricing', (c0 + nw/2 + c1) / 2, 260, 115)}
 
-    <rect x="${laneW + 40}" y="200" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="${laneW + 140}" y="220" class="act-text">Create Policy &amp; Price Version</text>
-    <text x="${laneW + 140}" y="235" class="act-desc">(Immutable Snapshot)</text>
+    <!-- 3. Engine: Price & Policy Version -->
+    <rect x="${c1 - nw/2}" y="315" width="${nw}" height="${nh}" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="${c1}" y="340" class="act-title">3. Create Price &amp; Policy Version</text>
+    <text x="${c1}" y="358" class="act-desc">(Immutable Version Snapshot)</text>
 
     <!-- To Branch Ops -->
-    <path d="M ${laneW + 240} 222 L ${2 * laneW + 40} 222" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="${laneW + 260}" y="215" class="edge-label">Propagate</text>
+    <path d="M ${c1 + nw/2} 345 L ${c2} 345 L ${c2} 400" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    ${edgeLabelBox('Propagate Rules', (c1 + nw/2 + c2) / 2, 345, 115)}
 
-    <rect x="${2 * laneW + 40}" y="200" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="${2 * laneW + 140}" y="220" class="act-text">Enforce on New Bookings</text>
-    <text x="${2 * laneW + 140}" y="235" class="act-desc">(Non-retroactive BR-GEN-02)</text>
+    <!-- 4. Branch Ops: Enforce on New Bookings -->
+    <rect x="${c2 - nw/2}" y="400" width="${nw}" height="${nh}" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="${c2}" y="425" class="act-title">4. Enforce on New Bookings</text>
+    <text x="${c2}" y="443" class="act-desc">(Non-retroactive BR-GEN-02)</text>
 
-    <circle cx="${2 * laneW + 140}" cy="290" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <circle cx="${2 * laneW + 140}" cy="290" r="7" fill="#000000" />
-    <path d="M ${2 * laneW + 140} 245 L ${2 * laneW + 140} 277" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <!-- End -->
+    <circle cx="${c2}" cy="530" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <circle cx="${c2}" cy="530" r="7" fill="#000000" />
+    <path d="M ${c2} 460 L ${c2} 517" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    ${edgeLabelBox('Version Active', c2, 488, 100)}
   `;
   return buildSwimlaneSvg(width, height, lanes, elements, 'Swimlane 4: Flow_4_BOM_Catalog_Pricing_And_Policy');
 }
@@ -434,42 +456,53 @@ function generateFlow4BOM() {
 // 5. Flow 5: Facility Layout & Staff Scheduling
 function generateFlow5Staff() {
   const lanes = ['Facility Manager (FM)', 'Shift Dispatcher', 'Facility Staff'];
-  const width = 850;
-  const height = 550;
-  const laneW = width / 3;
+  const width = 840;
+  const height = 650;
+  const c0 = 140, c1 = 420, c2 = 700;
+  const nw = 200, nh = 60;
+
   const elements = `
-    <circle cx="140" cy="80" r="10" fill="#000000" />
-    <path d="M 140 90 L 140 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <!-- Start -->
+    <circle cx="${c0}" cy="80" r="10" fill="#000000" />
+    <path d="M ${c0} 90 L ${c0} 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
 
-    <rect x="40" y="115" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="135" class="act-text">Configure Floorplan Layout</text>
-    <text x="140" y="150" class="act-desc">(Zone, Row, Unit Coordinates)</text>
+    <!-- 1. FM: Configure Floorplan -->
+    <rect x="${c0 - nw/2}" y="115" width="${nw}" height="${nh}" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="${c0}" y="140" class="act-title">1. Configure Floorplan Layout</text>
+    <text x="${c0}" y="158" class="act-desc">(Zone, Row, Unit Coordinates)</text>
 
-    <path d="M 140 160 L 140 200" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <!-- Vertical Link -->
+    <path d="M ${c0} 175 L ${c0} 230" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    ${edgeLabelBox('Floorplan Saved', c0, 201, 110)}
 
-    <rect x="40" y="200" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="220" class="act-text">Build Weekly Shift Roster</text>
-    <text x="140" y="235" class="act-desc">(Morning &amp; Afternoon Shifts)</text>
+    <!-- 2. FM: Weekly Shift Roster -->
+    <rect x="${c0 - nw/2}" y="230" width="${nw}" height="${nh}" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="${c0}" y="255" class="act-title">2. Build Weekly Shift Roster</text>
+    <text x="${c0}" y="273" class="act-desc">(Morning &amp; Afternoon Shifts)</text>
 
     <!-- To Dispatcher -->
-    <path d="M 240 222 L ${laneW + 40} 222" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="280" y="215" class="edge-label">Dispatch</text>
+    <path d="M ${c0 + nw/2} 260 L ${c1} 260 L ${c1} 315" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    ${edgeLabelBox('Publish Roster', (c0 + nw/2 + c1) / 2, 260, 110)}
 
-    <rect x="${laneW + 40}" y="200" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="${laneW + 140}" y="220" class="act-text">Generate Daily Worklist</text>
-    <text x="${laneW + 140}" y="235" class="act-desc">(Check-ins, Returns, Cleaning)</text>
+    <!-- 3. Dispatcher: Generate Daily Worklist -->
+    <rect x="${c1 - nw/2}" y="315" width="${nw}" height="${nh}" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="${c1}" y="340" class="act-title">3. Generate Daily Worklist</text>
+    <text x="${c1}" y="358" class="act-desc">(Check-ins, Returns, Cleaning)</text>
 
     <!-- To Staff -->
-    <path d="M ${laneW + 240} 222 L ${2 * laneW + 40} 222" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="${laneW + 260}" y="215" class="edge-label">Assign</text>
+    <path d="M ${c1 + nw/2} 345 L ${c2} 345 L ${c2} 400" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    ${edgeLabelBox('Assign Daily Tasks', (c1 + nw/2 + c2) / 2, 345, 125)}
 
-    <rect x="${2 * laneW + 40}" y="200" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="${2 * laneW + 140}" y="220" class="act-text">Execute Operations &amp; Sign-off</text>
-    <text x="${2 * laneW + 140}" y="235" class="act-desc">(Staff Desk Terminal)</text>
+    <!-- 4. Staff: Execute Operations -->
+    <rect x="${c2 - nw/2}" y="400" width="${nw}" height="${nh}" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="${c2}" y="425" class="act-title">4. Execute Operations &amp; Sign</text>
+    <text x="${c2}" y="443" class="act-desc">(Staff Desk Terminal Portal)</text>
 
-    <circle cx="${2 * laneW + 140}" cy="290" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <circle cx="${2 * laneW + 140}" cy="290" r="7" fill="#000000" />
-    <path d="M ${2 * laneW + 140} 245 L ${2 * laneW + 140} 277" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <!-- End -->
+    <circle cx="${c2}" cy="530" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <circle cx="${c2}" cy="530" r="7" fill="#000000" />
+    <path d="M ${c2} 460 L ${c2} 517" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    ${edgeLabelBox('Shift Logged', c2, 488, 95)}
   `;
   return buildSwimlaneSvg(width, height, lanes, elements, 'Swimlane 5: Flow_5_Facility_Layout_And_Staff_Scheduling');
 }
