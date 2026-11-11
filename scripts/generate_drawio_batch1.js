@@ -359,3 +359,4 @@ fs.writeFileSync(path.join(drawioDir, 'activity-diagram-flow-1-storage-reservati
 fs.writeFileSync(path.join(drawioDir, 'activity-diagram-flow-2-checkin-handover.drawio'), generateDrawioFlow2());
 
 console.log('Successfully generated pure Draw.io XML for Batch 1 (Flow 0, Flow 1, Flow 2).');
+
