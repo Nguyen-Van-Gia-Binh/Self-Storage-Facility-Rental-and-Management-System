@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 550" width="850" height="550">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 680" width="840" height="680">
   <style>
     .lane-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
     .act-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
@@ -13,64 +13,92 @@
     </marker>
   </defs>
   <!-- Background -->
-  <rect width="850" height="550" fill="#ffffff" />
+  <rect width="840" height="680" fill="#ffffff" />
   <!-- Lanes -->
   
-      <rect x="0" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="141.66666666666666" y="52" class="lane-title">Storage Customer</text>
+      <rect x="0" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="140" y="52" class="lane-title">Storage Customer</text>
     
-      <rect x="283.3333333333333" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="425" y="52" class="lane-title">Facility Staff</text>
+      <rect x="280" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="420" y="52" class="lane-title">Facility Staff</text>
     
-      <rect x="566.6666666666666" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="708.3333333333333" y="52" class="lane-title">Facility Manager</text>
+      <rect x="560" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="700" y="52" class="lane-title">Facility Manager</text>
     
   
-      <line x1="0" y1="30" x2="0" y2="505" stroke="#000000" stroke-width="1.2" />
+      <line x1="0" y1="30" x2="0" y2="635" stroke="#000000" stroke-width="1.2" />
     
-      <line x1="283.3333333333333" y1="30" x2="283.3333333333333" y2="505" stroke="#000000" stroke-width="1.2" />
+      <line x1="280" y1="30" x2="280" y2="635" stroke="#000000" stroke-width="1.2" />
     
-      <line x1="566.6666666666666" y1="30" x2="566.6666666666666" y2="505" stroke="#000000" stroke-width="1.2" />
+      <line x1="560" y1="30" x2="560" y2="635" stroke="#000000" stroke-width="1.2" />
     
-    <line x1="850" y1="30" x2="850" y2="505" stroke="#000000" stroke-width="1.2" />
-    <line x1="0" y1="505" x2="850" y2="505" stroke="#000000" stroke-width="1.2" />
+    <line x1="840" y1="30" x2="840" y2="635" stroke="#000000" stroke-width="1.2" />
+    <line x1="0" y1="635" x2="840" y2="635" stroke="#000000" stroke-width="1.2" />
   
   <!-- Diagram Elements -->
   
+    <!-- Start -->
     <circle cx="140" cy="80" r="10" fill="#000000" />
     <path d="M 140 90 L 140 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
 
-    <rect x="40" y="115" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="135" class="act-text">Submit Support Ticket</text>
-    <text x="140" y="150" class="act-desc">(Lock / Leak / Billing / Damage)</text>
+    <!-- 1. Customer: Submit Ticket -->
+    <rect x="40" y="115" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="140" y="140" class="act-title">1. Submit Support Ticket</text>
+    <text x="140" y="158" class="act-desc">(Lock / Leak / Billing / Damage)</text>
 
     <!-- To Staff -->
-    <path d="M 240 137 L 323.3333333333333 137" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="280" y="130" class="edge-label">Claim Ticket</text>
+    <path d="M 240 145 L 420 145 L 420 200" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="277.5" y="132" width="105" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="330" y="146" class="edge-label">Claim Ticket</text>
+  
 
-    <rect x="323.3333333333333" y="115" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="423.3333333333333" y="135" class="act-text">Investigate &amp; Resolve Issue</text>
-    <text x="423.3333333333333" y="150" class="act-desc">(Temp PIN / Battery Swap)</text>
+    <!-- 2. Staff: Investigate -->
+    <rect x="320" y="200" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="420" y="225" class="act-title">2. Investigate &amp; Resolve Issue</text>
+    <text x="420" y="243" class="act-desc">(Temp PIN / Battery / Inspection)</text>
 
-    <!-- If Major -> FM -->
-    <path d="M 523.3333333333333 137 L 606.6666666666666 137" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="543.3333333333333" y="130" class="edge-label">Escalate</text>
+    <!-- Escalate to FM -->
+    <path d="M 520 230 L 700 230 L 700 285" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="542.5" y="217" width="135" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="610" y="231" class="edge-label">Escalate Major Claim</text>
+  
 
-    <rect x="606.6666666666666" y="115" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="706.6666666666666" y="135" class="act-text">Approve Compensation</text>
-    <text x="706.6666666666666" y="150" class="act-desc">(Insurance Cap: 10M / 50M)</text>
+    <!-- 3. FM: Approve Compensation -->
+    <rect x="600" y="285" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="700" y="310" class="act-title">3. Approve Compensation</text>
+    <text x="700" y="328" class="act-desc">(Insurance Cap: 10M / 50M)</text>
 
-    <!-- Close Ticket -->
-    <path d="M 423.3333333333333 160 L 423.3333333333333 220" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <!-- Back to Staff: Mark Resolved -->
+    <path d="M 600 315 L 420 315 L 420 370" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="442.5" y="302" width="135" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="510" y="316" class="edge-label">Resolution Approved</text>
+  
 
-    <rect x="323.3333333333333" y="220" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="423.3333333333333" y="240" class="act-text">Mark Ticket: RESOLVED</text>
-    <text x="423.3333333333333" y="255" class="act-desc">(Auto-close after 72 hours)</text>
+    <!-- 4. Staff: Mark Ticket RESOLVED -->
+    <rect x="320" y="370" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="420" y="395" class="act-title">4. Mark Ticket: RESOLVED</text>
+    <text x="420" y="413" class="act-desc">(Auto-close after 72 Hours)</text>
 
-    <circle cx="423.3333333333333" cy="320" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <circle cx="423.3333333333333" cy="320" r="7" fill="#000000" />
-    <path d="M 423.3333333333333 265 L 423.3333333333333 307" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <!-- Notify Customer -->
+    <path d="M 320 400 L 140 400 L 140 455" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="170" y="387" width="120" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="230" y="401" class="edge-label">Notify Resolution</text>
+  
+
+    <!-- 5. Customer: Confirm & Close -->
+    <rect x="40" y="455" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="140" y="480" class="act-title">5. Confirm &amp; Rate Support</text>
+    <text x="140" y="498" class="act-desc">(Ticket CLOSED)</text>
+
+    <!-- End -->
+    <circle cx="140" cy="565" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <circle cx="140" cy="565" r="7" fill="#000000" />
+    <path d="M 140 515 L 140 552" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
   
   <!-- Figure Caption -->
-  <text x="425" y="535" class="caption">Swimlane 7: Flow_7_Customer_Support_And_Incident_Resolution</text>
+  <text x="420" y="665" class="caption">Swimlane 7: Flow_7_Customer_Support_And_Incident_Resolution</text>
 </svg>

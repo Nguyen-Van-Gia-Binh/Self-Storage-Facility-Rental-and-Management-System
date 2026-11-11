@@ -213,3 +213,4 @@ fs.writeFileSync(path.join(drawioDir, 'activity-diagram-flow-4-business-operatio
 fs.writeFileSync(path.join(drawioDir, 'activity-diagram-flow-5-facility-staff-management.drawio'), generateDrawioFlow5());
 
 console.log('Successfully generated pure Draw.io XML for Batch 2 (Flow 3, Flow 4, Flow 5).');
+

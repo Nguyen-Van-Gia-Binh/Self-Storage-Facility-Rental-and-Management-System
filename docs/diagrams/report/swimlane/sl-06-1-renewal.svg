@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 550" width="850" height="550">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 740" width="840" height="740">
   <style>
     .lane-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
     .act-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
@@ -13,55 +13,104 @@
     </marker>
   </defs>
   <!-- Background -->
-  <rect width="850" height="550" fill="#ffffff" />
+  <rect width="840" height="740" fill="#ffffff" />
   <!-- Lanes -->
   
-      <rect x="0" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="141.66666666666666" y="52" class="lane-title">Storage Customer</text>
+      <rect x="0" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="140" y="52" class="lane-title">Storage Customer</text>
     
-      <rect x="283.3333333333333" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="425" y="52" class="lane-title">Facility Manager</text>
+      <rect x="280" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="420" y="52" class="lane-title">Billing &amp; Contract Engine</text>
     
-      <rect x="566.6666666666666" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="708.3333333333333" y="52" class="lane-title">Billing &amp; Contract Engine</text>
+      <rect x="560" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="700" y="52" class="lane-title">Facility Manager</text>
     
   
-      <line x1="0" y1="30" x2="0" y2="505" stroke="#000000" stroke-width="1.2" />
+      <line x1="0" y1="30" x2="0" y2="695" stroke="#000000" stroke-width="1.2" />
     
-      <line x1="283.3333333333333" y1="30" x2="283.3333333333333" y2="505" stroke="#000000" stroke-width="1.2" />
+      <line x1="280" y1="30" x2="280" y2="695" stroke="#000000" stroke-width="1.2" />
     
-      <line x1="566.6666666666666" y1="30" x2="566.6666666666666" y2="505" stroke="#000000" stroke-width="1.2" />
+      <line x1="560" y1="30" x2="560" y2="695" stroke="#000000" stroke-width="1.2" />
     
-    <line x1="850" y1="30" x2="850" y2="505" stroke="#000000" stroke-width="1.2" />
-    <line x1="0" y1="505" x2="850" y2="505" stroke="#000000" stroke-width="1.2" />
+    <line x1="840" y1="30" x2="840" y2="695" stroke="#000000" stroke-width="1.2" />
+    <line x1="0" y1="695" x2="840" y2="695" stroke="#000000" stroke-width="1.2" />
   
   <!-- Diagram Elements -->
   
+    <!-- Start -->
     <circle cx="140" cy="80" r="10" fill="#000000" />
     <path d="M 140 90 L 140 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
 
-    <rect x="40" y="115" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="135" class="act-text">Open Renewal Portal</text>
-    <text x="140" y="150" class="act-desc">(Window: T-30 to T-20 days)</text>
+    <!-- 1. Customer: Open Renewal Portal -->
+    <rect x="40" y="115" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="140" y="140" class="act-title">1. Open Renewal Portal</text>
+    <text x="140" y="158" class="act-desc">(Window: T-30 to T-20 days)</text>
 
-    <path d="M 140 160 L 140 200" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <!-- Vertical Link -->
+    <path d="M 140 175 L 140 230" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="87.5" y="188" width="105" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="140" y="202" class="edge-label">Eligible Lease</text>
+  
 
-    <rect x="40" y="200" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="220" class="act-text">Select Extension (1-12 Mos)</text>
-    <text x="140" y="235" class="act-desc">(Deposit Carries Forward)</text>
+    <!-- 2. Customer: Select Extension -->
+    <rect x="40" y="230" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="140" y="255" class="act-title">2. Select Extension (1-12 Mos)</text>
+    <text x="140" y="273" class="act-desc">(Deposit Carries Forward)</text>
 
-    <!-- Pay VNPay -->
-    <path d="M 240 222 L 606.6666666666666 222" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="423.3333333333333" y="215" class="edge-label">Pay Rent via VNPay</text>
+    <!-- To Billing Engine: Check Conflict -->
+    <path d="M 240 260 L 420 260 L 420 315" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="267.5" y="247" width="125" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="330" y="261" class="edge-label">Check Unit Conflict</text>
+  
 
-    <rect x="606.6666666666666" y="200" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="706.6666666666666" y="220" class="act-text">Extend Contract End Date</text>
-    <text x="706.6666666666666" y="235" class="act-desc">(Contract Remains ACTIVE)</text>
+    <!-- 3. Engine: Verify Next Reservation -->
+    <rect x="320" y="315" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="420" y="340" class="act-title">3. Verify No Next Reservation</text>
+    <text x="420" y="358" class="act-desc">(Anti-Overlap Check, BR-REN-02)</text>
 
-    <circle cx="706.6666666666666" cy="290" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <circle cx="706.6666666666666" cy="290" r="7" fill="#000000" />
-    <path d="M 706.6666666666666 245 L 706.6666666666666 277" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <!-- To FM: Re-allocate if Conflict -->
+    <path d="M 520 345 L 700 345 L 700 400" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="552.5" y="332" width="115" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="610" y="346" class="edge-label">Resolve Conflict</text>
+  
+
+    <!-- 4. FM: Re-allocate Next Booking -->
+    <rect x="600" y="400" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="700" y="425" class="act-title">4. Resolve Unit Conflict</text>
+    <text x="700" y="443" class="act-desc">(Reassign Same-Type Unit)</text>
+
+    <!-- Back to Customer: VNPay -->
+    <path d="M 600 430 L 140 430 L 140 485" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="295" y="417" width="150" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="370" y="431" class="edge-label">Clear to Pay Extension</text>
+  
+
+    <!-- 5. Customer: Pay VNPay -->
+    <rect x="40" y="485" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="140" y="510" class="act-title">5. Complete VNPay Renewal</text>
+    <text x="140" y="528" class="act-desc">(Extension Invoice Settled)</text>
+
+    <!-- To Engine: Extend Date -->
+    <path d="M 240 515 L 420 515 L 420 570" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="262.5" y="502" width="135" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="330" y="516" class="edge-label">IPN Payment Success</text>
+  
+
+    <!-- 6. Engine: Extend Contract End Date -->
+    <rect x="320" y="570" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="420" y="595" class="act-title">6. Extend Contract End Date</text>
+    <text x="420" y="613" class="act-desc">(Contract Remains ACTIVE)</text>
+
+    <!-- End -->
+    <circle cx="420" cy="675" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <circle cx="420" cy="675" r="7" fill="#000000" />
+    <path d="M 420 630 L 420 662" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
   
   <!-- Figure Caption -->
-  <text x="425" y="535" class="caption">Swimlane 6.1: Flow_6_1_Customer_Online_Renewal</text>
+  <text x="420" y="725" class="caption">Swimlane 6.1: Flow_6_1_Customer_Online_Renewal</text>
 </svg>

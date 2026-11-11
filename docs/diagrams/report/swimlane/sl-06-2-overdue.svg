@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 650" width="850" height="650">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 770" width="840" height="770">
   <style>
     .lane-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
     .act-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
@@ -13,77 +13,104 @@
     </marker>
   </defs>
   <!-- Background -->
-  <rect width="850" height="650" fill="#ffffff" />
+  <rect width="840" height="770" fill="#ffffff" />
   <!-- Lanes -->
   
-      <rect x="0" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="141.66666666666666" y="52" class="lane-title">System Schedulers (Cron)</text>
+      <rect x="0" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="140" y="52" class="lane-title">System Schedulers (Cron)</text>
     
-      <rect x="283.3333333333333" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="425" y="52" class="lane-title">Storage Customer</text>
+      <rect x="280" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="420" y="52" class="lane-title">Storage Customer</text>
     
-      <rect x="566.6666666666666" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="708.3333333333333" y="52" class="lane-title">Staff &amp; Central Warehouse</text>
+      <rect x="560" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="700" y="52" class="lane-title">Staff &amp; Central Warehouse</text>
     
   
-      <line x1="0" y1="30" x2="0" y2="605" stroke="#000000" stroke-width="1.2" />
+      <line x1="0" y1="30" x2="0" y2="725" stroke="#000000" stroke-width="1.2" />
     
-      <line x1="283.3333333333333" y1="30" x2="283.3333333333333" y2="605" stroke="#000000" stroke-width="1.2" />
+      <line x1="280" y1="30" x2="280" y2="725" stroke="#000000" stroke-width="1.2" />
     
-      <line x1="566.6666666666666" y1="30" x2="566.6666666666666" y2="605" stroke="#000000" stroke-width="1.2" />
+      <line x1="560" y1="30" x2="560" y2="725" stroke="#000000" stroke-width="1.2" />
     
-    <line x1="850" y1="30" x2="850" y2="605" stroke="#000000" stroke-width="1.2" />
-    <line x1="0" y1="605" x2="850" y2="605" stroke="#000000" stroke-width="1.2" />
+    <line x1="840" y1="30" x2="840" y2="725" stroke="#000000" stroke-width="1.2" />
+    <line x1="0" y1="725" x2="840" y2="725" stroke="#000000" stroke-width="1.2" />
   
   <!-- Diagram Elements -->
   
+    <!-- Start -->
     <circle cx="140" cy="80" r="10" fill="#000000" />
     <path d="M 140 90 L 140 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
 
-    <rect x="40" y="115" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="135" class="act-text">Midnight Scan at Day D+1</text>
-    <text x="140" y="150" class="act-desc">(Transition to OVERDUE)</text>
+    <!-- 1. System: Midnight Scan -->
+    <rect x="40" y="115" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="140" y="140" class="act-title">1. Midnight Scan at Day D+1</text>
+    <text x="140" y="158" class="act-desc">(Transition to OVERDUE)</text>
 
-    <path d="M 140 160 L 140 200" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <!-- Vertical Link -->
+    <path d="M 140 175 L 140 230" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="75" y="188" width="130" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="140" y="202" class="edge-label">Unpaid Past Maturity</text>
+  
 
-    <rect x="40" y="200" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="220" class="act-text">Suspend Smart Lock PIN</text>
-    <text x="140" y="235" class="act-desc">("No Pay, No PIN" BR-OVD-01)</text>
+    <!-- 2. System: Suspend PIN -->
+    <rect x="40" y="230" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="140" y="255" class="act-title">2. Suspend Smart Lock PIN</text>
+    <text x="140" y="273" class="act-desc">("No Pay, No PIN" BR-OVD-01)</text>
 
     <!-- Notify Customer -->
-    <path d="M 240 222 L 323.3333333333333 222" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="280" y="215" class="edge-label">Alert SMS/Email</text>
+    <path d="M 240 260 L 420 260 L 420 315" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="272.5" y="247" width="115" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="330" y="261" class="edge-label">Alert SMS / Email</text>
+  
 
-    <rect x="323.3333333333333" y="200" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="423.3333333333333" y="220" class="act-text">Receive Daily Debt Notices</text>
-    <text x="423.3333333333333" y="235" class="act-desc">(Grace D+1..D+3, Penalty D+4..D+6)</text>
+    <!-- 3. Customer: Receive Notices -->
+    <rect x="320" y="315" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="420" y="340" class="act-title">3. Receive Daily Debt Notices</text>
+    <text x="420" y="358" class="act-desc">(Grace D+1..3, Penalty D+4..6)</text>
 
-    <!-- D+7 Eviction -->
-    <path d="M 140 245 L 140 320" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <!-- Back to System: D+7 Eviction -->
+    <path d="M 320 345 L 140 345 L 140 400" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="157.5" y="332" width="145" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="230" y="346" class="edge-label">No Payment by Day D+7</text>
+  
 
-    <rect x="40" y="320" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="340" class="act-text">Day D+7: Terminate Contract</text>
-    <text x="140" y="355" class="act-desc">(100% Deposit Liquidated)</text>
+    <!-- 4. System: Terminate Contract -->
+    <rect x="40" y="400" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="140" y="425" class="act-title">4. Day D+7: Terminate Contract</text>
+    <text x="140" y="443" class="act-desc">(100% Deposit Liquidated)</text>
 
     <!-- Dispatch to Staff -->
-    <path d="M 240 342 L 606.6666666666666 342" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="423.3333333333333" y="335" class="edge-label">Eviction Order</text>
+    <path d="M 240 430 L 700 430 L 700 485" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="400" y="417" width="140" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="470" y="431" class="edge-label">Eviction Work Order</text>
+  
 
-    <rect x="606.6666666666666" y="320" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="706.6666666666666" y="340" class="act-text">Seal Unit &amp; Impound Goods</text>
-    <text x="706.6666666666666" y="355" class="act-desc">(Transfer to Central Wh 30 days)</text>
+    <!-- 5. Staff: Seal Unit -->
+    <rect x="600" y="485" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="700" y="510" class="act-title">5. Seal Unit &amp; Impound Goods</text>
+    <text x="700" y="528" class="act-desc">(Transfer to Central Wh 30 Days)</text>
 
-    <!-- Unit Available D+8 -->
-    <path d="M 706.6666666666666 365 L 706.6666666666666 420" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <!-- Vertical Link -->
+    <path d="M 700 545 L 700 600" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="632.5" y="558" width="135" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="700" y="572" class="edge-label">Sanitization Complete</text>
+  
 
-    <rect x="606.6666666666666" y="420" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="706.6666666666666" y="440" class="act-text">Release Unit: AVAILABLE</text>
-    <text x="706.6666666666666" y="455" class="act-desc">(Day D+8, Buffer: 8 days)</text>
+    <!-- 6. Staff: Unit Available D+8 -->
+    <rect x="600" y="600" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="700" y="625" class="act-title">6. Release Unit: AVAILABLE</text>
+    <text x="700" y="643" class="act-desc">(Day D+8, Buffer: 8 Days)</text>
 
-    <circle cx="706.6666666666666" cy="510" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <circle cx="706.6666666666666" cy="510" r="7" fill="#000000" />
-    <path d="M 706.6666666666666 465 L 706.6666666666666 497" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <!-- End -->
+    <circle cx="700" cy="705" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <circle cx="700" cy="705" r="7" fill="#000000" />
+    <path d="M 700 660 L 700 692" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
   
   <!-- Figure Caption -->
-  <text x="425" y="635" class="caption">Swimlane 6.2: Flow_6_2_Overdue_Escalation_And_Eviction</text>
+  <text x="420" y="755" class="caption">Swimlane 6.2: Flow_6_2_Overdue_Escalation_And_Eviction</text>
 </svg>
