@@ -50,7 +50,7 @@ export const ManagerRoutes: React.FC = () => {
         <Route path="contracts/facilities/:facilityId" element={<ContractListPage />} />
         <Route path="contracts/:contractId" element={<ContractDetailPage />} />
 
-        {/* 4 Cấp độ Drill-down Phân công nhân sự & Ca trực (FM-05) */}
+        {/* 4 Cấp độ Drill-down Phân công nhân sự & Điều phối công việc (FM-05) */}
         <Route path="staff-schedule" element={<StaffSchedulePage />} />
         <Route path="staff-schedule/facilities/:facilityId" element={<ShiftCalendarPage />} />
         <Route path="staff-schedule/facilities/:facilityId/shifts" element={<WorkListPage />} />

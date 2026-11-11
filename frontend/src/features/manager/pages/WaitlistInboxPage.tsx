@@ -491,7 +491,7 @@ export const WaitlistInboxPage: React.FC = () => {
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
             <h3 className="text-lg font-bold text-gray-900">Ghi chú & Hẹn gọi lại sau</h3>
             <p className="mt-1 text-xs text-gray-500">
-              Nhập thông tin phản hồi từ khách (khách bận, cần suy nghĩ) để mở khóa cho ca sau hoặc tiếp tục chăm sóc.
+              Nhập thông tin phản hồi từ khách (khách bận, cần suy nghĩ) để tiếp tục chăm sóc và phân công xử lý sau.
             </p>
 
             <textarea

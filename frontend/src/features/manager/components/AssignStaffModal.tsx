@@ -66,7 +66,7 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStaffId) {
-      setErrorMessage('Vui lòng chọn nhân viên phụ trách ca trực.');
+      setErrorMessage('Vui lòng chọn nhân viên phụ trách.');
       return;
     }
 
@@ -161,7 +161,7 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
                 <span className="text-rose-500">*</span>
               </label>
               <span className="text-[11px] text-slate-400">
-                Khối lượng công việc trực ca hôm nay
+                Khối lượng công việc hôm nay
               </span>
             </div>
 
@@ -221,17 +221,19 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${
                               isOverloaded
-                                ? 'bg-rose-100 text-rose-700'
-                                : staff.activeTaskCount <= 2
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : 'bg-blue-100 text-blue-700'
+                                ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                                : staff.activeTaskCount > 0
+                                ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                                : 'bg-slate-100 text-slate-600'
                             }`}
                           >
-                            {staff.activeTaskCount} việc đang làm
+                            {staff.activeTaskCount > 0
+                              ? `${staff.activeTaskCount} việc đang làm`
+                              : '0 việc đang làm'}
                           </span>
                           {isOverloaded && (
                             <p className="text-[10px] text-rose-600 font-medium mt-0.5">
-                              Quá tải tải việc!
+                              Quá tải!
                             </p>
                           )}
                         </div>
@@ -265,7 +267,7 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Nhập ghi chú hoặc nhắc nhở đặc biệt cho nhân viên trực ca..."
+              placeholder="Nhập ghi chú hoặc nhắc nhở đặc biệt cho nhân viên được phân công..."
               rows={3}
               className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none resize-none"
             />

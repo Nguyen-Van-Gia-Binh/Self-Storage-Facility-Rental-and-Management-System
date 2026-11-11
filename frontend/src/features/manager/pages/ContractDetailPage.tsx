@@ -384,8 +384,8 @@ export const ContractDetailPage: React.FC = () => {
               </div>
               <p className="text-xs text-sky-800 mt-0.5">
                 {contract.assignedStaffId
-                  ? `Nhân viên trực ca sẽ tiếp đón khách hàng, dẫn khách đi kiểm tra hiện trường ô kho ${contract.storageUnitCode} và hỗ trợ ký biên bản bàn giao số.`
-                  : `Khách hàng đã thanh toán cọc thành công và sẵn sàng nhận kho. Bạn cần phân công nhân viên ca trực tiếp đón hoặc kiểm tra vị trí ô trên sơ đồ 2D.`}
+                  ? `Nhân viên cơ sở sẽ tiếp đón khách hàng, dẫn khách đi kiểm tra hiện trường ô kho ${contract.storageUnitCode} và hỗ trợ ký biên bản bàn giao số.`
+                  : `Khách hàng đã thanh toán cọc thành công và sẵn sàng nhận kho. Bạn cần phân công nhân viên cơ sở tiếp đón hoặc kiểm tra vị trí ô trên sơ đồ 2D.`}
               </p>
             </div>
           </div>
@@ -426,7 +426,7 @@ export const ContractDetailPage: React.FC = () => {
               <p className="text-xs text-amber-700 mt-0.5">
                 {contract.assignedStaffId
                   ? `Nhiệm vụ kiểm tra ô kho ${contract.storageUnitCode} đã được phân công. Quản lý chỉ có thể duyệt quyết toán & hoàn cọc sau khi nhân viên hoàn tất kiểm tra và nộp biên bản nghiệm thu hiện trạng.`
-                  : `Khách hàng đã gửi yêu cầu trả kho. Bạn cần phân công nhân viên trực ca đến kiểm tra hiện trạng ô kho ${contract.storageUnitCode} trước khi thực hiện quyết toán.`}
+                  : `Khách hàng đã gửi yêu cầu trả kho. Bạn cần phân công nhân viên cơ sở đến kiểm tra hiện trạng ô kho ${contract.storageUnitCode} trước khi thực hiện quyết toán.`}
               </p>
             </div>
           </div>

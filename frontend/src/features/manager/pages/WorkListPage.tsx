@@ -30,7 +30,6 @@ export const WorkListPage: React.FC = () => {
   const navigate = useNavigate();
 
   const queryDate = searchParams.get('date') || new Date().toISOString().split('T')[0];
-  const queryShift = searchParams.get('shift') || 'ALL';
   const queryStaffId = searchParams.get('staffId');
 
   const [facility, setFacility] = useState<FacilityListItem | null>(null);
@@ -229,10 +228,7 @@ export const WorkListPage: React.FC = () => {
   };
 
   const getShiftTitle = () => {
-    if (queryShift === 'MORNING') return 'Ca Sáng';
-    if (queryShift === 'AFTERNOON') return 'Ca Chiều';
-    if (queryShift === 'NIGHT') return 'Ca Đêm';
-    return 'Tất cả các ca';
+    return 'Lịch công việc trong ngày';
   };
 
   const breadcrumbItems = [
@@ -248,7 +244,7 @@ export const WorkListPage: React.FC = () => {
     <div className="space-y-6">
       <Breadcrumb items={breadcrumbItems} />
 
-      {/* Header Thông tin ca & Khối lượng */}
+      {/* Header Thông tin & Khối lượng công việc */}
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -273,7 +269,7 @@ export const WorkListPage: React.FC = () => {
               onClick={() => navigate(`/manager/staff-schedule/facilities/${facilityId}`)}
               className="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
             >
-              ← Về lịch ca trực
+              ← Về bảng điều phối
             </button>
           </div>
         </div>

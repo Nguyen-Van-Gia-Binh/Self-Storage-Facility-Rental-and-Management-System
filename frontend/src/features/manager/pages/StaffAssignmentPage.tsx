@@ -21,6 +21,7 @@ import {
   getDailyDispatchTasks,
   assignStaffToTask,
   filterDispatchTasksByDate,
+  enrichStaffListWithTasks,
 } from '../api/staffAssignmentApi';
 import { StaffWorkloadCard } from '../components/StaffWorkloadCard';
 import { DailyTasksDispatchBoard } from '../components/DailyTasksDispatchBoard';
@@ -95,7 +96,8 @@ export const StaffAssignmentPage: React.FC = () => {
           getDailyDispatchTasks(selectedFacilityId, selectedDate),
         ]);
         if (isMounted) {
-          setStaffList(workloadRes);
+          const enriched = enrichStaffListWithTasks(workloadRes, tasksRes);
+          setStaffList(enriched);
           setTasks(tasksRes);
 
           if (urlContractId) {
@@ -263,7 +265,7 @@ export const StaffAssignmentPage: React.FC = () => {
         {/* KPI 1: Nhân sự trực ca */}
         <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Nhân sự trực ca</span>
+            <span className="text-xs font-semibold text-slate-500">Nhân sự cơ sở</span>
             <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <Users className="w-4 h-4" />
             </div>
@@ -329,7 +331,7 @@ export const StaffAssignmentPage: React.FC = () => {
             <span className="text-[11px] text-amber-700 font-semibold">yêu cầu hỗ trợ</span>
           </div>
           <p className="text-[11px] text-amber-700 mt-1">
-            Điều phối nhân viên xử lý theo ca trực
+            Điều phối nhân viên xử lý công việc
           </p>
         </div>
       </div>

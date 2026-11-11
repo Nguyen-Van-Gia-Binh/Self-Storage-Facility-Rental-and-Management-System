@@ -22,6 +22,7 @@ import {
   getDailyDispatchTasks,
   assignStaffToTask,
   filterDispatchTasksByDate,
+  enrichStaffListWithTasks,
 } from '../api/staffAssignmentApi';
 import type { FacilityListItem } from '@/types';
 import type { StaffWorkloadItem, DailyDispatchTaskItem, AssignTaskPayload } from '../types/staffAssignment';
@@ -105,7 +106,8 @@ export const ShiftCalendarPage: React.FC = () => {
         setFacility(currentFac);
       }
 
-      setStaffList(staffData || []);
+      const enrichedStaff = enrichStaffListWithTasks(staffData || [], taskData || []);
+      setStaffList(enrichedStaff);
       setAllTasks(taskData || []);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Lỗi tải thông tin cơ sở và nhiệm vụ.');

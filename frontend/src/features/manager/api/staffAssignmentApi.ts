@@ -51,7 +51,7 @@ export async function getStaffWorkload(facilityId: number): Promise<StaffWorkloa
       facilityName: 'Kho SmartStorage',
       activeTaskCount: 0,
       completedTaskCount: 0,
-      shift: 'Trực cơ sở',
+      shift: '',
       status: 'AVAILABLE',
     },
     {
@@ -63,7 +63,7 @@ export async function getStaffWorkload(facilityId: number): Promise<StaffWorkloa
       facilityName: 'Kho SmartStorage',
       activeTaskCount: 0,
       completedTaskCount: 0,
-      shift: 'Trực cơ sở',
+      shift: '',
       status: 'AVAILABLE',
     },
   ];
@@ -92,7 +92,7 @@ export async function getStaffWorkload(facilityId: number): Promise<StaffWorkloa
         facilityName: item.facilityName || 'Kho SmartStorage',
         activeTaskCount: active,
         completedTaskCount: Number(item.completedTaskCount || 0),
-        shift: 'Trực cơ sở',
+        shift: '',
         status,
       };
     });
@@ -100,6 +100,47 @@ export async function getStaffWorkload(facilityId: number): Promise<StaffWorkloa
     console.warn('Lỗi gọi API /support-requests/staff-workload, sử dụng danh sách nhân viên cơ sở mặc định:', error);
     return fallbackStaff;
   }
+}
+
+/**
+ * Làm giàu danh sách nhân viên cơ sở với số lượng nhiệm vụ thực tế từ bảng điều phối
+ * (Bao gồm Check-in, Trả kho và Sự cố đang phụ trách)
+ */
+export function enrichStaffListWithTasks(
+  staffList: StaffWorkloadItem[],
+  tasks: DailyDispatchTaskItem[]
+): StaffWorkloadItem[] {
+  return staffList.map((staff) => {
+    const activeTasks = (tasks || []).filter(
+      (t) =>
+        (t.assignedStaffId === staff.staffId ||
+          (t.assignedStaffName &&
+            t.assignedStaffName.trim().toLowerCase() === staff.staffName.trim().toLowerCase())) &&
+        t.status !== 'COMPLETED' &&
+        t.status !== 'RESOLVED'
+    );
+    const completedTasks = (tasks || []).filter(
+      (t) =>
+        (t.assignedStaffId === staff.staffId ||
+          (t.assignedStaffName &&
+            t.assignedStaffName.trim().toLowerCase() === staff.staffName.trim().toLowerCase())) &&
+        (t.status === 'COMPLETED' || t.status === 'RESOLVED')
+    );
+
+    const activeCount = Math.max(staff.activeTaskCount || 0, activeTasks.length);
+    const completedCount = Math.max(staff.completedTaskCount || 0, completedTasks.length);
+
+    let status: 'AVAILABLE' | 'NORMAL' | 'OVERLOADED' = 'AVAILABLE';
+    if (activeCount >= 5) status = 'OVERLOADED';
+    else if (activeCount >= 3) status = 'NORMAL';
+
+    return {
+      ...staff,
+      activeTaskCount: activeCount,
+      completedTaskCount: completedCount,
+      status,
+    };
+  });
 }
 
 /**

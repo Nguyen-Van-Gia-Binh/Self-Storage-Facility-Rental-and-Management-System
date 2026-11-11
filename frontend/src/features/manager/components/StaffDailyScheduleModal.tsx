@@ -47,7 +47,7 @@ export const StaffDailyScheduleModal: React.FC<StaffDailyScheduleModalProps> = (
       } catch (err) {
         if (isMounted) {
           setError(
-            err instanceof Error ? err.message : 'Không thể tải lịch trình ca trực của nhân viên'
+            err instanceof Error ? err.message : 'Không thể tải lịch trình làm việc của nhân viên'
           );
         }
       } finally {

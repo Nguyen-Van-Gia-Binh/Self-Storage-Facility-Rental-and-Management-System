@@ -3,7 +3,7 @@ import {
   Calendar,
   CheckCircle2,
   AlertCircle,
-  Clock,
+  Building2,
   Phone,
   Mail,
   Filter,
@@ -91,8 +91,8 @@ export const StaffWorkloadCard: React.FC<StaffWorkloadCardProps> = ({
                 {staff.staffName}
               </h4>
               <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5 truncate">
-                <Clock className="w-3 h-3 text-slate-400 shrink-0" />
-                <span className="truncate">{staff.shift || 'Ca làm việc chính'}</span>
+                <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
+                <span className="truncate">{staff.facilityName || 'Cơ sở SmartStorage'}</span>
               </p>
             </div>
           </div>
@@ -164,7 +164,7 @@ export const StaffWorkloadCard: React.FC<StaffWorkloadCardProps> = ({
           className="flex-1 py-1.5 px-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
         >
           <Calendar className="w-3.5 h-3.5 text-slate-500" />
-          <span>Xem ca trực</span>
+          <span>Lịch công việc</span>
         </button>
 
         {onSelectForFilter && (

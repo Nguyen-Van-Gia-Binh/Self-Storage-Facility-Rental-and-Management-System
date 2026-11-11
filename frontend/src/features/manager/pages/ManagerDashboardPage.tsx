@@ -51,8 +51,8 @@ const NAV_CARDS = [
     hoverShadow: 'hover:shadow-purple-100',
     textColor: 'text-purple-600',
     label: 'Phân công Nhân sự',
-    subtitle: 'Điều phối nhân viên ca trực',
-    desc: 'Cân bằng tải nhân viên ca trực, điều phối bàn giao nhận kho, trả kho và niêm phong khóa ngoài.',
+    subtitle: 'Điều phối công việc nhân sự',
+    desc: 'Cân bằng tải nhân viên, điều phối bàn giao nhận kho, trả kho và niêm phong khóa ngoài.',
     cta: 'Mở Bàn phân công',
   },
   {
