@@ -1,46 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1057 571" width="1057" height="571">
   <style>
-    .state-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
-    .state-desc { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #444444; }
-    .edge-label { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: middle; }
-    .edge-label-start { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: start; }
-    .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .state-name { font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .edge-label { font-family: Arial, Helvetica, sans-serif; font-size: 11px; text-anchor: middle; fill: #000000; }
+    .caption { font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
   </style>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse">
       <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
     </marker>
   </defs>
-  <!-- Background -->
-  <rect width="800" height="400" fill="#ffffff" />
-  
-    <circle cx="80" cy="50" r="12" fill="#000000" />
-    <path d="M 80 62 L 80 100" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="90" y="85" class="edge-label-start">Init VNPay (BR-PAY-01)</text>
-
-    <rect x="20" y="100" width="120" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <text x="80" y="127" class="state-title">PENDING</text>
-
-    <rect x="250" y="100" width="120" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <text x="310" y="127" class="state-title">SUCCESS</text>
-    <path d="M 140 122 L 250 122" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="195" y="115" class="edge-label">IPN Checksum OK</text>
-
-    <rect x="20" y="230" width="120" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <text x="80" y="257" class="state-title">FAILED</text>
-    <path d="M 80 145 L 80 230" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="90" y="190" class="edge-label-start">User Cancel / Timeout</text>
-
-    <rect x="470" y="100" width="120" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <text x="530" y="127" class="state-title">REFUNDED</text>
-    <path d="M 370 122 L 470 122" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="420" y="115" class="edge-label">Settlement Voucher</text>
-
-    <circle cx="660" cy="122" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <circle cx="660" cy="122" r="7" fill="#000000" />
-    <path d="M 590 122 L 647 122" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-  
-  <!-- Figure Caption -->
-  <text x="400" y="375" class="caption">State Chart 6: Payment_Transaction_Status</text>
+  <rect width="1057" height="571" fill="#ffffff" />
+  <path d="M 55 283 L 55 175 L 262.5 175" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 55 307 L 55 455 L 262.5 455" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 355 151 L 355 80 L 672.5 80" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 447.5 175 L 672.5 175" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 355 199 L 355 305 L 672.5 305" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 447.5 455 L 760 455 L 760 339" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 847.5 80 L 995 80 L 995 161" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 847.5 175 L 981 175" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 847.5 315 L 995 315 L 995 189" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <circle cx="55" cy="295" r="11" fill="#000000" />
+  <rect x="262.5" y="151" width="185" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="355" y="175" class="state-name" dominant-baseline="central">Pending</text>
+  <rect x="262.5" y="431" width="185" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="355" y="455" class="state-name" dominant-baseline="central">Pending Refund</text>
+  <rect x="672.5" y="56" width="175" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="760" y="80" class="state-name" dominant-baseline="central">Expired</text>
+  <rect x="672.5" y="151" width="175" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="760" y="175" class="state-name" dominant-baseline="central">Failed</text>
+  <rect x="672.5" y="291" width="175" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="760" y="315" class="state-name" dominant-baseline="central">Success</text>
+  <circle cx="995" cy="175" r="13" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <circle cx="995" cy="175" r="8" fill="#000000" />
+  <rect x="81" y="165" width="142" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="152" y="175" class="edge-label" dominant-baseline="central">create payment order</text>
+  <rect x="84" y="445" width="136" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="152" y="455" class="edge-label" dominant-baseline="central">create refund order</text>
+  <rect x="446" y="70" width="168" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="530" y="80" class="edge-label" dominant-baseline="central">expire after 48h timeout</text>
+  <rect x="473" y="165" width="174" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="560" y="175" class="edge-label" dominant-baseline="central">fail or supersede payment</text>
+  <rect x="456" y="295" width="148" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="530" y="305" class="edge-label" dominant-baseline="central">confirm VNPay payment</text>
+  <rect x="526" y="445" width="148" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="600" y="455" class="edge-label" dominant-baseline="central">confirm bank transfer</text>
+  <text x="528.5" y="551" class="caption">State Chart 6: Payment Transaction Status</text>
 </svg>

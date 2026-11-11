@@ -1,147 +1,102 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 920" width="840" height="920">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 1178" width="960" height="1178">
   <style>
-    .lane-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
-    .act-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
-    .act-desc { font-family: Arial, sans-serif; font-size: 10px; text-anchor: middle; fill: #555555; }
-    .edge-label { font-family: Arial, sans-serif; font-size: 10.5px; fill: #000000; text-anchor: middle; }
+    .pool-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .lane-title { font-family: Arial, sans-serif; font-size: 11.5px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .node-text { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #000000; }
+    .edge-label { font-family: Arial, sans-serif; font-size: 10.5px; text-anchor: middle; fill: #000000; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; stroke-linejoin: round; }
     .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
   </style>
   <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse">
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto" markerUnits="userSpaceOnUse">
       <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
     </marker>
   </defs>
-  <!-- Background -->
-  <rect width="840" height="920" fill="#ffffff" />
-  <!-- Lanes -->
-  
-      <rect x="0" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="140" y="52" class="lane-title">Storage Customer</text>
-    
-      <rect x="280" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="420" y="52" class="lane-title">System (Portal &amp; VNPay)</text>
-    
-      <rect x="560" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="700" y="52" class="lane-title">Facility Manager</text>
-    
-  
-      <line x1="0" y1="30" x2="0" y2="875" stroke="#000000" stroke-width="1.2" />
-    
-      <line x1="280" y1="30" x2="280" y2="875" stroke="#000000" stroke-width="1.2" />
-    
-      <line x1="560" y1="30" x2="560" y2="875" stroke="#000000" stroke-width="1.2" />
-    
-    <line x1="840" y1="30" x2="840" y2="875" stroke="#000000" stroke-width="1.2" />
-    <line x1="0" y1="875" x2="840" y2="875" stroke="#000000" stroke-width="1.2" />
-  
-  <!-- Diagram Elements -->
-  
-    <!-- Start -->
-    <circle cx="140" cy="80" r="10" fill="#000000" />
-    <path d="M 140 90 L 140 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-
-    <!-- 1. Customer: Select Facility -->
-    <rect x="40" y="115" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="140" class="act-title">Select Facility &amp; Unit Type</text>
-    <text x="140" y="158" class="act-desc">(BR-PRI-01, BR-GEN-03)</text>
-
-    <!-- To System: Check Slot -->
-    <path d="M 240 145 L 420 145 L 420 190" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="275" y="132" width="110" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="330" y="146" class="edge-label">Check Capacity</text>
-  
-
-    <!-- Decision: Available? -->
-    <polygon points="420,190 475,225 420,260 365,225" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="420" y="229" class="edge-label">Capacity &gt; 0?</text>
-
-    <!-- Branch [No] -> Waitlist -->
-    <path d="M 365 225 L 140 225 L 140 255" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="197.5" y="212" width="110" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="252.5" y="226" class="edge-label">[No] Full Capacity</text>
-  
-
-    <rect x="40" y="255" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="280" class="act-title">Opt-in FIFO Waitlist</text>
-    <text x="140" y="298" class="act-desc">(Queue Position, BR-WAT-01)</text>
-
-    <circle cx="140" cy="355" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <circle cx="140" cy="355" r="7" fill="#000000" />
-    <path d="M 140 315 L 140 342" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-
-    <!-- Branch [Yes] -> Generate Invoice & Hold 48h -->
-    <path d="M 420 260 L 420 310" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="360" y="270" width="120" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="420" y="284" class="edge-label">[Yes] Slot Available</text>
-  
-
-    <rect x="320" y="310" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="420" y="335" class="act-title">Hold Unit 48h &amp; Calc Rent</text>
-    <text x="420" y="353" class="act-desc">(Deposit + 1st Month, BR-DEP-01)</text>
-
-    <!-- To Customer Pay (Routed cleanly below Waitlist End Circle) -->
-    <path d="M 420 370 L 420 398 L 140 398 L 140 430" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="205" y="385" width="150" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="280" y="399" class="edge-label">Redirect to VNPay URL</text>
-  
-
-    <rect x="40" y="430" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="455" class="act-title">Complete VNPay Payment</text>
-    <text x="140" y="473" class="act-desc">(Secure Sandbox Callback)</text>
-
-    <!-- Back to System IPN -->
-    <path d="M 240 460 L 420 460 L 420 510" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="260" y="447" width="140" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="330" y="461" class="edge-label">IPN Payment Success</text>
-  
-
-    <rect x="320" y="510" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="420" y="535" class="act-title">Confirm Reservation</text>
-    <text x="420" y="553" class="act-desc">(Status: CONFIRMED)</text>
-
-    <!-- To FM Allocate -->
-    <path d="M 520 540 L 700 540 L 700 590" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="535" y="527" width="150" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="610" y="541" class="edge-label">Dispatch Physical Binding</text>
-  
-
-    <rect x="600" y="590" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="700" y="615" class="act-title">Allocate Physical Unit</text>
-    <text x="700" y="633" class="act-desc">(Late Binding, BR-AVL-04)</text>
-
-    <!-- Back to System Create Pass -->
-    <path d="M 600 620 L 420 620 L 420 670" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="437.5" y="607" width="145" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="510" y="621" class="edge-label">Unit Assigned (Comp ID)</text>
-  
-
-    <rect x="320" y="670" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="420" y="695" class="act-title">Issue Move-in Pass &amp; QR</text>
-    <text x="420" y="713" class="act-desc">(PENDING_CHECK_IN)</text>
-
-    <!-- To Customer Pass -->
-    <path d="M 320 700 L 140 700 L 140 750" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="157.5" y="687" width="145" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="230" y="701" class="edge-label">Push Notification &amp; Pass</text>
-  
-
-    <rect x="40" y="750" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="775" class="act-title">Receive Move-in Pass</text>
-    <text x="140" y="793" class="act-desc">(Ready for Physical Handover)</text>
-
-    <circle cx="140" cy="850" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <circle cx="140" cy="850" r="7" fill="#000000" />
-    <path d="M 140 810 L 140 837" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-  
-  <!-- Figure Caption -->
-  <text x="420" y="905" class="caption">Swimlane 1: Flow_1_Storage_Unit_Reservation_And_Payment</text>
+  <rect width="960" height="1178" fill="#ffffff" />
+  <rect x="16" y="16" width="928" height="1118" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <rect x="16" y="16" width="28" height="1118" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <text x="30" y="575" transform="rotate(-90 30 575)" class="pool-title" dominant-baseline="central">Self-Storage Platform</text>
+  <rect x="44" y="16" width="280" height="1118" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="44" y="16" width="280" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="184" y="31" class="lane-title" dominant-baseline="central">Storage Customer</text>
+  <rect x="324" y="16" width="390" height="1118" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="324" y="16" width="390" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="519" y="31" class="lane-title" dominant-baseline="central">System</text>
+  <rect x="714" y="16" width="230" height="1118" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="714" y="16" width="230" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="829" y="31" class="lane-title" dominant-baseline="central">VNPay Gateway</text>
+  <circle cx="184" cy="74" r="10" fill="#000000" />
+  <rect x="98" y="105" width="172" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="184" y="121" class="node-text" dominant-baseline="central">Select facility, unit type</text><text x="184" y="135" class="node-text" dominant-baseline="central">&amp; rental period</text>
+  <rect x="98" y="179" width="172" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="184" y="200" class="node-text" dominant-baseline="central">Submit booking request</text>
+  <rect x="427" y="174" width="184" height="52" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="519" y="193" class="node-text" dominant-baseline="central">Validate account, debt,</text><text x="519" y="207" class="node-text" dominant-baseline="central">spam &amp; 30-day window</text>
+  <polygon points="519,253 579,286 519,319 459,286" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="519" y="279.5" class="node-text" dominant-baseline="central">Booking</text><text x="519" y="292.5" class="node-text" dominant-baseline="central">eligible?</text>
+  <rect x="98" y="263" width="172" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="184" y="279" class="node-text" dominant-baseline="central">Show booking error &amp;</text><text x="184" y="293" class="node-text" dominant-baseline="central">adjust selection</text>
+  <rect x="427" y="354" width="184" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="519" y="371" class="node-text" dominant-baseline="central">Lock &amp; check quota,</text><text x="519" y="385" class="node-text" dominant-baseline="central">calculate rent &amp; deposit</text>
+  <polygon points="519,434 577,466 519,498 461,466" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="519" y="459.5" class="node-text" dominant-baseline="central">Capacity</text><text x="519" y="472.5" class="node-text" dominant-baseline="central">&gt; 0?</text>
+  <rect x="100" y="443" width="168" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="184" y="459" class="node-text" dominant-baseline="central">Join FIFO waitlist</text><text x="184" y="473" class="node-text" dominant-baseline="central">queue</text>
+  <circle cx="184" cy="534" r="12" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <circle cx="184" cy="534" r="7" fill="#000000" />
+  <rect x="420" y="537" width="198" height="50" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="519" y="555" class="node-text" dominant-baseline="central">Create hold (48h) &amp;</text><text x="519" y="569" class="node-text" dominant-baseline="central">generate VNPay checkout</text>
+  <rect x="98" y="623" width="172" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="184" y="639" class="node-text" dominant-baseline="central">Open VNPay checkout</text><text x="184" y="653" class="node-text" dominant-baseline="central">&amp; select bank method</text>
+  <rect x="745" y="622" width="168" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="829" y="639" class="node-text" dominant-baseline="central">Process bank/card &amp;</text><text x="829" y="653" class="node-text" dominant-baseline="central">send IPN / return</text>
+  <rect x="423" y="706" width="192" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="519" y="723" class="node-text" dominant-baseline="central">Verify VNPay checksum,</text><text x="519" y="737" class="node-text" dominant-baseline="central">amount &amp; 48h hold</text>
+  <polygon points="519,785 581,818 519,851 457,818" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="519" y="811.5" class="node-text" dominant-baseline="central">Paid &amp; within</text><text x="519" y="824.5" class="node-text" dominant-baseline="central">48h hold?</text>
+  <polygon points="184,786 243,818 184,850 125,818" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="184" y="811.5" class="node-text" dominant-baseline="central">Retry within</text><text x="184" y="824.5" class="node-text" dominant-baseline="central">48h?</text>
+  <rect x="344" y="882" width="160" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="424" y="899" class="node-text" dominant-baseline="central">Mark EXPIRED &amp;</text><text x="424" y="913" class="node-text" dominant-baseline="central">release held quota</text>
+  <circle cx="424" cy="974" r="12" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <circle cx="424" cy="974" r="7" fill="#000000" />
+  <rect x="531" y="881" width="166" height="50" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="614" y="899" class="node-text" dominant-baseline="central">Confirm reservation &amp;</text><text x="614" y="913" class="node-text" dominant-baseline="central">create rental contract</text>
+  <rect x="98" y="996" width="172" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="184" y="1013" class="node-text" dominant-baseline="central">Receive confirmation &amp;</text><text x="184" y="1027" class="node-text" dominant-baseline="central">await unit check-in</text>
+  <circle cx="184" cy="1086" r="12" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <circle cx="184" cy="1086" r="7" fill="#000000" />
+  <path d="M 184 84 L 184 105" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 184 151 L 184 179" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 270 200 L 427 200" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 519 226 L 519 253" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 459 286 L 270 286" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="400" y="276" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 98 286 L 64 286 L 64 128 L 98 128" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 519 319 L 519 354" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="536" y="332" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 519 402 L 519 434" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 461 466 L 268 466" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="402" y="456" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 184 489 L 184 522" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 519 498 L 519 537" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="536" y="514" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 519 587 L 519 602 L 184 602 L 184 623" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 270 646 L 745 646" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="519" y="636" class="edge-label" dominant-baseline="central">Checkout URL</text>
+  <path d="M 829 670 L 829 730 L 615 730" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="765" y="720" class="edge-label" dominant-baseline="central">IPN / Return</text>
+  <path d="M 519 754 L 519 785" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 457 818 L 243 818" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="402" y="808" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 125 818 L 64 818 L 64 646 L 98 646" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="95" y="808" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 184 850 L 184 906 L 344 906" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="232" y="896" class="edge-label" dominant-baseline="central">No / Timeout</text>
+  <path d="M 424 930 L 424 962" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 581 818 L 614 818 L 614 881" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="596" y="808" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 614 931 L 614 1020 L 270 1020" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 184 1044 L 184 1074" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="480" y="1162" class="caption">Swimlane 1: Flow_1_Storage_Unit_Reservation_And_Payment</text>
 </svg>

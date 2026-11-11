@@ -1,116 +1,107 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 770" width="840" height="770">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 986 975" width="986" height="975">
   <style>
-    .lane-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
-    .act-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
-    .act-desc { font-family: Arial, sans-serif; font-size: 10px; text-anchor: middle; fill: #555555; }
-    .edge-label { font-family: Arial, sans-serif; font-size: 10.5px; fill: #000000; text-anchor: middle; }
+    .pool-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .lane-title { font-family: Arial, sans-serif; font-size: 11.5px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .node-text { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #000000; }
+    .edge-label { font-family: Arial, sans-serif; font-size: 10.5px; text-anchor: middle; fill: #000000; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; stroke-linejoin: round; }
     .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
   </style>
   <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse">
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto" markerUnits="userSpaceOnUse">
       <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
     </marker>
   </defs>
-  <!-- Background -->
-  <rect width="840" height="770" fill="#ffffff" />
-  <!-- Lanes -->
-  
-      <rect x="0" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="140" y="52" class="lane-title">System Schedulers (Cron)</text>
-    
-      <rect x="280" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="420" y="52" class="lane-title">Storage Customer</text>
-    
-      <rect x="560" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="700" y="52" class="lane-title">Staff &amp; Central Warehouse</text>
-    
-  
-      <line x1="0" y1="30" x2="0" y2="725" stroke="#000000" stroke-width="1.2" />
-    
-      <line x1="280" y1="30" x2="280" y2="725" stroke="#000000" stroke-width="1.2" />
-    
-      <line x1="560" y1="30" x2="560" y2="725" stroke="#000000" stroke-width="1.2" />
-    
-    <line x1="840" y1="30" x2="840" y2="725" stroke="#000000" stroke-width="1.2" />
-    <line x1="0" y1="725" x2="840" y2="725" stroke="#000000" stroke-width="1.2" />
-  
-  <!-- Diagram Elements -->
-  
-    <!-- Start -->
-    <circle cx="140" cy="80" r="10" fill="#000000" />
-    <path d="M 140 90 L 140 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-
-    <!-- 1. System: Midnight Scan -->
-    <rect x="40" y="115" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="140" class="act-title">1. Midnight Scan at Day D+1</text>
-    <text x="140" y="158" class="act-desc">(Transition to OVERDUE)</text>
-
-    <!-- Vertical Link -->
-    <path d="M 140 175 L 140 230" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="75" y="188" width="130" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="140" y="202" class="edge-label">Unpaid Past Maturity</text>
-  
-
-    <!-- 2. System: Suspend PIN -->
-    <rect x="40" y="230" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="255" class="act-title">2. Suspend Smart Lock PIN</text>
-    <text x="140" y="273" class="act-desc">("No Pay, No PIN" BR-OVD-01)</text>
-
-    <!-- Notify Customer -->
-    <path d="M 240 260 L 420 260 L 420 315" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="272.5" y="247" width="115" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="330" y="261" class="edge-label">Alert SMS / Email</text>
-  
-
-    <!-- 3. Customer: Receive Notices -->
-    <rect x="320" y="315" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="420" y="340" class="act-title">3. Receive Daily Debt Notices</text>
-    <text x="420" y="358" class="act-desc">(Grace D+1..3, Penalty D+4..6)</text>
-
-    <!-- Back to System: D+7 Eviction -->
-    <path d="M 320 345 L 140 345 L 140 400" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="157.5" y="332" width="145" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="230" y="346" class="edge-label">No Payment by Day D+7</text>
-  
-
-    <!-- 4. System: Terminate Contract -->
-    <rect x="40" y="400" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="425" class="act-title">4. Day D+7: Terminate Contract</text>
-    <text x="140" y="443" class="act-desc">(100% Deposit Liquidated)</text>
-
-    <!-- Dispatch to Staff -->
-    <path d="M 240 430 L 700 430 L 700 485" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="400" y="417" width="140" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="470" y="431" class="edge-label">Eviction Work Order</text>
-  
-
-    <!-- 5. Staff: Seal Unit -->
-    <rect x="600" y="485" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="700" y="510" class="act-title">5. Seal Unit &amp; Impound Goods</text>
-    <text x="700" y="528" class="act-desc">(Transfer to Central Wh 30 Days)</text>
-
-    <!-- Vertical Link -->
-    <path d="M 700 545 L 700 600" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="632.5" y="558" width="135" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="700" y="572" class="edge-label">Sanitization Complete</text>
-  
-
-    <!-- 6. Staff: Unit Available D+8 -->
-    <rect x="600" y="600" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="700" y="625" class="act-title">6. Release Unit: AVAILABLE</text>
-    <text x="700" y="643" class="act-desc">(Day D+8, Buffer: 8 Days)</text>
-
-    <!-- End -->
-    <circle cx="700" cy="705" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <circle cx="700" cy="705" r="7" fill="#000000" />
-    <path d="M 700 660 L 700 692" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-  
-  <!-- Figure Caption -->
-  <text x="420" y="755" class="caption">Swimlane 6.2: Flow_6_2_Overdue_Escalation_And_Eviction</text>
+  <rect width="986" height="975" fill="#ffffff" />
+  <rect x="16" y="16" width="954" height="915" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <rect x="16" y="16" width="28" height="915" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <text x="30" y="473.5" transform="rotate(-90 30 473.5)" class="pool-title" dominant-baseline="central">Self-Storage Platform</text>
+  <rect x="44" y="16" width="270" height="915" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="44" y="16" width="270" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="31" class="lane-title" dominant-baseline="central">Storage Customer</text>
+  <rect x="314" y="16" width="430" height="915" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="314" y="16" width="430" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="529" y="31" class="lane-title" dominant-baseline="central">System</text>
+  <rect x="744" y="16" width="226" height="915" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="744" y="16" width="226" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="857" y="31" class="lane-title" dominant-baseline="central">VNPay Gateway</text>
+  <circle cx="529" cy="66" r="10" fill="#000000" />
+  <rect x="417" y="95" width="224" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="529" y="111" class="node-text" dominant-baseline="central">Run 00:00 OverdueCronJob</text><text x="529" y="125" class="node-text" dominant-baseline="central">&amp; load policy snapshot</text>
+  <rect x="417" y="170" width="224" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="529" y="187" class="node-text" dominant-baseline="central">Compute D+days &amp; net fee</text><text x="529" y="201" class="node-text" dominant-baseline="central">(5%/d D+1..3, +10%/d cap 55%)</text>
+  <polygon points="529,247 610,280 529,313 448,280" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="529" y="273.5" class="node-text" dominant-baseline="central">Overdue days</text><text x="529" y="286.5" class="node-text" dominant-baseline="central">&gt;= 7 (D+7+)?</text>
+  <rect x="322" y="344" width="190" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="417" y="361" class="node-text" dominant-baseline="central">Set OVERDUE, accrue fee</text><text x="417" y="375" class="node-text" dominant-baseline="central">&amp; lock access PIN (D+1+)</text>
+  <rect x="87" y="344" width="184" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="361" class="node-text" dominant-baseline="central">View OVERDUE status,</text><text x="179" y="375" class="node-text" dominant-baseline="central">locked PIN &amp; penalty fee</text>
+  <polygon points="179,423 253,456 179,489 105,456" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="449.5" class="node-text" dominant-baseline="central">Settle overdue</text><text x="179" y="462.5" class="node-text" dominant-baseline="central">penalty now?</text>
+  <rect x="89" y="516" width="180" height="44" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="531" class="node-text" dominant-baseline="central">Remain OVERDUE locked;</text><text x="179" y="545" class="node-text" dominant-baseline="central">risk D+7 termination</text>
+  <circle cx="179" cy="592" r="12" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <circle cx="179" cy="592" r="7" fill="#000000" />
+  <rect x="540" y="344" width="194" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="637" y="361" class="node-text" dominant-baseline="central">Liquidate 100% deposit,</text><text x="637" y="375" class="node-text" dominant-baseline="central">TERMINATE &amp; revoke PIN</text>
+  <polygon points="637,424 716,456 637,488 558,456" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="637" y="449.5" class="node-text" dominant-baseline="central">Days &gt;= D+8</text><text x="637" y="462.5" class="node-text" dominant-baseline="central">(sealed 1 day)?</text>
+  <rect x="322" y="432" width="190" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="417" y="449" class="node-text" dominant-baseline="central">Set unit MAINTENANCE</text><text x="417" y="463" class="node-text" dominant-baseline="central">(1-day seal to depot)</text>
+  <rect x="437" y="514" width="184" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="529" y="531" class="node-text" dominant-baseline="central">Release unit to</text><text x="529" y="545" class="node-text" dominant-baseline="central">RESERVED / AVAILABLE</text>
+  <circle cx="529" cy="592" r="12" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <circle cx="529" cy="592" r="7" fill="#000000" />
+  <rect x="87" y="647" width="184" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="663" class="node-text" dominant-baseline="central">Click Pay Overdue Penalty</text><text x="179" y="677" class="node-text" dominant-baseline="central">in Customer Portal</text>
+  <rect x="423" y="646" width="212" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="529" y="663" class="node-text" dominant-baseline="central">Create OVERDUE_PENALTY</text><text x="529" y="677" class="node-text" dominant-baseline="central">txn &amp; VNPay URL</text>
+  <rect x="765" y="646" width="184" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="857" y="663" class="node-text" dominant-baseline="central">Process VNPay payment</text><text x="857" y="677" class="node-text" dominant-baseline="central">&amp; return IPN result</text>
+  <polygon points="857,727 927,760 857,793 787,760" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="857" y="753.5" class="node-text" dominant-baseline="central">Penalty paid</text><text x="857" y="766.5" class="node-text" dominant-baseline="central">successfully?</text>
+  <rect x="423" y="735" width="212" height="50" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="529" y="753" class="node-text" dominant-baseline="central">Clear penalty debt, reissue</text><text x="529" y="767" class="node-text" dominant-baseline="central">PIN &amp; keep OVERDUE</text>
+  <rect x="85" y="736" width="188" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="753" class="node-text" dominant-baseline="central">Re-enter unit to pack &amp;</text><text x="179" y="767" class="node-text" dominant-baseline="central">submit Return Notice</text>
+  <circle cx="179" cy="814" r="12" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <circle cx="179" cy="814" r="7" fill="#000000" />
+  <rect x="423" y="849" width="212" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="529" y="865" class="node-text" dominant-baseline="central">Keep accrued debt, PIN</text><text x="529" y="879" class="node-text" dominant-baseline="central">locked &amp; OVERDUE status</text>
+  <rect x="85" y="849" width="188" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="865" class="node-text" dominant-baseline="central">Show payment failure &amp;</text><text x="179" y="879" class="node-text" dominant-baseline="central">retry before D+7</text>
+  <path d="M 529 76 L 529 95" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 529 141 L 529 170" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 529 218 L 529 247" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 448 280 L 417 280 L 417 344" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="428" y="270" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 322 368 L 271 368" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 179 392 L 179 423" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 179 489 L 179 516" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="198" y="502" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 179 560 L 179 580" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 105 456 L 64 456 L 64 628 L 179 628 L 179 647" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="82" y="446" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 610 280 L 637 280 L 637 344" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="628" y="270" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 637 392 L 637 424" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 558 456 L 512 456" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="534" y="446" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 417 480 L 417 500 L 529 500 L 529 514" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="473" y="498" class="edge-label" dominant-baseline="central">At D+8</text>
+  <path d="M 637 488 L 637 538 L 621 538" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="656" y="504" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 529 562 L 529 580" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 271 670 L 423 670" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 635 670 L 765 670" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 857 694 L 857 727" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 787 760 L 635 760" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="762" y="750" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 423 760 L 273 760" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 179 784 L 179 802" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 857 793 L 857 872 L 635 872" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="878" y="816" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 423 872 L 273 872" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 85 872 L 64 872 L 64 670 L 87 670" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="493" y="959" class="caption">Swimlane 6.2: Flow_6_2_Overdue_Monitoring_Escalation_And_Termination</text>
 </svg>

@@ -1,70 +1,132 @@
-<mxfile host="Electron" modified="2026-11-11T15:04:35.248Z" agent="draw.io" version="21.0.0" type="device">
-  <diagram name="Swimlane 3: Flow_3_Checkout_Return_And_Final_Settlement" id="1te9x7najn">
-    <mxGraphModel dx="1200" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="950" math="0" shadow="0">
+<mxfile host="Electron" modified="2026-11-11T00:00:00.000Z" agent="draw.io" version="21.0.0" type="device">
+  <diagram name="Swimlane 3: Flow_3_Checkout_Return_And_Final_Settlement" id="sl-03-return-settlement">
+    <mxGraphModel dx="1020" dy="1180" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="980" pageHeight="1140" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        
-    <mxCell id="lane_0" value="Storage Customer" style="swimlane;html=1;startSize=35;fillColor=#f8f9fa;strokeColor=#000000;strokeWidth=1.5;fontStyle=1;fontSize=13;fontFamily=Arial;" vertex="1" parent="1">
-      <mxGeometry x="40" y="40" width="260" height="700" as="geometry" />
+        <mxCell id="pool" value="Self-Storage Platform" style="swimlane;childLayout=stackLayout;resizeParent=1;resizeParentMax=0;horizontal=0;startSize=28;horizontalStack=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="16" y="16" width="888" height="1020" as="geometry" />
     </mxCell>
-    <mxCell id="lane_1" value="Facility Staff" style="swimlane;html=1;startSize=35;fillColor=#f8f9fa;strokeColor=#000000;strokeWidth=1.5;fontStyle=1;fontSize=13;fontFamily=Arial;" vertex="1" parent="1">
-      <mxGeometry x="300" y="40" width="260" height="700" as="geometry" />
-    </mxCell>
-    <mxCell id="lane_2" value="Facility Manager" style="swimlane;html=1;startSize=35;fillColor=#f8f9fa;strokeColor=#000000;strokeWidth=1.5;fontStyle=1;fontSize=13;fontFamily=Arial;" vertex="1" parent="1">
-      <mxGeometry x="560" y="40" width="260" height="700" as="geometry" />
-    </mxCell>
-    <mxCell id="lane_3" value="Finance Ledger System" style="swimlane;html=1;startSize=35;fillColor=#f8f9fa;strokeColor=#000000;strokeWidth=1.5;fontStyle=1;fontSize=13;fontFamily=Arial;" vertex="1" parent="1">
-      <mxGeometry x="820" y="40" width="260" height="700" as="geometry" />
-    </mxCell>
-  
-    <mxCell id="start" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
-      <mxGeometry x="160" y="85" width="20" height="20" as="geometry" />
-    </mxCell>
-    <mxCell id="node_1" value="1. Schedule Return Date&lt;br&gt;&lt;font color=&quot;#555555&quot; style=&quot;font-size: 10px;&quot;&gt;(Normal or Win-Win Early Return)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
-      <mxGeometry x="70" y="130" width="200" height="60" as="geometry" />
-    </mxCell>
-    <mxCell id="node_2" value="2. Exit Inspection &amp;amp; Photos&lt;br&gt;&lt;font color=&quot;#555555&quot; style=&quot;font-size: 10px;&quot;&gt;(Assess Damage, Trash &amp;amp; Lock)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
-      <mxGeometry x="330" y="210" width="200" height="60" as="geometry" />
-    </mxCell>
-    <mxCell id="node_3" value="3. Set Unit: CLEANING&lt;br&gt;&lt;font color=&quot;#555555&quot; style=&quot;font-size: 10px;&quot;&gt;(Sanitization Queue, BR-RET-09)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
-      <mxGeometry x="330" y="325" width="200" height="60" as="geometry" />
-    </mxCell>
-    <mxCell id="node_4" value="4. Review &amp;amp; Approve Voucher&lt;br&gt;&lt;font color=&quot;#555555&quot; style=&quot;font-size: 10px;&quot;&gt;(Net Settlement Formula)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
-      <mxGeometry x="590" y="410" width="200" height="60" as="geometry" />
-    </mxCell>
-    <mxCell id="node_5" value="5. Record Double-Entry Ledger&lt;br&gt;&lt;font color=&quot;#555555&quot; style=&quot;font-size: 10px;&quot;&gt;(LedgerEntry Immutable Audit)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
-      <mxGeometry x="850" y="495" width="200" height="60" as="geometry" />
-    </mxCell>
-    <mxCell id="node_6" value="6. Receive Deposit Refund&lt;br&gt;&lt;font color=&quot;#555555&quot; style=&quot;font-size: 10px;&quot;&gt;(Contract CLOSED, Unit Available)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
-      <mxGeometry x="70" y="580" width="200" height="60" as="geometry" />
-    </mxCell>
-    <mxCell id="end" value="" style="shape=ellipse;html=1;shape=endState;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
-      <mxGeometry x="157" y="675" width="26" height="26" as="geometry" />
-    </mxCell>
-  
-    <mxCell id="e_start" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.2;" edge="1" parent="1" source="start" target="node_1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="e_1_2" value="Check-out Request" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="node_1" target="node_2">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="e_2_3" value="Inspection Logged" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="node_2" target="node_3">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="e_3_4" value="Damage Protocol" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="node_3" target="node_4">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="e_4_5" value="Authorize Ledger" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="node_4" target="node_5">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="e_5_6" value="Disburse Net Refund (3-5 days)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="node_5" target="node_6">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="e_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.2;" edge="1" parent="1" source="node_6" target="end">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-  
+        <mxCell id="lane_customer" value="Storage Customer" style="swimlane;startSize=30;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;fontStyle=1;" vertex="1" parent="pool">
+        <mxGeometry x="28" y="0" width="270" height="1020" as="geometry" />
+      </mxCell>
+        <mxCell id="lane_system" value="System" style="swimlane;startSize=30;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;fontStyle=1;" vertex="1" parent="pool">
+        <mxGeometry x="298" y="0" width="300" height="1020" as="geometry" />
+      </mxCell>
+        <mxCell id="lane_staff" value="Facility Manager &amp; Staff" style="swimlane;startSize=30;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;fontStyle=1;" vertex="1" parent="pool">
+        <mxGeometry x="598" y="0" width="290" height="1020" as="geometry" />
+      </mxCell>
+        <mxCell id="start" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="lane_customer">
+          <mxGeometry x="125" y="42" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="submit_ret" value="Submit return notice&lt;br&gt;(on-time or early)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="lane_customer">
+          <mxGeometry x="49" y="85" width="172" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="check_debt" value="Check contract status&lt;br&gt;&amp; overdue debt" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="lane_system">
+          <mxGeometry x="60" y="85" width="180" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="d_debt" value="Overdue debt&lt;br&gt;== 0?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="lane_system">
+          <mxGeometry x="88" y="160" width="124" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="block_debt" value="Show debt block &amp;&lt;br&gt;require penalty settlement" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="lane_customer">
+          <mxGeometry x="48" y="169" width="174" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="end_debt" value="" style="ellipse;html=1;shape=endState;fillColor=#000000;strokeColor=#000000;strokeWidth=1.2;" vertex="1" parent="lane_customer">
+          <mxGeometry x="123" y="246" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="create_ret" value="Set PENDING_RETURN &amp;&lt;br&gt;create return request" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="lane_system">
+          <mxGeometry x="57" y="263" width="186" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="inspect_exit" value="Inspect unit &amp; collect&lt;br&gt;customer co-signature" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="lane_staff">
+          <mxGeometry x="51" y="262" width="188" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="d_intact" value="Unit intact&lt;br&gt;(&quot;GOOD&quot;)?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="lane_staff">
+          <mxGeometry x="86" y="344" width="118" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="add_fees" value="Record damage/cleaning&lt;br&gt;fees &amp; photo evidence" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="lane_staff">
+          <mxGeometry x="52" y="443" width="186" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="calc_settle" value="Revoke PIN, set CLEANING&lt;br&gt;&amp; calc net settlement" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="lane_system">
+          <mxGeometry x="52" y="531" width="196" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="approve_settle" value="Review &amp; approve&lt;br&gt;final settlement balance" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="lane_staff">
+          <mxGeometry x="53" y="619" width="184" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="d_deficit" value="Net refund&lt;br&gt;&gt;= 0?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="lane_system">
+          <mxGeometry x="87" y="696" width="126" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="pay_deficit" value="Pay settlement deficit&lt;br&gt;via VNPay checkout" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="lane_customer">
+          <mxGeometry x="47" y="704" width="176" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="close_contract" value="Close contract (CLOSED),&lt;br&gt;record ledger &amp; refund" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="lane_system">
+          <mxGeometry x="54" y="792" width="192" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="complete_clean" value="Finish unit sanitation&lt;br&gt;(AVAILABLE / RESERVED)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="lane_staff">
+          <mxGeometry x="51" y="792" width="188" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="receive_refund" value="Receive deposit refund&lt;br&gt;(3-5 days) &amp; receipt" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.1;fontFamily=Arial;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="lane_customer">
+          <mxGeometry x="47" y="883" width="176" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="end_ok" value="" style="ellipse;html=1;shape=endState;fillColor=#000000;strokeColor=#000000;strokeWidth=1.2;" vertex="1" parent="lane_customer">
+          <mxGeometry x="123" y="960" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="start" target="submit_ret">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="submit_ret" target="check_debt">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="check_debt" target="d_debt">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_3" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="d_debt" target="block_debt">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="block_debt" target="end_debt">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_5" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="d_debt" target="create_ret">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="create_ret" target="inspect_exit">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="inspect_exit" target="d_intact">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_8" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="d_intact" target="add_fees">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="add_fees" target="calc_settle">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="759" y="572" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_10" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="d_intact" target="calc_settle">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="464" y="392" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="calc_settle" target="approve_settle">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="464" y="658" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="approve_settle" target="d_deficit">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="759" y="704" /><mxPoint x="464" y="704" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_13" value="No (Deficit)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="d_deficit" target="pay_deficit">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="pay_deficit" target="close_contract">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="179" y="832" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_15" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="d_deficit" target="close_contract">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="close_contract" target="complete_clean">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="complete_clean" target="receive_refund">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="759" y="922" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="edge_18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.1;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=10;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="receive_refund" target="end_ok">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
       </root>
     </mxGraphModel>
   </diagram>

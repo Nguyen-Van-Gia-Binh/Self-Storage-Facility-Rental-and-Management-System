@@ -1,121 +1,89 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 760" width="1040" height="760">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 1080" width="920" height="1080">
   <style>
-    .lane-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
-    .act-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
-    .act-desc { font-family: Arial, sans-serif; font-size: 10px; text-anchor: middle; fill: #555555; }
-    .edge-label { font-family: Arial, sans-serif; font-size: 10.5px; fill: #000000; text-anchor: middle; }
+    .pool-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .lane-title { font-family: Arial, sans-serif; font-size: 11.5px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .node-text { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #000000; }
+    .edge-label { font-family: Arial, sans-serif; font-size: 10.5px; text-anchor: middle; fill: #000000; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; stroke-linejoin: round; }
     .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
   </style>
   <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse">
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto" markerUnits="userSpaceOnUse">
       <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
     </marker>
   </defs>
-  <!-- Background -->
-  <rect width="1040" height="760" fill="#ffffff" />
-  <!-- Lanes -->
-  
-      <rect x="0" y="30" width="260" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="130" y="52" class="lane-title">Storage Customer</text>
-    
-      <rect x="260" y="30" width="260" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="390" y="52" class="lane-title">Facility Staff</text>
-    
-      <rect x="520" y="30" width="260" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="650" y="52" class="lane-title">Facility Manager</text>
-    
-      <rect x="780" y="30" width="260" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="910" y="52" class="lane-title">Finance Ledger System</text>
-    
-  
-      <line x1="0" y1="30" x2="0" y2="715" stroke="#000000" stroke-width="1.2" />
-    
-      <line x1="260" y1="30" x2="260" y2="715" stroke="#000000" stroke-width="1.2" />
-    
-      <line x1="520" y1="30" x2="520" y2="715" stroke="#000000" stroke-width="1.2" />
-    
-      <line x1="780" y1="30" x2="780" y2="715" stroke="#000000" stroke-width="1.2" />
-    
-    <line x1="1040" y1="30" x2="1040" y2="715" stroke="#000000" stroke-width="1.2" />
-    <line x1="0" y1="715" x2="1040" y2="715" stroke="#000000" stroke-width="1.2" />
-  
-  <!-- Diagram Elements -->
-  
-    <!-- Start -->
-    <circle cx="130" cy="80" r="10" fill="#000000" />
-    <path d="M 130 90 L 130 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-
-    <!-- 1. Customer: Schedule Return -->
-    <rect x="30" y="115" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="130" y="140" class="act-title">1. Schedule Return Date</text>
-    <text x="130" y="158" class="act-desc">(Normal or Win-Win Early Return)</text>
-
-    <!-- To Staff Inspection -->
-    <path d="M 230 145 L 390 145 L 390 200" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="247.5" y="132" width="125" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="310" y="146" class="edge-label">Check-out Request</text>
-  
-
-    <!-- 2. Staff: Exit Inspection -->
-    <rect x="290" y="200" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="390" y="225" class="act-title">2. Exit Inspection &amp; Photos</text>
-    <text x="390" y="243" class="act-desc">(Assess Damage, Trash &amp; Lock)</text>
-
-    <!-- To Unit CLEANING -->
-    <path d="M 390 260 L 390 315" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="330" y="273" width="120" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="390" y="287" class="edge-label">Inspection Logged</text>
-  
-
-    <!-- 3. Staff: Set CLEANING -->
-    <rect x="290" y="315" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="390" y="340" class="act-title">3. Set Unit: CLEANING</text>
-    <text x="390" y="358" class="act-desc">(Sanitization Queue, BR-RET-09)</text>
-
-    <!-- To FM Approval -->
-    <path d="M 490 345 L 650 345 L 650 400" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="510" y="332" width="120" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="570" y="346" class="edge-label">Damage Protocol</text>
-  
-
-    <!-- 4. FM: Approve Voucher -->
-    <rect x="550" y="400" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="650" y="425" class="act-title">4. Review &amp; Approve Voucher</text>
-    <text x="650" y="443" class="act-desc">(Net Settlement Formula)</text>
-
-    <!-- To Ledger System -->
-    <path d="M 750 430 L 910 430 L 910 485" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="772.5" y="417" width="115" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="830" y="431" class="edge-label">Authorize Ledger</text>
-  
-
-    <!-- 5. Ledger System: Double Entry -->
-    <rect x="810" y="485" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="910" y="510" class="act-title">5. Record Double-Entry Ledger</text>
-    <text x="910" y="528" class="act-desc">(LedgerEntry Immutable Audit)</text>
-
-    <!-- Refund Disbursed to Customer -->
-    <path d="M 810 515 L 130 515 L 130 570" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="375" y="502" width="190" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="470" y="516" class="edge-label">Disburse Net Refund (3-5 days)</text>
-  
-
-    <!-- 6. Customer: Receive Refund -->
-    <rect x="30" y="570" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="130" y="595" class="act-title">6. Receive Deposit Refund</text>
-    <text x="130" y="613" class="act-desc">(Contract CLOSED, Unit Available)</text>
-
-    <!-- End -->
-    <circle cx="130" cy="675" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <circle cx="130" cy="675" r="7" fill="#000000" />
-    <path d="M 130 630 L 130 662" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-  
-  <!-- Figure Caption -->
-  <text x="520" y="745" class="caption">Swimlane 3: Flow_3_Checkout_Return_And_Final_Settlement</text>
+  <rect width="920" height="1080" fill="#ffffff" />
+  <rect x="16" y="16" width="888" height="1020" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <rect x="16" y="16" width="28" height="1020" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <text x="30" y="526" transform="rotate(-90 30 526)" class="pool-title" dominant-baseline="central">Self-Storage Platform</text>
+  <rect x="44" y="16" width="270" height="1020" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="44" y="16" width="270" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="31" class="lane-title" dominant-baseline="central">Storage Customer</text>
+  <rect x="314" y="16" width="300" height="1020" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="314" y="16" width="300" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="464" y="31" class="lane-title" dominant-baseline="central">System</text>
+  <rect x="614" y="16" width="290" height="1020" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="614" y="16" width="290" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="759" y="31" class="lane-title" dominant-baseline="central">Facility Manager &amp; Staff</text>
+  <circle cx="179" cy="68" r="10" fill="#000000" />
+  <rect x="93" y="101" width="172" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="117" class="node-text" dominant-baseline="central">Submit return notice</text><text x="179" y="131" class="node-text" dominant-baseline="central">(on-time or early)</text>
+  <rect x="374" y="101" width="180" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="464" y="117" class="node-text" dominant-baseline="central">Check contract status</text><text x="464" y="131" class="node-text" dominant-baseline="central">&amp; overdue debt</text>
+  <polygon points="464,176 526,208 464,240 402,208" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="464" y="201.5" class="node-text" dominant-baseline="central">Overdue debt</text><text x="464" y="214.5" class="node-text" dominant-baseline="central">== 0?</text>
+  <rect x="92" y="185" width="174" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="201" class="node-text" dominant-baseline="central">Show debt block &amp;</text><text x="179" y="215" class="node-text" dominant-baseline="central">require penalty settlement</text>
+  <circle cx="179" cy="274" r="12" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <circle cx="179" cy="274" r="7" fill="#000000" />
+  <rect x="371" y="279" width="186" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="464" y="295" class="node-text" dominant-baseline="central">Set PENDING_RETURN &amp;</text><text x="464" y="309" class="node-text" dominant-baseline="central">create return request</text>
+  <rect x="665" y="278" width="188" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="759" y="295" class="node-text" dominant-baseline="central">Inspect unit &amp; collect</text><text x="759" y="309" class="node-text" dominant-baseline="central">customer co-signature</text>
+  <polygon points="759,360 818,392 759,424 700,392" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="759" y="385.5" class="node-text" dominant-baseline="central">Unit intact</text><text x="759" y="398.5" class="node-text" dominant-baseline="central">(&quot;GOOD&quot;)?</text>
+  <rect x="666" y="459" width="186" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="759" y="475" class="node-text" dominant-baseline="central">Record damage/cleaning</text><text x="759" y="489" class="node-text" dominant-baseline="central">fees &amp; photo evidence</text>
+  <rect x="366" y="547" width="196" height="50" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="464" y="565" class="node-text" dominant-baseline="central">Revoke PIN, set CLEANING</text><text x="464" y="579" class="node-text" dominant-baseline="central">&amp; calc net settlement</text>
+  <rect x="667" y="635" width="184" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="759" y="651" class="node-text" dominant-baseline="central">Review &amp; approve</text><text x="759" y="665" class="node-text" dominant-baseline="central">final settlement balance</text>
+  <polygon points="464,712 527,744 464,776 401,744" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="464" y="737.5" class="node-text" dominant-baseline="central">Net refund</text><text x="464" y="750.5" class="node-text" dominant-baseline="central">&gt;= 0?</text>
+  <rect x="91" y="720" width="176" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="737" class="node-text" dominant-baseline="central">Pay settlement deficit</text><text x="179" y="751" class="node-text" dominant-baseline="central">via VNPay checkout</text>
+  <rect x="368" y="808" width="192" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="464" y="825" class="node-text" dominant-baseline="central">Close contract (CLOSED),</text><text x="464" y="839" class="node-text" dominant-baseline="central">record ledger &amp; refund</text>
+  <rect x="665" y="808" width="188" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="759" y="825" class="node-text" dominant-baseline="central">Finish unit sanitation</text><text x="759" y="839" class="node-text" dominant-baseline="central">(AVAILABLE / RESERVED)</text>
+  <rect x="91" y="899" width="176" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="915" class="node-text" dominant-baseline="central">Receive deposit refund</text><text x="179" y="929" class="node-text" dominant-baseline="central">(3-5 days) &amp; receipt</text>
+  <circle cx="179" cy="988" r="12" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <circle cx="179" cy="988" r="7" fill="#000000" />
+  <path d="M 179 78 L 179 101" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 265 124 L 374 124" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 464 147 L 464 176" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 402 208 L 266 208" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="365" y="198" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 179 231 L 179 262" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 464 240 L 464 279" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="484" y="256" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 557 302 L 665 302" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 759 326 L 759 360" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 759 424 L 759 459" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="778" y="438" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 759 505 L 759 572 L 562 572" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 700 392 L 464 392 L 464 547" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="656" y="382" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 464 597 L 464 658 L 667 658" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 759 681 L 759 704 L 464 704 L 464 712" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 401 744 L 267 744" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="348" y="734" class="edge-label" dominant-baseline="central">No (Deficit)</text>
+  <path d="M 179 768 L 179 832 L 368 832" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 464 776 L 464 808" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="484" y="790" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 560 832 L 665 832" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 759 856 L 759 922 L 267 922" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 179 945 L 179 976" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="460" y="1064" class="caption">Swimlane 3: Flow_3_Checkout_Return_And_Final_Settlement</text>
 </svg>

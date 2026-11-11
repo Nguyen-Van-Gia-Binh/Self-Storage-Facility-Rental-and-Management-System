@@ -1,114 +1,66 @@
-<mxfile host="Electron">
-  <diagram name="Storage Reservation Lifecycle" id="wstAX4KUFr210jKFClyI">
-    <mxGraphModel dx="1778" dy="894" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+<mxfile host="Electron" modified="2026-11-12T00:00:00.000Z" agent="draw.io" version="21.0.0" type="device">
+  <diagram name="State Chart 3: Reservation Status" id="st-reservation">
+    <mxGraphModel dx="1022" dy="781" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="982" pageHeight="741" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-1" parent="1" style="ellipse;html=1;shape=startState;fillColor=#000000;strokeColor=#000000;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="-285" y="30" as="geometry" />
+        <mxCell id="start" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="173" y="28" width="24" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-2" edge="1" parent="1" source="7w6iHbU6V-dLSxgUVWd0-1" style="edgeStyle=orthogonalEdgeStyle;html=1;verticalAlign=bottom;endArrow=open;endSize=8;strokeColor=#003366;rounded=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="7w6iHbU6V-dLSxgUVWd0-3" value="Customer reserves unit&lt;div&gt;[Hold unit for 48h]&lt;/div&gt;">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint as="offset" />
-            <mxPoint x="395" y="120" as="targetPoint" />
-          </mxGeometry>
+        <mxCell id="PENDING_PAYMENT" value="Pending Payment" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="90" y="121" width="190" height="48" as="geometry" />
         </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-11" edge="1" parent="1" source="7w6iHbU6V-dLSxgUVWd0-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="7w6iHbU6V-dLSxgUVWd0-9" value="Deposit paid via VietQR&amp;nbsp;&lt;div&gt;&amp;amp; Unit assigned&lt;/div&gt;">
-          <mxGeometry relative="1" x="0.0044" as="geometry">
-            <mxPoint as="offset" />
-          </mxGeometry>
+        <mxCell id="EXPIRED" value="Expired" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="547.5" y="121" width="175" height="48" as="geometry" />
         </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-18" edge="1" parent="1" source="7w6iHbU6V-dLSxgUVWd0-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="7w6iHbU6V-dLSxgUVWd0-17" value="">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="CONFIRMED" value="Confirmed" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="90" y="321" width="190" height="48" as="geometry" />
         </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-19" connectable="0" parent="7w6iHbU6V-dLSxgUVWd0-18" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Customer cancels reservation&lt;div&gt;[Within 48h hold period]&lt;/div&gt;" vertex="1">
-          <mxGeometry relative="1" x="0.1571" as="geometry">
-            <mxPoint x="21" as="offset" />
-          </mxGeometry>
+        <mxCell id="CANCELLED" value="Cancelled" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="547.5" y="297" width="175" height="48" as="geometry" />
         </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-57" edge="1" parent="1" source="7w6iHbU6V-dLSxgUVWd0-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="7w6iHbU6V-dLSxgUVWd0-43">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="NO_SHOW" value="No Show" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="547.5" y="431" width="175" height="48" as="geometry" />
         </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-58" connectable="0" parent="7w6iHbU6V-dLSxgUVWd0-57" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Payment not completed&amp;nbsp;&lt;div&gt;[Timeout &amp;gt; 48h]&lt;/div&gt;" vertex="1">
-          <mxGeometry relative="1" x="-0.0193" y="2" as="geometry">
-            <mxPoint as="offset" />
-          </mxGeometry>
+        <mxCell id="FULFILLED" value="Fulfilled" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="547.5" y="561" width="175" height="48" as="geometry" />
         </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-3" parent="1" style="html=1;align=center;verticalAlign=top;rounded=1;absoluteArcSize=1;arcSize=10;dashed=0;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;Pending Payment&lt;/b&gt;&lt;div&gt;(48h Holding Window)&lt;/div&gt;" vertex="1">
-          <mxGeometry height="40" width="160" x="-350" y="180" as="geometry" />
+        <mxCell id="end" value="" style="ellipse;html=1;shape=endState;fillColor=#000000;strokeColor=#000000;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="866" y="351" width="28" height="28" as="geometry" />
         </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-13" edge="1" parent="1" source="7w6iHbU6V-dLSxgUVWd0-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="7w6iHbU6V-dLSxgUVWd0-12" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-14" connectable="0" parent="7w6iHbU6V-dLSxgUVWd0-13" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Sign handover protocol&amp;nbsp;&lt;div&gt;&amp;amp; 6-digit PIN activated&lt;/div&gt;" vertex="1">
-          <mxGeometry relative="1" x="-0.2624" y="1" as="geometry">
-            <mxPoint x="-1" y="8" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-38" edge="1" parent="1" source="7w6iHbU6V-dLSxgUVWd0-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="7w6iHbU6V-dLSxgUVWd0-37">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-40" connectable="0" parent="7w6iHbU6V-dLSxgUVWd0-38" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="[&amp;gt; 10 days past start date]&amp;nbsp;&lt;div&gt;Check-in grace period expired&lt;/div&gt;" vertex="1">
-          <mxGeometry relative="1" x="0.0494" as="geometry">
-            <mxPoint x="-5" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-9" parent="1" style="html=1;align=center;verticalAlign=top;rounded=1;absoluteArcSize=1;arcSize=10;dashed=0;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;Confirmed&lt;/b&gt;&lt;div&gt;(Unit Assigned &amp;amp; Deposit Verified)&lt;/div&gt;" vertex="1">
-          <mxGeometry height="60" width="170" x="-350" y="370" as="geometry" />
-        </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-30" edge="1" parent="1" source="7w6iHbU6V-dLSxgUVWd0-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="7w6iHbU6V-dLSxgUVWd0-29" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-12" parent="1" style="html=1;align=center;verticalAlign=top;rounded=1;absoluteArcSize=1;arcSize=10;dashed=0;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;" value="&lt;b&gt;Fulfilled&lt;/b&gt;&lt;div&gt;(Unit Handed Over &amp;amp; Active)&lt;/div&gt;" vertex="1">
-          <mxGeometry height="50" width="160" x="-350" y="560" as="geometry" />
-        </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-17" parent="1" style="html=1;align=center;verticalAlign=top;rounded=1;absoluteArcSize=1;arcSize=10;dashed=0;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;" value="&lt;b&gt;Cancelled&lt;/b&gt;&lt;div&gt;(Booking Cancelled / Refunded)&lt;/div&gt;" vertex="1">
-          <mxGeometry height="60" width="140" x="-680" y="180" as="geometry" />
-        </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-29" parent="1" style="ellipse;html=1;shape=endState;fillColor=strokeColor;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="-285" y="690" as="geometry" />
-        </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-34" edge="1" parent="1" source="7w6iHbU6V-dLSxgUVWd0-17" style="edgeStyle=segmentEdgeStyle;endArrow=classic;html=1;curved=0;rounded=0;endSize=8;startSize=8;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="7w6iHbU6V-dLSxgUVWd0-29" value="">
-          <mxGeometry height="50" relative="1" width="50" as="geometry">
-            <Array as="points">
-              <mxPoint x="-610" y="705" />
-            </Array>
-            <mxPoint x="-480" y="270" as="sourcePoint" />
-            <mxPoint x="-670" y="730" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-35" edge="1" parent="1" source="7w6iHbU6V-dLSxgUVWd0-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.861;entryY=1.03;entryDx=0;entryDy=0;entryPerimeter=0;" target="7w6iHbU6V-dLSxgUVWd0-17">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="-629.32" y="224.16" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-36" connectable="0" parent="7w6iHbU6V-dLSxgUVWd0-35" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Unit damaged on-site,&amp;nbsp;&lt;div&gt;Full refund disbursed&amp;nbsp;&lt;/div&gt;" vertex="1">
-          <mxGeometry relative="1" x="-0.2146" y="-1" as="geometry">
-            <mxPoint x="28" y="1" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-52" edge="1" parent="1" source="7w6iHbU6V-dLSxgUVWd0-37" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;libavoidRouting=1;entryX=1;entryY=0;entryDx=0;entryDy=0;" target="7w6iHbU6V-dLSxgUVWd0-29">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="60" y="690" />
-            </Array>
-            <mxPoint x="-260" y="680" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-37" parent="1" style="html=1;align=center;verticalAlign=top;rounded=1;absoluteArcSize=1;arcSize=10;dashed=0;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;No-show&lt;/b&gt;&lt;div&gt;(Check-in Defaulted &amp;amp; Slot Released)&lt;/div&gt;" vertex="1">
-          <mxGeometry height="50" width="150" x="40" y="375" as="geometry" />
-        </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-59" edge="1" parent="1" source="7w6iHbU6V-dLSxgUVWd0-43" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;libavoidRouting=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="7w6iHbU6V-dLSxgUVWd0-29">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="210" y="705" />
-            </Array>
-            <mxPoint x="210" y="700" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="7w6iHbU6V-dLSxgUVWd0-43" parent="1" style="html=1;align=center;verticalAlign=top;rounded=1;absoluteArcSize=1;arcSize=10;dashed=0;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;" value="&lt;b&gt;Expired&lt;/b&gt;&lt;div&gt;(48h Payment Timeout)&lt;/div&gt;" vertex="1">
-          <mxGeometry height="40" width="140" x="130" y="180" as="geometry" />
-        </mxCell>
+        <mxCell id="e1_create" value="create reservation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="start" target="PENDING_PAYMENT">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e2_expire" value="expire 48h hold" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.2916666666666667;exitDx=0;exitDy=0;entryX=0;entryY=0.2916666666666667;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="PENDING_PAYMENT" target="EXPIRED">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e3_cancel_unpaid" value="cancel unpaid booking" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="PENDING_PAYMENT" target="CANCELLED">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="355" y="157" /><mxPoint x="355" y="250" /><mxPoint x="635" y="250" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e4_pay" value="confirm VNPay payment" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="PENDING_PAYMENT" target="CONFIRMED">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e5_cancel_conf" value="cancel within grace period" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="CONFIRMED" target="CANCELLED">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e6_noshow" value="cancel after grace period" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="CONFIRMED" target="NO_SHOW">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="345" y="357" /><mxPoint x="345" y="455" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e7_fulfill" value="complete check-in or auto-activate" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="CONFIRMED" target="FULFILLED">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="185" y="585" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e8_end_exp" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="EXPIRED" target="end">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="880" y="145" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e9_end_cancel" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.14285714285714285;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="CANCELLED" target="end">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="795" y="321" /><mxPoint x="795" y="355" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e10_end_noshow" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.8571428571428571;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="NO_SHOW" target="end">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="795" y="455" /><mxPoint x="795" y="375" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e11_end_fulfill" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="FULFILLED" target="end">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="880" y="585" /></Array></mxGeometry>
+      </mxCell>
       </root>
     </mxGraphModel>
   </diagram>

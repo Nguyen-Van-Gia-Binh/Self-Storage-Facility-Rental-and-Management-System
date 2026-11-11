@@ -1,0 +1,73 @@
+<mxfile host="Electron" modified="2026-11-12T00:00:00.000Z" agent="draw.io" version="21.0.0" type="device">
+  <diagram name="State Chart 5: Waitlist Status" id="st-waitlist">
+    <mxGraphModel dx="1037" dy="822" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="997" pageHeight="782" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="start" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="253" y="28" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="WAITING" value="Waiting" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="167.5" y="121" width="195" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="CANCELLED" value="Cancelled" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="570" y="121" width="180" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="CONTACTING" value="Contacting" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="167.5" y="321" width="195" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="CONVERTED" value="Converted" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="570" y="321" width="180" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="PENDING_FOLLOW_UP" value="Pending Follow Up" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="167.5" y="521" width="195" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="REJECTED" value="Rejected" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="570" y="521" width="180" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="" style="ellipse;html=1;shape=endState;fillColor=#000000;strokeColor=#000000;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="881" y="331" width="28" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="e1_join" value="join waitlist" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="start" target="WAITING">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e2_cancel_waiting" value="cancel waitlist" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="WAITING" target="CANCELLED">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e3_start_contact" value="start contacting" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.2692307692307692;exitY=1;exitDx=0;exitDy=0;entryX=0.2692307692307692;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="WAITING" target="CONTACTING">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e4_unlock_2h" value="unlock 2h timeout" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.7307692307692307;exitY=0;exitDx=0;exitDy=0;entryX=0.7307692307692307;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="CONTACTING" target="WAITING">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e5_convert" value="convert to reservation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="CONTACTING" target="CONVERTED">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e6_followup" value="schedule follow-up" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.2692307692307692;exitY=1;exitDx=0;exitDy=0;entryX=0.2692307692307692;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="CONTACTING" target="PENDING_FOLLOW_UP">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e7_resume" value="resume contacting" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.7307692307692307;exitY=0;exitDx=0;exitDy=0;entryX=0.7307692307692307;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="PENDING_FOLLOW_UP" target="CONTACTING">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e8_revert_conv" value="revert on 24h hold expiry" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="CONVERTED" target="PENDING_FOLLOW_UP">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="660" y="425" /><mxPoint x="465" y="425" /><mxPoint x="465" y="533" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e9_reject_follow" value="reject offer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="PENDING_FOLLOW_UP" target="REJECTED">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e10_reject_contact" value="reject offer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="CONTACTING" target="REJECTED">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="65" y="345" /><mxPoint x="65" y="640" /><mxPoint x="660" y="640" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e11_end_cancel" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="CANCELLED" target="end">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="895" y="145" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e12_end_conv" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="CONVERTED" target="end">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e13_end_rej" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="REJECTED" target="end">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="895" y="545" /></Array></mxGeometry>
+      </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

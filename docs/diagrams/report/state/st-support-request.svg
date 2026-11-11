@@ -1,55 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 947 676" width="947" height="676">
   <style>
-    .state-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
-    .state-desc { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #444444; }
-    .edge-label { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: middle; }
-    .edge-label-start { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: start; }
-    .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .state-name { font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .edge-label { font-family: Arial, Helvetica, sans-serif; font-size: 11px; text-anchor: middle; fill: #000000; }
+    .caption { font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
   </style>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse">
       <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
     </marker>
   </defs>
-  <!-- Background -->
-  <rect width="800" height="400" fill="#ffffff" />
-  
-    <circle cx="70" cy="50" r="12" fill="#000000" />
-    <path d="M 70 62 L 70 100" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="80" y="85" class="edge-label-start">Submit Ticket (BR-SUP-01)</text>
-
-    <rect x="15" y="100" width="110" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <text x="70" y="127" class="state-title">NEW</text>
-
-    <rect x="190" y="100" width="110" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <text x="245" y="127" class="state-title">ASSIGNED</text>
-    <path d="M 125 122 L 190 122" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="155" y="115" class="edge-label">FM Dispatch</text>
-
-    <rect x="370" y="100" width="120" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <text x="430" y="127" class="state-title">IN_PROGRESS</text>
-    <path d="M 300 122 L 370 122" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="335" y="115" class="edge-label">Staff Claim</text>
-
-    <rect x="560" y="100" width="110" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <text x="615" y="127" class="state-title">RESOLVED</text>
-    <path d="M 490 122 L 560 122" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="525" y="115" class="edge-label">Fix Applied</text>
-
-    <rect x="560" y="220" width="110" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <text x="615" y="247" class="state-title">CLOSED</text>
-    <path d="M 615 145 L 615 220" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="625" y="185" class="edge-label-start">72h auto-close (BR-SUP-05)</text>
-
-    <!-- Reopen -->
-    <path d="M 560 135 L 430 135 L 430 145" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="495" y="150" class="edge-label">Customer Dispute</text>
-
-    <circle cx="740" cy="242" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <circle cx="740" cy="242" r="7" fill="#000000" />
-    <path d="M 670 242 L 727 242" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-  
-  <!-- Figure Caption -->
-  <text x="400" y="375" class="caption">State Chart 4: Support_Request_Ticket_Status</text>
+  <rect width="947" height="676" fill="#ffffff" />
+  <path d="M 240 52 L 240 111" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 330 135 L 885 135 L 885 331" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 240 159 L 240 241" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 240 289 L 240 391" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 330 403 L 555 403" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 555 427 L 330 427" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 240 439 L 240 560 L 555 560" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 645 439 L 645 536" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 735 560 L 885 560 L 885 359" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <circle cx="240" cy="40" r="11" fill="#000000" />
+  <rect x="150" y="111" width="180" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="240" y="135" class="state-name" dominant-baseline="central">New</text>
+  <rect x="150" y="241" width="180" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="240" y="265" class="state-name" dominant-baseline="central">Assigned</text>
+  <rect x="150" y="391" width="180" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="240" y="415" class="state-name" dominant-baseline="central">In Progress</text>
+  <rect x="555" y="391" width="180" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="645" y="415" class="state-name" dominant-baseline="central">Resolved</text>
+  <rect x="555" y="536" width="180" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="645" y="560" class="state-name" dominant-baseline="central">Closed</text>
+  <circle cx="885" cy="345" r="13" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <circle cx="885" cy="345" r="8" fill="#000000" />
+  <rect x="191.5" y="78" width="97" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="240" y="88" class="edge-label" dominant-baseline="central">submit ticket</text>
+  <rect x="498.5" y="125" width="123" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="560" y="135" class="edge-label" dominant-baseline="central">cancel new ticket</text>
+  <rect x="194.5" y="190" width="91" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="240" y="200" class="edge-label" dominant-baseline="central">assign staff</text>
+  <rect x="172" y="330" width="136" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="240" y="340" class="edge-label" dominant-baseline="central">start investigation</text>
+  <rect x="361.5" y="393" width="161" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="442" y="403" class="edge-label" dominant-baseline="central">resolve with relocation</text>
+  <rect x="380.5" y="417" width="123" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="442" y="427" class="edge-label" dominant-baseline="central">reject resolution</text>
+  <rect x="295" y="550" width="180" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="385" y="560" class="edge-label" dominant-baseline="central">resolve without relocation</text>
+  <rect x="539" y="478" width="212" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="645" y="488" class="edge-label" dominant-baseline="central">confirm, relocate or auto-close</text>
+  <text x="473.5" y="656" class="caption">State Chart 4: Support Request Status</text>
 </svg>

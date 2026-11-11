@@ -1,126 +1,97 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 830" width="840" height="830">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1182" width="900" height="1182">
   <style>
-    .lane-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
-    .act-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
-    .act-desc { font-family: Arial, sans-serif; font-size: 10px; text-anchor: middle; fill: #555555; }
-    .edge-label { font-family: Arial, sans-serif; font-size: 10.5px; fill: #000000; text-anchor: middle; }
+    .pool-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .lane-title { font-family: Arial, sans-serif; font-size: 11.5px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .node-text { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #000000; }
+    .edge-label { font-family: Arial, sans-serif; font-size: 10.5px; text-anchor: middle; fill: #000000; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; stroke-linejoin: round; }
     .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
   </style>
   <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse">
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto" markerUnits="userSpaceOnUse">
       <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
     </marker>
   </defs>
-  <!-- Background -->
-  <rect width="840" height="830" fill="#ffffff" />
-  <!-- Lanes -->
-  
-      <rect x="0" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="140" y="52" class="lane-title">Storage Customer</text>
-    
-      <rect x="280" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="420" y="52" class="lane-title">Facility Staff</text>
-    
-      <rect x="560" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="700" y="52" class="lane-title">Smart Lock &amp; System</text>
-    
-  
-      <line x1="0" y1="30" x2="0" y2="785" stroke="#000000" stroke-width="1.2" />
-    
-      <line x1="280" y1="30" x2="280" y2="785" stroke="#000000" stroke-width="1.2" />
-    
-      <line x1="560" y1="30" x2="560" y2="785" stroke="#000000" stroke-width="1.2" />
-    
-    <line x1="840" y1="30" x2="840" y2="785" stroke="#000000" stroke-width="1.2" />
-    <line x1="0" y1="785" x2="840" y2="785" stroke="#000000" stroke-width="1.2" />
-  
-  <!-- Diagram Elements -->
-  
-    <!-- Start -->
-    <circle cx="140" cy="80" r="10" fill="#000000" />
-    <path d="M 140 90 L 140 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-
-    <!-- 1. Customer: Present QR -->
-    <rect x="40" y="115" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="140" class="act-title">Present Move-in Pass QR</text>
-    <text x="140" y="158" class="act-desc">(Arrive at Facility on Start Date)</text>
-
-    <!-- To Staff: Scan Pass -->
-    <path d="M 240 145 L 420 145 L 420 190" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="275" y="132" width="110" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="330" y="146" class="edge-label">Scan QR Pass</text>
-  
-
-    <!-- 2. Staff: Verify Booking -->
-    <rect x="320" y="190" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="420" y="215" class="act-title">Verify Citizen ID &amp; Pass</text>
-    <text x="420" y="233" class="act-desc">(Staff Desk Terminal, BR-CHK-01)</text>
-
-    <!-- 3. Staff: Inspection -->
-    <path d="M 420 250 L 420 305" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="377.5" y="263" width="85" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="420" y="277" class="edge-label">ID Matched</text>
-  
-
-    <rect x="320" y="305" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="420" y="330" class="act-title">Execute 4-Point Inspection</text>
-    <text x="420" y="348" class="act-desc">(Lock, Cleanliness, Light, Air)</text>
-
-    <!-- Customer Co-Sign -->
-    <path d="M 320 335 L 140 335 L 140 385" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="167.5" y="322" width="125" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="230" y="336" class="edge-label">Request Signature</text>
-  
-
-    <!-- 4. Customer: Sign Protocol -->
-    <rect x="40" y="385" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="410" class="act-title">Sign Handover Protocol</text>
-    <text x="140" y="428" class="act-desc">(Digital Sign on Tablet)</text>
-
-    <!-- To Smart Lock System -->
-    <path d="M 240 415 L 700 415 L 700 465" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="380" y="402" width="180" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="470" y="416" class="edge-label">Protocol Co-Signed &amp; Stored</text>
-  
-
-    <!-- 5. System: Generate PIN -->
-    <rect x="600" y="465" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="700" y="490" class="act-title">Generate 6-Digit PIN</text>
-    <text x="700" y="508" class="act-desc">(Sync to Smart Lock Keypad)</text>
-
-    <!-- 6. System: Contract ACTIVE -->
-    <path d="M 700 525 L 700 580" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="637.5" y="537" width="125" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="700" y="551" class="edge-label">Keypad Provisioned</text>
-  
-
-    <rect x="600" y="580" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="700" y="605" class="act-title">Transition Contract ACTIVE</text>
-    <text x="700" y="623" class="act-desc">(Storage Unit: OCCUPIED)</text>
-
-    <!-- Send PIN to Customer -->
-    <path d="M 600 610 L 140 610 L 140 660" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="285" y="597" width="170" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="370" y="611" class="edge-label">Deliver Secure Access PIN</text>
-  
-
-    <!-- 7. Customer: Store PIN & Move-in -->
-    <rect x="40" y="660" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="685" class="act-title">Store PIN in App &amp; Move-in</text>
-    <text x="140" y="703" class="act-desc">(24/7 Gate &amp; Unit Access)</text>
-
-    <!-- End -->
-    <circle cx="140" cy="760" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <circle cx="140" cy="760" r="7" fill="#000000" />
-    <path d="M 140 720 L 140 747" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-  
-  <!-- Figure Caption -->
-  <text x="420" y="815" class="caption">Swimlane 2: Flow_2_Checkin_Physical_Handover_And_PIN_Activation</text>
+  <rect width="900" height="1182" fill="#ffffff" />
+  <rect x="16" y="16" width="868" height="1122" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <rect x="16" y="16" width="28" height="1122" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <text x="30" y="577" transform="rotate(-90 30 577)" class="pool-title" dominant-baseline="central">Self-Storage Platform</text>
+  <rect x="44" y="16" width="270" height="1122" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="44" y="16" width="270" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="31" class="lane-title" dominant-baseline="central">Storage Customer</text>
+  <rect x="314" y="16" width="290" height="1122" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="314" y="16" width="290" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="459" y="31" class="lane-title" dominant-baseline="central">System</text>
+  <rect x="604" y="16" width="280" height="1122" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="604" y="16" width="280" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="744" y="31" class="lane-title" dominant-baseline="central">Facility Manager &amp; Staff</text>
+  <circle cx="744" cy="66" r="10" fill="#000000" />
+  <rect x="652" y="107" width="184" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="744" y="123" class="node-text" dominant-baseline="central">Allocate physical unit &amp;</text><text x="744" y="137" class="node-text" dominant-baseline="central">assign check-in staff</text>
+  <rect x="371" y="107" width="176" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="459" y="123" class="node-text" dominant-baseline="central">Bind unit (RESERVED) &amp;</text><text x="459" y="137" class="node-text" dominant-baseline="central">issue move-in pass</text>
+  <polygon points="459,180 525,212 459,244 393,212" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="459" y="205.5" class="node-text" dominant-baseline="central">Checked in within</text><text x="459" y="218.5" class="node-text" dominant-baseline="central">10-day grace?</text>
+  <rect x="363" y="263" width="192" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="459" y="279" class="node-text" dominant-baseline="central">Auto-activate ACTIVE, set</text><text x="459" y="293" class="node-text" dominant-baseline="central">OCCUPIED &amp; email PIN</text>
+  <circle cx="459" cy="340" r="12" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <circle cx="459" cy="340" r="7" fill="#000000" />
+  <rect x="93" y="189" width="172" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="205" class="node-text" dominant-baseline="central">Arrive or open portal</text><text x="179" y="219" class="node-text" dominant-baseline="central">with Citizen ID &amp; pass</text>
+  <rect x="652" y="359" width="184" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="744" y="375" class="node-text" dominant-baseline="central">Verify Citizen ID &amp;</text><text x="744" y="389" class="node-text" dominant-baseline="central">move-in pass status</text>
+  <polygon points="744,436 803,468 744,500 685,468" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="744" y="461.5" class="node-text" dominant-baseline="central">ID &amp; pass</text><text x="744" y="474.5" class="node-text" dominant-baseline="central">valid?</text>
+  <rect x="93" y="445" width="172" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="461" class="node-text" dominant-baseline="central">Pause check-in &amp;</text><text x="179" y="475" class="node-text" dominant-baseline="central">show ID mismatch</text>
+  <rect x="650" y="536" width="188" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="744" y="553" class="node-text" dominant-baseline="central">Execute 4-point inspect</text><text x="744" y="567" class="node-text" dominant-baseline="central">(lock, clean, light, air)</text>
+  <polygon points="744,615 807,648 744,681 681,648" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="744" y="641.5" class="node-text" dominant-baseline="central">Passes 4-point</text><text x="744" y="654.5" class="node-text" dominant-baseline="central">inspection?</text>
+  <rect x="93" y="625" width="172" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="641" class="node-text" dominant-baseline="central">Co-sign digital</text><text x="179" y="655" class="node-text" dominant-baseline="central">handover protocol</text>
+  <rect x="365" y="704" width="188" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="459" y="721" class="node-text" dominant-baseline="central">Set ACTIVE &amp; OCCUPIED,</text><text x="459" y="735" class="node-text" dominant-baseline="central">generate 6-digit PIN</text>
+  <rect x="93" y="785" width="172" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="801" class="node-text" dominant-baseline="central">Receive 6-digit PIN &amp;</text><text x="179" y="815" class="node-text" dominant-baseline="central">unlock unit 24/7</text>
+  <circle cx="179" cy="874" r="12" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <circle cx="179" cy="874" r="7" fill="#000000" />
+  <rect x="367" y="913" width="184" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="459" y="929" class="node-text" dominant-baseline="central">Mark unit MAINTENANCE</text><text x="459" y="943" class="node-text" dominant-baseline="central">&amp; log handover defects</text>
+  <polygon points="179,904 240,936 179,968 118,936" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="929.5" class="node-text" dominant-baseline="central">Accept unit</text><text x="179" y="942.5" class="node-text" dominant-baseline="central">relocation?</text>
+  <rect x="365" y="1002" width="188" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="459" y="1019" class="node-text" dominant-baseline="central">Terminate contract &amp;</text><text x="459" y="1033" class="node-text" dominant-baseline="central">issue 100% refund</text>
+  <circle cx="459" cy="1090" r="12" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <circle cx="459" cy="1090" r="7" fill="#000000" />
+  <path d="M 744 76 L 744 107" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 652 130 L 547 130" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 459 153 L 459 180" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 459 244 L 459 263" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="494" y="250" class="edge-label" dominant-baseline="central">No (T+11)</text>
+  <path d="M 459 309 L 459 328" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 393 212 L 265 212" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="365" y="202" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 179 235 L 179 382 L 652 382" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 744 405 L 744 436" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 685 468 L 265 468" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="656" y="458" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 93 468 L 72 468 L 72 212 L 93 212" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 744 500 L 744 536" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="764" y="514" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 744 584 L 744 615" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 681 648 L 265 648" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="648" y="638" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 179 671 L 179 728 L 365 728" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 459 752 L 459 808 L 265 808" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 179 831 L 179 862" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 744 681 L 744 936 L 551 936" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="786" y="710" class="edge-label" dominant-baseline="central">No (Defect)</text>
+  <path d="M 367 936 L 240 936" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 118 936 L 52 936 L 52 90 L 744 90 L 744 107" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="92" y="926" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 179 968 L 179 1026 L 365 1026" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="222" y="1016" class="edge-label" dominant-baseline="central">No (Refund)</text>
+  <path d="M 459 1050 L 459 1078" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="450" y="1166" class="caption">Swimlane 2: Flow_2_Checkin_Physical_Handover_And_Auto_Activation</text>
 </svg>

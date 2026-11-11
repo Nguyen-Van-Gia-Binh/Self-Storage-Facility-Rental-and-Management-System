@@ -1,96 +1,81 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 650" width="840" height="650">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 790 902" width="790" height="902">
   <style>
-    .lane-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
-    .act-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
-    .act-desc { font-family: Arial, sans-serif; font-size: 10px; text-anchor: middle; fill: #555555; }
-    .edge-label { font-family: Arial, sans-serif; font-size: 10.5px; fill: #000000; text-anchor: middle; }
+    .pool-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .lane-title { font-family: Arial, sans-serif; font-size: 11.5px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .node-text { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #000000; }
+    .edge-label { font-family: Arial, sans-serif; font-size: 10.5px; text-anchor: middle; fill: #000000; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; stroke-linejoin: round; }
     .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
   </style>
   <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse">
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto" markerUnits="userSpaceOnUse">
       <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
     </marker>
   </defs>
-  <!-- Background -->
-  <rect width="840" height="650" fill="#ffffff" />
-  <!-- Lanes -->
-  
-      <rect x="0" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="140" y="52" class="lane-title">Business Operations Manager</text>
-    
-      <rect x="280" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="420" y="52" class="lane-title">Policy &amp; Pricing Engine</text>
-    
-      <rect x="560" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="700" y="52" class="lane-title">Branch Operations</text>
-    
-  
-      <line x1="0" y1="30" x2="0" y2="605" stroke="#000000" stroke-width="1.2" />
-    
-      <line x1="280" y1="30" x2="280" y2="605" stroke="#000000" stroke-width="1.2" />
-    
-      <line x1="560" y1="30" x2="560" y2="605" stroke="#000000" stroke-width="1.2" />
-    
-    <line x1="840" y1="30" x2="840" y2="605" stroke="#000000" stroke-width="1.2" />
-    <line x1="0" y1="605" x2="840" y2="605" stroke="#000000" stroke-width="1.2" />
-  
-  <!-- Diagram Elements -->
-  
-    <!-- Start -->
-    <circle cx="140" cy="80" r="10" fill="#000000" />
-    <path d="M 140 90 L 140 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-
-    <!-- 1. BOM: Configure Master Types -->
-    <rect x="40" y="115" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="140" class="act-title">1. Configure Master Types</text>
-    <text x="140" y="158" class="act-desc">(Dimensions &amp; Base Monthly Rates)</text>
-
-    <!-- Vertical Link -->
-    <path d="M 140 175 L 140 230" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="85" y="188" width="110" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="140" y="202" class="edge-label">Catalog Defined</text>
-  
-
-    <!-- 2. BOM: Regional Surcharges -->
-    <rect x="40" y="230" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="255" class="act-title">2. Set Regional Surcharges</text>
-    <text x="140" y="273" class="act-desc">(Prime Location / Branch Tier)</text>
-
-    <!-- To Policy Engine -->
-    <path d="M 240 260 L 420 260 L 420 315" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="272.5" y="247" width="115" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="330" y="261" class="edge-label">Publish Pricing</text>
-  
-
-    <!-- 3. Engine: Price & Policy Version -->
-    <rect x="320" y="315" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="420" y="340" class="act-title">3. Create Price &amp; Policy Version</text>
-    <text x="420" y="358" class="act-desc">(Immutable Version Snapshot)</text>
-
-    <!-- To Branch Ops -->
-    <path d="M 520 345 L 700 345 L 700 400" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="552.5" y="332" width="115" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="610" y="346" class="edge-label">Propagate Rules</text>
-  
-
-    <!-- 4. Branch Ops: Enforce on New Bookings -->
-    <rect x="600" y="400" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="700" y="425" class="act-title">4. Enforce on New Bookings</text>
-    <text x="700" y="443" class="act-desc">(Non-retroactive BR-GEN-02)</text>
-
-    <!-- End -->
-    <circle cx="700" cy="530" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <circle cx="700" cy="530" r="7" fill="#000000" />
-    <path d="M 700 460 L 700 517" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    
-    <rect x="650" y="475" width="100" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
-    <text x="700" y="489" class="edge-label">Version Active</text>
-  
-  
-  <!-- Figure Caption -->
-  <text x="420" y="635" class="caption">Swimlane 4: Flow_4_BOM_Catalog_Pricing_And_Policy</text>
+  <rect width="790" height="902" fill="#ffffff" />
+  <rect x="16" y="16" width="758" height="842" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <rect x="16" y="16" width="28" height="842" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <text x="30" y="437" transform="rotate(-90 30 437)" class="pool-title" dominant-baseline="central">Self-Storage Platform</text>
+  <rect x="44" y="16" width="310" height="842" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="44" y="16" width="310" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="199" y="31" class="lane-title" dominant-baseline="central">Business Operations Manager</text>
+  <rect x="354" y="16" width="420" height="842" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="354" y="16" width="420" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="564" y="31" class="lane-title" dominant-baseline="central">System</text>
+  <circle cx="199" cy="68" r="10" fill="#000000" />
+  <rect x="107" y="101" width="184" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="199" y="117" class="node-text" dominant-baseline="central">Manage facilities, unit</text><text x="199" y="131" class="node-text" dominant-baseline="central">types &amp; active status</text>
+  <rect x="468" y="101" width="192" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="564" y="117" class="node-text" dominant-baseline="central">Validate FAC code &amp; active</text><text x="564" y="131" class="node-text" dominant-baseline="central">contracts before disable</text>
+  <polygon points="564,178 627,210 564,242 501,210" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="564" y="203.5" class="node-text" dominant-baseline="central">Valid &amp; safe</text><text x="564" y="216.5" class="node-text" dominant-baseline="central">to save?</text>
+  <rect x="109" y="187" width="180" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="199" y="203" class="node-text" dominant-baseline="central">Show active-contract or</text><text x="199" y="217" class="node-text" dominant-baseline="central">code conflict error</text>
+  <rect x="468" y="275" width="192" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="564" y="291" class="node-text" dominant-baseline="central">Persist catalog changes</text><text x="564" y="305" class="node-text" dominant-baseline="central">&amp; evict facility cache</text>
+  <rect x="105" y="359" width="188" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="199" y="375" class="node-text" dominant-baseline="central">Set policy version, price</text><text x="199" y="389" class="node-text" dominant-baseline="central">(per m2) &amp; effective date</text>
+  <rect x="466" y="358" width="196" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="564" y="375" class="node-text" dominant-baseline="central">Validate dates, bounds,</text><text x="564" y="389" class="node-text" dominant-baseline="central">ACTIVE branch &amp; opt lock</text>
+  <polygon points="564,438 630,470 564,502 498,470" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="564" y="463.5" class="node-text" dominant-baseline="central">Rules &amp; version</text><text x="564" y="476.5" class="node-text" dominant-baseline="central">lock valid?</text>
+  <rect x="107" y="447" width="184" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="199" y="463" class="node-text" dominant-baseline="central">Show validation or lock</text><text x="199" y="477" class="node-text" dominant-baseline="central">conflict &amp; re-enter</text>
+  <polygon points="564,528 630,560 564,592 498,560" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="564" y="553.5" class="node-text" dominant-baseline="central">Effective date</text><text x="564" y="566.5" class="node-text" dominant-baseline="central">&lt;= today?</text>
+  <rect x="371" y="626" width="170" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="456" y="643" class="node-text" dominant-baseline="central">Save immutable version</text><text x="456" y="657" class="node-text" dominant-baseline="central">&amp; update live price/policy</text>
+  <rect x="587" y="626" width="170" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="672" y="643" class="node-text" dominant-baseline="central">Save future-dated</text><text x="672" y="657" class="node-text" dominant-baseline="central">scheduled price version</text>
+  <rect x="474" y="720" width="180" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="564" y="737" class="node-text" dominant-baseline="central">Compute Usage Rate &amp;</text><text x="564" y="751" class="node-text" dominant-baseline="central">4-stream revenue KPIs</text>
+  <rect x="107" y="721" width="184" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="199" y="737" class="node-text" dominant-baseline="central">Review live pricing &amp;</text><text x="199" y="751" class="node-text" dominant-baseline="central">system KPI dashboard</text>
+  <circle cx="199" cy="810" r="12" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <circle cx="199" cy="810" r="7" fill="#000000" />
+  <path d="M 199 78 L 199 101" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 291 124 L 468 124" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 564 147 L 564 178" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 501 210 L 289 210" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="425" y="200" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 109 210 L 72 210 L 72 124 L 107 124" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 564 242 L 564 275" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="584" y="258" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 564 321 L 564 340 L 199 340 L 199 359" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 293 382 L 466 382" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 564 406 L 564 438" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 498 470 L 291 470" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="425" y="460" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 107 470 L 72 470 L 72 382 L 105 382" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 564 502 L 564 528" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="584" y="514" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 498 560 L 456 560 L 456 626" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="476" y="550" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 630 560 L 672 560 L 672 626" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="652" y="550" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 456 674 L 456 696 L 564 696 L 564 720" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 672 674 L 672 744 L 654 744" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 474 744 L 291 744" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 199 767 L 199 798" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="395" y="886" class="caption">Swimlane 4: Flow_4_BOM_Policy_Pricing_And_Analytics</text>
 </svg>

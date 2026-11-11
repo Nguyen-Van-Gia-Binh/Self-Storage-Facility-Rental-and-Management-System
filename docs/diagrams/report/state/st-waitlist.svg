@@ -1,51 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 957 742" width="957" height="742">
   <style>
-    .state-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
-    .state-desc { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #444444; }
-    .edge-label { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: middle; }
-    .edge-label-start { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: start; }
-    .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .state-name { font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .edge-label { font-family: Arial, Helvetica, sans-serif; font-size: 11px; text-anchor: middle; fill: #000000; }
+    .caption { font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
   </style>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse">
       <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
     </marker>
   </defs>
-  <!-- Background -->
-  <rect width="800" height="400" fill="#ffffff" />
-  
-    <circle cx="80" cy="50" r="12" fill="#000000" />
-    <path d="M 80 62 L 80 100" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="90" y="85" class="edge-label-start">FIFO Join (BR-WAT-01)</text>
-
-    <rect x="20" y="100" width="120" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <text x="80" y="127" class="state-title">WAITING</text>
-
-    <rect x="220" y="100" width="120" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <text x="280" y="127" class="state-title">CONTACTING</text>
-    <path d="M 140 122 L 220 122" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="180" y="115" class="edge-label">FM Lock 2h</text>
-
-    <rect x="420" y="100" width="120" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <text x="480" y="127" class="state-title">CONVERTED</text>
-    <path d="M 340 122 L 420 122" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="380" y="115" class="edge-label">Client Agree</text>
-
-    <rect x="220" y="220" width="120" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <text x="280" y="247" class="state-title">EXPIRED</text>
-    <path d="M 280 145 L 280 220" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="290" y="185" class="edge-label-start">2h Timeout</text>
-
-    <rect x="420" y="220" width="120" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <text x="480" y="247" class="state-title">REJECTED</text>
-    <path d="M 340 135 L 420 225" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="400" y="175" class="edge-label">Declined</text>
-
-    <circle cx="610" cy="122" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <circle cx="610" cy="122" r="7" fill="#000000" />
-    <path d="M 540 122 L 597 122" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-  
-  <!-- Figure Caption -->
-  <text x="400" y="375" class="caption">State Chart 5: Waitlist_CRM_Status</text>
+  <rect width="957" height="742" fill="#ffffff" />
+  <path d="M 265 52 L 265 121" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 362.5 145 L 570 145" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 220 169 L 220 321" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 310 321 L 310 169" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 362.5 345 L 570 345" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 220 369 L 220 521" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 310 521 L 310 369" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 660 369 L 660 425 L 465 425 L 465 533 L 362.5 533" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 362.5 557 L 570 557" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 167.5 345 L 65 345 L 65 640 L 660 640 L 660 569" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 750 145 L 895 145 L 895 331" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 750 345 L 881 345" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 750 545 L 895 545 L 895 359" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <circle cx="265" cy="40" r="11" fill="#000000" />
+  <rect x="167.5" y="121" width="195" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="265" y="145" class="state-name" dominant-baseline="central">Waiting</text>
+  <rect x="570" y="121" width="180" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="660" y="145" class="state-name" dominant-baseline="central">Cancelled</text>
+  <rect x="167.5" y="321" width="195" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="265" y="345" class="state-name" dominant-baseline="central">Contacting</text>
+  <rect x="570" y="321" width="180" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="660" y="345" class="state-name" dominant-baseline="central">Converted</text>
+  <rect x="167.5" y="521" width="195" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="265" y="545" class="state-name" dominant-baseline="central">Pending Follow Up</text>
+  <rect x="570" y="521" width="180" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="660" y="545" class="state-name" dominant-baseline="central">Rejected</text>
+  <circle cx="895" cy="345" r="13" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <circle cx="895" cy="345" r="8" fill="#000000" />
+  <rect x="216.5" y="82" width="97" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="265" y="92" class="edge-label" dominant-baseline="central">join waitlist</text>
+  <rect x="410" y="135" width="110" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="465" y="145" class="edge-label" dominant-baseline="central">cancel waitlist</text>
+  <rect x="142" y="216" width="116" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="200" y="226" class="edge-label" dominant-baseline="central">start contacting</text>
+  <rect x="268.5" y="258" width="123" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="330" y="268" class="edge-label" dominant-baseline="central">unlock 2h timeout</text>
+  <rect x="387.5" y="335" width="155" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="465" y="345" class="edge-label" dominant-baseline="central">convert to reservation</text>
+  <rect x="135.5" y="416" width="129" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="200" y="426" class="edge-label" dominant-baseline="central">schedule follow-up</text>
+  <rect x="268.5" y="458" width="123" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="330" y="468" class="edge-label" dominant-baseline="central">resume contacting</text>
+  <rect x="473" y="415" width="174" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="560" y="425" class="edge-label" dominant-baseline="central">revert on 24h hold expiry</text>
+  <rect x="419.5" y="547" width="91" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="465" y="557" class="edge-label" dominant-baseline="central">reject offer</text>
+  <rect x="304.5" y="630" width="91" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="350" y="640" class="edge-label" dominant-baseline="central">reject offer</text>
+  <text x="478.5" y="722" class="caption">State Chart 5: Waitlist Status</text>
 </svg>
