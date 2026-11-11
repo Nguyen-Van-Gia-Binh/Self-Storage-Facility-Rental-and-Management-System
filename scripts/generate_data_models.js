@@ -8,7 +8,13 @@ const path = require('path');
 
 const dataDir = path.resolve('docs/diagrams/report/data');
 
+function cleanXml(str) {
+  return str.replace(/&(?!(amp|lt|gt|quot|apos);)/g, '&amp;');
+}
+
 function buildDataSvg(width, height, content, caption) {
+  const safeContent = cleanXml(content);
+  const safeCaption = cleanXml(caption);
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
   <style>
@@ -29,9 +35,9 @@ function buildDataSvg(width, height, content, caption) {
   </defs>
   <!-- Background -->
   <rect width="${width}" height="${height}" fill="#ffffff" />
-  ${content}
+  ${safeContent}
   <!-- Figure Caption -->
-  <text x="${width / 2}" y="${height - 15}" class="caption">${caption}</text>
+  <text x="${width / 2}" y="${height - 15}" class="caption">${safeCaption}</text>
 </svg>`;
 }
 
@@ -380,3 +386,4 @@ dataMap.forEach(({ file, gen }) => {
   fs.writeFileSync(path.join(dataDir, file), svg);
   console.log(`Generated: ${file}`);
 });
+

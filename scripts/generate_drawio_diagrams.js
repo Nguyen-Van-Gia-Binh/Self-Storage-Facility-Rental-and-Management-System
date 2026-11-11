@@ -61,3 +61,4 @@ function buildDrawioXml(diagramName, cellsXml) {
 }
 
 console.log('Diagram generator framework initialized.');
+

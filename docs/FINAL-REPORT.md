@@ -50,7 +50,7 @@ The Self-Storage Facility Rental and Management System provides a multi-role dig
 
 ### 1.1.0 End-to-End Operational Lifecycle Overview
 
-![End-to-End Operational Lifecycle](diagrams/report/swimlane/sl-00-end-to-end.svg)
+![End-to-End Operational Lifecycle](diagrams/report/swimlane/sl-00-end-to-end.png)
 
 - **Participating Actors:** Storage Customer, Facility Staff, Facility Manager, Automated System Schedulers.
 - **Workflow Trigger:** Customer seeks secure storage space across multi-city facility network.
@@ -61,7 +61,7 @@ The Self-Storage Facility Rental and Management System provides a multi-role dig
 
 ### 1.1.1 Flow 1 — Storage Unit Reservation & Waitlist CRM
 
-![Flow 1 Swimlane](diagrams/report/swimlane/sl-01-reservation.svg)
+![Flow 1 Swimlane](diagrams/report/swimlane/sl-01-reservation.png)
 
 - **Participating Actors:** Storage Customer, Facility Manager, Payment Gateway / System Webhook.
 - **Workflow Trigger:** Customer accesses self-service portal to reserve storage capacity.
@@ -72,7 +72,7 @@ The Self-Storage Facility Rental and Management System provides a multi-role dig
 
 ### 1.1.2 Flow 2 — Check-in, Physical Handover & Auto-Activation
 
-![Flow 2 Swimlane](diagrams/report/swimlane/sl-02-checkin-handover.svg)
+![Flow 2 Swimlane](diagrams/report/swimlane/sl-02-checkin-handover.png)
 
 - **Participating Actors:** Storage Customer, Facility Staff, Automated Schedulers.
 - **Workflow Trigger:** Customer arrives at facility on or after scheduled start date.
@@ -83,7 +83,7 @@ The Self-Storage Facility Rental and Management System provides a multi-role dig
 
 ### 1.1.3 Flow 3 — Unit Return, Win-Win Early Return & Final Settlement
 
-![Flow 3 Swimlane](diagrams/report/swimlane/sl-03-return-settlement.svg)
+![Flow 3 Swimlane](diagrams/report/swimlane/sl-03-return-settlement.png)
 
 - **Participating Actors:** Storage Customer, Facility Staff, Facility Manager, Accounting System.
 - **Workflow Trigger:** Customer schedules checkout or contract reaches scheduled maturity.
@@ -94,7 +94,7 @@ The Self-Storage Facility Rental and Management System provides a multi-role dig
 
 ### 1.1.4 Flow 4 — Business Operations Management, Pricing & Revenue
 
-![Flow 4 Swimlane](diagrams/report/swimlane/sl-04-bom-operations.svg)
+![Flow 4 Swimlane](diagrams/report/swimlane/sl-04-bom-operations.png)
 
 - **Participating Actors:** Business Operations Manager (BOM), System Reporting Engine.
 - **Workflow Trigger:** BOM reviews corporate revenue, adjusts regional rates, or establishes policies.
@@ -105,7 +105,7 @@ The Self-Storage Facility Rental and Management System provides a multi-role dig
 
 ### 1.1.5 Flow 5 — Facility Unit Layout Management & Staff Scheduling
 
-![Flow 5 Swimlane](diagrams/report/swimlane/sl-05-facility-staff.svg)
+![Flow 5 Swimlane](diagrams/report/swimlane/sl-05-facility-staff.png)
 
 - **Participating Actors:** Facility Manager, Facility Staff.
 - **Workflow Trigger:** Daily operational shift turnover and physical facility management.
@@ -116,7 +116,7 @@ The Self-Storage Facility Rental and Management System provides a multi-role dig
 
 ### 1.1.6 Flow 6.1 — Contract Renewal & Conflict Resolution
 
-![Flow 6.1 Swimlane](diagrams/report/swimlane/sl-06-1-renewal.svg)
+![Flow 6.1 Swimlane](diagrams/report/swimlane/sl-06-1-renewal.png)
 
 - **Participating Actors:** Storage Customer, Facility Manager, Automated Schedulers.
 - **Workflow Trigger:** Renewal scanner detects contracts entering the 30-day pre-expiration window (T-30).
@@ -127,7 +127,7 @@ The Self-Storage Facility Rental and Management System provides a multi-role dig
 
 ### 1.1.7 Flow 6.2 — Overdue Handling, Penalty Escalation & Eviction
 
-![Flow 6.2 Swimlane](diagrams/report/swimlane/sl-06-2-overdue.svg)
+![Flow 6.2 Swimlane](diagrams/report/swimlane/sl-06-2-overdue.png)
 
 - **Participating Actors:** Storage Customer, Facility Staff, Facility Manager, Automated Overdue Scheduler.
 - **Workflow Trigger:** Overdue scheduler executes daily at 00:00:00 midnight for contracts past `end_date`.
@@ -143,7 +143,7 @@ The Self-Storage Facility Rental and Management System provides a multi-role dig
 
 ### 1.1.8 Flow 7 — Customer Support, Incident Management & Compensation
 
-![Flow 7 Swimlane](diagrams/report/swimlane/sl-07-support.svg)
+![Flow 7 Swimlane](diagrams/report/swimlane/sl-07-support.png)
 
 - **Participating Actors:** Storage Customer, Facility Staff, Facility Manager.
 - **Workflow Trigger:** Customer files an incident ticket on the portal.
@@ -160,7 +160,7 @@ All state machines formalize entity lifecycle behaviors, verified state transiti
 
 The `RentalContract` entity governs the complete commercial and legal agreement between customer and facility across 9 distinct operational states.
 
-![RentalContract State Machine](diagrams/report/state/st-rental-contract.svg)
+![RentalContract State Machine](diagrams/report/state/st-rental-contract.png)
 
 | Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Governing Architectural Subsystem |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -181,7 +181,7 @@ The `RentalContract` entity governs the complete commercial and legal agreement 
 
 The `StorageUnit` entity enforces strict physical availability rules. To protect facility hygiene and customer satisfaction, units cannot transition directly from `OCCUPIED` to `AVAILABLE`; they must pass through mandatory sanitization in `CLEANING` (`BR-RET-09`).
 
-![StorageUnit State Machine](diagrams/report/state/st-storage-unit.svg)
+![StorageUnit State Machine](diagrams/report/state/st-storage-unit.png)
 
 | Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Governing Architectural Subsystem |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -201,7 +201,7 @@ The `StorageUnit` entity enforces strict physical availability rules. To protect
 
 The `Reservation` entity coordinates advance capacity allocation across 6 states.
 
-![Reservation State Machine](diagrams/report/state/st-reservation.svg)
+![Reservation State Machine](diagrams/report/state/st-reservation.png)
 
 | Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Governing Architectural Subsystem |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -218,7 +218,7 @@ The `Reservation` entity coordinates advance capacity allocation across 6 states
 
 The `SupportRequest` entity coordinates incident ticketing across 6 states.
 
-![SupportRequest State Machine](diagrams/report/state/st-support-request.svg)
+![SupportRequest State Machine](diagrams/report/state/st-support-request.png)
 
 | Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Governing Architectural Subsystem |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -235,7 +235,7 @@ The `SupportRequest` entity coordinates incident ticketing across 6 states.
 
 The `Waitlist` entity manages excess customer demand when unit types are fully occupied across 7 states.
 
-![Waitlist State Machine](diagrams/report/state/st-waitlist.svg)
+![Waitlist State Machine](diagrams/report/state/st-waitlist.png)
 
 | Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Governing Architectural Subsystem |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -252,7 +252,7 @@ The `Waitlist` entity manages excess customer demand when unit types are fully o
 
 The `PaymentTransaction` entity governs financial transaction states across 5 states.
 
-![PaymentTransaction State Machine](diagrams/report/state/st-payment-transaction.svg)
+![PaymentTransaction State Machine](diagrams/report/state/st-payment-transaction.png)
 
 | Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Governing Architectural Subsystem |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -270,7 +270,7 @@ The `PaymentTransaction` entity governs financial transaction states across 5 st
 
 The Conceptual Data Model abstracts the core business concepts into 17 high-level business entities organized across four fundamental functional domains:
 
-![Conceptual Data Model](diagrams/report/data/conceptual-model.svg)
+![Conceptual Data Model](diagrams/report/data/conceptual-model.png)
 
 ### Entity Glossary
 
@@ -302,7 +302,7 @@ The complete PostgreSQL database schema encompasses **30 relational tables** man
 
 ### 2.2.1 Part 1: Identity, Security & Facility Domain
 
-![Physical ERD Part 1](diagrams/report/data/erd-1-identity-facility.svg)
+![Physical ERD Part 1](diagrams/report/data/erd-1-identity-facility.png)
 
 - **Domain Scope:** User authentication, security audit logs, OTP verification, facility branches, master unit types, regional pricing overrides, and physical storage compartments.
 - **Included Tables (11):** `app_user`, `user_facility_assignment`, `login_history`, `audit_log`, `registration_otp`, `password_reset_otp`, `facility`, `unit_type`, `facility_unit_type_price`, `facility_unit_type_price_version`, `storage_unit`.
@@ -311,7 +311,7 @@ The complete PostgreSQL database schema encompasses **30 relational tables** man
 
 ### 2.2.2 Part 2: Booking, Waitlist, Contract & Handover Domain
 
-![Physical ERD Part 2](diagrams/report/data/erd-2-booking-contract.svg)
+![Physical ERD Part 2](diagrams/report/data/erd-2-booking-contract.png)
 
 - **Domain Scope:** Customer reservations, waitlist queue, legal rental contracts, contract renewals, digital handover records, exit return requests, and access credential tracking.
 - **Included Tables (8):** `reservation`, `waitlist`, `rental_contract`, `contract_renewal`, `handover_record`, `return_request`, `access_credential`, `access_log`.
@@ -320,7 +320,7 @@ The complete PostgreSQL database schema encompasses **30 relational tables** man
 
 ### 2.2.3 Part 3: Financial Ledger, Payment & Policy Domain
 
-![Physical ERD Part 3](diagrams/report/data/erd-3-finance-policy.svg)
+![Physical ERD Part 3](diagrams/report/data/erd-3-finance-policy.png)
 
 - **Domain Scope:** VNPay payment transactions, double-entry financial ledger entries, contract extra charges, overdue fee adjustment requests, system operating policies, and promotional discount programs.
 - **Included Tables (8):** `payment_transaction`, `ledger_entry`, `contract_extra_charge`, `overdue_fee_adjustment_request`, `policy_version`, `extra_fee_type`, `extra_fee_version`, `discount_program`.
@@ -329,7 +329,7 @@ The complete PostgreSQL database schema encompasses **30 relational tables** man
 
 ### 2.2.4 Part 4: Operations, Attachments & Support Domain
 
-![Physical ERD Part 4](diagrams/report/data/erd-4-support-ops.svg)
+![Physical ERD Part 4](diagrams/report/data/erd-4-support-ops.png)
 
 - **Domain Scope:** Customer support tickets, photographic evidence attachments, and daily facility staff shift dispatching.
 - **Included Tables (3):** `support_request`, `attachment`, `staff_daily_assignment`.

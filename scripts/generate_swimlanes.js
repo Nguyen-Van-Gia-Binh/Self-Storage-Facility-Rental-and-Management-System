@@ -8,6 +8,10 @@ const path = require('path');
 
 const swimlaneDir = path.resolve('docs/diagrams/report/swimlane');
 
+function cleanXml(str) {
+  return str.replace(/&(?!(amp|lt|gt|quot|apos);)/g, '&amp;');
+}
+
 function buildSwimlaneSvg(width, height, lanes, elements, caption) {
   const laneWidth = width / lanes.length;
   let laneHeaders = '';
@@ -15,10 +19,11 @@ function buildSwimlaneSvg(width, height, lanes, elements, caption) {
 
   lanes.forEach((lane, i) => {
     const x = i * laneWidth;
+    const safeLane = cleanXml(lane);
     // Header box
     laneHeaders += `
       <rect x="${x}" y="30" width="${laneWidth}" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="${x + laneWidth / 2}" y="52" class="lane-title">${lane}</text>
+      <text x="${x + laneWidth / 2}" y="52" class="lane-title">${safeLane}</text>
     `;
     // Outer boundary & vertical dividers
     laneDividers += `
@@ -30,6 +35,9 @@ function buildSwimlaneSvg(width, height, lanes, elements, caption) {
     <line x1="${width}" y1="30" x2="${width}" y2="${height - 45}" stroke="#000000" stroke-width="1.2" />
     <line x1="0" y1="${height - 45}" x2="${width}" y2="${height - 45}" stroke="#000000" stroke-width="1.2" />
   `;
+
+  const safeElements = cleanXml(elements);
+  const safeCaption = cleanXml(caption);
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
@@ -52,9 +60,9 @@ function buildSwimlaneSvg(width, height, lanes, elements, caption) {
   ${laneHeaders}
   ${laneDividers}
   <!-- Diagram Elements -->
-  ${elements}
+  ${safeElements}
   <!-- Figure Caption -->
-  <text x="${width / 2}" y="${height - 15}" class="caption">${caption}</text>
+  <text x="${width / 2}" y="${height - 15}" class="caption">${safeCaption}</text>
 </svg>`;
 }
 
@@ -576,3 +584,4 @@ swimlaneMap.forEach(({ file, gen }) => {
   fs.writeFileSync(path.join(swimlaneDir, file), svg);
   console.log(`Generated: ${file}`);
 });
+

@@ -381,3 +381,4 @@ stateMap.forEach(({ file, gen }) => {
   fs.writeFileSync(path.join(stateDir, file), svg);
   console.log(`Generated: ${file}`);
 });
+

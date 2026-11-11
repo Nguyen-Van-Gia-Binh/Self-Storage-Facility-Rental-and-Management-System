@@ -21,7 +21,7 @@
       <text x="141.66666666666666" y="52" class="lane-title">Storage Customer</text>
     
       <rect x="283.3333333333333" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="425" y="52" class="lane-title">System (Portal & VNPay)</text>
+      <text x="425" y="52" class="lane-title">System (Portal &amp; VNPay)</text>
     
       <rect x="566.6666666666666" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
       <text x="708.3333333333333" y="52" class="lane-title">Facility Manager</text>
