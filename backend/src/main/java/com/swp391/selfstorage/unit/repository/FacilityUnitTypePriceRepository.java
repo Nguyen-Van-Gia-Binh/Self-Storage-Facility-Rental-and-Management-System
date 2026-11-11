@@ -4,6 +4,7 @@ import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,6 +14,8 @@ public interface FacilityUnitTypePriceRepository extends JpaRepository<FacilityU
     Optional<FacilityUnitTypePrice> findByFacilityIdAndUnitTypeId(Long facilityId, Long unitTypeId);
 
     List<FacilityUnitTypePrice> findAllByFacilityId(Long facilityId);
+
+    List<FacilityUnitTypePrice> findAllByFacilityIdIn(Collection<Long> facilityIds);
 
     void deleteByFacilityIdAndUnitTypeId(Long facilityId, Long unitTypeId);
 }

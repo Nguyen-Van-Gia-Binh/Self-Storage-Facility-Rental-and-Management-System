@@ -12,10 +12,6 @@ import com.swp391.selfstorage.facility.entity.FacilityStatus;
 import com.swp391.selfstorage.facility.mapper.FacilityMapper;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
 import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
-import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
-import com.swp391.selfstorage.unit.entity.UnitType;
-import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
-import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -26,9 +22,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.user.repository.UserFacilityAssignmentRepository;
+import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -42,12 +42,6 @@ public class FacilityServiceImpl implements FacilityService {
 
     @Autowired(required = false)
     private AppliedPriceLookup appliedPriceLookup;
-
-    @Autowired(required = false)
-    private FacilityUnitTypePriceRepository facilityPriceRepository;
-
-    @Autowired(required = false)
-    private UnitTypeRepository unitTypeRepository;
 
     public FacilityServiceImpl(FacilityRepository facilityRepository, FacilityMapper facilityMapper) {
         this(facilityRepository, facilityMapper, null);
@@ -69,29 +63,16 @@ public class FacilityServiceImpl implements FacilityService {
             status = isActive ? FacilityStatus.ACTIVE : FacilityStatus.INACTIVE;
         }
         Page<Facility> page = facilityRepository.findByFilter(keyword, status, pageable);
-        Map<Long, java.math.BigDecimal> lowestPriceMap = facilityRepository.findLowestMonthlyPricesGroupedByFacility()
-                .stream()
-                .filter(row -> row != null && row.length >= 2 && row[0] != null)
-                .collect(Collectors.toMap(
-                        row -> ((Number) row[0]).longValue(),
-                        row -> toBigDecimal(row[1]),
-                        (a, b) -> a));
+        List<Long> facilityIds = page.getContent().stream()
+                .map(Facility::getId)
+                .filter(Objects::nonNull)
+                .toList();
+        Map<Long, BigDecimal> lowestPriceMap = resolveAppliedLowestPriceMap(
+                facilityIds, toFacilityPriceMap(facilityRepository.findLowestMonthlyPricesGroupedByFacility()));
+        Map<Long, Integer> unitTypeCountMap = toUnitTypeCountMap(
+                facilityRepository.countActiveUnitTypesGroupedByFacility());
 
-        Map<Long, Integer> unitTypeCountMap = facilityRepository.countActiveUnitTypesGroupedByFacility()
-                .stream()
-                .collect(Collectors.toMap(
-                        row -> ((Number) row[0]).longValue(),
-                        row -> ((Number) row[1]).intValue(),
-                        (a, b) -> a));
-
-        return PageResponse.from(page.map(facility -> {
-            FacilityResponse resp = facilityMapper.toResponse(facility);
-            if (resp != null && resp.getId() != null) {
-                resp.setLowestMonthlyPrice(lowestAppliedPrice(resp.getId(), lowestPriceMap.get(resp.getId())));
-                resp.setActiveUnitTypeCount(unitTypeCountMap.getOrDefault(resp.getId(), 0));
-            }
-            return resp;
-        }));
+        return PageResponse.from(page.map(facility -> mapWithMetrics(facility, lowestPriceMap, unitTypeCountMap)));
     }
 
     @Override
@@ -116,8 +97,12 @@ public class FacilityServiceImpl implements FacilityService {
 
     private void enrichFacilityMetrics(FacilityResponse resp) {
         if (resp == null || resp.getId() == null) return;
-        resp.setLowestMonthlyPrice(lowestAppliedPrice(resp.getId(),
-                facilityRepository.findLowestMonthlyPriceByFacilityId(resp.getId())));
+        BigDecimal sqlFallback = facilityRepository.findLowestMonthlyPriceByFacilityId(resp.getId());
+        Map<Long, BigDecimal> fallbackMap = sqlFallback != null
+                ? Map.of(resp.getId(), sqlFallback)
+                : Collections.emptyMap();
+        Map<Long, BigDecimal> resolved = resolveAppliedLowestPriceMap(List.of(resp.getId()), fallbackMap);
+        resp.setLowestMonthlyPrice(resolved.get(resp.getId()));
         resp.setActiveUnitTypeCount(facilityRepository.countActiveUnitTypesByFacilityId(resp.getId()));
     }
 
@@ -174,6 +159,9 @@ public class FacilityServiceImpl implements FacilityService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "facilities",
+            key = "'assigned-' + #currentUser.id + '-' + (#currentUser.role != null ? #currentUser.role.name() : '')",
+            condition = "#currentUser != null")
     public List<FacilityResponse> getMyAssignedFacilities(UserPrincipal currentUser) {
         if (currentUser == null) {
             return Collections.emptyList();
@@ -206,58 +194,76 @@ public class FacilityServiceImpl implements FacilityService {
                     .toList();
         }
 
-        Map<Long, java.math.BigDecimal> lowestPriceMap = facilityRepository.findLowestMonthlyPricesGroupedByFacility()
-                .stream()
+        List<Long> facilityIds = facilities.stream()
+                .map(Facility::getId)
+                .filter(Objects::nonNull)
+                .toList();
+        Map<Long, BigDecimal> lowestPriceMap = resolveAppliedLowestPriceMap(
+                facilityIds, toFacilityPriceMap(facilityRepository.findLowestMonthlyPricesGroupedByFacility()));
+        Map<Long, Integer> unitTypeCountMap = toUnitTypeCountMap(
+                facilityRepository.countActiveUnitTypesGroupedByFacility());
+
+        return facilities.stream()
+                .map(facility -> mapWithMetrics(facility, lowestPriceMap, unitTypeCountMap))
+                .toList();
+    }
+
+    private FacilityResponse mapWithMetrics(Facility facility,
+                                            Map<Long, BigDecimal> lowestPriceMap,
+                                            Map<Long, Integer> unitTypeCountMap) {
+        FacilityResponse resp = facilityMapper.toResponse(facility);
+        if (resp != null && resp.getId() != null) {
+            resp.setLowestMonthlyPrice(lowestPriceMap.get(resp.getId()));
+            resp.setActiveUnitTypeCount(unitTypeCountMap.getOrDefault(resp.getId(), 0));
+        }
+        return resp;
+    }
+
+    private Map<Long, BigDecimal> resolveAppliedLowestPriceMap(Collection<Long> facilityIds,
+                                                               Map<Long, BigDecimal> sqlFallbackMap) {
+        Map<Long, BigDecimal> result = new HashMap<>(sqlFallbackMap);
+        if (appliedPriceLookup == null || facilityIds == null || facilityIds.isEmpty()) {
+            return result;
+        }
+        Map<Long, Long> appliedPrices = appliedPriceLookup.resolveLowestMonthlyPricesByFacilityIds(facilityIds);
+        if (appliedPrices != null) {
+            appliedPrices.forEach((facId, price) -> {
+                if (price != null && price > 0) {
+                    result.put(facId, BigDecimal.valueOf(price));
+                }
+            });
+        }
+        return result;
+    }
+
+    private static Map<Long, BigDecimal> toFacilityPriceMap(List<Object[]> rows) {
+        if (rows == null || rows.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return rows.stream()
                 .filter(row -> row != null && row.length >= 2 && row[0] != null)
                 .collect(Collectors.toMap(
                         row -> ((Number) row[0]).longValue(),
                         row -> toBigDecimal(row[1]),
                         (a, b) -> a));
+    }
 
-        Map<Long, Integer> unitTypeCountMap = facilityRepository.countActiveUnitTypesGroupedByFacility()
-                .stream()
+    private static Map<Long, Integer> toUnitTypeCountMap(List<Object[]> rows) {
+        if (rows == null || rows.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return rows.stream()
+                .filter(row -> row != null && row.length >= 2 && row[0] != null && row[1] != null)
                 .collect(Collectors.toMap(
                         row -> ((Number) row[0]).longValue(),
                         row -> ((Number) row[1]).intValue(),
                         (a, b) -> a));
-
-        return facilities.stream().map(facility -> {
-            FacilityResponse resp = facilityMapper.toResponse(facility);
-            if (resp != null && resp.getId() != null) {
-                resp.setLowestMonthlyPrice(lowestAppliedPrice(resp.getId(), lowestPriceMap.get(resp.getId())));
-                resp.setActiveUnitTypeCount(unitTypeCountMap.getOrDefault(resp.getId(), 0));
-            }
-            return resp;
-        }).toList();
     }
 
-    private java.math.BigDecimal lowestAppliedPrice(Long facilityId, java.math.BigDecimal sqlFallback) {
-        if (appliedPriceLookup == null || facilityPriceRepository == null || unitTypeRepository == null) {
-            return sqlFallback;
-        }
-        long min = Long.MAX_VALUE;
-        boolean any = false;
-        for (FacilityUnitTypePrice row : facilityPriceRepository.findAllByFacilityId(facilityId)) {
-            if (row.getUnitTypeId() == null) {
-                continue;
-            }
-            UnitType type = unitTypeRepository.findById(row.getUnitTypeId()).orElse(null);
-            if (type == null || !type.isActive()) {
-                continue;
-            }
-            var price = appliedPriceLookup.resolveMonthlyPrice(facilityId, row.getUnitTypeId());
-            if (price.isPresent() && price.get() > 0 && price.get() < min) {
-                min = price.get();
-                any = true;
-            }
-        }
-        return any ? java.math.BigDecimal.valueOf(min) : sqlFallback;
-    }
-
-    private static java.math.BigDecimal toBigDecimal(Object val) {
+    private static BigDecimal toBigDecimal(Object val) {
         if (val == null) return null;
-        if (val instanceof java.math.BigDecimal bd) return bd;
-        if (val instanceof Number num) return java.math.BigDecimal.valueOf(num.longValue());
-        return new java.math.BigDecimal(val.toString());
+        if (val instanceof BigDecimal bd) return bd;
+        if (val instanceof Number num) return BigDecimal.valueOf(num.longValue());
+        return new BigDecimal(val.toString());
     }
 }

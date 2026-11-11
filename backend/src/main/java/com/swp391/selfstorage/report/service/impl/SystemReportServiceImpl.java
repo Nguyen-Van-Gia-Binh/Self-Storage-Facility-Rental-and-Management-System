@@ -90,11 +90,52 @@ public class SystemReportServiceImpl implements SystemReportService {
             curYm = curYm.plusMonths(1);
         }
 
-        for (Facility facility : targetFacilities) {
-            List<RentalContract> contracts = rentalContractRepository.findByFacilityId(facility.getId());
-            if (contracts == null) {
-                contracts = Collections.emptyList();
+        // Batch Fetch toàn bộ hợp đồng, giao dịch thanh toán và gia hạn (tránh N+1 qua từng cơ sở & hợp đồng)
+        List<Long> facilityIds = targetFacilities.stream()
+                .map(Facility::getId)
+                .filter(Objects::nonNull)
+                .toList();
+        List<RentalContract> allContracts = facilityIds.isEmpty()
+                ? Collections.emptyList()
+                : safeList(rentalContractRepository.findByFacilityIdIn(facilityIds));
+
+        Map<Long, List<RentalContract>> contractsByFacility = allContracts.stream()
+                .filter(c -> c.getFacilityId() != null)
+                .collect(Collectors.groupingBy(RentalContract::getFacilityId));
+
+        Set<Long> allContractIds = allContracts.stream()
+                .map(RentalContract::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Set<Long> allReservationIds = allContracts.stream()
+                .map(RentalContract::getReservationId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Long, List<PaymentTransaction>> paymentsByContractId = allContractIds.isEmpty()
+                ? Collections.emptyMap()
+                : safeList(paymentTransactionRepository.findByContractIdIn(allContractIds)).stream()
+                        .filter(p -> p.getContractId() != null)
+                        .collect(Collectors.groupingBy(PaymentTransaction::getContractId));
+        Map<Long, List<PaymentTransaction>> paymentsByReservationId = allReservationIds.isEmpty()
+                ? Collections.emptyMap()
+                : safeList(paymentTransactionRepository.findByReservationIdIn(allReservationIds)).stream()
+                        .filter(p -> p.getReservationId() != null)
+                        .collect(Collectors.groupingBy(PaymentTransaction::getReservationId));
+
+        Map<Long, Long> latestRenewalPriceByContractId = new HashMap<>();
+        if (contractRenewalRepository != null && !allContractIds.isEmpty()) {
+            for (ContractRenewal renewal : safeList(contractRenewalRepository.findByContractIdInOrderByCreatedAtDesc(allContractIds))) {
+                if (renewal.getContractId() != null
+                        && renewal.getMonthlyPriceSnapshot() != null
+                        && renewal.getMonthlyPriceSnapshot() > 0) {
+                    latestRenewalPriceByContractId.putIfAbsent(renewal.getContractId(), renewal.getMonthlyPriceSnapshot());
+                }
             }
+        }
+
+        for (Facility facility : targetFacilities) {
+            List<RentalContract> contracts = contractsByFacility.getOrDefault(facility.getId(), Collections.emptyList());
             Map<Long, RentalContract> contractMap = contracts.stream()
                     .collect(Collectors.toMap(RentalContract::getId, c -> c, (c1, c2) -> c1));
 
@@ -113,35 +154,8 @@ public class SystemReportServiceImpl implements SystemReportService {
                         || contract.getStatus() == ContractStatus.OVERDUE
                         || contract.getStatus() == ContractStatus.PENDING_RETURN;
                 // Gộp thanh toán theo contract_id và reservation_id (INITIAL_PAYMENT thường chỉ có reservationId)
-                List<PaymentTransaction> payments = new ArrayList<>();
-                Set<Long> seenPaymentIds = new HashSet<>();
-                List<PaymentTransaction> byContract = paymentTransactionRepository.findByContractId(contract.getId());
-                if (byContract != null) {
-                    for (PaymentTransaction p : byContract) {
-                        if (p.getId() != null) {
-                            if (seenPaymentIds.add(p.getId())) {
-                                payments.add(p);
-                            }
-                        } else {
-                            payments.add(p);
-                        }
-                    }
-                }
-                if (contract.getReservationId() != null) {
-                    List<PaymentTransaction> byReservation =
-                            paymentTransactionRepository.findByReservationId(contract.getReservationId());
-                    if (byReservation != null) {
-                        for (PaymentTransaction p : byReservation) {
-                            if (p.getId() != null) {
-                                if (seenPaymentIds.add(p.getId())) {
-                                    payments.add(p);
-                                }
-                            } else {
-                                payments.add(p);
-                            }
-                        }
-                    }
-                }
+                List<PaymentTransaction> payments = mergePaymentsForContract(
+                        contract, paymentsByContractId, paymentsByReservationId);
                 if (payments.isEmpty()) {
                     continue;
                 }
@@ -245,7 +259,7 @@ public class SystemReportServiceImpl implements SystemReportService {
             long facDepositLiability = facPendingRefundLiability;
 
             for (RentalContract c : contractMap.values()) {
-                long netMonthlyPrice = currentMonthlyPrice(c);
+                long netMonthlyPrice = currentMonthlyPrice(c, latestRenewalPriceByContractId);
                 if (c.getStatus() == ContractStatus.ACTIVE) {
                     facActiveContracts++;
                     facMrr += netMonthlyPrice;
@@ -352,25 +366,52 @@ public class SystemReportServiceImpl implements SystemReportService {
         long overallExploitableUnits = 0L;
         List<FacilityOccupancyDetailDto> facilityDetails = new ArrayList<>();
 
-        for (Facility facility : targetFacilities) {
-            List<StorageUnit> units = storageUnitRepository.findByFacilityId(facility.getId());
-            if (units == null) {
-                units = Collections.emptyList();
+        List<Long> facilityIds = targetFacilities.stream()
+                .map(Facility::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        Map<Long, EnumMap<StorageUnitStatus, Long>> unitCountsByFacility = new HashMap<>();
+        if (!facilityIds.isEmpty()) {
+            for (Object[] row : safeList(storageUnitRepository.countByFacilityIdInGroupByStatus(facilityIds))) {
+                if (row == null || row.length < 3 || row[0] == null || row[1] == null || row[2] == null) {
+                    continue;
+                }
+                Long facId = ((Number) row[0]).longValue();
+                StorageUnitStatus status = row[1] instanceof StorageUnitStatus s
+                        ? s
+                        : StorageUnitStatus.valueOf(row[1].toString());
+                long count = ((Number) row[2]).longValue();
+                unitCountsByFacility
+                        .computeIfAbsent(facId, k -> new EnumMap<>(StorageUnitStatus.class))
+                        .put(status, count);
             }
+        }
 
-            long totalUnits = units.size();
-            long availableUnits = units.stream().filter(u -> u.getStatus() == StorageUnitStatus.AVAILABLE).count();
-            long reservedUnits = units.stream().filter(u -> u.getStatus() == StorageUnitStatus.RESERVED).count();
-            long occupiedUnits = units.stream().filter(u -> u.getStatus() == StorageUnitStatus.OCCUPIED).count();
-            long cleaningUnits = units.stream().filter(u -> u.getStatus() == StorageUnitStatus.CLEANING).count();
-            long maintenanceUnits = units.stream().filter(u -> u.getStatus() == StorageUnitStatus.MAINTENANCE).count();
-            long outOfServiceUnits = units.stream().filter(u -> u.getStatus() == StorageUnitStatus.OUT_OF_SERVICE)
-                    .count();
+        Map<Long, Long> overdueCountByFacility = new HashMap<>();
+        if (!facilityIds.isEmpty()) {
+            for (Object[] row : safeList(rentalContractRepository.countByFacilityIdInAndStatus(facilityIds, ContractStatus.OVERDUE))) {
+                if (row == null || row.length < 2 || row[0] == null || row[1] == null) {
+                    continue;
+                }
+                overdueCountByFacility.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
+            }
+        }
 
-            List<RentalContract> contracts = rentalContractRepository.findByFacilityId(facility.getId());
-            long overdueContractsCount = (contracts != null)
-                    ? contracts.stream().filter(c -> c.getStatus() == ContractStatus.OVERDUE).count()
-                    : 0L;
+        for (Facility facility : targetFacilities) {
+            EnumMap<StorageUnitStatus, Long> statusCounts =
+                    unitCountsByFacility.getOrDefault(facility.getId(), new EnumMap<>(StorageUnitStatus.class));
+
+            long availableUnits = statusCounts.getOrDefault(StorageUnitStatus.AVAILABLE, 0L);
+            long reservedUnits = statusCounts.getOrDefault(StorageUnitStatus.RESERVED, 0L);
+            long occupiedUnits = statusCounts.getOrDefault(StorageUnitStatus.OCCUPIED, 0L);
+            long cleaningUnits = statusCounts.getOrDefault(StorageUnitStatus.CLEANING, 0L);
+            long maintenanceUnits = statusCounts.getOrDefault(StorageUnitStatus.MAINTENANCE, 0L);
+            long outOfServiceUnits = statusCounts.getOrDefault(StorageUnitStatus.OUT_OF_SERVICE, 0L);
+            long totalUnits = availableUnits + reservedUnits + occupiedUnits
+                    + cleaningUnits + maintenanceUnits + outOfServiceUnits;
+
+            long overdueContractsCount = overdueCountByFacility.getOrDefault(facility.getId(), 0L);
 
             // Usage Rate = Occupied / (Total - OutOfService - Maintenance) (REP-03, BR-AVL-01)
             long exploitableUnits = totalUnits - outOfServiceUnits - maintenanceUnits;
@@ -426,21 +467,14 @@ public class SystemReportServiceImpl implements SystemReportService {
     public PageResponse<OverdueContractDetailDto> getSystemOverdueContracts(Long facilityId, Integer minOverdueDays, Pageable pageable) {
         LocalDate today = LocalDate.now();
 
-        // 1. Lấy danh sách hợp đồng theo phạm vi cơ sở
-        List<RentalContract> allContracts;
+        // 1. Lấy danh sách hợp đồng quá hạn đã lọc trực tiếp dưới DB (tránh kéo cả bảng findAll() về RAM)
         if (facilityId != null) {
             facilityRepository.findById(facilityId)
                     .orElseThrow(() -> new CustomException(ErrorCode.FACILITY_NOT_FOUND, "Không tìm thấy cơ sở: " + facilityId));
-            allContracts = rentalContractRepository.findByFacilityId(facilityId);
-        } else {
-            allContracts = rentalContractRepository.findAll();
         }
+        List<RentalContract> allContracts = safeList(rentalContractRepository.findOverdueCandidates(facilityId, today));
 
-        if (allContracts == null) {
-            allContracts = Collections.emptyList();
-        }
-
-        // 2. Lọc hợp đồng quá hạn (Trạng thái OVERDUE hoặc ACTIVE nhưng đã qua endDateExclusive)
+        // 2. Lọc phòng vệ hợp đồng quá hạn (Trạng thái OVERDUE hoặc ACTIVE nhưng đã qua endDateExclusive)
         List<RentalContract> overdueContracts = allContracts.stream()
                 .filter(c -> c.getStatus() == ContractStatus.OVERDUE
                         || (c.getStatus() == ContractStatus.ACTIVE && c.getEndDateExclusive() != null && c.getEndDateExclusive().isBefore(today)))
@@ -550,14 +584,45 @@ public class SystemReportServiceImpl implements SystemReportService {
         return facilityRepository.findAll();
     }
 
-    private long currentMonthlyPrice(RentalContract c) {
-        if (contractRenewalRepository != null && c.getId() != null) {
-            Optional<ContractRenewal> latest = contractRenewalRepository
-                    .findTopByContractIdOrderByCreatedAtDesc(c.getId());
-            if (latest != null && latest.isPresent()
-                    && latest.get().getMonthlyPriceSnapshot() != null
-                    && latest.get().getMonthlyPriceSnapshot() > 0) {
-                return latest.get().getMonthlyPriceSnapshot();
+    private static <T> List<T> safeList(List<T> list) {
+        return list != null ? list : Collections.emptyList();
+    }
+
+    private static List<PaymentTransaction> mergePaymentsForContract(
+            RentalContract contract,
+            Map<Long, List<PaymentTransaction>> paymentsByContractId,
+            Map<Long, List<PaymentTransaction>> paymentsByReservationId) {
+        List<PaymentTransaction> byContract = paymentsByContractId.get(contract.getId());
+        List<PaymentTransaction> byReservation = contract.getReservationId() != null
+                ? paymentsByReservationId.get(contract.getReservationId())
+                : null;
+        if ((byContract == null || byContract.isEmpty()) && (byReservation == null || byReservation.isEmpty())) {
+            return Collections.emptyList();
+        }
+        List<PaymentTransaction> merged = new ArrayList<>();
+        Set<Long> seenIds = new HashSet<>();
+        if (byContract != null) {
+            for (PaymentTransaction p : byContract) {
+                if (p.getId() == null || seenIds.add(p.getId())) {
+                    merged.add(p);
+                }
+            }
+        }
+        if (byReservation != null) {
+            for (PaymentTransaction p : byReservation) {
+                if (p.getId() == null || seenIds.add(p.getId())) {
+                    merged.add(p);
+                }
+            }
+        }
+        return merged;
+    }
+
+    private long currentMonthlyPrice(RentalContract c, Map<Long, Long> latestRenewalPriceByContractId) {
+        if (c.getId() != null) {
+            Long snapshot = latestRenewalPriceByContractId.get(c.getId());
+            if (snapshot != null && snapshot > 0) {
+                return snapshot;
             }
         }
         int months = Math.max(1, c.getRentalMonths());

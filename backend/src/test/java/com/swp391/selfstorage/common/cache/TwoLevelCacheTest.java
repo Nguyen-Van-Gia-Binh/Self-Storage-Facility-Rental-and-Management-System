@@ -5,7 +5,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.support.SimpleValueWrapper;
+
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -92,5 +95,19 @@ class TwoLevelCacheTest {
 
         verify(l1Cache, times(1)).evict("key1");
         verify(l2Cache, times(1)).evict("key1");
+    }
+
+    @Test
+    @DisplayName("TwoLevelCacheManager: Cache nằm trong l1OnlyCaches chỉ dùng L1, không gọi L2 Redis")
+    void testTwoLevelCacheManager_l1OnlySkipsL2() {
+        CacheManager l1Manager = mock(CacheManager.class);
+        CacheManager l2Manager = mock(CacheManager.class);
+        when(l1Manager.getCache("userDetails")).thenReturn(l1Cache);
+
+        TwoLevelCacheManager manager = new TwoLevelCacheManager(l1Manager, l2Manager, Set.of("userDetails"));
+        Cache cache = manager.getCache("userDetails");
+
+        assertThat(cache).isSameAs(l1Cache);
+        verify(l2Manager, never()).getCache("userDetails");
     }
 }

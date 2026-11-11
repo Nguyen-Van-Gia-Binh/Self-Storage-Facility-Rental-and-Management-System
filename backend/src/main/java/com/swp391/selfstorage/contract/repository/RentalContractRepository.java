@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,6 +24,28 @@ public interface RentalContractRepository
     Optional<RentalContract> findByIdAndFacilityIdIn(Long id, List<Long> facilityIds);
 
     List<RentalContract> findByFacilityId(Long facilityId);
+
+    List<RentalContract> findByFacilityIdIn(Collection<Long> facilityIds);
+
+    @Query("""
+        SELECT rc.facilityId, COUNT(rc) FROM RentalContract rc
+        WHERE rc.facilityId IN :facilityIds
+          AND rc.status = :status
+        GROUP BY rc.facilityId
+    """)
+    List<Object[]> countByFacilityIdInAndStatus(@Param("facilityIds") Collection<Long> facilityIds,
+                                                @Param("status") ContractStatus status);
+
+    @Query("""
+        SELECT rc FROM RentalContract rc
+        WHERE (:facilityId IS NULL OR rc.facilityId = :facilityId)
+          AND (rc.status = com.swp391.selfstorage.contract.entity.ContractStatus.OVERDUE
+               OR (rc.status = com.swp391.selfstorage.contract.entity.ContractStatus.ACTIVE
+                   AND rc.endDateExclusive IS NOT NULL
+                   AND rc.endDateExclusive < :today))
+    """)
+    List<RentalContract> findOverdueCandidates(@Param("facilityId") Long facilityId,
+                                               @Param("today") LocalDate today);
 
     boolean existsByAccessCode(String accessCode);
 

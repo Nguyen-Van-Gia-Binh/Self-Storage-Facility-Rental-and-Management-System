@@ -22,6 +22,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.util.StringUtils;
 
 import java.time.Duration;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
@@ -34,11 +35,15 @@ public class CacheConfig {
 
     @Bean
     public CacheManager cacheManager() {
-        // 1. Cấu hình L1 Cache: Caffeine In-Memory (TTL 15 phút, tối đa 500 bản ghi)
+        // 1. Cấu hình L1 Cache: Caffeine In-Memory (TTL 15 phút cho danh mục, TTL 5 phút cho userDetails)
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager("facilities", "unitTypes");
         caffeineCacheManager.setCaffeine(Caffeine.newBuilder()
                 .expireAfterWrite(15, TimeUnit.MINUTES)
                 .maximumSize(500));
+        caffeineCacheManager.registerCustomCache("userDetails", Caffeine.newBuilder()
+                .expireAfterWrite(5, TimeUnit.MINUTES)
+                .maximumSize(500)
+                .build());
 
         // 2. Cấu hình L2 Cache: Redis Upstash nếu REDIS_URL được cấu hình
         RedisCacheManager redisCacheManager = null;
@@ -74,7 +79,7 @@ public class CacheConfig {
         }
 
         if (redisCacheManager != null) {
-            return new TwoLevelCacheManager(caffeineCacheManager, redisCacheManager);
+            return new TwoLevelCacheManager(caffeineCacheManager, redisCacheManager, Set.of("userDetails"));
         }
 
         return caffeineCacheManager;

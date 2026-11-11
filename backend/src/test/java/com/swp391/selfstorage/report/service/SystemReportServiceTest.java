@@ -45,6 +45,9 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -117,8 +120,7 @@ class SystemReportServiceTest {
                 .endDateExclusive(LocalDate.of(2026, 10, 25))
                 .build();
 
-        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(c1));
-        when(rentalContractRepository.findByFacilityId(2L)).thenReturn(List.of(c2));
+        when(rentalContractRepository.findByFacilityIdIn(any())).thenReturn(List.of(c1, c2));
 
         PaymentTransaction p1 = PaymentTransaction.builder()
                 .id(1L)
@@ -138,8 +140,6 @@ class SystemReportServiceTest {
                 .build();
         pExtra.setCreatedAt(java.time.Instant.parse("2026-10-10T10:00:00Z"));
 
-        when(paymentTransactionRepository.findByContractId(101L)).thenReturn(List.of(p1, pExtra));
-
         PaymentTransaction p2 = PaymentTransaction.builder()
                 .id(3L)
                 .contractId(102L)
@@ -149,9 +149,12 @@ class SystemReportServiceTest {
                 .build();
         p2.setCreatedAt(java.time.Instant.parse("2026-10-08T10:00:00Z"));
 
-        when(paymentTransactionRepository.findByContractId(102L)).thenReturn(List.of(p2));
+        when(paymentTransactionRepository.findByContractIdIn(any())).thenReturn(List.of(p1, pExtra, p2));
 
         SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(from, to, null);
+
+        verify(rentalContractRepository, never()).findByFacilityId(any());
+        verify(paymentTransactionRepository, never()).findByContractId(any());
 
         assertNotNull(report);
         assertEquals(13_200_000L, report.getTotalRevenue());
@@ -183,7 +186,7 @@ class SystemReportServiceTest {
                 .totalRentalFee(3_000_000L)
                 .depositAmount(1_000_000L)
                 .build();
-        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(contract));
+        when(rentalContractRepository.findByFacilityIdIn(any())).thenReturn(List.of(contract));
 
         PaymentTransaction initial = PaymentTransaction.builder()
                 .contractId(201L).amount(4_000_000L).transactionType("INITIAL_PAYMENT").status("SUCCESS").build();
@@ -197,7 +200,7 @@ class SystemReportServiceTest {
         PaymentTransaction refund = PaymentTransaction.builder()
                 .contractId(201L).amount(200_000L).transactionType("REFUND").status("PENDING_REFUND").build();
         refund.setCreatedAt(java.time.Instant.parse("2026-10-05T03:00:00Z"));
-        when(paymentTransactionRepository.findByContractId(201L)).thenReturn(List.of(initial, renewal, penalty, refund));
+        when(paymentTransactionRepository.findByContractIdIn(any())).thenReturn(List.of(initial, renewal, penalty, refund));
 
         SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(from, to, null);
 
@@ -242,7 +245,7 @@ class SystemReportServiceTest {
                 .depositBalance(1_200_000L)
                 .build();
 
-        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(contract1, contract2));
+        when(rentalContractRepository.findByFacilityIdIn(any())).thenReturn(List.of(contract1, contract2));
 
         SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(from, to, null);
 
@@ -265,7 +268,7 @@ class SystemReportServiceTest {
                 .totalRentalFee(5_000_000L)
                 .depositAmount(0L)
                 .build();
-        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(contract));
+        when(rentalContractRepository.findByFacilityIdIn(any())).thenReturn(List.of(contract));
 
         // 1 giao dịch SUCCESS 5 triệu
         PaymentTransaction successTxn = PaymentTransaction.builder()
@@ -277,7 +280,7 @@ class SystemReportServiceTest {
                 .contractId(501L).amount(2_000_000L).transactionType("CONTRACT_RENEWAL").status("PENDING").build();
         pendingTxn.setCreatedAt(java.time.Instant.parse("2026-10-06T03:00:00Z"));
 
-        when(paymentTransactionRepository.findByContractId(501L)).thenReturn(List.of(successTxn, pendingTxn));
+        when(paymentTransactionRepository.findByContractIdIn(any())).thenReturn(List.of(successTxn, pendingTxn));
 
         SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(from, to, null);
 
@@ -301,8 +304,8 @@ class SystemReportServiceTest {
                 .totalRentalFee(2_000_000L)
                 .depositAmount(1_000_000L)
                 .build();
-        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(contract));
-        when(paymentTransactionRepository.findByContractId(301L)).thenReturn(Collections.emptyList());
+        when(rentalContractRepository.findByFacilityIdIn(any())).thenReturn(List.of(contract));
+        when(paymentTransactionRepository.findByContractIdIn(any())).thenReturn(Collections.emptyList());
 
         PaymentTransaction initial = PaymentTransaction.builder()
                 .id(90L)
@@ -312,7 +315,7 @@ class SystemReportServiceTest {
                 .status("SUCCESS")
                 .build();
         initial.setCreatedAt(java.time.Instant.parse("2026-09-10T03:00:00Z"));
-        when(paymentTransactionRepository.findByReservationId(501L)).thenReturn(List.of(initial));
+        when(paymentTransactionRepository.findByReservationIdIn(any())).thenReturn(List.of(initial));
 
         SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(from, to, null);
 
@@ -364,21 +367,15 @@ class SystemReportServiceTest {
     void testSystemOccupancyReport_Success_DescendingSort() {
         when(facilityRepository.findAll()).thenReturn(List.of(facility1, facility2));
 
-        List<StorageUnit> units1 = List.of(
-                StorageUnit.builder().id(1L).status(StorageUnitStatus.OCCUPIED).build(),
-                StorageUnit.builder().id(2L).status(StorageUnitStatus.OCCUPIED).build(),
-                StorageUnit.builder().id(3L).status(StorageUnitStatus.AVAILABLE).build(),
-                StorageUnit.builder().id(4L).status(StorageUnitStatus.AVAILABLE).build());
-        when(storageUnitRepository.findByFacilityId(1L)).thenReturn(units1);
-
-        List<StorageUnit> units2 = List.of(
-                StorageUnit.builder().id(5L).status(StorageUnitStatus.OCCUPIED).build(),
-                StorageUnit.builder().id(6L).status(StorageUnitStatus.OCCUPIED).build(),
-                StorageUnit.builder().id(7L).status(StorageUnitStatus.OCCUPIED).build(),
-                StorageUnit.builder().id(8L).status(StorageUnitStatus.AVAILABLE).build());
-        when(storageUnitRepository.findByFacilityId(2L)).thenReturn(units2);
+        when(storageUnitRepository.countByFacilityIdInGroupByStatus(any())).thenReturn(List.of(
+                new Object[] {1L, StorageUnitStatus.OCCUPIED, 2L},
+                new Object[] {1L, StorageUnitStatus.AVAILABLE, 2L},
+                new Object[] {2L, StorageUnitStatus.OCCUPIED, 3L},
+                new Object[] {2L, StorageUnitStatus.AVAILABLE, 1L}));
 
         SystemOccupancyReportResponse report = systemReportService.getSystemOccupancyReport(null);
+
+        verify(storageUnitRepository, never()).findByFacilityId(any());
 
         assertNotNull(report);
         assertEquals(8, report.getTotalUnits());
@@ -398,10 +395,8 @@ class SystemReportServiceTest {
     void testSystemOccupancyReport_ZeroDivisionSafety() {
         when(facilityRepository.findAll()).thenReturn(List.of(facility1));
 
-        List<StorageUnit> units = List.of(
-                StorageUnit.builder().id(1L).status(StorageUnitStatus.OUT_OF_SERVICE).build(),
-                StorageUnit.builder().id(2L).status(StorageUnitStatus.OUT_OF_SERVICE).build());
-        when(storageUnitRepository.findByFacilityId(1L)).thenReturn(units);
+        when(storageUnitRepository.countByFacilityIdInGroupByStatus(any())).thenReturn(List.<Object[]>of(
+                new Object[] {1L, StorageUnitStatus.OUT_OF_SERVICE, 2L}));
 
         SystemOccupancyReportResponse report = systemReportService.getSystemOccupancyReport(null);
 
@@ -430,7 +425,7 @@ class SystemReportServiceTest {
                 .overdueFeeAccrued(1_500_000L).monthlyPrice(3_000_000L).status(ContractStatus.OVERDUE)
                 .build();
 
-        when(rentalContractRepository.findAll()).thenReturn(List.of(c1, c2));
+        when(rentalContractRepository.findOverdueCandidates(isNull(), any(LocalDate.class))).thenReturn(List.of(c1, c2));
 
         AppUser u1 = new AppUser();
 
@@ -483,7 +478,7 @@ class SystemReportServiceTest {
                 .overdueFeeAccrued(1_500_000L).monthlyPrice(3_000_000L).status(ContractStatus.OVERDUE)
                 .build();
 
-        when(rentalContractRepository.findAll()).thenReturn(List.of(c1, c2));
+        when(rentalContractRepository.findOverdueCandidates(isNull(), any(LocalDate.class))).thenReturn(List.of(c1, c2));
         when(userRepository.findAllById(any())).thenReturn(Collections.emptyList());
         when(storageUnitRepository.findAllById(any())).thenReturn(Collections.emptyList());
         when(facilityRepository.findAllById(any())).thenReturn(Collections.emptyList());
@@ -534,7 +529,7 @@ class SystemReportServiceTest {
     @Test
     @DisplayName("US-BM-05.1 AC-4: Xuất file báo cáo danh sách nợ quá hạn rỗng vẫn có tiêu đề và ghi chú")
     void testExportSystemReport_Overdue_Empty() {
-        when(rentalContractRepository.findAll()).thenReturn(Collections.emptyList());
+        when(rentalContractRepository.findOverdueCandidates(isNull(), any(LocalDate.class))).thenReturn(Collections.emptyList());
 
         byte[] csvBytes = systemReportService.exportSystemReport(ReportExportType.OVERDUE, null, null, null,
                 mockPrincipal);
@@ -564,7 +559,7 @@ class SystemReportServiceTest {
                 .depositAmount(0L)
                 .depositBalance(0L)
                 .build();
-        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(prepaidContract));
+        when(rentalContractRepository.findByFacilityIdIn(any())).thenReturn(List.of(prepaidContract));
 
         PaymentTransaction initialPaid = PaymentTransaction.builder()
                 .id(61L)
@@ -574,7 +569,7 @@ class SystemReportServiceTest {
                 .status("SUCCESS")
                 .build();
         initialPaid.setCreatedAt(java.time.Instant.parse("2026-10-10T03:00:00Z"));
-        when(paymentTransactionRepository.findByContractId(601L)).thenReturn(List.of(initialPaid));
+        when(paymentTransactionRepository.findByContractIdIn(any())).thenReturn(List.of(initialPaid));
 
         SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(from, to, null);
 
@@ -587,18 +582,10 @@ class SystemReportServiceTest {
     void testSystemOccupancyReport_ExcludesMaintenanceFromDenominator() {
         when(facilityRepository.findAll()).thenReturn(List.of(facility1));
 
-        List<StorageUnit> units = List.of(
-                StorageUnit.builder().id(1L).status(StorageUnitStatus.OCCUPIED).build(),
-                StorageUnit.builder().id(2L).status(StorageUnitStatus.OCCUPIED).build(),
-                StorageUnit.builder().id(3L).status(StorageUnitStatus.OCCUPIED).build(),
-                StorageUnit.builder().id(4L).status(StorageUnitStatus.OCCUPIED).build(),
-                StorageUnit.builder().id(5L).status(StorageUnitStatus.OCCUPIED).build(),
-                StorageUnit.builder().id(6L).status(StorageUnitStatus.OCCUPIED).build(),
-                StorageUnit.builder().id(7L).status(StorageUnitStatus.AVAILABLE).build(),
-                StorageUnit.builder().id(8L).status(StorageUnitStatus.AVAILABLE).build(),
-                StorageUnit.builder().id(9L).status(StorageUnitStatus.AVAILABLE).build(),
-                StorageUnit.builder().id(10L).status(StorageUnitStatus.MAINTENANCE).build());
-        when(storageUnitRepository.findByFacilityId(1L)).thenReturn(units);
+        when(storageUnitRepository.countByFacilityIdInGroupByStatus(any())).thenReturn(List.of(
+                new Object[] {1L, StorageUnitStatus.OCCUPIED, 6L},
+                new Object[] {1L, StorageUnitStatus.AVAILABLE, 3L},
+                new Object[] {1L, StorageUnitStatus.MAINTENANCE, 1L}));
 
         SystemOccupancyReportResponse report = systemReportService.getSystemOccupancyReport(null);
 
@@ -630,9 +617,8 @@ class SystemReportServiceTest {
                 .depositBalance(0L)
                 .build();
 
-        when(rentalContractRepository.findByFacilityId(1L))
+        when(rentalContractRepository.findByFacilityIdIn(any()))
                 .thenReturn(List.of(activeContract, returnedPendingRefundContract));
-        when(paymentTransactionRepository.findByContractId(701L)).thenReturn(Collections.emptyList());
 
         PaymentTransaction pendingRefundTxn = PaymentTransaction.builder()
                 .id(71L)
@@ -642,7 +628,7 @@ class SystemReportServiceTest {
                 .status("PENDING_REFUND")
                 .build();
         pendingRefundTxn.setCreatedAt(java.time.Instant.parse("2026-10-15T03:00:00Z"));
-        when(paymentTransactionRepository.findByContractId(702L)).thenReturn(List.of(pendingRefundTxn));
+        when(paymentTransactionRepository.findByContractIdIn(any())).thenReturn(List.of(pendingRefundTxn));
 
         SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(from, to, null);
 
@@ -664,9 +650,9 @@ class SystemReportServiceTest {
                 .totalRentalFee(3_000_000L)
                 .depositAmount(0L)
                 .build();
-        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(contract));
-        when(contractRenewalRepository.findTopByContractIdOrderByCreatedAtDesc(801L))
-                .thenReturn(Optional.of(ContractRenewal.builder()
+        when(rentalContractRepository.findByFacilityIdIn(any())).thenReturn(List.of(contract));
+        when(contractRenewalRepository.findByContractIdInOrderByCreatedAtDesc(any()))
+                .thenReturn(List.of(ContractRenewal.builder()
                         .contractId(801L)
                         .monthlyPriceSnapshot(1_000_000L)
                         .build()));
@@ -689,7 +675,7 @@ class SystemReportServiceTest {
                 .depositAmount(800_000L)
                 .depositBalance(0L)
                 .build();
-        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(contract));
+        when(rentalContractRepository.findByFacilityIdIn(any())).thenReturn(List.of(contract));
 
         PaymentTransaction paid = PaymentTransaction.builder()
                 .id(91L).contractId(901L).amount(3_200_000L)
@@ -703,7 +689,7 @@ class SystemReportServiceTest {
                 .id(93L).contractId(901L).amount(9_000_000L)
                 .transactionType("REFUND").status("REFUND_FAILED").build();
         failed.setPaidAt(java.time.Instant.parse("2026-09-26T04:00:00Z"));
-        when(paymentTransactionRepository.findByContractId(901L)).thenReturn(List.of(paid, refund, failed));
+        when(paymentTransactionRepository.findByContractIdIn(any())).thenReturn(List.of(paid, refund, failed));
 
         SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(
                 LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30), null);
@@ -725,7 +711,7 @@ class SystemReportServiceTest {
                 .monthlyPrice(1_200_000L)
                 .status(ContractStatus.OVERDUE)
                 .build();
-        when(rentalContractRepository.findAll()).thenReturn(List.of(contract));
+        when(rentalContractRepository.findOverdueCandidates(isNull(), any(LocalDate.class))).thenReturn(List.of(contract));
         when(userRepository.findAllById(any())).thenReturn(Collections.emptyList());
         when(storageUnitRepository.findAllById(any())).thenReturn(Collections.emptyList());
         when(facilityRepository.findAllById(any())).thenReturn(List.of(facility1));
@@ -743,13 +729,13 @@ class SystemReportServiceTest {
         RentalContract contract = RentalContract.builder()
                 .id(911L).facilityId(1L).status(ContractStatus.ACTIVE)
                 .totalRentalFee(1_000_000L).depositAmount(0L).build();
-        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(contract));
+        when(rentalContractRepository.findByFacilityIdIn(any())).thenReturn(List.of(contract));
         PaymentTransaction paid = PaymentTransaction.builder()
                 .id(1L).contractId(911L).amount(1_000_000L)
                 .transactionType("INITIAL_PAYMENT").status("SUCCESS").build();
         paid.setCreatedAt(java.time.Instant.parse("2026-10-31T16:55:00Z"));
         paid.setPaidAt(java.time.Instant.parse("2026-10-31T17:05:00Z"));
-        when(paymentTransactionRepository.findByContractId(911L)).thenReturn(List.of(paid));
+        when(paymentTransactionRepository.findByContractIdIn(any())).thenReturn(List.of(paid));
 
         SystemRevenueReportResponse october = systemReportService.getSystemRevenueReport(
                 LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31), null);

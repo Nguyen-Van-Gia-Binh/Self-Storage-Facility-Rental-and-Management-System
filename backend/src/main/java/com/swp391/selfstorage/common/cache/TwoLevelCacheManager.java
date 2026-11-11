@@ -6,6 +6,7 @@ import org.springframework.cache.CacheManager;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -15,17 +16,26 @@ public class TwoLevelCacheManager implements CacheManager {
 
     private final CacheManager l1CacheManager;
     private final CacheManager l2CacheManager;
+    private final Set<String> l1OnlyCaches;
     private final Map<String, Cache> cacheMap = new ConcurrentHashMap<>();
 
     public TwoLevelCacheManager(CacheManager l1CacheManager, CacheManager l2CacheManager) {
+        this(l1CacheManager, l2CacheManager, Collections.emptySet());
+    }
+
+    public TwoLevelCacheManager(CacheManager l1CacheManager, CacheManager l2CacheManager, Set<String> l1OnlyCaches) {
         this.l1CacheManager = l1CacheManager;
         this.l2CacheManager = l2CacheManager;
+        this.l1OnlyCaches = l1OnlyCaches != null ? l1OnlyCaches : Collections.emptySet();
     }
 
     @Override
     public Cache getCache(String name) {
         return cacheMap.computeIfAbsent(name, cacheName -> {
             Cache l1 = l1CacheManager != null ? l1CacheManager.getCache(cacheName) : null;
+            if (l1OnlyCaches.contains(cacheName)) {
+                return l1;
+            }
             Cache l2 = l2CacheManager != null ? l2CacheManager.getCache(cacheName) : null;
             if (l1 == null && l2 == null) {
                 return null;
