@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 550" width="850" height="550">
+  <style>
+    .lane-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .act-text { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #000000; }
+    .act-desc { font-family: Arial, sans-serif; font-size: 10px; text-anchor: middle; fill: #444444; }
+    .edge-label { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: middle; }
+    .edge-label-start { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: start; }
+    .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
+    </marker>
+  </defs>
+  <!-- Background -->
+  <rect width="850" height="550" fill="#ffffff" />
+  <!-- Lanes -->
+  
+      <rect x="0" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="141.66666666666666" y="52" class="lane-title">Facility Manager (FM)</text>
+    
+      <rect x="283.3333333333333" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="425" y="52" class="lane-title">Shift Dispatcher</text>
+    
+      <rect x="566.6666666666666" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="708.3333333333333" y="52" class="lane-title">Facility Staff</text>
+    
+  
+      <line x1="0" y1="30" x2="0" y2="505" stroke="#000000" stroke-width="1.2" />
+    
+      <line x1="283.3333333333333" y1="30" x2="283.3333333333333" y2="505" stroke="#000000" stroke-width="1.2" />
+    
+      <line x1="566.6666666666666" y1="30" x2="566.6666666666666" y2="505" stroke="#000000" stroke-width="1.2" />
+    
+    <line x1="850" y1="30" x2="850" y2="505" stroke="#000000" stroke-width="1.2" />
+    <line x1="0" y1="505" x2="850" y2="505" stroke="#000000" stroke-width="1.2" />
+  
+  <!-- Diagram Elements -->
+  
+    <circle cx="140" cy="80" r="10" fill="#000000" />
+    <path d="M 140 90 L 140 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+
+    <rect x="40" y="115" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="140" y="135" class="act-text">Configure Floorplan Layout</text>
+    <text x="140" y="150" class="act-desc">(Zone, Row, Unit Coordinates)</text>
+
+    <path d="M 140 160 L 140 200" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+
+    <rect x="40" y="200" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="140" y="220" class="act-text">Build Weekly Shift Roster</text>
+    <text x="140" y="235" class="act-desc">(Morning &amp; Afternoon Shifts)</text>
+
+    <!-- To Dispatcher -->
+    <path d="M 240 222 L 323.3333333333333 222" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="280" y="215" class="edge-label">Dispatch</text>
+
+    <rect x="323.3333333333333" y="200" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="423.3333333333333" y="220" class="act-text">Generate Daily Worklist</text>
+    <text x="423.3333333333333" y="235" class="act-desc">(Check-ins, Returns, Cleaning)</text>
+
+    <!-- To Staff -->
+    <path d="M 523.3333333333333 222 L 606.6666666666666 222" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="543.3333333333333" y="215" class="edge-label">Assign</text>
+
+    <rect x="606.6666666666666" y="200" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="706.6666666666666" y="220" class="act-text">Execute Operations &amp; Sign-off</text>
+    <text x="706.6666666666666" y="235" class="act-desc">(Staff Desk Terminal)</text>
+
+    <circle cx="706.6666666666666" cy="290" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <circle cx="706.6666666666666" cy="290" r="7" fill="#000000" />
+    <path d="M 706.6666666666666 245 L 706.6666666666666 277" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+  
+  <!-- Figure Caption -->
+  <text x="425" y="535" class="caption">Swimlane 5: Flow_5_Facility_Layout_And_Staff_Scheduling</text>
+</svg>

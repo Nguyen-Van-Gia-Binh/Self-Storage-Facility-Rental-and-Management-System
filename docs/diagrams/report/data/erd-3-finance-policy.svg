@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 550" width="850" height="550">
+  <style>
+    .entity-header { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .domain-title { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #000000; }
+    .attr-pk { font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; fill: #000000; }
+    .attr-text { font-family: Arial, sans-serif; font-size: 11px; fill: #222222; }
+    .edge-label { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: middle; }
+    .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
+    </marker>
+    <marker id="crow" viewBox="0 0 12 12" refX="12" refY="6" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 0 L 12 6 L 0 12 M 12 0 L 12 12" stroke="#000000" stroke-width="1.2" fill="none" />
+    </marker>
+  </defs>
+  <!-- Background -->
+  <rect width="850" height="550" fill="#ffffff" />
+  
+    
+    <rect x="40" y="50" width="230" height="150" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="40" y="50" width="230" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="40" y1="76" x2="270" y2="76" stroke="#000000" stroke-width="1.2" />
+    <text x="155" y="68" class="entity-header">payment_transaction</text>
+    <text x="48" y="92" class="attr-pk">PK id : uuid</text><text x="48" y="110" class="attr-text">   order_code : bigint UNIQUE</text><text x="48" y="128" class="attr-pk">FK reservation_id : uuid</text><text x="48" y="146" class="attr-pk">FK contract_id : uuid</text><text x="48" y="164" class="attr-text">   amount : decimal(12,2)</text><text x="48" y="182" class="attr-text">   payment_gateway : varchar(20)</text><text x="48" y="200" class="attr-text">   status : varchar(20)</text>
+  
+
+    
+    <rect x="330" y="50" width="230" height="150" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="330" y="50" width="230" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="330" y1="76" x2="560" y2="76" stroke="#000000" stroke-width="1.2" />
+    <text x="445" y="68" class="entity-header">ledger_entry</text>
+    <text x="338" y="92" class="attr-pk">PK id : uuid</text><text x="338" y="110" class="attr-pk">FK transaction_id : uuid</text><text x="338" y="128" class="attr-pk">FK contract_id : uuid</text><text x="338" y="146" class="attr-text">   entry_type : varchar(50)</text><text x="338" y="164" class="attr-text">   debit_amount : decimal(12,2)</text><text x="338" y="182" class="attr-text">   credit_amount : decimal(12,2)</text><text x="338" y="200" class="attr-text">   recorded_at : timestamp</text>
+  
+
+    
+    <rect x="610" y="50" width="210" height="150" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="610" y="50" width="210" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="610" y1="76" x2="820" y2="76" stroke="#000000" stroke-width="1.2" />
+    <text x="715" y="68" class="entity-header">policy_version</text>
+    <text x="618" y="92" class="attr-pk">PK id : uuid</text><text x="618" y="110" class="attr-text">   version_code : varchar(50)</text><text x="618" y="128" class="attr-text">   deposit_multiplier : decimal(3,2)</text><text x="618" y="146" class="attr-text">   buffer_days : int</text><text x="618" y="164" class="attr-text">   grace_days : int</text><text x="618" y="182" class="attr-text">   daily_penalty_rate : decimal(5,4)</text><text x="618" y="200" class="attr-text">   is_active : boolean</text>
+  
+
+    
+    <rect x="40" y="260" width="230" height="140" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="40" y="260" width="230" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="40" y1="286" x2="270" y2="286" stroke="#000000" stroke-width="1.2" />
+    <text x="155" y="278" class="entity-header">contract_extra_charge</text>
+    <text x="48" y="302" class="attr-pk">PK id : uuid</text><text x="48" y="320" class="attr-pk">FK contract_id : uuid</text><text x="48" y="338" class="attr-text">   charge_category : varchar(50)</text><text x="48" y="356" class="attr-text">   amount : decimal(12,2)</text><text x="48" y="374" class="attr-text">   reason : varchar(255)</text><text x="48" y="392" class="attr-text">   is_settled : boolean</text>
+  
+
+    
+    <rect x="330" y="260" width="230" height="140" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="330" y="260" width="230" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="330" y1="286" x2="560" y2="286" stroke="#000000" stroke-width="1.2" />
+    <text x="445" y="278" class="entity-header">deposit_settlement_voucher</text>
+    <text x="338" y="302" class="attr-pk">PK id : uuid</text><text x="338" y="320" class="attr-pk">FK contract_id : uuid</text><text x="338" y="338" class="attr-text">   original_deposit : decimal(12,2)</text><text x="338" y="356" class="attr-text">   deductions : decimal(12,2)</text><text x="338" y="374" class="attr-text">   net_refund_amount : decimal(12,2)</text><text x="338" y="392" class="attr-text">   approval_status : varchar(20)</text>
+  
+
+    <path d="M 270 120 L 330 120" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <path d="M 445 200 L 445 260" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+  
+  <!-- Figure Caption -->
+  <text x="425" y="535" class="caption">ERD Part 3: Financial_Ledger_Payment_And_Policy_Domain</text>
+</svg>

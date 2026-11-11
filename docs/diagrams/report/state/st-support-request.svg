@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <style>
+    .state-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .state-desc { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #444444; }
+    .edge-label { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: middle; }
+    .edge-label-start { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: start; }
+    .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
+    </marker>
+  </defs>
+  <!-- Background -->
+  <rect width="800" height="400" fill="#ffffff" />
+  
+    <circle cx="70" cy="50" r="12" fill="#000000" />
+    <path d="M 70 62 L 70 100" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="80" y="85" class="edge-label-start">Submit Ticket (BR-SUP-01)</text>
+
+    <rect x="15" y="100" width="110" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <text x="70" y="127" class="state-title">NEW</text>
+
+    <rect x="190" y="100" width="110" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <text x="245" y="127" class="state-title">ASSIGNED</text>
+    <path d="M 125 122 L 190 122" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="155" y="115" class="edge-label">FM Dispatch</text>
+
+    <rect x="370" y="100" width="120" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <text x="430" y="127" class="state-title">IN_PROGRESS</text>
+    <path d="M 300 122 L 370 122" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="335" y="115" class="edge-label">Staff Claim</text>
+
+    <rect x="560" y="100" width="110" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <text x="615" y="127" class="state-title">RESOLVED</text>
+    <path d="M 490 122 L 560 122" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="525" y="115" class="edge-label">Fix Applied</text>
+
+    <rect x="560" y="220" width="110" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <text x="615" y="247" class="state-title">CLOSED</text>
+    <path d="M 615 145 L 615 220" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="625" y="185" class="edge-label-start">72h auto-close (BR-SUP-05)</text>
+
+    <!-- Reopen -->
+    <path d="M 560 135 L 430 135 L 430 145" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="495" y="150" class="edge-label">Customer Dispute</text>
+
+    <circle cx="740" cy="242" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <circle cx="740" cy="242" r="7" fill="#000000" />
+    <path d="M 670 242 L 727 242" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+  
+  <!-- Figure Caption -->
+  <text x="400" y="375" class="caption">State Chart 4: Support_Request_Ticket_Status</text>
+</svg>

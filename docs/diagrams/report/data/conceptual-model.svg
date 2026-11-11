@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 650" width="880" height="650">
+  <style>
+    .entity-header { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .domain-title { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #000000; }
+    .attr-pk { font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; fill: #000000; }
+    .attr-text { font-family: Arial, sans-serif; font-size: 11px; fill: #222222; }
+    .edge-label { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: middle; }
+    .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
+    </marker>
+    <marker id="crow" viewBox="0 0 12 12" refX="12" refY="6" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 0 L 12 6 L 0 12 M 12 0 L 12 12" stroke="#000000" stroke-width="1.2" fill="none" />
+    </marker>
+  </defs>
+  <!-- Background -->
+  <rect width="880" height="650" fill="#ffffff" />
+  
+    <!-- Domain Groups -->
+    <rect x="20" y="30" width="400" height="260" rx="6" ry="6" stroke="#000000" stroke-width="1.2" stroke-dasharray="4 4" fill="none" />
+    <text x="35" y="52" class="domain-title">Identity &amp; Facility Domain</text>
+
+    
+    <rect x="40" y="70" width="160" height="95" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="40" y="70" width="160" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="40" y1="96" x2="200" y2="96" stroke="#000000" stroke-width="1.2" />
+    <text x="120" y="88" class="entity-header">AppUser</text>
+    <text x="48" y="112" class="attr-text">id : UUID</text><text x="48" y="130" class="attr-text">email : string</text><text x="48" y="148" class="attr-text">role : Role</text><text x="48" y="166" class="attr-text">status : Status</text>
+  
+    
+    <rect x="240" y="70" width="160" height="95" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="240" y="70" width="160" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="240" y1="96" x2="400" y2="96" stroke="#000000" stroke-width="1.2" />
+    <text x="320" y="88" class="entity-header">Facility</text>
+    <text x="248" y="112" class="attr-text">id : UUID</text><text x="248" y="130" class="attr-text">name : string</text><text x="248" y="148" class="attr-text">city : string</text><text x="248" y="166" class="attr-text">status : Status</text>
+  
+    
+    <rect x="40" y="185" width="160" height="95" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="40" y="185" width="160" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="40" y1="211" x2="200" y2="211" stroke="#000000" stroke-width="1.2" />
+    <text x="120" y="203" class="entity-header">UnitType</text>
+    <text x="48" y="227" class="attr-text">id : UUID</text><text x="48" y="245" class="attr-text">type_code : string</text><text x="48" y="263" class="attr-text">area_sqm : decimal</text><text x="48" y="281" class="attr-text">base_price : decimal</text>
+  
+    
+    <rect x="240" y="185" width="160" height="95" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="240" y="185" width="160" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="240" y1="211" x2="400" y2="211" stroke="#000000" stroke-width="1.2" />
+    <text x="320" y="203" class="entity-header">StorageUnit</text>
+    <text x="248" y="227" class="attr-text">id : UUID</text><text x="248" y="245" class="attr-text">unit_number : string</text><text x="248" y="263" class="attr-text">status : UnitStatus</text><text x="248" y="281" class="attr-text">facility_id : UUID</text>
+  
+
+    <rect x="450" y="30" width="410" height="260" rx="6" ry="6" stroke="#000000" stroke-width="1.2" stroke-dasharray="4 4" fill="none" />
+    <text x="465" y="52" class="domain-title">Booking &amp; Contract Domain</text>
+
+    
+    <rect x="470" y="70" width="180" height="95" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="470" y="70" width="180" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="470" y1="96" x2="650" y2="96" stroke="#000000" stroke-width="1.2" />
+    <text x="560" y="88" class="entity-header">Reservation</text>
+    <text x="478" y="112" class="attr-text">id : UUID</text><text x="478" y="130" class="attr-text">booking_code : string</text><text x="478" y="148" class="attr-text">status : ResStatus</text><text x="478" y="166" class="attr-text">customer_id : UUID</text>
+  
+    
+    <rect x="670" y="70" width="170" height="95" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="670" y="70" width="170" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="670" y1="96" x2="840" y2="96" stroke="#000000" stroke-width="1.2" />
+    <text x="755" y="88" class="entity-header">RentalContract</text>
+    <text x="678" y="112" class="attr-text">id : UUID</text><text x="678" y="130" class="attr-text">contract_code : string</text><text x="678" y="148" class="attr-text">status : ContractStatus</text><text x="678" y="166" class="attr-text">start_date : date</text>
+  
+    
+    <rect x="470" y="185" width="180" height="95" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="470" y="185" width="180" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="470" y1="211" x2="650" y2="211" stroke="#000000" stroke-width="1.2" />
+    <text x="560" y="203" class="entity-header">Waitlist</text>
+    <text x="478" y="227" class="attr-text">id : UUID</text><text x="478" y="245" class="attr-text">priority_seq : int</text><text x="478" y="263" class="attr-text">status : WaitlistStatus</text><text x="478" y="281" class="attr-text">customer_id : UUID</text>
+  
+    
+    <rect x="670" y="185" width="170" height="95" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="670" y="185" width="170" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="670" y1="211" x2="840" y2="211" stroke="#000000" stroke-width="1.2" />
+    <text x="755" y="203" class="entity-header">HandoverRecord</text>
+    <text x="678" y="227" class="attr-text">id : UUID</text><text x="678" y="245" class="attr-text">handover_date : timestamp</text><text x="678" y="263" class="attr-text">pin_code_hash : string</text><text x="678" y="281" class="attr-text">checklist_ok : bool</text>
+  
+
+    <rect x="20" y="315" width="400" height="270" rx="6" ry="6" stroke="#000000" stroke-width="1.2" stroke-dasharray="4 4" fill="none" />
+    <text x="35" y="337" class="domain-title">Finance &amp; Policy Domain</text>
+
+    
+    <rect x="40" y="355" width="175" height="105" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="40" y="355" width="175" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="40" y1="381" x2="215" y2="381" stroke="#000000" stroke-width="1.2" />
+    <text x="127.5" y="373" class="entity-header">PaymentTransaction</text>
+    <text x="48" y="397" class="attr-text">id : UUID</text><text x="48" y="415" class="attr-text">order_code : long</text><text x="48" y="433" class="attr-text">amount : decimal</text><text x="48" y="451" class="attr-text">status : PayStatus</text>
+  
+    
+    <rect x="235" y="355" width="170" height="105" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="235" y="355" width="170" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="235" y1="381" x2="405" y2="381" stroke="#000000" stroke-width="1.2" />
+    <text x="320" y="373" class="entity-header">PolicyVersion</text>
+    <text x="243" y="397" class="attr-text">id : UUID</text><text x="243" y="415" class="attr-text">version_number : int</text><text x="243" y="433" class="attr-text">deposit_mult : decimal</text><text x="243" y="451" class="attr-text">buffer_days : int</text>
+  
+    
+    <rect x="40" y="480" width="175" height="95" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="40" y="480" width="175" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="40" y1="506" x2="215" y2="506" stroke="#000000" stroke-width="1.2" />
+    <text x="127.5" y="498" class="entity-header">ContractExtraCharge</text>
+    <text x="48" y="522" class="attr-text">id : UUID</text><text x="48" y="540" class="attr-text">charge_type : ChargeType</text><text x="48" y="558" class="attr-text">amount : decimal</text><text x="48" y="576" class="attr-text">settled : bool</text>
+  
+    
+    <rect x="235" y="480" width="170" height="95" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="235" y="480" width="170" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="235" y1="506" x2="405" y2="506" stroke="#000000" stroke-width="1.2" />
+    <text x="320" y="498" class="entity-header">LedgerEntry</text>
+    <text x="243" y="522" class="attr-text">id : UUID</text><text x="243" y="540" class="attr-text">entry_type : EntryType</text><text x="243" y="558" class="attr-text">amount : decimal</text><text x="243" y="576" class="attr-text">created_at : timestamp</text>
+  
+
+    <rect x="450" y="315" width="410" height="270" rx="6" ry="6" stroke="#000000" stroke-width="1.2" stroke-dasharray="4 4" fill="none" />
+    <text x="465" y="337" class="domain-title">Operations &amp; Support Domain</text>
+
+    
+    <rect x="470" y="355" width="180" height="105" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="470" y="355" width="180" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="470" y1="381" x2="650" y2="381" stroke="#000000" stroke-width="1.2" />
+    <text x="560" y="373" class="entity-header">SupportRequest</text>
+    <text x="478" y="397" class="attr-text">id : UUID</text><text x="478" y="415" class="attr-text">ticket_code : string</text><text x="478" y="433" class="attr-text">category : TicketCat</text><text x="478" y="451" class="attr-text">status : TicketStatus</text>
+  
+    
+    <rect x="670" y="355" width="170" height="105" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="670" y="355" width="170" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="670" y1="381" x2="840" y2="381" stroke="#000000" stroke-width="1.2" />
+    <text x="755" y="373" class="entity-header">StaffDailyAssignment</text>
+    <text x="678" y="397" class="attr-text">id : UUID</text><text x="678" y="415" class="attr-text">assignment_date : date</text><text x="678" y="433" class="attr-text">shift : ShiftType</text><text x="678" y="451" class="attr-text">staff_id : UUID</text>
+  
+    
+    <rect x="470" y="480" width="180" height="95" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="470" y="480" width="180" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="470" y1="506" x2="650" y2="506" stroke="#000000" stroke-width="1.2" />
+    <text x="560" y="498" class="entity-header">ReturnRequest</text>
+    <text x="478" y="522" class="attr-text">id : UUID</text><text x="478" y="540" class="attr-text">scheduled_date : date</text><text x="478" y="558" class="attr-text">damage_fee : decimal</text><text x="478" y="576" class="attr-text">approved : bool</text>
+  
+    
+    <rect x="670" y="480" width="170" height="95" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <rect x="670" y="480" width="170" height="26" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#f4f4f4" />
+    <line x1="670" y1="506" x2="840" y2="506" stroke="#000000" stroke-width="1.2" />
+    <text x="755" y="498" class="entity-header">OverdueLog</text>
+    <text x="678" y="522" class="attr-text">id : UUID</text><text x="678" y="540" class="attr-text">overdue_day : int</text><text x="678" y="558" class="attr-text">penalty_accrued : decimal</text><text x="678" y="576" class="attr-text">pin_locked : bool</text>
+  
+
+    <!-- Connecting Edges -->
+    <path d="M 200 115 L 470 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="330" y="108" class="edge-label">places reservation</text>
+
+    <path d="M 650 115 L 670 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="660" y="108" class="edge-label">converts</text>
+
+    <path d="M 320 280 L 320 315 L 560 315 L 560 165" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="440" y="308" class="edge-label">allocates unit to contract</text>
+  
+  <!-- Figure Caption -->
+  <text x="440" y="635" class="caption">Conceptual Data Model: Core_Business_Entities</text>
+</svg>

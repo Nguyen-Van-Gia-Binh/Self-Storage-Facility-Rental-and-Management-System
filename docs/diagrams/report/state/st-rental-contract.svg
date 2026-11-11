@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 580" width="850" height="580">
+  <style>
+    .state-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .state-desc { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #444444; }
+    .edge-label { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: middle; }
+    .edge-label-start { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: start; }
+    .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
+    </marker>
+  </defs>
+  <!-- Background -->
+  <rect width="850" height="580" fill="#ffffff" />
+  
+    <!-- Initial State -->
+    <circle cx="100" cy="50" r="12" fill="#000000" />
+    <path d="M 100 62 L 100 100" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="110" y="85" class="edge-label-start">Deposit confirmed (BR-DEP-01)</text>
+
+    <!-- State: PENDING_CHECK_IN -->
+    <rect x="30" y="100" width="140" height="50" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <text x="100" y="125" class="state-title">Pending Check-in</text>
+    <text x="100" y="140" class="state-desc">(Unit Allocated)</text>
+
+    <!-- State: CANCELLED -->
+    <rect x="250" y="100" width="130" height="50" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <text x="315" y="130" class="state-title">Cancelled</text>
+
+    <!-- PENDING_CHECK_IN -> CANCELLED -->
+    <path d="M 170 125 L 250 125" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="210" y="118" class="edge-label">Cancel / No-show</text>
+
+    <!-- State: ACTIVE -->
+    <rect x="30" y="220" width="140" height="55" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <text x="100" y="245" class="state-title">Active</text>
+    <text x="100" y="262" class="state-desc">(Smart Lock PIN Active)</text>
+
+    <!-- PENDING_CHECK_IN -> ACTIVE -->
+    <path d="M 100 150 L 100 220" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="105" y="185" class="edge-label-start">Check-in signed / Auto-act T+11</text>
+
+    <!-- State: PENDING_RETURN -->
+    <rect x="250" y="220" width="140" height="55" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <text x="320" y="245" class="state-title">Pending Return</text>
+    <text x="320" y="262" class="state-desc">(Inspection Booked)</text>
+
+    <!-- ACTIVE -> PENDING_RETURN -->
+    <path d="M 170 240 L 250 240" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="210" y="233" class="edge-label">Request Return</text>
+
+    <!-- PENDING_RETURN -> ACTIVE -->
+    <path d="M 250 260 L 170 260" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="210" y="275" class="edge-label">Cancel Return</text>
+
+    <!-- State: OVERDUE -->
+    <rect x="30" y="350" width="140" height="55" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <text x="100" y="375" class="state-title">Overdue</text>
+    <text x="100" y="392" class="state-desc">(PIN Locked D+1)</text>
+
+    <!-- ACTIVE -> OVERDUE -->
+    <path d="M 100 275 L 100 350" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="105" y="315" class="edge-label-start">Midnight cron D+1 (BR-OVD-01)</text>
+
+    <!-- OVERDUE -> ACTIVE -->
+    <path d="M 70 350 L 70 275" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="65" y="315" class="edge-label-start">Pay Debt &amp; Renew</text>
+
+    <!-- State: RETURNED -->
+    <rect x="470" y="220" width="140" height="55" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <text x="540" y="245" class="state-title">Returned</text>
+    <text x="540" y="262" class="state-desc">(Unit Vacated)</text>
+
+    <!-- PENDING_RETURN -> RETURNED -->
+    <path d="M 390 247 L 470 247" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="430" y="240" class="edge-label">Staff Sign-off</text>
+
+    <!-- State: CLOSED -->
+    <rect x="680" y="220" width="130" height="55" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <text x="745" y="245" class="state-title">Closed</text>
+    <text x="745" y="262" class="state-desc">(Deposit Settled)</text>
+
+    <!-- RETURNED -> CLOSED -->
+    <path d="M 610 247 L 680 247" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="645" y="240" class="edge-label">FM Settle</text>
+
+    <!-- State: TERMINATED -->
+    <rect x="250" y="350" width="140" height="55" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <text x="320" y="375" class="state-title">Terminated</text>
+    <text x="320" y="392" class="state-desc">(Eviction D+7)</text>
+
+    <!-- OVERDUE -> TERMINATED -->
+    <path d="M 170 377 L 250 377" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="210" y="370" class="edge-label">D+7 Liquidate</text>
+
+    <!-- Final States End Circles -->
+    <!-- CANCELLED -> End -->
+    <circle cx="430" cy="125" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <circle cx="430" cy="125" r="7" fill="#000000" />
+    <path d="M 380 125 L 417 125" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+
+    <!-- TERMINATED -> End -->
+    <circle cx="440" cy="377" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <circle cx="440" cy="377" r="7" fill="#000000" />
+    <path d="M 390 377 L 427 377" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+
+    <!-- CLOSED -> End -->
+    <circle cx="745" cy="330" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <circle cx="745" cy="330" r="7" fill="#000000" />
+    <path d="M 745 275 L 745 317" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+  
+  <!-- Figure Caption -->
+  <text x="425" y="555" class="caption">State Chart 1: Rental_Contract_Lifecycle</text>
+</svg>

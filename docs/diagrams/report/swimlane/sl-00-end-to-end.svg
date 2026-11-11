@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 750" width="900" height="750">
+  <style>
+    .lane-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .act-text { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #000000; }
+    .act-desc { font-family: Arial, sans-serif; font-size: 10px; text-anchor: middle; fill: #444444; }
+    .edge-label { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: middle; }
+    .edge-label-start { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: start; }
+    .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
+    </marker>
+  </defs>
+  <!-- Background -->
+  <rect width="900" height="750" fill="#ffffff" />
+  <!-- Lanes -->
+  
+      <rect x="0" y="30" width="225" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="112.5" y="52" class="lane-title">Storage Customer</text>
+    
+      <rect x="225" y="30" width="225" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="337.5" y="52" class="lane-title">Facility Staff</text>
+    
+      <rect x="450" y="30" width="225" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="562.5" y="52" class="lane-title">Facility Manager</text>
+    
+      <rect x="675" y="30" width="225" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="787.5" y="52" class="lane-title">System Schedulers</text>
+    
+  
+      <line x1="0" y1="30" x2="0" y2="705" stroke="#000000" stroke-width="1.2" />
+    
+      <line x1="225" y1="30" x2="225" y2="705" stroke="#000000" stroke-width="1.2" />
+    
+      <line x1="450" y1="30" x2="450" y2="705" stroke="#000000" stroke-width="1.2" />
+    
+      <line x1="675" y1="30" x2="675" y2="705" stroke="#000000" stroke-width="1.2" />
+    
+    <line x1="900" y1="30" x2="900" y2="705" stroke="#000000" stroke-width="1.2" />
+    <line x1="0" y1="705" x2="900" y2="705" stroke="#000000" stroke-width="1.2" />
+  
+  <!-- Diagram Elements -->
+  
+    <!-- Start -->
+    <circle cx="112" cy="85" r="10" fill="#000000" />
+    <path d="M 112 95 L 112 120" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+
+    <rect x="25" y="120" width="175" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="112" y="145" class="act-text">1. Reserve Unit &amp; Pay Deposit</text>
+
+    <!-- Transition to FM -->
+    <path d="M 200 142 L 562 142 L 562 170" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="350" y="135" class="edge-label">Deposit Confirmed</text>
+
+    <rect x="475" y="170" width="175" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="562" y="195" class="act-text">2. Allocate Storage Unit</text>
+
+    <!-- Transition to Staff -->
+    <path d="M 562 215 L 562 250 L 337 250" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="450" y="245" class="edge-label">Move-in Pass Issued</text>
+
+    <rect x="250" y="235" width="175" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="337" y="260" class="act-text">3. 4-Point Handover &amp; PIN</text>
+
+    <!-- Transition to Customer Active -->
+    <path d="M 250 257 L 112 257 L 112 320" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="160" y="250" class="edge-label">PIN Issued</text>
+
+    <rect x="25" y="320" width="175" height="50" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="112" y="342" class="act-text">4. Occupy &amp; Store Goods</text>
+    <text x="112" y="358" class="act-desc">(Customer Self-Service)</text>
+
+    <!-- Path to System Overdue Cron -->
+    <path d="M 200 345 L 787 345 L 787 400" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="490" y="338" class="edge-label">Lease Expiry without Renewal</text>
+
+    <rect x="700" y="400" width="175" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="787" y="425" class="act-text">5. Daily Midnight Overdue Scan</text>
+
+    <!-- Lock PIN -->
+    <path d="M 700 422 L 337 422 L 337 460" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="500" y="415" class="edge-label">Lock PIN Day D+1 (BR-OVD-01)</text>
+
+    <rect x="250" y="460" width="175" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="337" y="485" class="act-text">6. Overdue Handling / Return</text>
+
+    <!-- Exit Settlement -->
+    <path d="M 337 505 L 337 540 L 562 540" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="420" y="533" class="edge-label">Checkout Complete</text>
+
+    <rect x="475" y="520" width="175" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="562" y="545" class="act-text">7. Approve Final Settlement</text>
+
+    <!-- Complete End -->
+    <circle cx="562" cy="620" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <circle cx="562" cy="620" r="7" fill="#000000" />
+    <path d="M 562 565 L 562 607" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="575" y="590" class="edge-label-start">Contract Completed</text>
+  
+  <!-- Figure Caption -->
+  <text x="450" y="735" class="caption">Swimlane 0: End_To_End_Operational_Lifecycle</text>
+</svg>

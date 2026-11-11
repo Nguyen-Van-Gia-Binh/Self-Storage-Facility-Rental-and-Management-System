@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 650" width="850" height="650">
+  <style>
+    .lane-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .act-text { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #000000; }
+    .act-desc { font-family: Arial, sans-serif; font-size: 10px; text-anchor: middle; fill: #444444; }
+    .edge-label { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: middle; }
+    .edge-label-start { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: start; }
+    .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
+    </marker>
+  </defs>
+  <!-- Background -->
+  <rect width="850" height="650" fill="#ffffff" />
+  <!-- Lanes -->
+  
+      <rect x="0" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="141.66666666666666" y="52" class="lane-title">Storage Customer</text>
+    
+      <rect x="283.3333333333333" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="425" y="52" class="lane-title">Facility Staff</text>
+    
+      <rect x="566.6666666666666" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="708.3333333333333" y="52" class="lane-title">Smart Lock & System</text>
+    
+  
+      <line x1="0" y1="30" x2="0" y2="605" stroke="#000000" stroke-width="1.2" />
+    
+      <line x1="283.3333333333333" y1="30" x2="283.3333333333333" y2="605" stroke="#000000" stroke-width="1.2" />
+    
+      <line x1="566.6666666666666" y1="30" x2="566.6666666666666" y2="605" stroke="#000000" stroke-width="1.2" />
+    
+    <line x1="850" y1="30" x2="850" y2="605" stroke="#000000" stroke-width="1.2" />
+    <line x1="0" y1="605" x2="850" y2="605" stroke="#000000" stroke-width="1.2" />
+  
+  <!-- Diagram Elements -->
+  
+    <circle cx="140" cy="80" r="10" fill="#000000" />
+    <path d="M 140 90 L 140 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+
+    <rect x="40" y="115" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="140" y="135" class="act-text">Present Move-in Pass QR</text>
+    <text x="140" y="150" class="act-desc">(Arrive at Facility)</text>
+
+    <!-- To Staff -->
+    <path d="M 240 137 L 323.3333333333333 137" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="280" y="130" class="edge-label">Scan Pass</text>
+
+    <rect x="323.3333333333333" y="115" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="423.3333333333333" y="135" class="act-text">Verify Citizen ID &amp; Booking</text>
+    <text x="423.3333333333333" y="150" class="act-desc">(Staff Desk Terminal)</text>
+
+    <!-- Inspection -->
+    <path d="M 423.3333333333333 160 L 423.3333333333333 200" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+
+    <rect x="323.3333333333333" y="200" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="423.3333333333333" y="220" class="act-text">Execute 4-Point Inspection</text>
+    <text x="423.3333333333333" y="235" class="act-desc">(Lock, Clean, Light, Climate)</text>
+
+    <!-- Customer Co-Sign -->
+    <path d="M 323.3333333333333 222 L 240 222" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="280" y="215" class="edge-label">Digital Sign</text>
+
+    <rect x="40" y="200" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="140" y="220" class="act-text">Sign Handover Protocol</text>
+    <text x="140" y="235" class="act-desc">(Accept Compartment)</text>
+
+    <!-- To Smart Lock System -->
+    <path d="M 240 245 L 606.6666666666666 245" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="423.3333333333333" y="260" class="edge-label">Protocol Submitted</text>
+
+    <rect x="606.6666666666666" y="225" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="706.6666666666666" y="245" class="act-text">Generate 6-Digit PIN</text>
+    <text x="706.6666666666666" y="260" class="act-desc">(Activate on Keypad)</text>
+
+    <!-- Update Contract ACTIVE -->
+    <path d="M 706.6666666666666 270 L 706.6666666666666 320" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+
+    <rect x="606.6666666666666" y="320" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="706.6666666666666" y="340" class="act-text">Transition Contract ACTIVE</text>
+    <text x="706.6666666666666" y="355" class="act-desc">(Unit: OCCUPIED)</text>
+
+    <!-- Send PIN to Customer -->
+    <path d="M 606.6666666666666 342 L 140 342 L 140 380" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="283.3333333333333" y="335" class="edge-label">Deliver Secure PIN</text>
+
+    <rect x="40" y="380" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="140" y="400" class="act-text">Store PIN in Portal &amp; Move-in</text>
+    <text x="140" y="415" class="act-desc">(Access Authorized)</text>
+
+    <circle cx="140" cy="470" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <circle cx="140" cy="470" r="7" fill="#000000" />
+    <path d="M 140 425 L 140 457" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+  
+  <!-- Figure Caption -->
+  <text x="425" y="635" class="caption">Swimlane 2: Flow_2_Checkin_Physical_Handover_And_PIN_Activation</text>
+</svg>

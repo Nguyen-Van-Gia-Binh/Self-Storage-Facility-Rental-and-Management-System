@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <style>
+    .state-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .state-desc { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #444444; }
+    .edge-label { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: middle; }
+    .edge-label-start { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: start; }
+    .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
+    </marker>
+  </defs>
+  <!-- Background -->
+  <rect width="800" height="400" fill="#ffffff" />
+  
+    <circle cx="80" cy="50" r="12" fill="#000000" />
+    <path d="M 80 62 L 80 100" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="90" y="85" class="edge-label-start">Init VNPay (BR-PAY-01)</text>
+
+    <rect x="20" y="100" width="120" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <text x="80" y="127" class="state-title">PENDING</text>
+
+    <rect x="250" y="100" width="120" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <text x="310" y="127" class="state-title">SUCCESS</text>
+    <path d="M 140 122 L 250 122" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="195" y="115" class="edge-label">IPN Checksum OK</text>
+
+    <rect x="20" y="230" width="120" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <text x="80" y="257" class="state-title">FAILED</text>
+    <path d="M 80 145 L 80 230" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="90" y="190" class="edge-label-start">User Cancel / Timeout</text>
+
+    <rect x="470" y="100" width="120" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <text x="530" y="127" class="state-title">REFUNDED</text>
+    <path d="M 370 122 L 470 122" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <text x="420" y="115" class="edge-label">Settlement Voucher</text>
+
+    <circle cx="660" cy="122" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <circle cx="660" cy="122" r="7" fill="#000000" />
+    <path d="M 590 122 L 647 122" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+  
+  <!-- Figure Caption -->
+  <text x="400" y="375" class="caption">State Chart 6: Payment_Transaction_Status</text>
+</svg>
