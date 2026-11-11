@@ -137,7 +137,8 @@ public class UserServiceImpl implements UserService {
     @Override
     @Caching(evict = {
             @CacheEvict(value = "userDetails", key = "#result.email", condition = "#result != null && #result.email != null"),
-            @CacheEvict(value = "facilities", allEntries = true)
+            @CacheEvict(value = "facilities", allEntries = true),
+            @CacheEvict(value = "assignedFacilities", allEntries = true)
     })
     public UserResponse updateUserRole(Long id, UpdateUserRoleRequest request) {
         AppUser user = findUserById(id);

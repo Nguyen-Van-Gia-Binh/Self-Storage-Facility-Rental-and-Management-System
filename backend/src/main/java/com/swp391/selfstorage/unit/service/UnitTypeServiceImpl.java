@@ -99,7 +99,8 @@ public class UnitTypeServiceImpl implements UnitTypeService {
     @Override
     @Caching(evict = {
             @CacheEvict(value = "unitTypes", allEntries = true),
-            @CacheEvict(value = "facilities", allEntries = true)
+            @CacheEvict(value = "facilities", allEntries = true),
+            @CacheEvict(value = "assignedFacilities", allEntries = true)
     })
     public UnitTypeResponse createUnitType(Long facilityId, CreateUnitTypeRequest request) {
         if (unitTypeRepository.existsByCode(request.getCode())) {
@@ -154,7 +155,8 @@ public class UnitTypeServiceImpl implements UnitTypeService {
     @Override
     @Caching(evict = {
             @CacheEvict(value = "unitTypes", allEntries = true),
-            @CacheEvict(value = "facilities", allEntries = true)
+            @CacheEvict(value = "facilities", allEntries = true),
+            @CacheEvict(value = "assignedFacilities", allEntries = true)
     })
     public UnitTypeResponse updateUnitType(Long facilityId, Long unitTypeId, UpdateUnitTypeRequest request) {
         UnitType ut = unitTypeRepository.findById(unitTypeId)
@@ -209,7 +211,8 @@ public class UnitTypeServiceImpl implements UnitTypeService {
     @Override
     @Caching(evict = {
             @CacheEvict(value = "unitTypes", allEntries = true),
-            @CacheEvict(value = "facilities", allEntries = true)
+            @CacheEvict(value = "facilities", allEntries = true),
+            @CacheEvict(value = "assignedFacilities", allEntries = true)
     })
     public void deactivateUnitType(Long facilityId, Long unitTypeId) {
         UnitType ut = unitTypeRepository.findById(unitTypeId)
@@ -222,7 +225,8 @@ public class UnitTypeServiceImpl implements UnitTypeService {
     @Override
     @Caching(evict = {
             @CacheEvict(value = "unitTypes", allEntries = true),
-            @CacheEvict(value = "facilities", allEntries = true)
+            @CacheEvict(value = "facilities", allEntries = true),
+            @CacheEvict(value = "assignedFacilities", allEntries = true)
     })
     public UnitTypeResponse updateUnitTypeStatus(Long facilityId, Long unitTypeId, boolean isActive) {
         if (!isActive) {

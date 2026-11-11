@@ -55,6 +55,7 @@ class BackendPerformanceStatisticsTest {
         stats.setStatisticsEnabled(true);
 
         clearCache("facilities");
+        clearCache("assignedFacilities");
         clearCache("userDetails");
 
         // 1. Đo CustomUserDetailsService (Cold vs Warm)

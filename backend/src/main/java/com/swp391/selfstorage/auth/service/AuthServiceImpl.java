@@ -27,6 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,6 +60,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Value("${google.client-id:}")
     private String googleClientId;
+
+    @Autowired(required = false)
+    private CacheManager cacheManager;
 
     public AuthServiceImpl(UserRepository userRepository,
                            UserFacilityAssignmentRepository userFacilityAssignmentRepository,
@@ -376,6 +381,7 @@ public class AuthServiceImpl implements AuthService {
 
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+        evictUserDetailsCache(user.getEmail());
         log.info("Đặt lại mật khẩu thành công cho email: {}", request.getEmail());
     }
 
@@ -412,5 +418,15 @@ public class AuthServiceImpl implements AuthService {
 
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+        evictUserDetailsCache(user.getEmail());
+    }
+
+    private void evictUserDetailsCache(String email) {
+        if (cacheManager != null && email != null) {
+            Cache cache = cacheManager.getCache("userDetails");
+            if (cache != null) {
+                cache.evict(email);
+            }
+        }
     }
 }

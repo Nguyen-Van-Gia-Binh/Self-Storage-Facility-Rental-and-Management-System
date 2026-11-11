@@ -601,15 +601,8 @@ public class SystemReportServiceImpl implements SystemReportService {
         }
         List<PaymentTransaction> merged = new ArrayList<>();
         Set<Long> seenIds = new HashSet<>();
-        if (byContract != null) {
-            for (PaymentTransaction p : byContract) {
-                if (p.getId() == null || seenIds.add(p.getId())) {
-                    merged.add(p);
-                }
-            }
-        }
-        if (byReservation != null) {
-            for (PaymentTransaction p : byReservation) {
+        for (List<PaymentTransaction> source : List.of(safeList(byContract), safeList(byReservation))) {
+            for (PaymentTransaction p : source) {
                 if (p.getId() == null || seenIds.add(p.getId())) {
                     merged.add(p);
                 }

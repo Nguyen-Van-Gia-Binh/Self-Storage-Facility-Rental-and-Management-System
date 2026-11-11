@@ -35,13 +35,17 @@ public class CacheConfig {
 
     @Bean
     public CacheManager cacheManager() {
-        // 1. Cấu hình L1 Cache: Caffeine In-Memory (TTL 15 phút cho danh mục, TTL 5 phút cho userDetails)
+        // 1. Cấu hình L1 Cache: Caffeine In-Memory (TTL 15 phút cho danh mục/assignedFacilities, TTL 5 phút cho userDetails)
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager("facilities", "unitTypes");
         caffeineCacheManager.setCaffeine(Caffeine.newBuilder()
                 .expireAfterWrite(15, TimeUnit.MINUTES)
                 .maximumSize(500));
         caffeineCacheManager.registerCustomCache("userDetails", Caffeine.newBuilder()
                 .expireAfterWrite(5, TimeUnit.MINUTES)
+                .maximumSize(500)
+                .build());
+        caffeineCacheManager.registerCustomCache("assignedFacilities", Caffeine.newBuilder()
+                .expireAfterWrite(15, TimeUnit.MINUTES)
                 .maximumSize(500)
                 .build());
 
@@ -79,7 +83,10 @@ public class CacheConfig {
         }
 
         if (redisCacheManager != null) {
-            return new TwoLevelCacheManager(caffeineCacheManager, redisCacheManager, Set.of("userDetails"));
+            return new TwoLevelCacheManager(
+                    caffeineCacheManager,
+                    redisCacheManager,
+                    Set.of("userDetails", "assignedFacilities"));
         }
 
         return caffeineCacheManager;
