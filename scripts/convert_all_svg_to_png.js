@@ -40,3 +40,4 @@ directories.forEach(dir => {
 });
 
 console.log(`\nSuccessfully converted ${totalConverted} diagrams to crisp 2x Retina PNGs.`);
+

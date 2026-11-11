@@ -1,0 +1,102 @@
+<mxfile host="Electron" modified="2026-11-11T13:53:25.099Z" agent="draw.io" version="21.0.0" type="device">
+  <diagram name="Swimlane 0: End_To_End_Operational_Lifecycle" id="7ic9ellrsd">
+    <mxGraphModel dx="1200" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="950" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+    <!-- Lanes -->
+    <mxCell id="lane_0" value="Storage Customer" style="swimlane;html=1;startSize=35;fillColor=#f8f9fa;strokeColor=#000000;strokeWidth=1.5;fontStyle=1;fontSize=13;fontFamily=Arial;" vertex="1" parent="1">
+      <mxGeometry x="40" y="40" width="260" height="740" as="geometry" />
+    </mxCell>
+    <mxCell id="lane_1" value="Facility Staff" style="swimlane;html=1;startSize=35;fillColor=#f8f9fa;strokeColor=#000000;strokeWidth=1.5;fontStyle=1;fontSize=13;fontFamily=Arial;" vertex="1" parent="1">
+      <mxGeometry x="300" y="40" width="260" height="740" as="geometry" />
+    </mxCell>
+    <mxCell id="lane_2" value="Facility Manager" style="swimlane;html=1;startSize=35;fillColor=#f8f9fa;strokeColor=#000000;strokeWidth=1.5;fontStyle=1;fontSize=13;fontFamily=Arial;" vertex="1" parent="1">
+      <mxGeometry x="560" y="40" width="260" height="740" as="geometry" />
+    </mxCell>
+    <mxCell id="lane_3" value="System Schedulers" style="swimlane;html=1;startSize=35;fillColor=#f8f9fa;strokeColor=#000000;strokeWidth=1.5;fontStyle=1;fontSize=13;fontFamily=Arial;" vertex="1" parent="1">
+      <mxGeometry x="820" y="40" width="260" height="740" as="geometry" />
+    </mxCell>
+  
+    <!-- Start -->
+    <mxCell id="start" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+      <mxGeometry x="160" y="90" width="20" height="20" as="geometry" />
+    </mxCell>
+
+    <!-- Node 1: Customer Reserve -->
+    <mxCell id="node_1" value="1. Reserve Unit &amp;amp; Pay Deposit&lt;br&gt;&lt;font color=&quot;#555555&quot; style=&quot;font-size: 10px;&quot;&gt;(BR-PRI-01, BR-DEP-01)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+      <mxGeometry x="70" y="140" width="200" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Node 2: FM Allocate -->
+    <mxCell id="node_2" value="2. Allocate Storage Unit&lt;br&gt;&lt;font color=&quot;#555555&quot; style=&quot;font-size: 10px;&quot;&gt;(Late Binding, BR-AVL-04)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+      <mxGeometry x="590" y="210" width="200" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Node 3: Staff Handover -->
+    <mxCell id="node_3" value="3. 4-Point Handover &amp;amp; PIN&lt;br&gt;&lt;font color=&quot;#555555&quot; style=&quot;font-size: 10px;&quot;&gt;(Lock, Clean, Light, Air)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+      <mxGeometry x="330" y="280" width="200" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Node 4: Customer Occupy -->
+    <mxCell id="node_4" value="4. Occupy &amp;amp; Store Goods&lt;br&gt;&lt;font color=&quot;#555555&quot; style=&quot;font-size: 10px;&quot;&gt;(24/7 Keypad Access Portal)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+      <mxGeometry x="70" y="360" width="200" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Node 5: System Schedulers Overdue Scan -->
+    <mxCell id="node_5" value="5. Daily Midnight Overdue Scan&lt;br&gt;&lt;font color=&quot;#555555&quot; style=&quot;font-size: 10px;&quot;&gt;(Cron 00:00:00, BR-OVD-01)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+      <mxGeometry x="850" y="430" width="200" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Node 6: Staff Overdue / Return -->
+    <mxCell id="node_6" value="6. Overdue Handling / Return&lt;br&gt;&lt;font color=&quot;#555555&quot; style=&quot;font-size: 10px;&quot;&gt;(Inspection &amp;amp; Settlement)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+      <mxGeometry x="330" y="510" width="200" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- Node 7: FM Approve Settlement -->
+    <mxCell id="node_7" value="7. Approve Final Settlement&lt;br&gt;&lt;font color=&quot;#555555&quot; style=&quot;font-size: 10px;&quot;&gt;(Refund Deposit, BR-DEP-03)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+      <mxGeometry x="590" y="590" width="200" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- End -->
+    <mxCell id="end" value="" style="shape=ellipse;html=1;shape=endState;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+      <mxGeometry x="677" y="695" width="26" height="26" as="geometry" />
+    </mxCell>
+  
+    <mxCell id="e_start" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.2;" edge="1" parent="1" source="start" target="node_1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e_1_2" value="Deposit Confirmed (48h)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="node_1" target="node_2">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e_2_3" value="Move-in Pass Issued" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="node_2" target="node_3">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e_3_4" value="PIN Delivered &amp;amp; Active" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="node_3" target="node_4">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e_4_5" value="Lease Expiry (No Renewal)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="node_4" target="node_5">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e_5_6" value="Lock PIN Day D+1 (BR-OVD-01)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="node_5" target="node_6">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e_6_7" value="Checkout Inspection Passed" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="node_6" target="node_7">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e_7_end" value="Contract Completed" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.2;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="node_7" target="end">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

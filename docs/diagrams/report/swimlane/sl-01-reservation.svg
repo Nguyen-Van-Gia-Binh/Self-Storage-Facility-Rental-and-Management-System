@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 750" width="850" height="750">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 880" width="840" height="880">
   <style>
     .lane-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
-    .act-text { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #000000; }
-    .act-desc { font-family: Arial, sans-serif; font-size: 10px; text-anchor: middle; fill: #444444; }
-    .edge-label { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: middle; }
-    .edge-label-start { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; text-anchor: start; }
+    .act-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .act-desc { font-family: Arial, sans-serif; font-size: 10px; text-anchor: middle; fill: #555555; }
+    .edge-label { font-family: Arial, sans-serif; font-size: 10.5px; fill: #000000; text-anchor: middle; }
     .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
   </style>
   <defs>
@@ -14,106 +13,135 @@
     </marker>
   </defs>
   <!-- Background -->
-  <rect width="850" height="750" fill="#ffffff" />
+  <rect width="840" height="880" fill="#ffffff" />
   <!-- Lanes -->
   
-      <rect x="0" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="141.66666666666666" y="52" class="lane-title">Storage Customer</text>
+      <rect x="0" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="140" y="52" class="lane-title">Storage Customer</text>
     
-      <rect x="283.3333333333333" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="425" y="52" class="lane-title">System (Portal &amp; VNPay)</text>
+      <rect x="280" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="420" y="52" class="lane-title">System (Portal &amp; VNPay)</text>
     
-      <rect x="566.6666666666666" y="30" width="283.3333333333333" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
-      <text x="708.3333333333333" y="52" class="lane-title">Facility Manager</text>
+      <rect x="560" y="30" width="280" height="35" stroke="#000000" stroke-width="1.5" fill="#f8f9fa" />
+      <text x="700" y="52" class="lane-title">Facility Manager</text>
     
   
-      <line x1="0" y1="30" x2="0" y2="705" stroke="#000000" stroke-width="1.2" />
+      <line x1="0" y1="30" x2="0" y2="835" stroke="#000000" stroke-width="1.2" />
     
-      <line x1="283.3333333333333" y1="30" x2="283.3333333333333" y2="705" stroke="#000000" stroke-width="1.2" />
+      <line x1="280" y1="30" x2="280" y2="835" stroke="#000000" stroke-width="1.2" />
     
-      <line x1="566.6666666666666" y1="30" x2="566.6666666666666" y2="705" stroke="#000000" stroke-width="1.2" />
+      <line x1="560" y1="30" x2="560" y2="835" stroke="#000000" stroke-width="1.2" />
     
-    <line x1="850" y1="30" x2="850" y2="705" stroke="#000000" stroke-width="1.2" />
-    <line x1="0" y1="705" x2="850" y2="705" stroke="#000000" stroke-width="1.2" />
+    <line x1="840" y1="30" x2="840" y2="835" stroke="#000000" stroke-width="1.2" />
+    <line x1="0" y1="835" x2="840" y2="835" stroke="#000000" stroke-width="1.2" />
   
   <!-- Diagram Elements -->
   
-    <circle cx="141.66666666666666" cy="80" r="10" fill="#000000" />
-    <path d="M 141.66666666666666 90 L 141.66666666666666 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <!-- Start -->
+    <circle cx="140" cy="80" r="10" fill="#000000" />
+    <path d="M 140 90 L 140 115" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
 
-    <rect x="40" y="115" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="135" class="act-text">Select Facility &amp; Unit Type</text>
-    <text x="140" y="150" class="act-desc">(BR-PRI-01, BR-GEN-03)</text>
+    <!-- 1. Customer: Select Facility -->
+    <rect x="40" y="115" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="140" y="140" class="act-title">Select Facility &amp; Unit Type</text>
+    <text x="140" y="158" class="act-desc">(BR-PRI-01, BR-GEN-03)</text>
 
-    <!-- To System -->
-    <path d="M 240 137 L 323.3333333333333 137" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="280" y="130" class="edge-label">Check Slot</text>
+    <!-- To System: Check Slot -->
+    <path d="M 240 145 L 420 145 L 420 190" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="275" y="132" width="110" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="330" y="146" class="edge-label">Check Capacity</text>
+  
 
     <!-- Decision: Available? -->
-    <polygon points="423.3333333333333,180 493.3333333333333,215 423.3333333333333,250 353.3333333333333,215" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="423.3333333333333" y="218" class="edge-label">Capacity &gt; 0?</text>
+    <polygon points="420,190 475,225 420,260 365,225" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="420" y="229" class="edge-label">Capacity &gt; 0?</text>
 
-    <path d="M 423.3333333333333 160 L 423.3333333333333 180" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    <!-- Branch [No] -> Waitlist -->
+    <path d="M 365 225 L 140 225 L 140 255" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="197.5" y="212" width="110" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="252.5" y="226" class="edge-label">[No] Full Capacity</text>
+  
 
-    <!-- Branch: Yes -->
-    <path d="M 423.3333333333333 250 L 423.3333333333333 280" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="438.3333333333333" y="268" class="edge-label-start">Yes (Available)</text>
+    <rect x="40" y="255" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="140" y="280" class="act-title">Opt-in FIFO Waitlist</text>
+    <text x="140" y="298" class="act-desc">(Queue Position, BR-WAT-01)</text>
 
-    <rect x="323.3333333333333" y="280" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="423.3333333333333" y="300" class="act-text">Generate Invoice &amp; Hold 48h</text>
-    <text x="423.3333333333333" y="315" class="act-desc">(Deposit + Rent, BR-DEP-01)</text>
+    <circle cx="140" cy="355" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <circle cx="140" cy="355" r="7" fill="#000000" />
+    <path d="M 140 315 L 140 342" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Branch [Yes] -> Generate Invoice & Hold 48h -->
+    <path d="M 420 260 L 420 300" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="430" y="267" width="120" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="490" y="281" class="edge-label">[Yes] Slot Available</text>
+  
+
+    <rect x="320" y="300" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="420" y="325" class="act-title">Hold Unit 48h &amp; Calc Rent</text>
+    <text x="420" y="343" class="act-desc">(Deposit + 1st Month, BR-DEP-01)</text>
 
     <!-- To Customer Pay -->
-    <path d="M 323.3333333333333 302 L 240 302" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="280" y="295" class="edge-label">VNPay URL</text>
+    <path d="M 320 330 L 210 330 L 210 390 L 140 390 L 140 400" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="185" y="317" width="140" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="255" y="331" class="edge-label">Redirect to VNPay URL</text>
+  
 
-    <rect x="40" y="280" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="300" class="act-text">Complete VNPay Payment</text>
-    <text x="140" y="315" class="act-desc">(Sandbox Callback)</text>
+    <rect x="40" y="400" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="140" y="425" class="act-title">Complete VNPay Payment</text>
+    <text x="140" y="443" class="act-desc">(Secure Sandbox Callback)</text>
 
     <!-- Back to System IPN -->
-    <path d="M 140 325 L 140 370 L 323.3333333333333 370" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="220" y="365" class="edge-label">Payment Success</text>
+    <path d="M 240 430 L 420 430 L 420 480" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="260" y="417" width="140" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="330" y="431" class="edge-label">IPN Payment Success</text>
+  
 
-    <rect x="323.3333333333333" y="350" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="423.3333333333333" y="370" class="act-text">Confirm Reservation</text>
-    <text x="423.3333333333333" y="385" class="act-desc">(Status: CONFIRMED)</text>
+    <rect x="320" y="480" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="420" y="505" class="act-title">Confirm Reservation</text>
+    <text x="420" y="523" class="act-desc">(Status: CONFIRMED)</text>
 
     <!-- To FM Allocate -->
-    <path d="M 523.3333333333333 372 L 606.6666666666666 372" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="543.3333333333333" y="365" class="edge-label">Dispatch</text>
+    <path d="M 520 510 L 700 510 L 700 560" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="530" y="497" width="160" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="610" y="511" class="edge-label">Dispatch Physical Binding</text>
+  
 
-    <rect x="606.6666666666666" y="350" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="706.6666666666666" y="370" class="act-text">Allocate Physical Unit</text>
-    <text x="706.6666666666666" y="385" class="act-desc">(Late Binding, BR-AVL-04)</text>
+    <rect x="600" y="560" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="700" y="585" class="act-title">Allocate Physical Unit</text>
+    <text x="700" y="603" class="act-desc">(Late Binding, BR-AVL-04)</text>
 
-    <!-- Back to System Create Contract -->
-    <path d="M 706.6666666666666 395 L 706.6666666666666 440 L 523.3333333333333 440" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="566.6666666666666" y="430" class="edge-label">Unit Assigned</text>
+    <!-- Back to System Create Pass -->
+    <path d="M 600 590 L 420 590 L 420 640" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="435" y="577" width="150" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="510" y="591" class="edge-label">Unit Assigned (Comp ID)</text>
+  
 
-    <rect x="323.3333333333333" y="420" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="423.3333333333333" y="440" class="act-text">Issue Move-in Pass &amp; QR</text>
-    <text x="423.3333333333333" y="455" class="act-desc">(PENDING_CHECK_IN)</text>
+    <rect x="320" y="640" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="420" y="665" class="act-title">Issue Move-in Pass &amp; QR</text>
+    <text x="420" y="683" class="act-desc">(PENDING_CHECK_IN)</text>
 
     <!-- To Customer Pass -->
-    <path d="M 323.3333333333333 442 L 240 442" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="280" y="435" class="edge-label">Notify App</text>
+    <path d="M 320 670 L 140 670 L 140 720" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
+    
+    <rect x="150" y="657" width="160" height="20" fill="#ffffff" stroke="#cccccc" stroke-width="0.5" rx="3" ry="3" />
+    <text x="230" y="671" class="edge-label">Push Notification &amp; Pass</text>
+  
 
-    <rect x="40" y="420" width="200" height="45" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="440" class="act-text">Receive Move-in Pass</text>
-    <text x="140" y="455" class="act-desc">(Ready for Handover)</text>
+    <rect x="40" y="720" width="200" height="60" rx="6" ry="6" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
+    <text x="140" y="745" class="act-title">Receive Move-in Pass</text>
+    <text x="140" y="763" class="act-desc">(Ready for Physical Handover)</text>
 
-    <circle cx="140" cy="510" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
-    <circle cx="140" cy="510" r="7" fill="#000000" />
-    <path d="M 140 465 L 140 497" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-
-    <!-- Branch: No -> Waitlist -->
-    <path d="M 353.3333333333333 215 L 140 215 L 140 230" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
-    <text x="190" y="208" class="edge-label">No (Full)</text>
-
-    <rect x="40" y="230" width="200" height="35" rx="4" ry="4" stroke="#000000" stroke-width="1.2" fill="#ffffff" />
-    <text x="140" y="252" class="act-text">Opt-in FIFO Waitlist (BR-WAT-01)</text>
+    <circle cx="140" cy="820" r="13" stroke="#000000" stroke-width="1.5" fill="#ffffff" />
+    <circle cx="140" cy="820" r="7" fill="#000000" />
+    <path d="M 140 780 L 140 807" stroke="#000000" stroke-width="1.2" fill="none" marker-end="url(#arrow)" />
   
   <!-- Figure Caption -->
-  <text x="425" y="735" class="caption">Swimlane 1: Flow_1_Storage_Unit_Reservation_And_Payment</text>
+  <text x="420" y="865" class="caption">Swimlane 1: Flow_1_Storage_Unit_Reservation_And_Payment</text>
 </svg>
