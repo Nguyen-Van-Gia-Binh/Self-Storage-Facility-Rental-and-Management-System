@@ -962,12 +962,11 @@ public class ReservationServiceImpl implements ReservationService {
             });
         }
 
-        // Thong tin chuyen khoan VietQR Napas247
+        // Thong tin thanh toan VNPay Sandbox
         String transferContent = "SMARTSTORAGE " + r.getCode();
         res.setTransferContent(transferContent);
-        res.setBankName("MB Bank (Ngan hang Quan Doi)");
-        res.setBankAccountNumber("0888 567 999");
-        res.setVietQrPayload("vietqr://" + r.getTotalPayable() + "/" + transferContent);
+        res.setBankName("VNPay Sandbox");
+        res.setBankAccountNumber("VNPAY-ONLINE");
 
         return res;
     }

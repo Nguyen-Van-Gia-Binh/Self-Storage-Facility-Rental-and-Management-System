@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1038 781" width="1038" height="781">
+  <style>
+    .state-name { font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .edge-label { font-family: Arial, Helvetica, sans-serif; font-size: 11px; text-anchor: middle; fill: #000000; }
+    .caption { font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
+    </marker>
+  </defs>
+  <rect width="1038" height="781" fill="#ffffff" />
+  <path d="M 235 52 L 235 126" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 372.5 138 L 567.5 138" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 567.5 162 L 372.5 162" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 660 174 L 660 336" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 660 384 L 660 536" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 567.5 360 L 372.5 360" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 235 174 L 235 336" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 325 336 L 325 174" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 567.5 560 L 465 560 L 465 430 L 345 430 L 345 384" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 752.5 560 L 880 560 L 880 150 L 752.5 150" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 660 584 L 660 645 L 990 645 L 990 52 L 325 52 L 325 126" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 187.5 150 L 68 150 L 68 560 L 187.5 560" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 220 384 L 220 536" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 305 536 L 305 384" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 280 584 L 280 661" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <circle cx="235" cy="40" r="11" fill="#000000" />
+  <rect x="187.5" y="126" width="185" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="280" y="150" class="state-name" dominant-baseline="central">Available</text>
+  <rect x="567.5" y="126" width="185" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="660" y="150" class="state-name" dominant-baseline="central">Reserved</text>
+  <rect x="187.5" y="336" width="185" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="280" y="360" class="state-name" dominant-baseline="central">Maintenance</text>
+  <rect x="567.5" y="336" width="185" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="660" y="360" class="state-name" dominant-baseline="central">Occupied</text>
+  <rect x="187.5" y="536" width="185" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="280" y="560" class="state-name" dominant-baseline="central">Out of Service</text>
+  <rect x="567.5" y="536" width="185" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="660" y="560" class="state-name" dominant-baseline="central">Cleaning</text>
+  <circle cx="280" cy="675" r="13" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <circle cx="280" cy="675" r="8" fill="#000000" />
+  <rect x="193" y="80" width="84" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="235" y="90" class="edge-label" dominant-baseline="central">create unit</text>
+  <rect x="399" y="128" width="142" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="470" y="138" class="edge-label" dominant-baseline="central">allocate reservation</text>
+  <rect x="424.5" y="152" width="91" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="470" y="162" class="edge-label" dominant-baseline="central">release hold</text>
+  <rect x="598.5" y="245" width="123" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="660" y="255" class="edge-label" dominant-baseline="central">complete check-in</text>
+  <rect x="605" y="450" width="110" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="660" y="460" class="edge-label" dominant-baseline="central">complete return</text>
+  <rect x="392.5" y="350" width="155" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="470" y="360" class="edge-label" dominant-baseline="central">evict or relocate unit</text>
+  <rect x="177" y="218" width="116" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="235" y="228" class="edge-label" dominant-baseline="central">flag maintenance</text>
+  <rect x="270" y="276" width="110" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="325" y="286" class="edge-label" dominant-baseline="central">complete repair</text>
+  <rect x="416.5" y="420" width="97" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="465" y="430" class="edge-label" dominant-baseline="central">report defect</text>
+  <rect x="838" y="343" width="84" height="34" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="880" y="353" class="edge-label" dominant-baseline="central">assign next</text>
+  <text x="880" y="367" class="edge-label" dominant-baseline="central">reservation</text>
+  <rect x="598.5" y="42" width="123" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="660" y="52" class="edge-label" dominant-baseline="central">complete cleaning</text>
+  <rect x="6.5" y="350" width="123" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="68" y="360" class="edge-label" dominant-baseline="central">decommission unit</text>
+  <rect x="158.5" y="432" width="123" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="220" y="442" class="edge-label" dominant-baseline="central">decommission unit</text>
+  <rect x="243.5" y="490" width="123" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="305" y="500" class="edge-label" dominant-baseline="central">reopen for repair</text>
+  <rect x="238" y="610" width="84" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="280" y="620" class="edge-label" dominant-baseline="central">retire unit</text>
+  <text x="519" y="761" class="caption">State Chart 2: Storage Unit Status</text>
+</svg>

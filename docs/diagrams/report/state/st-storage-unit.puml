@@ -1,0 +1,35 @@
+@startuml st-storage-unit
+!pragma layout smetana
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+
+title State Machine Diagram — StorageUnit Entity (6 States)
+
+[*] --> AVAILABLE : Facility unit initial onboarding\n/ FacilityService#createUnit
+
+AVAILABLE --> RESERVED : FM allocates unit to confirmed reservation\n[Contract created with PENDING_CHECK_IN]\n/ UnitAssignmentService#assignUnit (BR-AVL-04)
+AVAILABLE --> MAINTENANCE : FM/Staff schedules regular preventive maintenance\n/ StorageUnitService#setMaintenance
+AVAILABLE --> OUT_OF_SERVICE : Severe physical defect or structural decommission\n/ StorageUnitService#decommissionUnit
+
+RESERVED --> OCCUPIED : Handover completed & contract activated\n[Handover protocol signed]\n/ HandoverService#completeCheckIn (BR-CHK-03)
+RESERVED --> AVAILABLE : Check-in cancelled or reservation expired\n/ ReservationService#cancelReservation / UnitAssignmentService#unassign
+
+OCCUPIED --> CLEANING : Checkout inspection completed upon unit return\n[Protocol signed, customer vacates unit]\n/ ReturnService#completeInspection (BR-RET-09)
+OCCUPIED --> MAINTENANCE : Critical defect reported during active rental\n/ SupportService#flagUnitMaintenance
+
+CLEANING --> AVAILABLE : Facility staff finishes sanitization & trash clearance\n/ StorageUnitService#completeCleaning (BR-RET-09)
+CLEANING --> RESERVED : Pre-assigned to immediate future pending check-in\n/ UnitAssignmentService#assignUnit
+CLEANING --> MAINTENANCE : Cleaning staff identifies physical defect needing repair\n/ StorageUnitService#setMaintenance
+
+MAINTENANCE --> AVAILABLE : Maintenance and inspection repairs completed\n/ StorageUnitService#completeMaintenance
+MAINTENANCE --> RESERVED : Repaired unit allocated to pending reservation\n/ UnitAssignmentService#assignUnit
+MAINTENANCE --> CLEANING : Repairs finished, requires final post-work cleaning\n/ StorageUnitService#setCleaning
+MAINTENANCE --> OUT_OF_SERVICE : Damage beyond repair / permanent unit retirement\n/ StorageUnitService#decommissionUnit
+
+OUT_OF_SERVICE --> MAINTENANCE : Restoration project initiated\n/ StorageUnitService#restoreToMaintenance
+OUT_OF_SERVICE --> AVAILABLE : Reconditioned and certified safe for rental\n/ StorageUnitService#recommissionUnit
+
+OUT_OF_SERVICE --> [*] : Physical unit demolished / permanently removed
+@enduml
+

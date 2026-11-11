@@ -1,0 +1,74 @@
+@startuml sl-02-checkin-handover
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam conditionStyle inside
+
+title Flow 2 — Check-in, Physical Handover & Activation (Activity Swimlane)
+
+|Storage Customer|
+start
+:Arrive at facility on scheduled check-in date;
+:Present Digital Move-in Pass or Booking Code at reception desk;
+
+|Facility Staff|
+:Scan Move-in Pass QR code or lookup contract code in Staff Desk;
+:Verify Customer Identity (Citizen ID / Passport) (BR-CHK-01);
+:Escort customer to physical storage unit location;
+
+|Storage Customer|
+:Inspect storage unit condition alongside Facility Staff;
+
+|Facility Staff|
+:Evaluate 4-point handover criteria (Lock, Cleanliness, Lighting, Climate) (BR-CHK-02);
+
+if (Storage unit satisfies all criteria & customer accepts?) then (accepted)
+  :Take handover evidence photos and upload attachments;
+  :Generate electronic HandoverRecord protocol;
+
+  |Storage Customer|
+  :Sign digital handover confirmation on tablet/mobile screen;
+
+  |Facility Staff|
+  :Confirm customer signature & complete handover in system;
+
+  |System|
+  :Transition RentalContract status: PENDING_CHECK_IN -> ACTIVE;
+  :Transition StorageUnit status: RESERVED -> OCCUPIED;
+  :Generate 6-digit secure access PIN code (BR-CHK-03);
+  :Activate facility access gate credentials;
+  :Send confirmation SMS/Email with PIN code to customer;
+
+  |Storage Customer|
+  :Receive active Smart Lock PIN code & begin self-storage usage;
+  stop
+
+else (defective unit / customer rejects)
+  |Facility Staff|
+  :Document defect details & customer rejection reason;
+  if (Alternative vacant unit of same type available?) then (swap possible)
+    :Trigger emergency unit swap workflow (BR-CHK-04);
+    |System|
+    :Reassign contract to new physical StorageUnit (BR-CHK-04);
+    :Mark defective unit as MAINTENANCE / OUT_OF_SERVICE;
+    |Facility Staff|
+    :Escort customer to newly assigned unit & restart inspection;
+    stop
+  else (no alternative unit)
+    :Cancel check-in & submit refund request;
+    |System|
+    :Transition contract to CANCELLED & initiate deposit refund (BR-CAN-03);
+    stop
+  endif
+endif
+
+|System|
+note right
+  **Auto-Activation Safety Cron (BR-CAN-04, BR-CHK-05):**
+  If customer does not check in by T+11 days
+  and does not cancel, system automatically
+  activates contract to ACTIVE at 23:59:59 T+11
+  to protect facility rental revenue.
+end note
+@enduml
+

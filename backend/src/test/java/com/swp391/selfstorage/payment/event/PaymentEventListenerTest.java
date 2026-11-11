@@ -76,6 +76,6 @@ class PaymentEventListenerTest {
         assertEquals("SETTLEMENT", saved.getTransactionType());
         assertEquals("PENDING", saved.getStatus());
         assertEquals(500_000L, saved.getAmount());
-        assertEquals("VIETQR_PAYOS", saved.getPaymentMethod());
+        assertEquals("VNPAY", saved.getPaymentMethod());
     }
 }

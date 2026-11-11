@@ -81,7 +81,7 @@ class StorageUnitIntegrityAuditTest {
     }
 
     @Test
-    @DisplayName("Kiểm toán toàn hệ thống: Hợp đồng ACTIVE/OVERDUE/PENDING_RETURN bắt buộc ô kho phải là OCCUPIED")
+    @DisplayName("Kiểm toán toàn hệ thống: Hợp đồng ACTIVE/OVERDUE bắt buộc ô kho là OCCUPIED, PENDING_RETURN là OCCUPIED hoặc CLEANING")
     void assertContractUnitStatusSynchronized() {
         List<Map<String, Object>> mismatchContracts = jdbcTemplate.queryForList("""
             SELECT rc.code AS contract_code, rc.status AS contract_status,
@@ -89,11 +89,12 @@ class StorageUnitIntegrityAuditTest {
             FROM rental_contract rc
             JOIN storage_unit su ON rc.storage_unit_id = su.id
             JOIN facility f ON rc.facility_id = f.id
-            WHERE rc.status IN ('ACTIVE', 'OVERDUE', 'PENDING_RETURN') AND su.status <> 'OCCUPIED'
+            WHERE (rc.status IN ('ACTIVE', 'OVERDUE') AND su.status <> 'OCCUPIED')
+               OR (rc.status = 'PENDING_RETURN' AND su.status NOT IN ('OCCUPIED', 'CLEANING'))
         """);
 
         assertThat(mismatchContracts)
-            .as("Hợp đồng ACTIVE/OVERDUE/PENDING_RETURN phải gắn với ô kho có status OCCUPIED")
+            .as("Hợp đồng ACTIVE/OVERDUE phải gắn với ô kho OCCUPIED; PENDING_RETURN gắn với OCCUPIED hoặc CLEANING")
             .isEmpty();
     }
 

@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2340 1600" width="2340" height="1600">
+  <style>
+    .cluster-title { font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: bold; fill: #1E293B; }
+    .tbl-title { font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .col-pk { font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; font-weight: bold; fill: #000000; }
+    .col-name { font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; fill: #111111; }
+    .col-type { font-family: Arial, Helvetica, sans-serif; font-size: 10px; text-anchor: end; fill: #1F2937; }
+    .badge-u { font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; font-weight: bold; text-anchor: middle; fill: #B91C1C; }
+    .badge-n { font-family: Arial, Helvetica, sans-serif; font-size: 8.5px; font-weight: bold; text-anchor: middle; fill: #111111; }
+    .edge-label { font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: 600; text-anchor: middle; fill: #0F172A; }
+    .caption { font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: bold; text-anchor: middle; fill: #000000; }
+  </style>
+  <rect width="2340" height="1600" fill="#FFFFFF"/>
+  
+      <g>
+        <rect x="50" y="50" width="940" height="690" rx="12" ry="12" fill="#F8FAFC" stroke="#475569" stroke-width="1.5" stroke-dasharray="8 5"/>
+        <rect x="66" y="38" width="244.75" height="24" rx="5" fill="#FFFFFF" stroke="#475569" stroke-width="1.1"/>
+        <text x="76" y="54" class="cluster-title">1. Identity &amp; Facility Domain</text>
+      </g>
+
+      <g>
+        <rect x="1170" y="50" width="1100" height="690" rx="12" ry="12" fill="#FFFBEB" stroke="#D97706" stroke-width="1.5" stroke-dasharray="8 5"/>
+        <rect x="1186" y="38" width="237" height="24" rx="5" fill="#FFFFFF" stroke="#D97706" stroke-width="1.1"/>
+        <text x="1196" y="54" class="cluster-title">2. Booking &amp; Contract Domain</text>
+      </g>
+
+      <g>
+        <rect x="50" y="870" width="940" height="640" rx="12" ry="12" fill="#F8FAFC" stroke="#475569" stroke-width="1.5" stroke-dasharray="8 5"/>
+        <rect x="66" y="858" width="252.5" height="24" rx="5" fill="#FFFFFF" stroke="#475569" stroke-width="1.1"/>
+        <text x="76" y="874" class="cluster-title">4. Operations &amp; Support Domain</text>
+      </g>
+
+      <g>
+        <rect x="1170" y="870" width="1100" height="640" rx="12" ry="12" fill="#F8FAFC" stroke="#475569" stroke-width="1.5" stroke-dasharray="8 5"/>
+        <rect x="1186" y="858" width="221.5" height="24" rx="5" fill="#FFFFFF" stroke="#475569" stroke-width="1.1"/>
+        <text x="1196" y="874" class="cluster-title">3. Finance &amp; Policy Domain</text>
+      </g>
+
+  <polyline points="260,428 260,520 270,520 270,530 265,550" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="266.0,428.0 260.0,438.0 254.0,428.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="260.0" cy="442.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="260.0" y1="545.0" x2="270.0" y2="545.0" stroke="#000000" stroke-width="1.3"/><line x1="260.0" y1="541.0" x2="270.0" y2="541.0" stroke="#000000" stroke-width="1.3"/><polyline points="260,360 260,260 270,260 270,250 265,232" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="254.0,360.0 260.0,350.0 266.0,360.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="260.0" cy="346.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="270.0" y1="237.0" x2="260.0" y2="237.0" stroke="#000000" stroke-width="1.3"/><line x1="270.0" y1="241.0" x2="260.0" y2="241.0" stroke="#000000" stroke-width="1.3"/><polyline points="680,200 390,200 390,610 320,610" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="680.0,206.0 670.0,200.0 680.0,194.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="666.0" cy="200.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="325.0" y1="605.0" x2="325.0" y2="615.0" stroke="#000000" stroke-width="1.3"/><line x1="329.0" y1="605.0" x2="329.0" y2="615.0" stroke="#000000" stroke-width="1.3"/><polyline points="680,180 380,180 380,170 350,170" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="680.0,186.0 670.0,180.0 680.0,174.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="666.0" cy="180.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="355.0" y1="165.0" x2="355.0" y2="175.0" stroke="#000000" stroke-width="1.3"/><line x1="359.0" y1="165.0" x2="359.0" y2="175.0" stroke="#000000" stroke-width="1.3"/><polyline points="320,640 670,640 670,570 700,570" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="320.0,634.0 330.0,640.0 320.0,646.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="334.0" cy="640.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><polyline points="700.0,576.0 690.0,570.0 700.0,564.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="686.0" cy="570.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><polyline points="1350,170 830,170 830,560 790,560" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="1350.0,176.0 1340.0,170.0 1350.0,164.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="1336.0" cy="170.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="795.0" y1="555.0" x2="795.0" y2="565.0" stroke="#000000" stroke-width="1.3"/><line x1="799.0" y1="555.0" x2="799.0" y2="565.0" stroke="#000000" stroke-width="1.3"/><polyline points="1350,195 1330,200 850,200 850,500 350,500 350,580 320,580" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="1350.0,201.0 1340.0,195.0 1350.0,189.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="1336.0" cy="195.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="325.0" y1="575.0" x2="325.0" y2="585.0" stroke="#000000" stroke-width="1.3"/><line x1="329.0" y1="575.0" x2="329.0" y2="585.0" stroke="#000000" stroke-width="1.3"/><polyline points="1350,150 830,150 830,120 380,120 380,140 350,140" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="1350.0,156.0 1340.0,150.0 1350.0,144.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="1336.0" cy="150.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="355.0" y1="135.0" x2="355.0" y2="145.0" stroke="#000000" stroke-width="1.3"/><line x1="359.0" y1="135.0" x2="359.0" y2="145.0" stroke="#000000" stroke-width="1.3"/><polyline points="1415,224 1420,240 1420,300 1410,300 1410,330" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<line x1="1420.0" y1="229.0" x2="1410.0" y2="229.0" stroke="#000000" stroke-width="1.3"/><circle cx="1415.0" cy="236.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="1405.0" y1="325.0" x2="1415.0" y2="325.0" stroke="#000000" stroke-width="1.3"/><circle cx="1410.0" cy="318.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><polyline points="1350,420 870,420 870,590 790,590" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="1350.0,426.0 1340.0,420.0 1350.0,414.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="1336.0" cy="420.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="795.0" y1="585.0" x2="795.0" y2="595.0" stroke="#000000" stroke-width="1.3"/><line x1="799.0" y1="585.0" x2="799.0" y2="595.0" stroke="#000000" stroke-width="1.3"/><polyline points="1350,360 410,360 410,220 380,220 380,200 350,200" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="1350.0,366.0 1340.0,360.0 1350.0,354.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="1336.0" cy="360.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="355.0" y1="195.0" x2="355.0" y2="205.0" stroke="#000000" stroke-width="1.3"/><line x1="359.0" y1="195.0" x2="359.0" y2="205.0" stroke="#000000" stroke-width="1.3"/><polyline points="1350,390 870,390 870,190 820,190 800,185" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="1350.0,396.0 1340.0,390.0 1350.0,384.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="1336.0" cy="390.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="805.0" y1="180.0" x2="805.0" y2="190.0" stroke="#000000" stroke-width="1.3"/><circle cx="812.0" cy="185.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><polyline points="1470,370 1520,370 1520,1000 1480,1000" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="1470.0,364.0 1480.0,370.0 1470.0,376.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="1484.0" cy="370.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="1485.0" y1="995.0" x2="1485.0" y2="1005.0" stroke="#000000" stroke-width="1.3"/><line x1="1489.0" y1="995.0" x2="1489.0" y2="1005.0" stroke="#000000" stroke-width="1.3"/><polyline points="1470,415 1490,420 1540,420 1540,1230 1490,1230" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="1470.0,409.0 1480.0,415.0 1470.0,421.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="1484.0" cy="415.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="1495.0" y1="1225.0" x2="1495.0" y2="1235.0" stroke="#000000" stroke-width="1.3"/><circle cx="1502.0" cy="1230.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><polyline points="1415,560 1420,540 1420,480 1390,480 1390,452" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<line x1="1410.0" y1="555.0" x2="1420.0" y2="555.0" stroke="#000000" stroke-width="1.3"/><circle cx="1415.0" cy="548.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="1395.0" y1="457.0" x2="1385.0" y2="457.0" stroke="#000000" stroke-width="1.3"/><line x1="1395.0" y1="461.0" x2="1385.0" y2="461.0" stroke="#000000" stroke-width="1.3"/><polyline points="1340,610 820,610 820,620 790,620" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="1340.0,616.0 1330.0,610.0 1340.0,604.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="1326.0" cy="610.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="795.0" y1="615.0" x2="795.0" y2="625.0" stroke="#000000" stroke-width="1.3"/><line x1="799.0" y1="615.0" x2="799.0" y2="625.0" stroke="#000000" stroke-width="1.3"/><polyline points="1340,585 1320,590 890,590 890,220 800,220" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="1340.0,591.0 1330.0,585.0 1340.0,579.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="1326.0" cy="585.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="805.0" y1="215.0" x2="805.0" y2="225.0" stroke="#000000" stroke-width="1.3"/><circle cx="812.0" cy="220.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><polyline points="1415,682 1420,700 1420,840 1430,840 1430,910 1410,910 1410,940" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="1421.0,682.0 1415.0,692.0 1409.0,682.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="1415.0" cy="696.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="1405.0" y1="935.0" x2="1415.0" y2="935.0" stroke="#000000" stroke-width="1.3"/><line x1="1405.0" y1="931.0" x2="1415.0" y2="931.0" stroke="#000000" stroke-width="1.3"/><polyline points="1940,190 1560,190 1560,590 1510,590 1490,585" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<line x1="1935.0" y1="195.0" x2="1935.0" y2="185.0" stroke="#000000" stroke-width="1.3"/><circle cx="1928.0" cy="190.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="1495.0" y1="580.0" x2="1495.0" y2="590.0" stroke="#000000" stroke-width="1.3"/><line x1="1499.0" y1="580.0" x2="1499.0" y2="590.0" stroke="#000000" stroke-width="1.3"/><polyline points="1940,410 1580,410 1580,610 1510,610 1490,605" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="1940.0,416.0 1930.0,410.0 1940.0,404.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="1926.0" cy="410.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="1495.0" y1="600.0" x2="1495.0" y2="610.0" stroke="#000000" stroke-width="1.3"/><line x1="1499.0" y1="600.0" x2="1499.0" y2="610.0" stroke="#000000" stroke-width="1.3"/><polyline points="1940,620 1490,620" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="1940.0,626.0 1930.0,620.0 1940.0,614.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="1926.0" cy="620.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="1495.0" y1="615.0" x2="1495.0" y2="625.0" stroke="#000000" stroke-width="1.3"/><line x1="1499.0" y1="615.0" x2="1499.0" y2="625.0" stroke="#000000" stroke-width="1.3"/><polyline points="2010,1270 2010,1090 2130,1090 2130,490 1430,490 1430,452" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="2004.0,1270.0 2010.0,1260.0 2016.0,1270.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="2010.0" cy="1256.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="1435.0" y1="457.0" x2="1425.0" y2="457.0" stroke="#000000" stroke-width="1.3"/><circle cx="1430.0" cy="464.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><polyline points="1920,1330 1560,1330 1560,660 1510,660 1490,655" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="1920.0,1336.0 1910.0,1330.0 1920.0,1324.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="1906.0" cy="1330.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="1495.0" y1="650.0" x2="1495.0" y2="660.0" stroke="#000000" stroke-width="1.3"/><circle cx="1502.0" cy="655.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><polyline points="2090,410 2150,410 2150,1330 2100,1330" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<line x1="2095.0" y1="405.0" x2="2095.0" y2="415.0" stroke="#000000" stroke-width="1.3"/><circle cx="2102.0" cy="410.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="2105.0" y1="1325.0" x2="2105.0" y2="1335.0" stroke="#000000" stroke-width="1.3"/><circle cx="2112.0" cy="1330.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><polyline points="1920,1010 1580,1010 1580,640 1490,640" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="1920.0,1016.0 1910.0,1010.0 1920.0,1004.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="1906.0" cy="1010.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="1495.0" y1="635.0" x2="1495.0" y2="645.0" stroke="#000000" stroke-width="1.3"/><line x1="1499.0" y1="635.0" x2="1499.0" y2="645.0" stroke="#000000" stroke-width="1.3"/><polyline points="1920,1035 1900,1040 1580,1040 1580,1430 1480,1430" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="1920.0,1041.0 1910.0,1035.0 1920.0,1029.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="1906.0" cy="1035.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="1485.0" y1="1425.0" x2="1485.0" y2="1435.0" stroke="#000000" stroke-width="1.3"/><circle cx="1492.0" cy="1430.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><polyline points="745,970 750,950 750,670 745,652" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="739.0,970.0 745.0,960.0 751.0,970.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="745.0" cy="956.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="750.0" y1="657.0" x2="740.0" y2="657.0" stroke="#000000" stroke-width="1.3"/><line x1="750.0" y1="661.0" x2="740.0" y2="661.0" stroke="#000000" stroke-width="1.3"/><polyline points="820,1030 1170,1030 1170,630 1340,630" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="820.0,1024.0 830.0,1030.0 820.0,1036.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="834.0" cy="1030.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="1335.0" y1="635.0" x2="1335.0" y2="625.0" stroke="#000000" stroke-width="1.3"/><circle cx="1328.0" cy="630.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><polyline points="670,1030 640,1030 640,230 660,230 680,225" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="670.0,1036.0 660.0,1030.0 670.0,1024.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="656.0" cy="1030.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="675.0" y1="230.0" x2="675.0" y2="220.0" stroke="#000000" stroke-width="1.3"/><circle cx="668.0" cy="225.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><polyline points="800,1360 1150,1360 1150,660 1320,660 1340,655" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="800.0,1354.0 810.0,1360.0 800.0,1366.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="814.0" cy="1360.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="1335.0" y1="660.0" x2="1335.0" y2="650.0" stroke="#000000" stroke-width="1.3"/><line x1="1331.0" y1="660.0" x2="1331.0" y2="650.0" stroke="#000000" stroke-width="1.3"/><polyline points="360,1025 380,1030 620,1030 620,620 680,620 700,615" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="360.0,1019.0 370.0,1025.0 360.0,1031.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="374.0" cy="1025.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="695.0" y1="620.0" x2="695.0" y2="610.0" stroke="#000000" stroke-width="1.3"/><line x1="691.0" y1="620.0" x2="691.0" y2="610.0" stroke="#000000" stroke-width="1.3"/><polyline points="265,980 270,960 270,900 340,900 340,700 270,700 270,690 265,672" fill="none" stroke="#111111" stroke-width="1.15" stroke-linejoin="round"/>
+<polyline points="259.0,980.0 265.0,970.0 271.0,980.0" fill="none" stroke="#000000" stroke-width="1.2"/><circle cx="265.0" cy="966.0" r="3.4" fill="#FFFFFF" stroke="#000000" stroke-width="1.2"/><line x1="270.0" y1="677.0" x2="260.0" y2="677.0" stroke="#000000" stroke-width="1.3"/><line x1="270.0" y1="681.0" x2="260.0" y2="681.0" stroke="#000000" stroke-width="1.3"/>
+  
+      <g>
+        <rect x="180" y="110" width="170" height="122" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 180 136 L 180 117 Q 180 110 187 110 L 343 110 Q 350 110 350 117 L 350 136 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="265" y="127.5" class="tbl-title">UnitType</text>
+        <text x="192" y="151.5" class="col-pk">code</text><text x="192" y="169.5" class="col-name">name</text><text x="192" y="187.5" class="col-name">dimensions (W x L x H)</text><text x="192" y="205.5" class="col-name">environment</text><text x="192" y="223.5" class="col-name">isActive</text>
+      </g>
+
+      <g>
+        <rect x="160" y="360" width="200" height="68" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 160 386 L 160 367 Q 160 360 167 360 L 353 360 Q 360 360 360 367 L 360 386 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="260" y="377.5" class="tbl-title">FacilityUnitTypePrice</text>
+        <text x="172" y="401.5" class="col-name">monthlyPrice</text><text x="172" y="419.5" class="col-name">pricePerM2</text>
+      </g>
+
+      <g>
+        <rect x="210" y="550" width="110" height="122" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 210 576 L 210 557 Q 210 550 217 550 L 313 550 Q 320 550 320 557 L 320 576 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="265" y="567.5" class="tbl-title">Facility</text>
+        <text x="222" y="591.5" class="col-pk">code</text><text x="222" y="609.5" class="col-name">name</text><text x="222" y="627.5" class="col-name">address</text><text x="222" y="645.5" class="col-name">openingHours</text><text x="222" y="663.5" class="col-name">status</text>
+      </g>
+
+      <g>
+        <rect x="680" y="150" width="120" height="104" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 680 176 L 680 157 Q 680 150 687 150 L 793 150 Q 800 150 800 157 L 800 176 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="740" y="167.5" class="tbl-title">StorageUnit</text>
+        <text x="692" y="191.5" class="col-pk">code</text><text x="692" y="209.5" class="col-name">floor</text><text x="692" y="227.5" class="col-name">position</text><text x="692" y="245.5" class="col-name">status</text>
+      </g>
+
+      <g>
+        <rect x="700" y="530" width="90" height="122" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 700 556 L 700 537 Q 700 530 707 530 L 783 530 Q 790 530 790 537 L 790 556 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="745" y="547.5" class="tbl-title">AppUser</text>
+        <text x="712" y="571.5" class="col-pk">email</text><text x="712" y="589.5" class="col-name">fullName</text><text x="712" y="607.5" class="col-name">phone</text><text x="712" y="625.5" class="col-name">role</text><text x="712" y="643.5" class="col-name">status</text>
+      </g>
+
+      <g>
+        <rect x="1350" y="120" width="130" height="104" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 1350 146 L 1350 127 Q 1350 120 1357 120 L 1473 120 Q 1480 120 1480 127 L 1480 146 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="1415" y="137.5" class="tbl-title">Waitlist</text>
+        <text x="1362" y="161.5" class="col-name">targetStartDate</text><text x="1362" y="179.5" class="col-name">rentalMonths</text><text x="1362" y="197.5" class="col-name">contactPhone</text><text x="1362" y="215.5" class="col-name">status</text>
+      </g>
+
+      <g>
+        <rect x="1350" y="330" width="120" height="122" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 1350 356 L 1350 337 Q 1350 330 1357 330 L 1463 330 Q 1470 330 1470 337 L 1470 356 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="1410" y="347.5" class="tbl-title">Reservation</text>
+        <text x="1362" y="371.5" class="col-pk">code</text><text x="1362" y="389.5" class="col-name">startDate</text><text x="1362" y="407.5" class="col-name">rentalMonths</text><text x="1362" y="425.5" class="col-name">totalPayable</text><text x="1362" y="443.5" class="col-name">status</text>
+      </g>
+
+      <g>
+        <rect x="1340" y="560" width="150" height="122" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 1340 586 L 1340 567 Q 1340 560 1347 560 L 1483 560 Q 1490 560 1490 567 L 1490 586 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="1415" y="577.5" class="tbl-title">RentalContract</text>
+        <text x="1352" y="601.5" class="col-pk">code</text><text x="1352" y="619.5" class="col-name">startDate</text><text x="1352" y="637.5" class="col-name">endDate</text><text x="1352" y="655.5" class="col-name">depositBalance</text><text x="1352" y="673.5" class="col-name">status</text>
+      </g>
+
+      <g>
+        <rect x="1940" y="140" width="150" height="104" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 1940 166 L 1940 147 Q 1940 140 1947 140 L 2083 140 Q 2090 140 2090 147 L 2090 166 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="2015" y="157.5" class="tbl-title">HandoverRecord</text>
+        <text x="1952" y="181.5" class="col-name">handoverAt</text><text x="1952" y="199.5" class="col-name">conditionNote</text><text x="1952" y="217.5" class="col-name">customerConfirmed</text><text x="1952" y="235.5" class="col-name">status</text>
+      </g>
+
+      <g>
+        <rect x="1940" y="360" width="150" height="104" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 1940 386 L 1940 367 Q 1940 360 1947 360 L 2083 360 Q 2090 360 2090 367 L 2090 386 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="2015" y="377.5" class="tbl-title">ContractRenewal</text>
+        <text x="1952" y="401.5" class="col-name">previousEndDate</text><text x="1952" y="419.5" class="col-name">newEndDate</text><text x="1952" y="437.5" class="col-name">rentalMonths</text><text x="1952" y="455.5" class="col-name">totalPaid</text>
+      </g>
+
+      <g>
+        <rect x="1940" y="560" width="150" height="122" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 1940 586 L 1940 567 Q 1940 560 1947 560 L 2083 560 Q 2090 560 2090 567 L 2090 586 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="2015" y="577.5" class="tbl-title">ReturnRequest</text>
+        <text x="1952" y="601.5" class="col-name">requestedReturnDate</text><text x="1952" y="619.5" class="col-name">isIntact</text><text x="1952" y="637.5" class="col-name">damageCost</text><text x="1952" y="655.5" class="col-name">depositRefundAmount</text><text x="1952" y="673.5" class="col-name">status</text>
+      </g>
+
+      <g>
+        <rect x="170" y="980" width="190" height="86" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 170 1006 L 170 987 Q 170 980 177 980 L 353 980 Q 360 980 360 987 L 360 1006 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="265" y="997.5" class="tbl-title">StaffDailyAssignment</text>
+        <text x="182" y="1021.5" class="col-name">workDate</text><text x="182" y="1039.5" class="col-name">taskType</text><text x="182" y="1057.5" class="col-name">referenceType</text>
+      </g>
+
+      <g>
+        <rect x="670" y="970" width="150" height="122" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 670 996 L 670 977 Q 670 970 677 970 L 813 970 Q 820 970 820 977 L 820 996 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="745" y="987.5" class="tbl-title">SupportRequest</text>
+        <text x="682" y="1011.5" class="col-pk">code</text><text x="682" y="1029.5" class="col-name">category</text><text x="682" y="1047.5" class="col-name">description</text><text x="682" y="1065.5" class="col-name">relocationRequired</text><text x="682" y="1083.5" class="col-name">status</text>
+      </g>
+
+      <g>
+        <rect x="690" y="1310" width="110" height="104" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 690 1336 L 690 1317 Q 690 1310 697 1310 L 793 1310 Q 800 1310 800 1317 L 800 1336 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="745" y="1327.5" class="tbl-title">AccessLog</text>
+        <text x="702" y="1351.5" class="col-name">accessedAt</text><text x="702" y="1369.5" class="col-name">method</text><text x="702" y="1387.5" class="col-name">accessorName</text><text x="702" y="1405.5" class="col-name">status</text>
+      </g>
+
+      <g>
+        <rect x="1340" y="940" width="140" height="122" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 1340 966 L 1340 947 Q 1340 940 1347 940 L 1473 940 Q 1480 940 1480 947 L 1480 966 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="1410" y="957.5" class="tbl-title">PolicyVersion</text>
+        <text x="1352" y="981.5" class="col-pk">versionNo</text><text x="1352" y="999.5" class="col-name">depositMultiplier</text><text x="1352" y="1017.5" class="col-name">rentalBufferDays</text><text x="1352" y="1035.5" class="col-name">overdueCapRate</text><text x="1352" y="1053.5" class="col-name">effectiveFrom</text>
+      </g>
+
+      <g>
+        <rect x="1340" y="1170" width="150" height="122" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 1340 1196 L 1340 1177 Q 1340 1170 1347 1170 L 1483 1170 Q 1490 1170 1490 1177 L 1490 1196 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="1415" y="1187.5" class="tbl-title">DiscountProgram</text>
+        <text x="1352" y="1211.5" class="col-pk">name</text><text x="1352" y="1229.5" class="col-name">discountType</text><text x="1352" y="1247.5" class="col-name">discountValue</text><text x="1352" y="1265.5" class="col-name">scopeType</text><text x="1352" y="1283.5" class="col-name">isActive</text>
+      </g>
+
+      <g>
+        <rect x="1350" y="1380" width="130" height="104" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 1350 1406 L 1350 1387 Q 1350 1380 1357 1380 L 1473 1380 Q 1480 1380 1480 1387 L 1480 1406 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="1415" y="1397.5" class="tbl-title">ExtraFeeType</text>
+        <text x="1362" y="1421.5" class="col-pk">code</text><text x="1362" y="1439.5" class="col-name">name</text><text x="1362" y="1457.5" class="col-name">amount</text><text x="1362" y="1475.5" class="col-name">category</text>
+      </g>
+
+      <g>
+        <rect x="1920" y="980" width="180" height="86" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 1920 1006 L 1920 987 Q 1920 980 1927 980 L 2093 980 Q 2100 980 2100 987 L 2100 1006 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="2010" y="997.5" class="tbl-title">ContractExtraCharge</text>
+        <text x="1932" y="1021.5" class="col-name">amount</text><text x="1932" y="1039.5" class="col-name">reason</text><text x="1932" y="1057.5" class="col-name">status</text>
+      </g>
+
+      <g>
+        <rect x="1920" y="1270" width="180" height="122" rx="7" ry="7" fill="#FFFFFF" stroke="#111111" stroke-width="1.3"/>
+        <path d="M 1920 1296 L 1920 1277 Q 1920 1270 1927 1270 L 2093 1270 Q 2100 1270 2100 1277 L 2100 1296 Z" fill="#F3F4F6" stroke="#111111" stroke-width="1.3"/>
+        <text x="2010" y="1287.5" class="tbl-title">PaymentTransaction</text>
+        <text x="1932" y="1311.5" class="col-pk">orderCode</text><text x="1932" y="1329.5" class="col-name">transactionType</text><text x="1932" y="1347.5" class="col-name">amount</text><text x="1932" y="1365.5" class="col-name">paymentMethod</text><text x="1932" y="1383.5" class="col-name">status</text>
+      </g>
+
+  
+        <rect x="226.1" y="467.0" width="67.8" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="260" y="477.2" class="edge-label">sets rate</text>
+
+        <rect x="226.1" y="303.0" width="67.8" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="260" y="313.2" class="edge-label">priced by</text>
+
+        <rect x="365.4" y="398.0" width="49.2" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="390" y="408.2" class="edge-label">houses</text>
+
+        <rect x="493.0" y="173.0" width="74.0" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="530" y="183.2" class="edge-label">classifies</text>
+
+        <rect x="445.6" y="633.0" width="98.8" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="495" y="643.2" class="edge-label">assigned staff</text>
+
+        <rect x="1068.5" y="163.0" width="43.0" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1090" y="173.2" class="edge-label">joins</text>
+
+        <rect x="569.2" y="493.0" width="61.6" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="600" y="503.2" class="edge-label">waits at</text>
+
+        <rect x="1059.2" y="143.0" width="61.6" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1090" y="153.2" class="edge-label">requests</text>
+
+        <rect x="1379.9" y="263.0" width="80.2" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1420" y="273.2" class="edge-label">converts to</text>
+
+        <rect x="1085.4" y="413.0" width="49.2" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1110" y="423.2" class="edge-label">places</text>
+
+        <rect x="974.7" y="353.0" width="92.6" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1021" y="363.2" class="edge-label">reserves type</text>
+
+        <rect x="1073.0" y="383.0" width="74.0" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1110" y="393.2" class="edge-label">holds unit</text>
+
+        <rect x="1479.9" y="773.0" width="80.2" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1520" y="783.2" class="edge-label">governed by</text>
+
+        <rect x="1493.7" y="1021.0" width="92.6" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1540" y="1031.2" class="edge-label">applies promo</text>
+
+        <rect x="1379.9" y="503.0" width="80.2" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1420" y="513.2" class="edge-label">converts to</text>
+
+        <rect x="1058.5" y="603.0" width="43.0" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1080" y="613.2" class="edge-label">signs</text>
+
+        <rect x="1074.2" y="583.0" width="61.6" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1105" y="593.2" class="edge-label">occupies</text>
+
+        <rect x="1379.9" y="763.0" width="80.2" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1420" y="773.2" class="edge-label">governed by</text>
+
+        <rect x="1709.9" y="183.0" width="80.2" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1750" y="193.2" class="edge-label">handed over</text>
+
+        <rect x="1732.3" y="403.0" width="55.4" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1760" y="413.2" class="edge-label">extends</text>
+
+        <rect x="1681.1" y="613.0" width="67.8" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1715" y="623.2" class="edge-label">exits via</text>
+
+        <rect x="1736.8" y="483.0" width="86.4" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1780" y="493.2" class="edge-label">pays deposit</text>
+
+        <rect x="1532.3" y="988.0" width="55.4" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1560" y="998.2" class="edge-label">settles</text>
+
+        <rect x="2119.2" y="1093.0" width="61.6" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="2150" y="1103.2" class="edge-label">paid via</text>
+
+        <rect x="1725.4" y="1003.0" width="49.2" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1750" y="1013.2" class="edge-label">incurs</text>
+
+        <rect x="1690.6" y="1033.0" width="98.8" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1740" y="1043.2" class="edge-label">categorized by</text>
+
+        <rect x="722.3" y="803.0" width="55.4" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="750" y="813.2" class="edge-label">submits</text>
+
+        <rect x="958.0" y="1023.0" width="74.0" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="995" y="1033.2" class="edge-label">relates to</text>
+
+        <rect x="593.7" y="423.0" width="92.6" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="640" y="433.2" class="edge-label">reports issue</text>
+
+        <rect x="1113.0" y="1108.0" width="74.0" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="1150" y="1118.2" class="edge-label">logs entry</text>
+
+        <rect x="459.9" y="1023.0" width="80.2" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="500" y="1033.2" class="edge-label">assigned to</text>
+
+        <rect x="274.2" y="893.0" width="61.6" height="14" rx="2" fill="#FFFFFF" opacity="0.96"/>
+        <text x="305" y="903.2" class="edge-label">works at</text>
+
+  <text x="1170" y="1580" class="caption">Conceptual Data Model (19 Core Domain Entities across 4 Functional Domains)</text>
+</svg>

@@ -1,0 +1,24 @@
+@startuml st-reservation
+!pragma layout smetana
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+
+title State Machine Diagram — Reservation Entity (6 States)
+
+[*] --> PENDING_PAYMENT : Customer selects unit type & submits booking\n[Capacity reserved in 30-day window]\n/ ReservationService#createReservation (BR-RES-01)
+
+PENDING_PAYMENT --> CONFIRMED : Customer completes VNPay payment within 48 hours\n[PaymentTransaction SUCCESS]\n/ PaymentService#completeVnpayPayment (BR-PAY-02, BR-DEP-03)
+PENDING_PAYMENT --> EXPIRED : 48 hours pass without payment\n/ ReservationExpiryScheduler (BR-RES-02)
+PENDING_PAYMENT --> CANCELLED : Customer manually cancels reservation draft\n/ ReservationService#cancelPendingReservation
+
+CONFIRMED --> FULFILLED : Unit allocated, contract activated & checked in\n/ HandoverService#completeCheckIn (BR-CHK-03)
+CONFIRMED --> CANCELLED : Customer cancels confirmed reservation\n[Deposit refund according to cancellation schedule]\n/ ReservationService#cancelConfirmedReservation (BR-CAN-01)
+CONFIRMED --> NO_SHOW : Customer never shows up past auto-activation deadline\n/ AutoActivationScheduler (BR-CAN-04)
+
+EXPIRED --> [*]
+CANCELLED --> [*]
+FULFILLED --> [*]
+NO_SHOW --> [*]
+@enduml
+

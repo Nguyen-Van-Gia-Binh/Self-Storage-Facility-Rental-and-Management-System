@@ -1,0 +1,56 @@
+@startuml sl-04-bom-operations
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam conditionStyle inside
+
+title Flow 4 — Business Operations Management, Pricing Policy & Revenue Analytics
+
+|Business Operations Manager|
+start
+:Access BOM Management Portal;
+
+fork
+  :Manage Master Unit Types & Standards (BM-01);
+  :Define unit dimensions (length, width, height, volume);
+  :Set standard base price catalog (BR-PRI-01);
+  :Publish Master Unit Type updates;
+fork again
+  :Configure Regional Facility Pricing Overrides (BM-02);
+  :Select target facility & unit types;
+  :Set location-adjusted rental rates (BR-PRI-02);
+  :Create new FacilityUnitTypePriceVersion record (immutable history) (BR-PRI-03);
+  :Publish updated facility price catalog;
+fork again
+  :Create Discount Programs & Seasonal Promotions (BM-05);
+  :Define discount percentage, valid date range, and applicable facilities;
+  :Activate promotional campaign;
+fork again
+  :Manage System Operating Policies (BM-04);
+  :Adjust overdue grace period, penalty rates, or buffer days;
+  :Publish new PolicyVersion;
+end fork
+
+|System|
+:Persist policy and pricing version updates in database;
+:Apply effective pricing to all new reservations and quote calculations;
+
+|Business Operations Manager|
+:Access Revenue & Facility Performance Analytics Hub (BM-03);
+
+|System|
+:Query live contracts, payments, and facility occupancy data;
+:Compute four-stream revenue breakdown (Rental, Deposit, Overdue Penalties, Extra Fees);
+:Calculate Facility Occupancy Rate and Unit Usage Rate (BM-03);
+note right
+  **Operational Metrics (BM-03):**
+  Usage Rate = Total Occupied Units / Total Capacity
+  Revenue = Realized Rental + Penalties + Additional Services
+end note
+
+|Business Operations Manager|
+:Inspect interactive revenue charts, occupancy comparisons, and facility KPI scorecards;
+:Export financial performance report (Excel / CSV / PDF);
+stop
+@enduml
+

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 916" width="1080" height="916">
+  <style>
+    .pool-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .lane-title { font-family: Arial, sans-serif; font-size: 11.5px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .node-text { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #000000; }
+    .edge-label { font-family: Arial, sans-serif; font-size: 10.5px; text-anchor: middle; fill: #000000; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; stroke-linejoin: round; }
+    .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
+    </marker>
+  </defs>
+  <rect width="1080" height="916" fill="#ffffff" />
+  <rect x="16" y="16" width="1048" height="856" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <rect x="16" y="16" width="28" height="856" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <text x="30" y="444" transform="rotate(-90 30 444)" class="pool-title" dominant-baseline="central">Self-Storage Platform</text>
+  <rect x="44" y="16" width="210" height="856" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="44" y="16" width="210" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="149" y="31" class="lane-title" dominant-baseline="central">Business Ops Manager</text>
+  <rect x="254" y="16" width="260" height="856" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="254" y="16" width="260" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="384" y="31" class="lane-title" dominant-baseline="central">Storage Customer</text>
+  <rect x="514" y="16" width="290" height="856" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="514" y="16" width="290" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="659" y="31" class="lane-title" dominant-baseline="central">System</text>
+  <rect x="804" y="16" width="260" height="856" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="804" y="16" width="260" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="934" y="31" class="lane-title" dominant-baseline="central">Facility Manager &amp; Staff</text>
+  <circle cx="149" cy="68" r="10" fill="#000000" />
+  <rect x="62" y="95" width="174" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="149" y="111" class="node-text" dominant-baseline="central">Configure facilities, policy</text><text x="149" y="125" class="node-text" dominant-baseline="central">&amp; per-m2 pricing (Flow 4)</text>
+  <rect x="561" y="95" width="196" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="659" y="111" class="node-text" dominant-baseline="central">Validate catalog rules &amp;</text><text x="659" y="125" class="node-text" dominant-baseline="central">publish live pricing (F4)</text>
+  <rect x="292" y="181" width="184" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="384" y="197" class="node-text" dominant-baseline="central">Search units, hold 48h</text><text x="384" y="211" class="node-text" dominant-baseline="central">&amp; pay via VNPay (Flow 1)</text>
+  <rect x="561" y="181" width="196" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="659" y="197" class="node-text" dominant-baseline="central">Handle waitlist / payment</text><text x="659" y="211" class="node-text" dominant-baseline="central">&amp; assign staff (F1, F5)</text>
+  <rect x="840" y="181" width="188" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="934" y="197" class="node-text" dominant-baseline="central">Allocate unit &amp; execute</text><text x="934" y="211" class="node-text" dominant-baseline="central">4-pt handover (Flow 2)</text>
+  <rect x="561" y="270" width="196" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="659" y="287" class="node-text" dominant-baseline="central">Set ACTIVE/OCCUPIED &amp;</text><text x="659" y="301" class="node-text" dominant-baseline="central">email PIN (or T+11 auto)</text>
+  <rect x="292" y="270" width="184" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="384" y="287" class="node-text" dominant-baseline="central">Occupy unit; renew &gt;=T-20</text><text x="384" y="301" class="node-text" dominant-baseline="central">(F6.1) or ticket (F7)</text>
+  <polygon points="384,353 457,386 384,419 311,386" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="384" y="379.5" class="node-text" dominant-baseline="central">Return submitted</text><text x="384" y="392.5" class="node-text" dominant-baseline="central">before endDate?</text>
+  <rect x="561" y="362" width="196" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="659" y="379" class="node-text" dominant-baseline="central">Run 00:00 cron: lock PIN</text><text x="659" y="393" class="node-text" dominant-baseline="central">D+1 &amp; accrue fee (F6.2)</text>
+  <polygon points="659,445 733,478 659,511 585,478" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="659" y="471.5" class="node-text" dominant-baseline="central">Penalty settled</text><text x="659" y="484.5" class="node-text" dominant-baseline="central">before D+7?</text>
+  <rect x="292" y="454" width="184" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="384" y="471" class="node-text" dominant-baseline="central">Pay OVERDUE_PENALTY &amp;</text><text x="384" y="485" class="node-text" dominant-baseline="central">get PIN (keep OVERDUE)</text>
+  <rect x="840" y="454" width="188" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="934" y="471" class="node-text" dominant-baseline="central">Seal unit (MAINTENANCE 1d)</text><text x="934" y="485" class="node-text" dominant-baseline="central">&amp; move goods to depot</text>
+  <rect x="561" y="540" width="196" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="659" y="557" class="node-text" dominant-baseline="central">Liquidate 100% deposit,</text><text x="659" y="571" class="node-text" dominant-baseline="central">TERMINATE &amp; release D+8</text>
+  <circle cx="659" cy="616" r="12" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <circle cx="659" cy="616" r="7" fill="#000000" />
+  <rect x="292" y="648" width="184" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="384" y="665" class="node-text" dominant-baseline="central">Submit Return Notice</text><text x="384" y="679" class="node-text" dominant-baseline="central">(if OVERDUE, debt == 0)</text>
+  <rect x="552" y="648" width="214" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="659" y="665" class="node-text" dominant-baseline="central">Revoke PIN, set PENDING_RETURN</text><text x="659" y="679" class="node-text" dominant-baseline="central">&amp; route exit task (F3)</text>
+  <rect x="840" y="648" width="188" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="934" y="665" class="node-text" dominant-baseline="central">Execute exit inspection &amp;</text><text x="934" y="679" class="node-text" dominant-baseline="central">approve settlement (F3)</text>
+  <rect x="561" y="738" width="196" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="659" y="755" class="node-text" dominant-baseline="central">Settle balance, set CLOSED</text><text x="659" y="769" class="node-text" dominant-baseline="central">&amp; CLEANING -&gt; AVAILABLE</text>
+  <rect x="292" y="738" width="184" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="384" y="755" class="node-text" dominant-baseline="central">Receive refund/receipt &amp;</text><text x="384" y="769" class="node-text" dominant-baseline="central">complete rental lifecycle</text>
+  <circle cx="384" cy="824" r="12" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <circle cx="384" cy="824" r="7" fill="#000000" />
+  <path d="M 149 78 L 149 95" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 236 118 L 561 118" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 659 141 L 659 162 L 384 162 L 384 181" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 476 204 L 561 204" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 757 204 L 840 204" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 934 227 L 934 294 L 757 294" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 561 294 L 476 294" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 384 318 L 384 353" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 311 386 L 272 386 L 272 672 L 292 672" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="294" y="376" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 457 386 L 561 386" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="484" y="376" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 659 410 L 659 445" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 585 478 L 476 478" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="552" y="468" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 384 502 L 384 648" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 733 478 L 840 478" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="766" y="468" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 934 502 L 934 564 L 757 564" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 659 588 L 659 604" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 476 672 L 552 672" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 766 672 L 840 672" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 934 696 L 934 762 L 757 762" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 561 762 L 476 762" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 384 786 L 384 812" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="540" y="900" class="caption">Swimlane 0: End_To_End_Self_Storage_Operational_Lifecycle</text>
+</svg>

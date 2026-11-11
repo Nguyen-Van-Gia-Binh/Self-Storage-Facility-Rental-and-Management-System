@@ -112,12 +112,12 @@ Mỗi luồng nghiệp vụ trong hệ thống tuân thủ mô hình phân tần
        │               - Tạo Reservation (status: PENDING_PAYMENT, storage_unit_id: null, hold_expires_at: now + 48h) [BR-DEP-03]
        │               - Tạo sẵn RentalContract PENDING_CHECK_IN, storage_unit_id vẫn null
        │
-       ├─► 5. Thanh toán trực tuyến (VietQR / Cổng Sandbox)
+       ├─► 5. Thanh toán trực tuyến (VNPay Sandbox)
        │      Frontend: PaymentPage.tsx / SandboxCheckoutPage.tsx
-       │      API: POST /api/v1/payment/create-qr hoặc POST /api/v1/payment/initiate
+       │      API: POST /api/v1/payments/checkout
        │      Backend: PaymentController ──► PaymentServiceImpl
-       │               - Tạo PaymentTransaction (type: INITIAL_PAYMENT, status: PENDING)
-       │               - Sinh mã VietQR kèm cú pháp nội dung chuyển khoản chuẩn hóa
+       │               - Tạo PaymentTransaction (type: CHARGE, status: PENDING)
+       │               - Tạo URL chuyển hướng cổng thanh toán VNPay Sandbox (HMAC-SHA512)
        │
        ├─► 6. Xác nhận thanh toán thành công (Webhook / Callback / Sandbox Confirm)
        │      API: POST /api/v1/payment/callback hoặc POST /api/v1/payment/sandbox-pay
@@ -225,7 +225,7 @@ Quy trình hỗ trợ linh hoạt 2 nhánh nhận kho theo chuẩn Contactless S
 | :------------- | :------------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------- | :------------------------- |
 | **UNH-CHK-01** | **Ô đã gán bị lỗi lúc bàn giao**                              | Hiện trường ô kho bị ẩm dột, kẹt cửa cuốn, bẩn hoặc điện hỏng, không đạt `BR-CHK-02`.                     | Staff báo lỗi. Ô đó sang `MAINTENANCE`. FM gọi `PATCH /reservations/{id}/assign-unit` (hoặc đổi ô trên hợp đồng) sang ô `AVAILABLE` cùng loại; hợp đồng giữ `PENDING_CHECK_IN` và cập nhật `storage_unit_id`. Chỉ khi hết ô thay thế mới hủy và hoàn 100% cọc cùng phí thuê.                      | Staff báo lỗi trên màn bàn giao. FM chọn ô khác trên sơ đồ cơ sở. Nhân viên bàn giao tiếp trên ô mới.                        | `BR-CHK-06`<br>`BR-AVL-04` |
 | **UNH-CHK-02** | **Sai lệch thông tin CCCD / Khách không đủ giấy tờ**          | Người đến nhận kho không mang CCCD hoặc thông tin không khớp với người đại diện hợp đồng.                 | Nhân viên tạm dừng quy trình bàn giao. Hợp đồng giữ nguyên `PENDING_CHECK_IN`. Nhân viên ghi chú vào nhật ký tiếp đón.                                                                                                                                                                            | Thẻ xác minh hiển thị cảnh báo chưa đạt điều kiện nhận kho. Nút "Tiến hành bàn giao" bị khóa mờ.                             | `BR-CHK-01`                |
-| **UNH-CHK-03** | **Bàn phím số / Khóa IoT bị lỗi sau khi ký biên bản**         | Bàn phím số tại cửa ô kho bị liệt nút hoặc không kết nối được mạng sau khi sinh mã PIN.                   | Nhân viên gọi `POST /api/v1/customer/access/regenerate-pin` để cấp lại mã khác hoặc liên hệ Quản lý cơ sở để kích hoạt quy trình Điều chuyển ô kho khẩn cấp (`Relocation`).                                                                                                                       | Nhân viên bấm nút "Cấp lại PIN" hoặc "Yêu cầu đổi ô kho" ngay trên màn hình hoàn tất bàn giao.                               | `BR-ACC-03`<br>`BR-AVL-05` |
+| **UNH-CHK-03** | **Bàn phím số / Khóa IoT bị lỗi sau khi ký biên bản**         | Bàn phím số tại cửa ô kho bị liệt nút hoặc không kết nối được mạng sau khi sinh mã PIN.                   | Nhân viên tạo phiếu sự cố `SupportCategory.LOCK_ACCESS` (`isUrgent = true`) hoặc báo Quản lý cơ sở điều chuyển sang ô kho khác qua `POST /api/v1/contracts/{id}/reassign-unit` (`Relocation`).                                                                                                                                      | Nhân viên báo lỗi khóa / yêu cầu đổi ô kho để Quản lý điều phối ô thay thế.                                                  | `BR-SUP-01`<br>`BR-AVL-05` |
 | **UNH-CHK-04** | **Khách đến trễ trong thời hạn ân hạn (Grace Period)**        | Khách đến nhận kho sau ngày bắt đầu hợp đồng 1–2 ngày nhưng vẫn trong khoảng ân hạn (`checkinGraceDays`). | Hệ thống vẫn cho phép thực hiện Check-in Online hoặc Check-in tại quầy, kích hoạt `ACTIVE`. Thời hạn kết thúc hợp đồng giữ nguyên theo thỏa thuận ban đầu.                                                                                                                                        | Giao diện hiển thị nhãn cảnh báo: _"Ân hạn nhận kho: Còn X ngày"_ kèm nút Nhận kho Online hoặc Dời ngày (`BR-RES-06`).       | `BR-CHK-05`                |
 | **UNH-CHK-05** | **Khách không Check-in Online và không đến quầy quá 10 ngày** | Quá 10 ngày ân hạn (`checkin.grace_days`) mà khách không nhận kho, không dời lịch và không hủy đơn.       | Scheduled job `AutoCheckInActivationScheduler` chạy lúc 00:00 ngày T+11: Tự động chuyển Contract sang `ACTIVE`, StorageUnit sang `OCCUPIED`, cấp mã PIN gửi qua Email/SMS (Deemed Acceptance) [BR-CAN-04, BR-CHK-05]. Không hủy đơn và không hoàn tiền, bảo toàn 100% doanh thu cho doanh nghiệp. | Hợp đồng tự động chuyển vào danh sách "Đang hoạt động" trên Customer Portal kèm mã PIN 24/7 để khách sử dụng bất cứ khi nào. | `BR-CAN-04`<br>`BR-CHK-05` |
 
@@ -260,7 +260,7 @@ Quy trình hỗ trợ linh hoạt 2 nhánh nhận kho theo chuẩn Contactless S
        │      API: POST /api/v1/contracts/{id}/return-inspection
        │      Backend: ContractController.submitReturnInspection()
        │               - Chụp ảnh hiện trạng kho đã dọn sạch, không hư hỏng
-       │               - Thu hồi mã PIN: AccessCredential.status ──► REVOKED [BR-RET-09]
+       │               - Thu hồi mã PIN: RentalContract.accessCode = null [BR-RET-09]
        │               - Đánh dấu cờ inspectionDone = true [ISS-50]
        │
 [Facility Manager — ContractDetailPage.tsx]
@@ -285,7 +285,7 @@ Quy trình hỗ trợ linh hoạt 2 nhánh nhận kho theo chuẩn Contactless S
 | Mã kịch bản    | Tình huống ngoại lệ / Lỗi                                                 | Điều kiện kích hoạt                                                                                                | Xử lý Backend & HTTP Status                                                                                                                                                                                                                                                          | Hiển thị Giao diện (Frontend)                                                                                                                                    | Quy tắc nghiệp vụ          |
 | :------------- | :------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------- |
 | **UNH-RET-01** | **Chặn trả kho khi đang nợ phạt quá hạn (Block on Debt)**                 | Hợp đồng đang ở mốc quá hạn `D+4` trở đi có tiền phạt tích lũy chưa nộp.                                           | Nếu gọi `POST /return-notice`, Backend trả về `400 Bad Request` (`MUST_SETTLE_OVERDUE_DEBT_FIRST`). Bắt buộc thanh toán sạch nợ phạt mới cho báo trả kho.                                                                                                                            | Nút "Báo trả kho" bị khóa mờ trên UI. Hiển thị thông báo: _"Vui lòng nộp phạt quá hạn trước khi thực hiện trả kho."_                                             | `BR-RET-11`<br>`ISS-46`    |
-| **UNH-RET-02** | **Quyết toán âm (Khấu trừ vượt tiền cọc - Negative Settlement)**          | Khách hàng làm hư hại vách ngăn nặng, xả rác bẩn: Chi phí đền bù (DAMAGE) + dọn dẹp (CLEANING) > Tiền cọc ban đầu. | `settlementPreview` trả về số âm (`refundAmount < 0`). Quản lý phê duyệt sẽ sinh khoản thu bổ sung `SETTLEMENT_DEFICIT`. Contract chuyển `PENDING_SETTLEMENT_PAYMENT`. Chỉ chuyển `CLOSED` sau khi khách trả đủ tiền bù.                                                             | Quản lý xem bảng cân đối màu đỏ cảnh báo âm tiền. Khách hàng nhận hóa đơn quét mã VietQR thanh toán bù phần chênh lệch.                                          | `BR-RET-04`                |
+| **UNH-RET-02** | **Quyết toán âm (Khấu trừ vượt tiền cọc - Negative Settlement)**          | Khách hàng làm hư hại vách ngăn nặng, xả rác bẩn: Chi phí đền bù (DAMAGE) + dọn dẹp (CLEANING) > Tiền cọc ban đầu. | `settlementPreview` trả về số âm (`refundAmount < 0`). Quản lý phê duyệt sẽ sinh khoản thu bổ sung `SETTLEMENT_DEFICIT`. Contract chuyển `PENDING_SETTLEMENT_PAYMENT`. Chỉ chuyển `CLOSED` sau khi khách trả đủ tiền bù.                                                             | Quản lý xem bảng cân đối màu đỏ cảnh báo âm tiền. Khách hàng nhận hóa đơn thanh toán qua cổng VNPay Sandbox cho phần chênh lệch.                                 | `BR-RET-04`                |
 | **UNH-RET-03** | **Khách đổi ý muốn tiếp tục thuê (Hủy báo trả kho)**                      | Khách đã bấm báo trả kho nhưng sau đó muốn tiếp tục sử dụng kho (nhân viên chưa bấm bắt đầu nghiệm thu).           | Khách gọi `POST /api/v1/customer/contracts/{id}/cancel-return`. Backend kiểm tra nếu chưa nghiệm thu thì chuyển `Contract.status ──► ACTIVE`, xóa task nghiệm thu của nhân viên.                                                                                                     | Khách bấm nút "Hủy yêu cầu trả kho" trên `MyUnitsPage.tsx`. Thẻ hợp đồng trở về trạng thái hoạt động bình thường.                                                | `BR-RET-12`                |
 | **UNH-RET-04** | **Khách hàng bỏ rơi đồ đạc / Không đến bàn giao trả kho**                 | Hợp đồng hết hạn, khách không liên lạc được hoặc không dọn dẹp đồ đạc ra khỏi kho.                                 | Quản lý và nhân viên lập biên bản hiện trường đơn phương, chụp ảnh niêm phong đồ, chuyển kho sang `MAINTENANCE` để xử lý tài sản vô chủ, tịch thu 100% tiền cọc.                                                                                                                     | Manager xem danh sách kho cần xử lý cưỡng chế trên `ContractDashboardPage.tsx`.                                                                                  | `BR-OVD-11`                |
 | **UNH-RET-05** | **Khấu trừ Hư hỏng & Phạt Cọc khi Trả kho Sớm (Early Return Settlement)** | Khách hàng báo trả kho trước hạn, có phát sinh hư hại cơ khí hoặc xả rác bẩn tại hiện trường.                      | Backend tính toán: Hoàn 100% tiền thuê phần chưa dùng (`return.early_refund_rate = 100%`), phạt 100% tiền cọc Deposit (`return.early_penalty_rate = 100%`), trừ chi phí `DAMAGE`/`CLEANING` do Staff lập biên bản. Nếu kết quả âm $\rightarrow$ sinh khoản thu `SETTLEMENT_DEFICIT`. | Frontend hiển thị bảng quyết toán chi tiết: số tiền thuê thừa được hoàn, tiền cọc bị trừ làm phí vi phạm cam kết, và khoản thực nhận sau khi trừ chi phí hư hại. | `BR-RET-06`<br>`BR-RET-04` |
@@ -351,21 +351,21 @@ Quy trình hỗ trợ linh hoạt 2 nhánh nhận kho theo chuẩn Contactless S
        │      Frontend: FacilityListPage ──► UnitTypeListPage ──► StorageUnitListPage ──► StorageUnitDetailPage
        │      Backend: StorageUnitController ──► Giám sát trạng thái vật lý của từng ô kho
        │
-       ├─► 2. Điều phối Nhân sự & Lịch trực Drill-down 4 cấp độ (FM-05)
+       ├─► 2. Điều phối Nhân sự & Giao việc thực địa (FM-05)
        │      Frontend: StaffSchedulePage ──► ShiftCalendarPage ──► WorkListPage ──► WorkDetailPage
-       │      API: POST /api/v1/manager/assignments
-       │      Backend: StaffAssignmentController ──► Phân công ca trực (Sáng / Chiều / Tối) và gán task
+       │      API: GET /api/v1/support-requests/staff-workload, POST /api/v1/staff-assignments
+       │      Backend: StaffAssignmentController ──► Kiểm tra Staff ACTIVE & thuộc cơ sở, lưu StaffDailyAssignment (Check-in / Return / Incident)
        │
        └─► 3. Giám sát Báo cáo Sức khỏe Cơ sở
               Frontend: FacilityReportsPage.tsx (/manager/reports)
               Backend: FacilityReportController ──► Thống kê ô kho theo trạng thái và cảnh báo hợp đồng sắp hết hạn
 ```
 
-### 6.2. Unhappy & Exception Cases: Xung đột ca trực, Bảo trì khẩn cấp & Phân quyền đa cơ sở
+### 6.2. Unhappy & Exception Cases: Nhân sự không thuộc cơ sở, Bảo trì khẩn cấp & Phân quyền đa cơ sở
 
 | Mã kịch bản    | Tình huống ngoại lệ / Lỗi                                       | Điều kiện kích hoạt                                                                | Xử lý Backend & HTTP Status                                                                                                                                                                  | Hiển thị Giao diện (Frontend)                                                               | Quy tắc nghiệp vụ   |
 | :------------- | :-------------------------------------------------------------- | :--------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------ | :------------------ |
-| **UNH-MGR-01** | **Xung đột lịch phân công ca trực (Shift Conflict)**            | Quản lý gán cùng 1 nhân viên vào 2 ca trực trùng khung giờ trong cùng 1 ngày.      | Backend kiểm tra khung giờ ca trực, từ chối lưu và ném `400 Bad Request` (`STAFF_ALREADY_ASSIGNED_IN_SHIFT`).                                                                                | Lịch phân ca `ShiftCalendarPage.tsx` hiển thị cảnh báo trùng ca trực của nhân viên.         | `FM-05`             |
+| **UNH-MGR-01** | **Nhân viên không thuộc cơ sở / không ACTIVE**                  | Quản lý điều phối nhiệm vụ cho nhân viên chưa gắn với cơ sở hoặc đang ngưng hoạt động. | Backend kiểm tra `UserStatus.ACTIVE` và `UserFacilityAssignmentRepository.existsByUserIdAndFacilityId`, từ chối phân công và ném `400 Bad Request` (`STAFF_NOT_IN_FACILITY`).               | Giao diện điều phối `ShiftCalendarPage.tsx` báo lỗi và yêu cầu chọn nhân viên hợp lệ của cơ sở. | `FM-05`             |
 | **UNH-MGR-02** | **Ô kho bị sự cố đột xuất cần bảo trì khẩn cấp**                | Ô kho đang `AVAILABLE` bị dột nước hoặc hỏng bóng đèn.                             | Quản lý gọi `PATCH /api/v1/storage-units/{id}/status` chuyển sang `MAINTENANCE`. Ô này ra khỏi hạn ngạch hạng kho và khỏi danh sách ô FM được gán. Khách không chọn ô này trên cổng đặt chỗ. | Thẻ ô trên sơ đồ FM/Staff chuyển xám bảo trì và không gán được.                             | `BR-AVL-04`         |
 | **UNH-MGR-03** | **Từ chối truy cập dữ liệu cơ sở khác (Multi-Facility Breach)** | Quản lý cơ sở A cố tình gọi API tra cứu danh sách hợp đồng hoặc ô kho của cơ sở B. | `FacilitySecurityService` đối soát danh sách `facilityIds` trong JWT token, ném `403 Forbidden` (`ACCESS_DENIED_TO_FACILITY`).                                                               | Giao diện hiển thị trang báo lỗi 403 trang nhã, không để lộ dữ liệu nhạy cảm của cơ sở bạn. | `SA-03`<br>`ISS-41` |
 
@@ -383,22 +383,27 @@ Quy trình hỗ trợ linh hoạt 2 nhánh nhận kho theo chuẩn Contactless S
 [Customer — RenewalPage.tsx]
        │
        ├─► 1. Khách hàng bấm "Gia hạn" trên thẻ hợp đồng ACTIVE
-       │      API: GET /api/v1/contracts/{id}/renewal/preview?months={n}
-       │      Backend: RenewalServiceImpl.previewRenewal()
-       │               - Khách đang thuê được ưu tiên giữ chỗ gia hạn đến hết ngày đáo hạn [BR-REN-01]
-       │               - Đơn giá thuê áp dụng theo biểu giá hiện hành tại thời điểm gia hạn [BR-REN-05]
+       │      API: POST /api/v1/contracts/{id}/renewals/quote
+       │      Backend: RenewalServiceImpl.getRenewalQuote()
+       │               - Chặn hợp đồng OVERDUE (400 RENEWAL_NOT_ALLOWED) và unitType INACTIVE (400 UNIT_TYPE_INACTIVE)
+       │               - Chặn nếu còn < 20 ngày đến endDate (400 RENEWAL_DEADLINE_PASSED — BR-REN-09)
+       │               - Kiểm tra trùng lịch với Waitlist / Reservation trong khoảng rentalBufferDays (409 CAPACITY_NOT_AVAILABLE)
+       │               - Bảo lưu tiền cọc cũ (BR-DEP-01); tính phí thuê N tháng (1..12) theo biểu giá hiện hành (BR-REN-05)
        │
-       ├─► 2. Khởi tạo gia hạn & Khóa giữ chỗ 48h
-       │      API: POST /api/v1/contracts/{id}/renewal/initiate
-       │      Backend: Khóa ô kho 48h ở trạng thái PENDING_RENEWAL [BR-REN-10]
-       │               Sinh mã VietQR thanh toán tiền thuê kỳ mới
+       ├─► 2. Khởi tạo thanh toán gia hạn (không giữ khóa PENDING_RENEWAL)
+       │      API: POST /api/v1/payments/checkout (purpose = CONTRACT_RENEWAL)
+       │      Backend: PaymentServiceImpl chạy lại getRenewalQuote() để xác thực & tạo phiên VNPay Sandbox
        │
-       └─► 3. Thanh toán thành công (Webhook Callback)
-              Backend: Cộng thêm N tháng vào end_date: Contract.end_date = Contract.end_date + N tháng [BR-REN-04]
-                       Hợp đồng quay trở về trạng thái ACTIVE, lưu lịch sử gia hạn
+       └─► 3. Thanh toán thành công (AFTER_COMMIT Event)
+              Backend: ContractEventListener -> RenewalServiceImpl.processRenewal() (REQUIRES_NEW, idempotent theo paymentTransactionId)
+                       Cộng thêm N tháng vào endDate (Contract.endDate = Contract.endDate + N tháng, BR-REN-04)
+                       Hợp đồng giữ nguyên trạng thái ACTIVE và lưu bản ghi ContractRenewal
 ```
 
-- **Ngoại lệ Xung đột lịch gia hạn (UNH-REN-01):** Nếu khách để hợp đồng bước sang quá hạn mới bấm gia hạn và ô kho đó đã được một khách hàng mới đặt giữ chỗ cho kỳ tiếp theo (`BR-REN-09`), hệ thống sẽ ném lỗi `409 Conflict` (`RENEWAL_PERIOD_CONFLICT`). Giao diện thông báo: _"Ô kho đã có người đặt trước cho giai đoạn tới, không thể gia hạn tiếp. Vui lòng liên hệ quản lý để đổi ô kho khác."_
+- **Ngoại lệ Xung đột & Quá hạn gia hạn (UNH-REN-01):**
+  - Nếu hợp đồng đã sang `OVERDUE`, hệ thống trả `400 Bad Request` (`RENEWAL_NOT_ALLOWED`).
+  - Nếu thời gian còn lại trước `endDate` nhỏ hơn 20 ngày, hệ thống trả `400 Bad Request` (`RENEWAL_DEADLINE_PASSED`, `BR-REN-09`).
+  - Nếu ô kho bị vướng lịch đặt giữ chỗ / Waitlist cho kỳ kế tiếp, hệ thống trả `409 Conflict` (`CAPACITY_NOT_AVAILABLE`). Giao diện thông báo không thể gia hạn do đã hết sức chứa cho giai đoạn tiếp theo.
 
 ### 7.2. Sub-flow 6.2: Xử lý Quá hạn (Vòng đời 8 Ngày Khép kín D+1 đến D+8)
 
@@ -413,18 +418,18 @@ Khi hợp đồng đến ngày kết thúc (`end_date`) mà khách chưa thanh t
        │   - Khóa tự gia hạn Online (BR-REN-06)
        │   - Giao diện khách (MyUnitsPage.tsx):
        │     + Cột mã PIN hiển thị nhãn hồng "Đã khóa PIN (Đóng phí để mở)"
-       │     + HIỆN nút "Đóng phí & Mở PIN" (Quét mã VietQR nộp phạt: POST /api/v1/payments/checkout)
+       │     + HIỆN nút "Đóng phí & Mở PIN" (Thanh toán qua VNPay Sandbox: POST /api/v1/payments/checkout)
        │     + ẨN nút "Báo trả kho" (Phải trả hết nợ quá hạn mới mở khóa nút Báo trả kho theo BR-RET-01)
        │
        ├─► GIAI ĐOẠN 1: Ngày D+1 đến D+3 (Thu phí Lưu kho Quá hạn, Miễn phạt vi phạm) [BR-OVD-02]
        │   - Phí lưu kho quá hạn: 5% tiền cọc Deposit / ngày (lũy kế 3 ngày = 15% cọc)
        │   - Miễn phạt vi phạm cam kết hợp đồng (Ân hạn nhân văn)
-       │   - Khách quét VietQR trả hết phí quá hạn -> Nhận mã PIN tạm trong ngày đến 23:59 (BR-OVD-08) và mở nút "Báo trả kho"
+       │   - Khách thanh toán VNPay Sandbox trả hết phí quá hạn (purpose = OVERDUE_PENALTY) -> PaymentServiceImpl xóa nợ overdueFeeAccrued = 0, cấp lại mã PIN 6 số nếu đang trống và giữ nguyên trạng thái OVERDUE (BR-OVD-08) để mở luồng Báo trả kho (submitReturnNotice)
        │
        ├─► GIAI ĐOẠN 2: Ngày D+4 đến D+7 (Phạt vi phạm Hợp đồng +10%/ngày) [BR-OVD-03, BR-OVD-04]
        │   - Tính phí phạt quá hạn cộng dồn hằng đêm: 10% cọc / ngày trên nền 15% của Giai đoạn 1
        │   - Mốc D+4 = 25% cọc, D+5 = 35% cọc, D+6 = 45% cọc, D+7 chạm trần tối đa = 55% cọc (BR-OVD-04)
-       │   - Mã PIN tiếp tục bị khóa cho đến khi khách quét VietQR thanh toán đủ 100% nợ quá hạn tích lũy
+       │   - Mã PIN tiếp tục bị khóa cho đến khi khách thanh toán qua VNPay Sandbox đủ 100% nợ quá hạn tích lũy
        │
        ├─► MỐC D+7: Cưỡng chế Chấm dứt & Niêm phong về Kho Tổng [BR-OVD-07, BR-OVD-11]
        │   - Trạng thái hợp đồng chuyển thành: TERMINATED
@@ -443,41 +448,47 @@ Khi hợp đồng đến ngày kết thúc (`end_date`) mà khách chưa thanh t
 
 ## Flow 7 — Support Ticket & Incident: Xử lý Sự cố & Yêu cầu hỗ trợ
 
-- **Mã nghiệp vụ liên quan:** `SC-06`, `FS-04`, `FM-05`
-- **Diễn viên (Actors):** `Storage Customer` (gửi yêu cầu), `Facility Staff` (xử lý tại chỗ), `Facility Manager` (điều phối)
-- **Quy tắc nghiệp vụ cốt lõi:** `BR-SUP-01..04`, `BR-ACC-03`, `BR-AVL-05`
+- **Mã nghiệp vụ liên quan:** `SC-06`, `FS-05`, `FM-05`
+- **Diễn viên (Actors):** `Storage Customer` (gửi yêu cầu & xác nhận), `Facility Staff` (xử lý tại chỗ), `Facility Manager` (điều phối & đổi ô kho khẩn cấp)
+- **Quy tắc nghiệp vụ cốt lõi:** `BR-SUP-01..05`, `BR-AVL-05`, `BR-ACC-04`
 
-### 8.1. Happy Path: Báo hỏng hạ tầng & Nhân viên xử lý miễn phí 0đ
+### 8.1. Happy Path: Báo hỏng hạ tầng & Nhân viên xử lý tại chỗ
 
 ```
 [Customer — SupportPage.tsx]
        │
        ├─► 1. Khách gửi phiếu yêu cầu hỗ trợ sự cố
-       │      API: POST /api/v1/customer/support ──► Sinh mã SUP-YYYYMM-NNNN chống trùng
-       │      Trạng thái ban đầu: OPEN
+       │      API: POST /api/v1/support-requests ──► Sinh mã SUP-YYYYMM-XXXX
+       │      Backend: CustomerSupportServiceImpl.createSupportRequest()
+       │               - Trạng thái ban đầu: NEW; slaDueAt = null (bãi bỏ SLA cứng 2h/24h theo BR-SUP-01)
+       │               - Hỗ trợ 5 danh mục SupportCategory: UNIT_DAMAGE, LOCK_ACCESS, PAYMENT, BELONGINGS, OTHER
        │
-[Manager — IncidentListPage.tsx]
+[Manager — IncidentListPage.tsx / IncidentDetailPage.tsx]
        │
-       ├─► 2. Quản lý phân công nhân viên ca trực
-       │      API: POST /api/v1/support/{id}/assign ──► Trạng thái: IN_PROGRESS
+       ├─► 2. Quản lý xem tải nhân viên & phân công nhân viên tại cơ sở
+       │      API: GET /api/v1/support-requests/staff-workload?facilityId=...
+       │      API: PATCH /api/v1/support-requests/{id}/assign ──► Trạng thái: ASSIGNED
        │
 [Staff — StaffIncidentPage.tsx]
        │
-       └─► 3. Nhân viên xử lý xong sự cố hạ tầng (Lỗi cơ sở: kẹt ổ khóa, dột trần)
-              API: POST /api/v1/support/{id}/resolve
-              Backend: Phụ phí = 0 đ (Cơ sở chịu hoàn toàn chi phí)
-                       Nộp ảnh hiện trường sau khi sửa xong
-                       SupportRequest.status ──► CLOSED ngay lập tức [BR-SUP-03]
+       ├─► 3. Nhân viên tiếp nhận xử lý hiện trường
+       │      API: PATCH /api/v1/support-requests/{id}/in-progress ──► Trạng thái: IN_PROGRESS
+       │
+       └─► 4. Nhân viên hoàn tất xử lý & đóng sự cố thông thường (!relocationRequired)
+              API: PATCH /api/v1/support-requests/{id}/resolve (tối đa 5 ảnh SUPPORT_RESOLUTION)
+              Backend: StaffSupportServiceImpl.resolveSupportRequest()
+                       Nếu relocationRequired = false: SupportRequest.status ──► CLOSED ngay lập tức
+                       Nếu relocationRequired = true: SupportRequest.status ──► RESOLVED (chờ FM đổi ô kho hoặc Khách xác nhận)
 ```
 
-### 8.2. Unhappy & Exception Cases: Bồi thường lỗi khách, Điều chuyển kho & Cấp lại mã PIN
+### 8.2. Unhappy & Exception Cases: Đổi ô kho khẩn cấp, Sự cố PIN/Khóa, Phản hồi & Tự động đóng
 
-| Mã kịch bản    | Tình huống ngoại lệ / Lỗi                                                | Điều kiện kích hoạt                                                                        | Xử lý Backend & HTTP Status                                                                                                                                                                                                                                           | Hiển thị Giao diện (Frontend)                                                                                 | Quy tắc nghiệp vụ          |
-| :------------- | :----------------------------------------------------------------------- | :----------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------ | :------------------------- |
-| **UNH-SUP-01** | **Bồi thường sự cố do lỗi khách hàng (Customer Fault)**                  | Sự cố do khách sơ suất gây ra (làm gãy khóa, bôi bẩn vách ngăn kho).                       | Nhân viên chọn loại phụ phí từ bảng `ExtraFeeType`, nhập số tiền đền bù. Bắt buộc nhân viên phải xác nhận đã thu đủ tiền bồi thường mới cho phép đóng ticket.                                                                                                         | Form nghiệm thu hiện ô nhập phụ phí và checkbox xác nhận thu tiền trước khi nộp.                              | `BR-SUP-02`                |
-| **UNH-SUP-02** | **Sự cố nặng cần đổi ô kho khẩn cấp (Emergency Relocation)**             | Ô kho bị ngập nước hoặc ẩm mốc nặng không thể tiếp tục lưu trữ tài sản.                    | Quản lý thực hiện đổi ô kho dự phòng (`Relocation`). Hệ thống bảo lưu 100% đơn giá thuê và tiền cọc ban đầu của khách hàng (`BR-AVL-05`), sinh Phụ lục điều chuyển hợp đồng.                                                                                          | Quản lý thao tác chọn ô kho mới trên `IncidentDetailPage.tsx`. Hợp đồng khách tự động cập nhật mã ô kho mới.  | `BR-AVL-05`<br>`BR-SUP-02` |
-| **UNH-SUP-03** | **Khách quên mã PIN vào ban đêm (Lost PIN Self-Service)**                | Khách hàng đến cơ sở ngoài giờ làm việc và quên mã PIN mở khóa.                            | Khách gọi `POST /api/v1/customer/access/regenerate-pin`. Backend sinh ngay ngẫu nhiên mã PIN 6 chữ số mới và cập nhật tức thì vào CSDL mà không cần chờ nhân viên trực duyệt.                                                                                         | Khách bấm nút "Cấp lại PIN mới" trên `SupportPage.tsx` hoặc thẻ hợp đồng, mã PIN mới hiện ngay trên màn hình. | `BR-ACC-03`                |
-| **UNH-SUP-04** | **Bồi thường thiệt hại hàng hóa do sự cố kỹ thuật (Goods Damage Claim)** | Hạ tầng cơ sở xảy ra lỗi kỹ thuật (vỡ ống nước, chập điện cơ sở) làm hư hỏng đồ của khách. | Giám định tổn thất thực tế có hóa đơn. Công ty đền bù tối đa hạn mức `support.goods_liability_cap` (10.000.000 đ) hoặc chuyển hồ sơ đối tác bảo hiểm chi trả tối đa `insurance.coverage_cap` (50.000.000 đ) nếu có Gói Bảo vệ Mở rộng. Miễn trừ 100% nếu là hàng cấm. | Phiếu hỗ trợ cập nhật kết luận giám định, số tiền bồi thường được phê duyệt và hình thức chi trả.             | `BR-SUP-04`                |
+| Mã kịch bản    | Tình huống ngoại lệ / Lỗi                                               | Điều kiện kích hoạt                                                                           | Xử lý Backend & HTTP Status                                                                                                                                                                                                                                   | Hiển thị Giao diện (Frontend)                                                                                        | Quy tắc nghiệp vụ          |
+| :------------- | :---------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------- | :------------------------- |
+| **UNH-SUP-01** | **Khách chưa hài lòng sau khi xử lý (`satisfied = false`)**             | Sự cố đã được xử lý (`RESOLVED`) nhưng khách kiểm tra thấy chưa đạt khi xác nhận.             | Khách gọi `PATCH /api/v1/support-requests/{id}/confirm` với `satisfied = false`. `CustomerSupportServiceImpl.confirmResolution()` đẩy trạng thái quay lại `IN_PROGRESS` và nối `[Khách phản hồi]` vào `resolutionNote`.                                    | Trên `SupportPage.tsx`, phiếu quay về trạng thái Đang xử lý để nhân viên tiếp tục khắc phục.                         | `BR-SUP-02`                |
+| **UNH-SUP-02** | **Sự cố nặng cần đổi ô kho khẩn cấp (`relocationRequired = true`)**     | Ô kho bị ngập nước/hư hại nặng; Staff bật cờ `PATCH /support-requests/{id}/relocation-required`. | Staff chỉ được chuyển tối đa sang `RESOLVED`; nếu cố đóng `CLOSED` khi chưa đổi kho sẽ bị chặn (`400 VALIDATION_FAILED`). FM gọi `POST /api/v1/contracts/{id}/reassign-unit` đổi sang ô mới cùng `UnitType` (hoặc nâng cấp diện tích lớn hơn cùng môi trường), giữ nguyên đơn giá & cọc (`BR-AVL-05`), chuyển ô cũ sang `MAINTENANCE` và đóng ticket `CLOSED`. | Staff thấy nút đánh dấu cần di dời; FM thao tác chọn ô kho thay thế trên `IncidentDetailPage.tsx` / `ContractDetailPage.tsx`. | `BR-AVL-05`<br>`BR-SUP-02` |
+| **UNH-SUP-03** | **Sự cố khóa / Quên mã PIN ra vào (`SupportCategory.LOCK_ACCESS`)**   | Khách gặp sự cố ổ khóa hoặc quên mã PIN khi tiếp cận ô kho.                                   | Khách tạo phiếu danh mục `LOCK_ACCESS`. `SupportRequest.isUrgent()` tự động trả về `true` để ưu tiên điều phối xử lý nhanh. (Riêng trường hợp khóa PIN do quá hạn, thanh toán `OVERDUE_PENALTY` sẽ tự cấp lại PIN 6 số nếu `accessCode` đang trống).          | Phiếu gắn huy hiệu Khẩn cấp (`isUrgent`) nổi bật trên hàng đợi của Staff/Manager.                                    | `BR-SUP-01`<br>`BR-OVD-08` |
+| **UNH-SUP-04** | **Tự động đóng phiếu `RESOLVED` quá hạn xác nhận (`SupportAutoCloseJob`)** | Phiếu `RESOLVED` (với `relocationRequired = false`) quá thời hạn không có phản hồi từ khách.   | `SupportAutoCloseJob` chạy lúc `00:30:00` hằng đêm (`Asia/Ho_Chi_Minh`), đối chiếu `supportAutoCloseWorkingDays` từ `PolicyVersion` hiện hành (mặc định **7 ngày làm việc**) và tự động đóng sang `CLOSED`.                                               | Phiếu tự chuyển sang tab Đã đóng sau 7 ngày làm việc nếu không phát sinh mở lại.                                     | `BR-SUP-05`                |
 
 ---
 
@@ -515,7 +526,7 @@ Hệ thống cấu hình 3 tác vụ tự động chạy nền (Background Sched
 | Tên Cron Job                   | Lịch biểu (Cron / Fixed Delay)                | Múi giờ            | Mục đích & Tác động CSDL                                                                                                                                                                                   | Tập tin mã nguồn                                                  |
 | :----------------------------- | :-------------------------------------------- | :----------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------- |
 | **`ReservationHoldExpiryJob`** | `fixedDelay = 120000` (Mỗi 2 phút quét 1 lần) | Server Time        | Quét các đơn đặt chỗ `PENDING_PAYMENT` có `hold_expires_at < now`. Chuyển trạng thái sang `EXPIRED`, giải phóng ô kho để khách khác có thể đặt.                                                            | `backend/.../reservation/scheduler/ReservationHoldExpiryJob.java` |
-| **`OverdueCronJob`**           | `0 0 0 * * ?` (Đúng 00:00:00 hằng đêm)        | `Asia/Ho_Chi_Minh` | Quét toàn bộ hợp đồng quá hạn. D+1: Chuyển `OVERDUE`; D+4..D+6: Tính phí phạt 10%/ngày; D+7: Khóa mã PIN sang `SUSPENDED`; D+10: Chấm dứt sang `TERMINATED_OVERDUE`, khóa vĩnh viễn mã PIN sang `REVOKED`. | `backend/.../policy/scheduler/OverdueCronJob.java`                |
+| **`OverdueCronJob`**           | `0 0 0 * * ?` (Đúng 00:00:00 hằng đêm)        | `Asia/Ho_Chi_Minh` | Quét toàn bộ hợp đồng quá hạn theo vòng đời 8 ngày. D+1: Chuyển `OVERDUE` & khóa mã PIN (`accessCode = null`); D+1..D+3: phí `5%/ngày`; D+4..D+6: phạt `+10%/ngày` (trần `55%`); D+7: Chấm dứt sang `TERMINATED`, thanh lý cọc (`depositBalance = 0`), chuyển ô kho sang `MAINTENANCE`; D+8: Giải phóng ô kho về `AVAILABLE` / `RESERVED`. | `backend/.../policy/scheduler/OverdueCronJob.java`                |
 | **`SupportAutoCloseJob`**      | `0 30 0 * * ?` (Đúng 00:30:00 hằng đêm)       | `Asia/Ho_Chi_Minh` | Quét các phiếu sự cố ở trạng thái `RESOLVED`. Nếu đã qua số ngày làm việc quy định trong chính sách (`supportAutoCloseWorkingDays`, mặc định 7 ngày), tự động chuyển sang `CLOSED`.                        | `backend/.../support/scheduler/SupportAutoCloseJob.java`          |
 
 ---
@@ -525,43 +536,41 @@ Hệ thống cấu hình 3 tác vụ tự động chạy nền (Background Sched
 ### 11.1. Đơn đặt chỗ (Reservation)
 
 ```
-       [Tạo đơn giữ chỗ]
+       [Tạo đơn giữ chỗ / Chuyển từ Waitlist]
               │
               ▼
        PENDING_PAYMENT ────────(Hết 48h không nộp tiền)──────► EXPIRED
               │
-              ├─(Thanh toán thành công)─► CONFIRMED
-              │                               │
-              │                               ├─(Check-in Online / tại quầy)──► FULFILLED
-              │                               │
-              │                               ├─(Khách hủy theo 3 tầng BR-CAN)► CANCELLED
-              │                               │
-              │                               └─(Quá 10 ngày ân hạn - Auto-Act)─► FULFILLED
-              ▼
-          CANCELLED
+              ├─(Khách hủy khi chưa thanh toán)────────────────► CANCELLED
+              │
+              └─(Thanh toán VNPay thành công)─► CONFIRMED
+                                                   │
+                                                   ├─(Check-in / Auto-Activation T+11)──► FULFILLED
+                                                   ├─(Khách hủy trong graceDays)─────────► CANCELLED
+                                                   └─(Khách hủy quá graceDays)───────────► NO_SHOW
 ```
 
 ### 11.2. Hợp đồng thuê kho (RentalContract)
 
 ```
-  [Đặt chỗ thành công]
+  [Đặt chỗ thành công / Tạo trực tiếp]
            │
            ▼
-   PENDING_CHECK_IN ─────────(Từ chối bàn giao hết ô đổi)─────────► CANCELLED (Hoàn 100%)
+   PENDING_CHECK_IN ──┬─(Hủy hợp đồng)────────────────────────────► CANCELLED
+           │          └─(Từ chối bàn giao / Hủy reservation)──────► TERMINATED ──(Duyệt quyết toán)──► CLOSED
            │
       (Check-in đạt / Auto-Activation T+11)
            ▼
-        ACTIVE ──────────────(Khởi tạo gia hạn 48h)─────────────► PENDING_RENEWAL
-           │                                                              │
-           │                                                              ├─(Nộp tiền OK)──► ACTIVE
-           │                                                              └─(Hết 48h)──────► ACTIVE
+        ACTIVE ◄──────(Gia hạn thành công trước T-20 qua CONTRACT_RENEWAL)───┐
+           │                                                                  │
+           ├──────────────────────────────────────────────────────────────────┘
            │
-           ├─(Báo trả kho)──► PENDING_RETURN ──► (Duyệt quyết toán cọc)──► CLOSED
-           │                         ▲
-           │                         │ (Sau khi đóng hết nợ phạt)
-      (Đến ngày end_date)            │
-           ▼                         │
-        OVERDUE ─────────────────────┴─(D+10 không xử lý)─────────► TERMINATED_OVERDUE
+           ├─(Báo trả kho / Hủy trả kho)──► PENDING_RETURN ──► RETURNED ──(Duyệt quyết toán)──► CLOSED
+           │                                       ▲
+           │                                       │ (Trả nợ OVERDUE_PENALTY -> giữ OVERDUE -> Báo trả kho)
+      (Đến ngày endDate)                           │
+           ▼                                       │
+        OVERDUE ───────────────────────────────────┴─(D+7 không xử lý)──► TERMINATED ──(Thanh lý 30 ngày)──► CLOSED
 ```
 
 ### 11.3. Ô kho vật lý (StorageUnit)
@@ -578,19 +587,21 @@ Hệ thống cấu hình 3 tác vụ tự động chạy nền (Background Sched
        MAINTENANCE ◄────────(Từ chối bàn giao / Báo hỏng)──────── CLEANING
 ```
 
-### 11.4. Mã PIN truy cập (AccessCredential)
+### 11.4. Mã PIN truy cập (`RentalContract.accessCode`)
 
 ```
-  [Sau khi Check-in thành công]
+  [Sau khi Check-in / Auto-Activation thành công]
                 │
                 ▼
-             ACTIVE ◄──────────────(Đóng sạch nợ phạt D+7..D+9)──────────┐
-                │                                                         │
-                ├─────────(Đến ngày D+7 quá hạn chưa trả)─────────► SUSPENDED
-                │                                                         │
-                ├─────────(Hoàn tất trả kho hoặc chạm mốc D+10)───────────┤
-                ▼                                                         ▼
-             REVOKED ◄────────────────────────────────────────────────────┘
+         Đang hoạt động ◄───────(Thanh toán OVERDUE_PENALTY D+1..D+6 -> cấp lại 6 số)──┐
+          (6 chữ số)                                                                   │
+                │                                                                      │
+                ├─────────(Đến ngày D+1 quá hạn chưa gia hạn)──────────► Đã khóa PIN ──┘
+                │                                                     (accessCode = null)
+                ├─────────(Hoàn tất trả kho RETURNED hoặc chạm mốc D+7 TERMINATED)─────┐
+                ▼                                                                      ▼
+          Thu hồi vĩnh viễn ◄──────────────────────────────────────────────────────────┘
+         (accessCode = null)
 ```
 
 ---
@@ -608,9 +619,9 @@ Hệ thống cấu hình 3 tác vụ tự động chạy nền (Background Sched
 | **Chính sách & Biểu giá (Flow 4)**       | `PolicyController`<br>`PricingController`<br>`SurchargeController`      | `PolicyServiceImpl`<br>`PricingServiceImpl`<br>`SurchargeServiceImpl`      | `PolicyVersionRepository`<br>`FacilityUnitTypePriceRepository`<br>`ExtraFeeTypeRepository` |
 | **Báo cáo hệ thống & Cơ sở (Flow 4, 5)** | `SystemReportController`<br>`FacilityReportController`                  | `SystemReportServiceImpl`<br>`FacilityReportServiceImpl`                   | `FacilityRepository`<br>`RentalContractRepository`                                         |
 | **Cơ sở & Ô kho (Flow 5)**               | `FacilityController`<br>`StorageUnitController`<br>`UnitTypeController` | `FacilityServiceImpl`<br>`StorageUnitServiceImpl`<br>`UnitTypeServiceImpl` | `FacilityRepository`<br>`StorageUnitRepository`<br>`UnitTypeRepository`                    |
-| **Phân công ca trực (Flow 5)**           | `StaffAssignmentController`<br>`StaffDailyTaskController`               | `StaffAssignmentServiceImpl`<br>`StaffDailyTaskServiceImpl`                | `StaffShiftRepository`<br>`DailyTaskRepository`                                            |
-| **Gia hạn hợp đồng (Flow 6.1)**          | `ContractRenewalController`                                             | `RenewalServiceImpl`                                                       | `ContractRenewalHistoryRepository`                                                         |
-| **Xử lý Quá hạn (Flow 6.2)**             | `OverdueCronJob` (Scheduler)                                            | `OverdueProcessingServiceImpl`                                             | `RentalContractRepository`<br>`AccessCredentialRepository`                                 |
+| **Phân công nhiệm vụ (Flow 5)**          | `StaffAssignmentController`<br>`StaffDailyTaskController`               | `StaffAssignmentServiceImpl`<br>`StaffDailyTaskServiceImpl`                | `StaffDailyAssignmentRepository`                                                           |
+| **Gia hạn hợp đồng (Flow 6.1)**          | `ContractRenewalController`                                             | `RenewalServiceImpl`                                                       | `ContractRenewalRepository`                                                                |
+| **Xử lý Quá hạn (Flow 6.2)**             | `OverdueCronJob` (Scheduler)                                            | `OverdueProcessingServiceImpl`                                             | `RentalContractRepository`<br>`StorageUnitRepository`<br>`PolicyVersionRepository`         |
 | **Yêu cầu hỗ trợ & Sự cố (Flow 7)**      | `CustomerSupportController`<br>`StaffSupportController`                 | `CustomerSupportServiceImpl`<br>`StaffSupportServiceImpl`                  | `SupportRequestRepository`                                                                 |
 | **Bảo mật & Người dùng (SYS)**           | `AuthController`<br>`UserController`<br>`AuditLogController`            | `AuthServiceImpl`<br>`UserServiceImpl`<br>`AuditLogServiceImpl`            | `UserRepository`<br>`AuditLogRepository`                                                   |
 

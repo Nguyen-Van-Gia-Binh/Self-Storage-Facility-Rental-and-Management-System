@@ -1,0 +1,83 @@
+@startuml sl-03-return-settlement
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam conditionStyle inside
+
+title Flow 3 — Unit Return, Win-Win Early Return & Final Settlement (Activity Swimlane)
+
+|Storage Customer|
+start
+:Access My Units portal & select active rental contract;
+:Initiate Unit Return workflow;
+:Select requested return appointment date (BR-RET-01);
+
+if (Return date is before contract end date?) then (early return)
+  |Storage Customer|
+  :Review Win-Win Early Return financial quote (BR-RET-06);
+  note right
+    **Win-Win Early Return Policy (BR-RET-06):**
+    - 100% refund of unused future rental days
+    - Forfeit 100% initial security deposit as penalty
+  end note
+  :Acknowledge terms and confirm early return submission;
+else (standard return)
+  |Storage Customer|
+  :Confirm return schedule at contract maturity;
+endif
+
+|System|
+:Create ReturnRequest record with status PENDING;
+:Transition RentalContract status: ACTIVE -> PENDING_RETURN;
+:Assign checkout inspection task to Facility Staff shift schedule;
+
+|Storage Customer|
+:Clear all personal belongings from storage unit;
+:Meet Facility Staff at facility on scheduled return date;
+
+|Facility Staff|
+:Conduct exit inspection (check structural integrity, cleanliness, trash, damages) (BR-RET-04);
+:Capture checkout inspection photos & record unit condition;
+
+if (Unit has physical damage or extra cleaning required?) then (yes)
+  :Log repair costs & extra cleaning charges as ContractExtraCharge (BR-RET-05);
+else (clean & intact)
+  :Confirm zero damage charges;
+endif
+
+:Submit final inspection report in system;
+
+|System|
+:Calculate final settlement balance:
+Net Balance = Deposit - Damage Charges - Unpaid Penalties + Unused Rent (BR-RET-07);
+
+|Facility Manager|
+:Review ReturnRequest, inspection photos, and proposed settlement statement;
+:Approve final settlement calculation (BR-RET-07);
+
+|System|
+:Revoke customer Smart Lock PIN & gate access credentials;
+:Transition StorageUnit status: OCCUPIED -> CLEANING (BR-RET-09);
+if (Net Balance > 0 (Refund to Customer)?) then (refund)
+  :Queue bank transfer refund for remaining deposit balance (BR-RET-08);
+  :Mark PaymentTransaction as PENDING_REFUND / SUCCESS;
+else if (Net Balance < 0 (Customer owes money)?) then (debt)
+  :Generate outstanding payment link for customer to pay shortfall;
+  |Storage Customer|
+  :Pay outstanding balance via VNPay Sandbox;
+  |System|
+endif
+
+:Transition RentalContract status: PENDING_RETURN -> RETURNED -> CLOSED;
+:Transition ReturnRequest status: PENDING -> COMPLETED;
+
+|Facility Staff|
+:Complete facility cleaning & sanitize unit;
+|System|
+:Transition StorageUnit status: CLEANING -> AVAILABLE (ready for re-rent) (BR-RET-09);
+
+|Storage Customer|
+:Receive final settlement statement & contract closure receipt;
+stop
+@enduml
+

@@ -1,0 +1,28 @@
+@startuml st-waitlist
+!pragma layout smetana
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+
+title State Machine Diagram — Waitlist Entity (7 States)
+
+[*] --> WAITING : Customer joins waitlist when unit type capacity is 0\n[FIFO queue priority tracked by created_at]\n/ WaitlistService#registerWaitlist (BR-WAT-01)
+
+WAITING --> CONTACTING : FM starts phone outreach to highest priority customer\n/ WaitlistService#startContacting (BR-WAT-02)
+WAITING --> EXPIRED : Target desired start date has passed with no unit available\n/ WaitlistExpiryScheduler
+WAITING --> CANCELLED : Customer proactively cancels waitlist entry from portal\n/ WaitlistService#cancelWaitlist
+
+CONTACTING --> PENDING_FOLLOW_UP : Customer requests callback later or needs time to decide\n/ WaitlistService#markFollowUp
+CONTACTING --> CONVERTED : Customer agrees to rent available unit\n[Converted into Reservation, unit held 2 hours]\n/ WaitlistService#convertToReservation (BR-WAT-03)
+CONTACTING --> REJECTED : Customer declines offer or no longer needs storage\n/ WaitlistService#rejectOffer
+
+PENDING_FOLLOW_UP --> CONTACTING : FM resumes follow-up call with customer\n/ WaitlistService#resumeContact
+PENDING_FOLLOW_UP --> REJECTED : Customer declines after follow-up\n/ WaitlistService#rejectOffer
+PENDING_FOLLOW_UP --> EXPIRED : Expiration date reached before confirmation\n/ WaitlistExpiryScheduler
+
+CONVERTED --> [*]
+REJECTED --> [*]
+EXPIRED --> [*]
+CANCELLED --> [*]
+@enduml
+

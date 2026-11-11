@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 930 714" width="930" height="714">
+  <style>
+    .pool-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .lane-title { font-family: Arial, sans-serif; font-size: 11.5px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .node-text { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #000000; }
+    .edge-label { font-family: Arial, sans-serif; font-size: 10.5px; text-anchor: middle; fill: #000000; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; stroke-linejoin: round; }
+    .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
+    </marker>
+  </defs>
+  <rect width="930" height="714" fill="#ffffff" />
+  <rect x="16" y="16" width="898" height="654" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <rect x="16" y="16" width="28" height="654" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <text x="30" y="343" transform="rotate(-90 30 343)" class="pool-title" dominant-baseline="central">Self-Storage Platform</text>
+  <rect x="44" y="16" width="270" height="654" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="44" y="16" width="270" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="31" class="lane-title" dominant-baseline="central">Storage Customer</text>
+  <rect x="314" y="16" width="310" height="654" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="314" y="16" width="310" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="469" y="31" class="lane-title" dominant-baseline="central">System</text>
+  <rect x="624" y="16" width="290" height="654" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="624" y="16" width="290" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="769" y="31" class="lane-title" dominant-baseline="central">Facility Manager &amp; Staff</text>
+  <circle cx="179" cy="68" r="10" fill="#000000" />
+  <rect x="87" y="99" width="184" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="115" class="node-text" dominant-baseline="central">Submit support ticket &amp;</text><text x="179" y="129" class="node-text" dominant-baseline="central">&lt;= 5 evidence photos</text>
+  <rect x="371" y="99" width="196" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="469" y="115" class="node-text" dominant-baseline="central">Validate contract &amp; create</text><text x="469" y="129" class="node-text" dominant-baseline="central">SUP ticket (status NEW)</text>
+  <rect x="673" y="99" width="192" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="769" y="115" class="node-text" dominant-baseline="central">Review workload &amp; assign</text><text x="769" y="129" class="node-text" dominant-baseline="central">ACTIVE facility staff</text>
+  <rect x="371" y="180" width="196" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="469" y="197" class="node-text" dominant-baseline="central">Verify staff facility &amp;</text><text x="469" y="211" class="node-text" dominant-baseline="central">upsert task (ASSIGNED)</text>
+  <rect x="673" y="267" width="192" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="769" y="283" class="node-text" dominant-baseline="central">Start on-site inspection</text><text x="769" y="297" class="node-text" dominant-baseline="central">(status IN_PROGRESS)</text>
+  <polygon points="769,348 845,382 769,416 693,382" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="769" y="375.5" class="node-text" dominant-baseline="central">Unit relocation</text><text x="769" y="388.5" class="node-text" dominant-baseline="central">required?</text>
+  <rect x="369" y="358" width="200" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="469" y="375" class="node-text" dominant-baseline="central">Save note &amp; &lt;= 5 photos;</text><text x="469" y="389" class="node-text" dominant-baseline="central">close (or 7d auto-close)</text>
+  <rect x="87" y="358" width="184" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="375" class="node-text" dominant-baseline="central">Review resolution outcome</text><text x="179" y="389" class="node-text" dominant-baseline="central">&amp; confirmation status</text>
+  <circle cx="179" cy="444" r="12" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <circle cx="179" cy="444" r="7" fill="#000000" />
+  <rect x="673" y="452" width="192" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="769" y="469" class="node-text" dominant-baseline="central">Flag relocationRequired &amp;</text><text x="769" y="483" class="node-text" dominant-baseline="central">block premature close</text>
+  <rect x="673" y="536" width="192" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="769" y="553" class="node-text" dominant-baseline="central">Select same/larger unit &amp;</text><text x="769" y="567" class="node-text" dominant-baseline="central">execute reassign-unit</text>
+  <rect x="367" y="535" width="204" height="50" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="469" y="553" class="node-text" dominant-baseline="central">Set old unit MAINTENANCE,</text><text x="469" y="567" class="node-text" dominant-baseline="central">bind new unit &amp; CLOSE</text>
+  <rect x="87" y="536" width="184" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="179" y="553" class="node-text" dominant-baseline="central">View relocation notice</text><text x="179" y="567" class="node-text" dominant-baseline="central">(rent &amp; deposit kept)</text>
+  <circle cx="179" cy="622" r="12" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <circle cx="179" cy="622" r="7" fill="#000000" />
+  <path d="M 179 78 L 179 99" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 271 122 L 371 122" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 567 122 L 673 122" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 769 145 L 769 204 L 567 204" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 469 228 L 469 250 L 769 250 L 769 267" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 769 313 L 769 348" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 693 382 L 569 382" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="656" y="372" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 369 382 L 271 382" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 179 406 L 179 432" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 769 416 L 769 452" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="790" y="432" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 769 500 L 769 536" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 673 560 L 571 560" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 367 560 L 271 560" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 179 584 L 179 610" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="465" y="698" class="caption">Swimlane 7: Flow_7_Customer_Support_And_Incident_Resolution</text>
+</svg>

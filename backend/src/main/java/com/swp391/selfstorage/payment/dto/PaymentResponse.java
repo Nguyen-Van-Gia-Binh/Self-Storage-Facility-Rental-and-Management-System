@@ -28,12 +28,11 @@ public class PaymentResponse {
     private String facilityName;
     private String customerName;
 
-    // Tiện ích chuyển khoản VietQR Napas247 / PayOS
+    // Tiện ích thanh toán VNPay Sandbox
     private Long orderCode;
     private String checkoutUrl;
     private String transferContent;
     private String bankName;
     private String bankAccountNumber;
-    private String vietQrPayload;
     private String qrCodeUrl;
 }

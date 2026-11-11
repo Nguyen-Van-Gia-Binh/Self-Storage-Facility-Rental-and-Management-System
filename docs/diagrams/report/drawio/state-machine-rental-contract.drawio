@@ -1,0 +1,88 @@
+<mxfile host="Electron" modified="2026-11-12T00:00:00.000Z" agent="draw.io" version="21.0.0" type="device">
+  <diagram name="State Chart 1: Rental Contract Status" id="st-rental-contract">
+    <mxGraphModel dx="1327" dy="827" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1287" pageHeight="787" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="start" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="313" y="28" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="PENDING_CHECK_IN" value="Pending Check-in" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="232.5" y="121" width="185" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="CANCELLED" value="Cancelled" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="587.5" y="121" width="175" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="ACTIVE" value="Active" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="232.5" y="321" width="185" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="PENDING_RETURN" value="Pending Return" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="587.5" y="321" width="175" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="RETURNED" value="Returned" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="912.5" y="321" width="165" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="OVERDUE" value="Overdue" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="232.5" y="526" width="185" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="TERMINATED" value="Terminated" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="587.5" y="526" width="175" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="CLOSED" value="Closed" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="912.5" y="526" width="165" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="" style="ellipse;html=1;shape=endState;fillColor=#000000;strokeColor=#000000;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="1171" y="331" width="28" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="confirm deposit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="start" target="PENDING_CHECK_IN">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e2" value="cancel contract" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="PENDING_CHECK_IN" target="CANCELLED">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e3" value="reject handover" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="PENDING_CHECK_IN" target="TERMINATED">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="48" y="145" /><mxPoint x="48" y="645" /><mxPoint x="675" y="645" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e4" value="complete check-in" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="PENDING_CHECK_IN" target="ACTIVE">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e5_renew" value="renew lease" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.25675675675675674;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="ACTIVE" target="ACTIVE">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="155" y="345" /><mxPoint x="155" y="286" /><mxPoint x="280" y="286" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e6_ret" value="submit return notice" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="ACTIVE" target="PENDING_RETURN">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e7_cancel_ret" value="cancel return" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="PENDING_RETURN" target="ACTIVE">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e8_inspect" value="complete inspection" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="PENDING_RETURN" target="RETURNED">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e9_settle_ret" value="approve settlement" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="RETURNED" target="CLOSED">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e10_overdue" value="expire lease at D+1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="ACTIVE" target="OVERDUE">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e11_pay_debt" value="pay overdue fee" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.25675675675675674;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="OVERDUE" target="OVERDUE">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="155" y="550" /><mxPoint x="155" y="492" /><mxPoint x="280" y="492" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e12_ovd_ret" value="submit return notice" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="OVERDUE" target="PENDING_RETURN">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="495" y="538" /><mxPoint x="495" y="448" /><mxPoint x="675" y="448" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e13_evict" value="evict at D+7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="OVERDUE" target="TERMINATED">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e14_settle_term" value="approve settlement" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="TERMINATED" target="CLOSED">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e15_end_cancel" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="CANCELLED" target="end">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1185" y="145" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e16_end_closed" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="CLOSED" target="end">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1185" y="550" /></Array></mxGeometry>
+      </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

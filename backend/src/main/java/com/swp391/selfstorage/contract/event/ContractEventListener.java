@@ -38,7 +38,7 @@ public class ContractEventListener {
     }
 
     /**
-     * Tự động gia hạn hợp đồng sau khi thanh toán gia hạn qua PayOS VietQR thành công — SC-04.
+     * Tự động gia hạn hợp đồng sau khi thanh toán gia hạn qua VNPay thành công — SC-04.
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)

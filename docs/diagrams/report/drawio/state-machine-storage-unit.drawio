@@ -1,0 +1,79 @@
+<mxfile host="Electron" modified="2026-11-12T00:00:00.000Z" agent="draw.io" version="21.0.0" type="device">
+  <diagram name="State Chart 2: Storage Unit Status" id="st-storage-unit">
+    <mxGraphModel dx="1118" dy="861" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1078" pageHeight="821" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="start" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="223" y="28" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="AVAILABLE" value="Available" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="187.5" y="126" width="185" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="RESERVED" value="Reserved" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="567.5" y="126" width="185" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="MAINTENANCE" value="Maintenance" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="187.5" y="336" width="185" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="OCCUPIED" value="Occupied" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="567.5" y="336" width="185" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="OUT_OF_SERVICE" value="Out of Service" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="187.5" y="536" width="185" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="CLEANING" value="Cleaning" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#000000;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="567.5" y="536" width="185" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="" style="ellipse;html=1;shape=endState;fillColor=#000000;strokeColor=#000000;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="266" y="661" width="28" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="e1_create" value="create unit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25675675675675674;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="start" target="AVAILABLE">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e2_alloc" value="allocate reservation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="AVAILABLE" target="RESERVED">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e3_release" value="release hold" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="RESERVED" target="AVAILABLE">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e4_checkin" value="complete check-in" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="RESERVED" target="OCCUPIED">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e5_checkout" value="complete return" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="OCCUPIED" target="CLEANING">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e6_evict_reloc" value="evict or relocate unit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="OCCUPIED" target="MAINTENANCE">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e7_flag_maint" value="flag maintenance" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25675675675675674;exitY=1;exitDx=0;exitDy=0;entryX=0.25675675675675674;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="AVAILABLE" target="MAINTENANCE">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e8_complete_repair" value="complete repair" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.7432432432432432;exitY=0;exitDx=0;exitDy=0;entryX=0.7432432432432432;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="MAINTENANCE" target="AVAILABLE">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e9_clean_defect" value="report defect" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.8513513513513513;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="CLEANING" target="MAINTENANCE">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="465" y="560" /><mxPoint x="465" y="430" /><mxPoint x="345" y="430" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e10_clean_res" value="assign next&lt;br&gt;reservation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="CLEANING" target="RESERVED">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="880" y="560" /><mxPoint x="880" y="150" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e11_clean_avail" value="complete cleaning" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.7432432432432432;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="CLEANING" target="AVAILABLE">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="660" y="645" /><mxPoint x="990" y="645" /><mxPoint x="990" y="52" /><mxPoint x="325" y="52" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e12_avail_oos" value="decommission unit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="AVAILABLE" target="OUT_OF_SERVICE">
+        <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="68" y="150" /><mxPoint x="68" y="560" /></Array></mxGeometry>
+      </mxCell>
+        <mxCell id="e13_maint_oos" value="decommission unit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.17567567567567569;exitY=1;exitDx=0;exitDy=0;entryX=0.17567567567567569;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="MAINTENANCE" target="OUT_OF_SERVICE">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e14_oos_reopen" value="reopen for repair" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.6351351351351351;exitY=0;exitDx=0;exitDy=0;entryX=0.6351351351351351;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="OUT_OF_SERVICE" target="MAINTENANCE">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+        <mxCell id="e15_retire" value="retire unit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.2;endArrow=classic;endFill=1;fontFamily=Arial;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;labelBorderColor=none;" edge="1" parent="1" source="OUT_OF_SERVICE" target="end">
+        <mxGeometry relative="1" as="geometry"></mxGeometry>
+      </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

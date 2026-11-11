@@ -1,0 +1,36 @@
+@startuml st-rental-contract
+!pragma layout smetana
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+
+title State Machine Diagram — RentalContract Entity (9 States)
+
+[*] --> PENDING_CHECK_IN : Customer reserves & pays initial deposit\n[Reservation confirmed, FM allocates unit]\n/ ReservationService#confirm / UnitAllocation
+
+PENDING_CHECK_IN --> ACTIVE : Customer & Staff complete 4-point handover\n[HandoverRecord signed by customer]\n/ HandoverService#completeCheckIn (BR-CHK-03)
+PENDING_CHECK_IN --> ACTIVE : Auto-activation at 23:59:59 T+11\n[Customer no-show beyond T+11 days]\n/ AutoActivationScheduler (BR-CAN-04, BR-CHK-05)
+PENDING_CHECK_IN --> CANCELLED : Customer cancels before move-in date\n[Subject to cancellation refund schedule]\n/ ContractService#cancelCheckIn (BR-CAN-01)
+PENDING_CHECK_IN --> CANCELLED : Unit defective during handover & no swap available\n/ HandoverService#rejectHandover (BR-CHK-04)
+
+ACTIVE --> PENDING_RETURN : Customer submits return request\n[Selected return appointment date]\n/ ReturnService#requestReturn (BR-RET-01)
+ACTIVE --> OVERDUE : Daily cron runs at 00:00:00 midnight\n[contract.endDate < today AND no renewal]\n/ OverdueScheduler#scanOverdueContracts (BR-OVD-01)
+ACTIVE --> PENDING_EMERGENCY_RESOLUTION : Catastrophic incident / facility emergency\n/ SupportService#flagEmergency
+
+OVERDUE --> PENDING_RETURN : Customer settles debt & schedules return\n/ ReturnService#requestReturn
+OVERDUE --> ACTIVE : Customer pays full overdue debt & renews lease\n/ ContractRenewalService#payOverdueRenewal
+OVERDUE --> TERMINATED : Overdue past D+10 & 48h final notice expires\n[Default liquidation / property impounded]\n/ EvictionService#terminateContract (BR-OVD-09)
+
+PENDING_RETURN --> RETURNED : Staff checkout inspection complete\n[Unit clean, damages assessed, protocol signed]\n/ ReturnService#completeInspection (BR-RET-07)
+PENDING_RETURN --> ACTIVE : Customer cancels return request before inspection\n/ ReturnService#cancelReturnRequest (BR-RET-03)
+
+RETURNED --> CLOSED : Final settlement approved & deposit refunded/settled\n[Net balance paid / refunded via VNPay / Bank Transfer]\n/ SettlementService#approveSettlement (BR-RET-08)
+
+PENDING_EMERGENCY_RESOLUTION --> ACTIVE : Emergency resolved or unit swapped\n/ SupportService#resolveEmergency
+PENDING_EMERGENCY_RESOLUTION --> TERMINATED : Facility closed or irreparable damage\n/ SupportService#terminateEmergency
+
+CANCELLED --> [*]
+CLOSED --> [*]
+TERMINATED --> [*]
+@enduml
+

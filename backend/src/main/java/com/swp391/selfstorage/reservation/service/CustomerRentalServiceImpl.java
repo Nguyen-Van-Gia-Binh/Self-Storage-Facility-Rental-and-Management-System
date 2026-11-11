@@ -259,7 +259,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         // Hướng dẫn mở cửa kho
         if (contract.getStatus() == ContractStatus.OVERDUE) {
             if (detail.isAccessCodeLocked()) {
-                detail.setInstructionNotes("Mã PIN của quý khách hiện đang tạm khóa an ninh (Nguyên tắc No Pay, No PIN) do hợp đồng quá hạn. Vui lòng quét VietQR thanh toán nợ phí quá hạn để nhận mã PIN tạm trong ngày.");
+                detail.setInstructionNotes("Mã PIN của quý khách hiện đang tạm khóa an ninh (Nguyên tắc No Pay, No PIN) do hợp đồng quá hạn. Vui lòng thanh toán trực tuyến VNPay nợ phí quá hạn để nhận mã PIN tạm trong ngày.");
             } else {
                 detail.setInstructionNotes("Quý khách đã thanh toán phí quá hạn và được cấp mã PIN tạm trong ngày. Vui lòng bấm 'Báo trả kho' hoặc hoàn tất dọn đồ trước 23:59.");
             }
@@ -436,7 +436,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             res.setTotalOutstandingDebt(fee);
 
             // BR-OVD-01, BR-OVD-05: Khóa PIN ngay từ D+1 nếu còn nợ phí quá hạn (fee > 0).
-            // Chỉ khi khách quét VietQR thanh toán hết phí quá hạn (fee == 0) mới được cấp PIN tạm trong ngày (BR-OVD-08).
+            // Chỉ khi khách thanh toán qua VNPay thanh toán hết phí quá hạn (fee == 0) mới được cấp PIN tạm trong ngày (BR-OVD-08).
             if (fee > 0 || contract.getAccessCode() == null) {
                 res.setAccessCode(null);
                 res.setAccessCodeLocked(true);

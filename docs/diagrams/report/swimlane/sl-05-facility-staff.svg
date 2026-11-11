@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 880" width="920" height="880">
+  <style>
+    .pool-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .lane-title { font-family: Arial, sans-serif; font-size: 11.5px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .node-text { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #000000; }
+    .edge-label { font-family: Arial, sans-serif; font-size: 10.5px; text-anchor: middle; fill: #000000; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; stroke-linejoin: round; }
+    .caption { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
+    </marker>
+  </defs>
+  <rect width="920" height="880" fill="#ffffff" />
+  <rect x="16" y="16" width="888" height="820" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <rect x="16" y="16" width="28" height="820" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <text x="30" y="426" transform="rotate(-90 30 426)" class="pool-title" dominant-baseline="central">Self-Storage Platform</text>
+  <rect x="44" y="16" width="280" height="820" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="44" y="16" width="280" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="184" y="31" class="lane-title" dominant-baseline="central">Facility Manager</text>
+  <rect x="324" y="16" width="320" height="820" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="324" y="16" width="320" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="484" y="31" class="lane-title" dominant-baseline="central">System</text>
+  <rect x="644" y="16" width="260" height="820" fill="none" stroke="#000000" stroke-width="1.1" />
+  <rect x="644" y="16" width="260" height="30" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="774" y="31" class="lane-title" dominant-baseline="central">Facility Staff</text>
+  <circle cx="184" cy="68" r="10" fill="#000000" />
+  <rect x="92" y="99" width="184" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="184" y="115" class="node-text" dominant-baseline="central">Create unit(s) or toggle</text><text x="184" y="129" class="node-text" dominant-baseline="central">MAINTENANCE / OOS</text>
+  <rect x="386" y="99" width="196" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="484" y="115" class="node-text" dominant-baseline="central">Verify JWT facility scope,</text><text x="484" y="129" class="node-text" dominant-baseline="central">code uniqueness &amp; state</text>
+  <polygon points="484,174 558,208 484,242 410,208" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="484" y="201.5" class="node-text" dominant-baseline="central">Access, code &amp;</text><text x="484" y="214.5" class="node-text" dominant-baseline="central">status valid?</text>
+  <rect x="94" y="185" width="180" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="184" y="201" class="node-text" dominant-baseline="central">Show 403/409 error &amp;</text><text x="184" y="215" class="node-text" dominant-baseline="central">adjust unit action</text>
+  <rect x="386" y="271" width="196" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="484" y="287" class="node-text" dominant-baseline="central">Persist unit state &amp; update</text><text x="484" y="301" class="node-text" dominant-baseline="central">real-time availability</text>
+  <rect x="92" y="351" width="184" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="184" y="367" class="node-text" dominant-baseline="central">Inspect workload &amp; assign</text><text x="184" y="381" class="node-text" dominant-baseline="central">Check-in/Return/Incident</text>
+  <rect x="386" y="351" width="196" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="484" y="367" class="node-text" dominant-baseline="central">Check staff ACTIVE status</text><text x="484" y="381" class="node-text" dominant-baseline="central">&amp; facility membership</text>
+  <polygon points="484,426 558,460 484,494 410,460" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="484" y="453.5" class="node-text" dominant-baseline="central">Staff ACTIVE &amp;</text><text x="484" y="466.5" class="node-text" dominant-baseline="central">in facility?</text>
+  <rect x="94" y="437" width="180" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="184" y="453" class="node-text" dominant-baseline="central">Show staff error &amp;</text><text x="184" y="467" class="node-text" dominant-baseline="central">pick eligible staff</text>
+  <rect x="386" y="523" width="196" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="484" y="539" class="node-text" dominant-baseline="central">Save task assignment &amp;</text><text x="484" y="553" class="node-text" dominant-baseline="central">publish daily queue</text>
+  <rect x="680" y="523" width="188" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="774" y="539" class="node-text" dominant-baseline="central">Open Daily Tasks Desk &amp;</text><text x="774" y="553" class="node-text" dominant-baseline="central">filter pending work</text>
+  <polygon points="774,600 847,634 774,668 701,634" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="774" y="627.5" class="node-text" dominant-baseline="central">Pending or late</text><text x="774" y="640.5" class="node-text" dominant-baseline="central">tasks left?</text>
+  <rect x="680" y="700" width="188" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="774" y="717" class="node-text" dominant-baseline="central">Complete Check-in, Return</text><text x="774" y="731" class="node-text" dominant-baseline="central">or Support resolution</text>
+  <rect x="386" y="700" width="196" height="48" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="484" y="717" class="node-text" dominant-baseline="central">Aggregate daily tasks,</text><text x="484" y="731" class="node-text" dominant-baseline="central">Usage Rate &amp; debt aging</text>
+  <rect x="92" y="701" width="184" height="46" fill="#ffffff" stroke="#000000" stroke-width="1.1" />
+  <text x="184" y="717" class="node-text" dominant-baseline="central">Review facility overview</text><text x="184" y="731" class="node-text" dominant-baseline="central">&amp; expiring contracts</text>
+  <circle cx="184" cy="788" r="12" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <circle cx="184" cy="788" r="7" fill="#000000" />
+  <path d="M 184 78 L 184 99" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 276 122 L 386 122" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 484 145 L 484 174" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 410 208 L 274 208" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="382" y="198" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 94 208 L 68 208 L 68 122 L 92 122" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 484 242 L 484 271" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="506" y="256" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 484 317 L 484 334 L 184 334 L 184 351" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 276 374 L 386 374" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 484 397 L 484 426" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 410 460 L 274 460" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="382" y="450" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 94 460 L 68 460 L 68 374 L 92 374" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 484 494 L 484 523" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="506" y="508" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 582 546 L 680 546" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 774 569 L 774 600" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 774 668 L 774 700" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="796" y="684" class="edge-label" dominant-baseline="central">Yes</text>
+  <path d="M 680 724 L 582 724" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 701 634 L 484 634 L 484 700" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="656" y="624" class="edge-label" dominant-baseline="central">No</text>
+  <path d="M 386 724 L 276 724" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <path d="M 184 747 L 184 776" fill="none" stroke="#000000" stroke-width="1.1" marker-end="url(#arrow)" />
+  <text x="460" y="864" class="caption">Swimlane 5: Flow_5_Facility_Unit_And_Staff_Management</text>
+</svg>

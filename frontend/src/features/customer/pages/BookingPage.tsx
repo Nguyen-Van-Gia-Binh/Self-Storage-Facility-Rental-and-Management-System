@@ -739,7 +739,7 @@ export const BookingPage: React.FC = () => {
           </div>
         </div>
       ) : (
-        /* ==================== STEP 3: THANH TOÁN VIETQR & GIỮ CHỖ 48H ==================== */
+        /* ==================== STEP 3: THANH TOÁN VNPAY & GIỮ CHỖ 48H ==================== */
         <BookingPaymentStep
           createdReservationId={createdReservationId}
           checkoutData={checkoutData}

@@ -324,7 +324,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
               const penaltyFee = (contract.overdueFee ?? 0) > 0 ? contract.overdueFee! : fallbackOverdueFee;
               // Khóa nút gia hạn khi < 20 ngày theo quy chế BR-REN-01 (đối với ACTIVE, hợp đồng OVERDUE không thể tự gia hạn trực tuyến)
               const canRenewOnline = contract.status === 'ACTIVE' && daysRemaining >= 20;
-              // Khách đã thanh toán hết phí quá hạn qua VietQR và được cấp Mã PIN tạm đến 23:59 để dọn đồ & Báo trả kho (BR-OVD-08)
+              // Khách đã thanh toán hết phí quá hạn qua VNPay và được cấp Mã PIN tạm đến 23:59 để dọn đồ & Báo trả kho (BR-OVD-08)
               const isOverdueUnlocked = contract.status === 'OVERDUE' && penaltyFee === 0;
               const settlementDeficit =
                 ((contract.status as string) === 'TERMINATED' || contract.status === 'PENDING_RETURN') &&
@@ -587,7 +587,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                             setPayingContract(contract);
                           }}
                           className="h-7 text-xs px-2.5 font-bold bg-[#0d6050] hover:bg-[#12836d] text-white cursor-pointer whitespace-nowrap shrink-0 shadow-xs"
-                          title="Quét VietQR hoặc thanh toán online tiền cọc & thuê ban đầu"
+                          title="Thanh toán trực tuyến VNPay tiền cọc & thuê ban đầu"
                         >
                           <CreditCard className="w-3.5 h-3.5 mr-1 text-amber-300" />
                           Thanh toán ngay
@@ -602,7 +602,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                             onOpenOverduePayment({ ...contract, overdueFee: penaltyFee });
                           }}
                           className="h-7 text-xs px-2.5 font-bold bg-rose-600 hover:bg-rose-700 text-white cursor-pointer whitespace-nowrap shrink-0 shadow-xs"
-                          title="Thanh toán phí quá hạn qua VietQR để mở Mã PIN tạm thời (đến 23:59) và mở khóa nút Báo trả kho"
+                          title="Thanh toán phí quá hạn qua VNPay để mở Mã PIN tạm thời (đến 23:59) và mở khóa nút Báo trả kho"
                         >
                           <CreditCard className="w-3.5 h-3.5 mr-1" />
                           Đóng phí & Mở PIN

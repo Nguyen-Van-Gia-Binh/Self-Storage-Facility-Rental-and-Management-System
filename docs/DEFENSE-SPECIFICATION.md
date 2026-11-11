@@ -327,10 +327,10 @@ flowchart TD
 
 ---
 
-### 1.1.5. Flow 5: Quản lý Cơ sở, Ô kho & Phân công ca trực (Facility & Staff Operations)
+### 1.1.5. Flow 5: Quản lý Cơ sở, Ô kho & Điều phối công việc nhân viên (Facility & Staff Operations)
 
 * **Tác nhân:** `Business Operations Manager` ↔ `Facility Manager` ↔ `Facility Staff`.
-* **Phạm vi nghiệp vụ:** BOM khởi tạo cơ sở với mã định danh chuẩn `FAC-XX` (`BR-GEN-07`), FM tạo sơ đồ ô kho và phân ca trực không chồng chéo, nhân viên nhận ca và thực hiện kiểm kê hiện trạng theo checklist.
+* **Phạm vi nghiệp vụ:** BOM khởi tạo cơ sở với mã định danh chuẩn `FAC-XX` (`BR-GEN-07`), FM tạo sơ đồ ô kho, cập nhật trạng thái bảo trì và phân công nhiệm vụ thực địa (Check-in, Return, Incident) cho nhân viên thuộc cơ sở (`SA-03`, `FM-05`); nhân viên xem bảng việc hằng ngày (`GET /staff/daily-tasks`) và thực hiện xử lý hiện trường.
 
 ```mermaid
 flowchart TD
@@ -341,26 +341,24 @@ flowchart TD
 
     subgraph FM ["Quản lý cơ sở (Facility Manager)"]
         FM_Units["Khai báo Danh mục Ô kho (Mã kho, Tầng, Loại kho)"]
-        FM_Shift["Lập Lịch Phân ca Trực hàng tuần cho Staff"]
-        FM_CheckShift["Kiểm tra: Không được phân trùng ca cùng nhân viên"]
-        FM_Monitor["Giám sát trạng thái ô kho (AVAILABLE, OCCUPIED, CLEANING)"]
+        FM_Dispatch["Xem tải công việc & Phân công Check-in / Return / Incident"]
+        FM_CheckStaff["Kiểm tra: Nhân viên ACTIVE và thuộc đúng cơ sở"]
+        FM_Monitor["Giám sát trạng thái ô kho & báo cáo vận hành cơ sở"]
     end
 
     subgraph Staff ["Nhân viên cơ sở (Facility Staff)"]
-        ST_ViewShift["Xem lịch phân công ca trực cá nhân"]
-        ST_Checkin["Điểm danh nhận ca trực tại cơ sở"]
-        ST_InspectUnit["Kiểm tra định kỳ các ô kho trống & báo bảo trì"]
+        ST_ViewDesk["Mở Daily Tasks Desk & lọc việc tồn / trễ hạn"]
+        ST_Execute["Thực hiện bàn giao Check-in, Return hoặc xử lý Support"]
     end
 
     BM_Fac --> BM_AssignFM
     BM_AssignFM --> FM_Units
     FM_Units --> FM_Monitor
-    BM_AssignFM --> FM_Shift
-    FM_Shift --> FM_CheckShift
-    FM_CheckShift --> ST_ViewShift
-    ST_ViewShift --> ST_Checkin
-    ST_Checkin --> ST_InspectUnit
-    ST_InspectUnit --> FM_Monitor
+    BM_AssignFM --> FM_Dispatch
+    FM_Dispatch --> FM_CheckStaff
+    FM_CheckStaff --> ST_ViewDesk
+    ST_ViewDesk --> ST_Execute
+    ST_Execute --> FM_Monitor
 ```
 
 ---

@@ -275,8 +275,8 @@ class ReservationCreationTest {
     }
 
     @Test
-    @DisplayName("Tạo thông tin chuyển khoản VietQR Napas247 chính xác theo mã đơn đặt chỗ")
-    void shouldGenerateCorrectTransferContentAndVietQrPayload() {
+    @DisplayName("Tạo thông tin thanh toán VNPay Sandbox chính xác theo mã đơn đặt chỗ")
+    void shouldGenerateCorrectTransferContentAndPaymentInfo() {
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> {
             Reservation r = inv.getArgument(0);
             r.setId(502L);
@@ -287,10 +287,8 @@ class ReservationCreationTest {
 
         assertNotNull(response.getTransferContent());
         assertEquals("SMARTSTORAGE " + response.getCode(), response.getTransferContent());
-        assertEquals("MB Bank (Ngan hang Quan Doi)", response.getBankName());
-        assertEquals("0888 567 999", response.getBankAccountNumber());
-        assertEquals("vietqr://" + response.getTotalPayable() + "/" + response.getTransferContent(),
-                response.getVietQrPayload());
+        assertEquals("VNPay Sandbox", response.getBankName());
+        assertEquals("VNPAY-ONLINE", response.getBankAccountNumber());
     }
 
     @Test

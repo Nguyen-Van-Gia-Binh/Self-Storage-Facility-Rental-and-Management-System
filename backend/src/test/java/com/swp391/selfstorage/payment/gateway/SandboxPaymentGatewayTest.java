@@ -26,7 +26,7 @@ class SandboxPaymentGatewayTest {
     }
 
     @Test
-    @DisplayName("Khởi tạo thanh toán Sandbox trả về thông tin VietQR Napas247 hợp lệ")
+    @DisplayName("Khởi tạo thanh toán Sandbox trả về thông tin VNPay Sandbox hợp lệ")
     void testCreatePayment_Success() {
         PaymentCheckoutCommand command = PaymentCheckoutCommand.builder()
                 .orderCode(123456789L)

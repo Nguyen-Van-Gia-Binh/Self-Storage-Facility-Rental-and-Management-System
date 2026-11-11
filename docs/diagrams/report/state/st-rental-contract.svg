@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1247 747" width="1247" height="747">
+  <style>
+    .state-name { font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000000; }
+    .edge-label { font-family: Arial, Helvetica, sans-serif; font-size: 11px; text-anchor: middle; fill: #000000; }
+    .caption { font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; fill: #000000; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000" />
+    </marker>
+  </defs>
+  <rect width="1247" height="747" fill="#ffffff" />
+  <path d="M 325 52 L 325 121" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 417.5 145 L 587.5 145" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 232.5 145 L 48 145 L 48 645 L 675 645 L 675 574" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 325 169 L 325 321" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 232.5 345 L 155 345 L 155 286 L 280 286 L 280 321" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 417.5 333 L 587.5 333" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 587.5 357 L 417.5 357" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 762.5 345 L 912.5 345" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 995 369 L 995 526" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 325 369 L 325 526" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 232.5 550 L 155 550 L 155 492 L 280 492 L 280 526" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 417.5 538 L 495 538 L 495 448 L 675 448 L 675 369" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 417.5 562 L 587.5 562" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 762.5 550 L 912.5 550" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 762.5 145 L 1185 145 L 1185 331" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <path d="M 1077.5 550 L 1185 550 L 1185 359" fill="none" stroke="#000000" stroke-width="1.2" stroke-linejoin="miter" marker-end="url(#arrow)" />
+  <circle cx="325" cy="40" r="11" fill="#000000" />
+  <rect x="232.5" y="121" width="185" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="325" y="145" class="state-name" dominant-baseline="central">Pending Check-in</text>
+  <rect x="587.5" y="121" width="175" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="675" y="145" class="state-name" dominant-baseline="central">Cancelled</text>
+  <rect x="232.5" y="321" width="185" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="325" y="345" class="state-name" dominant-baseline="central">Active</text>
+  <rect x="587.5" y="321" width="175" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="675" y="345" class="state-name" dominant-baseline="central">Pending Return</text>
+  <rect x="912.5" y="321" width="165" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="995" y="345" class="state-name" dominant-baseline="central">Returned</text>
+  <rect x="232.5" y="526" width="185" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="325" y="550" class="state-name" dominant-baseline="central">Overdue</text>
+  <rect x="587.5" y="526" width="175" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="675" y="550" class="state-name" dominant-baseline="central">Terminated</text>
+  <rect x="912.5" y="526" width="165" height="48" rx="4" ry="4" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <text x="995" y="550" class="state-name" dominant-baseline="central">Closed</text>
+  <circle cx="1185" cy="345" r="13" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
+  <circle cx="1185" cy="345" r="8" fill="#000000" />
+  <rect x="270" y="78" width="110" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="325" y="88" class="edge-label" dominant-baseline="central">confirm deposit</text>
+  <rect x="447" y="135" width="110" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="502" y="145" class="edge-label" dominant-baseline="central">cancel contract</text>
+  <rect x="295" y="635" width="110" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="350" y="645" class="edge-label" dominant-baseline="central">reject handover</text>
+  <rect x="263.5" y="222" width="123" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="325" y="232" class="edge-label" dominant-baseline="central">complete check-in</text>
+  <rect x="113" y="305" width="84" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="155" y="315" class="edge-label" dominant-baseline="central">renew lease</text>
+  <rect x="431" y="323" width="142" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="502" y="333" class="edge-label" dominant-baseline="central">submit return notice</text>
+  <rect x="453.5" y="347" width="97" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="502" y="357" class="edge-label" dominant-baseline="central">cancel return</text>
+  <rect x="770" y="335" width="136" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="838" y="345" class="edge-label" dominant-baseline="central">complete inspection</text>
+  <rect x="930.5" y="438" width="129" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="995" y="448" class="edge-label" dominant-baseline="central">approve settlement</text>
+  <rect x="257" y="424" width="136" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="325" y="434" class="edge-label" dominant-baseline="central">expire lease at D+1</text>
+  <rect x="100" y="510" width="110" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="155" y="520" class="edge-label" dominant-baseline="central">pay overdue fee</text>
+  <rect x="514" y="438" width="142" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="585" y="448" class="edge-label" dominant-baseline="central">submit return notice</text>
+  <rect x="456.5" y="552" width="91" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="502" y="562" class="edge-label" dominant-baseline="central">evict at D+7</text>
+  <rect x="773.5" y="540" width="129" height="20" rx="2" ry="2" fill="#ffffff" stroke="none" />
+  <text x="838" y="550" class="edge-label" dominant-baseline="central">approve settlement</text>
+  <text x="623.5" y="727" class="caption">State Chart 1: Rental Contract Status</text>
+</svg>
