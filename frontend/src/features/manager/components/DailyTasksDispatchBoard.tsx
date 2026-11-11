@@ -6,6 +6,7 @@ import {
   Wrench,
   Lock,
   Clock,
+  Calendar,
   AlertCircle,
   UserPlus,
   ArrowRightLeft,
@@ -268,7 +269,7 @@ export const DailyTasksDispatchBoard: React.FC<DailyTasksDispatchBoardProps> = (
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase font-semibold text-[11px]">
-              <th className="py-3 px-4">Giờ hẹn</th>
+              <th className="py-3 px-4">Ngày hẹn</th>
               <th className="py-3 px-4">Phân loại & Nhiệm vụ</th>
               <th className="py-3 px-4">Khách hàng & Ô kho</th>
               <th className="py-3 px-4">Nhân sự phụ trách</th>
@@ -289,11 +290,11 @@ export const DailyTasksDispatchBoard: React.FC<DailyTasksDispatchBoardProps> = (
             ) : (
               filteredTasks.map((task) => (
                 <tr key={task.id} className="hover:bg-slate-50/60 transition-colors">
-                  {/* Giờ hẹn */}
+                  {/* Ngày hẹn */}
                   <td className="py-3.5 px-4 whitespace-nowrap">
                     <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{task.scheduledTime}</span>
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{task.scheduledDate}</span>
                     </div>
                   </td>
 

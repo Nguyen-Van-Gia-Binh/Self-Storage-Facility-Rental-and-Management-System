@@ -77,9 +77,7 @@ export const WorkDetailPage: React.FC = () => {
               scheduledDate: ticket.createdAt
                 ? ticket.createdAt.split('T')[0]
                 : dateParam,
-              scheduledTime: ticket.createdAt
-                ? ticket.createdAt.substring(11, 16)
-                : 'Hôm nay',
+              scheduledTime: '',
               slaDeadline: ticket.slaDueAt,
               priority: ticket.isUrgent ? 'URGENT' : 'NORMAL',
               isUrgent: ticket.isUrgent,
@@ -133,7 +131,7 @@ export const WorkDetailPage: React.FC = () => {
           customerName: 'Khách hàng',
           customerPhone: 'Chưa cập nhật',
           scheduledDate: dateParam,
-          scheduledTime: 'Hôm nay',
+          scheduledTime: '',
           priority: 'NORMAL',
           isUrgent: false,
           status: 'UNASSIGNED',
@@ -235,7 +233,7 @@ export const WorkDetailPage: React.FC = () => {
             </div>
             <h1 className="text-xl font-bold text-slate-900">{task.title}</h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Thời gian hẹn: {task.scheduledDate} · {task.scheduledTime} · Cơ sở: {task.facilityName}
+              Ngày phân công: {task.scheduledDate} · Cơ sở: {task.facilityName}
             </p>
           </div>
 
@@ -301,8 +299,8 @@ export const WorkDetailPage: React.FC = () => {
               <span className="font-medium text-slate-700">{task.scheduledDate}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Giờ thực hiện:</span>
-              <span className="font-medium text-slate-700">{task.scheduledTime}</span>
+              <span className="text-slate-500">Hình thức:</span>
+              <span className="font-medium text-slate-700">Phân công trực theo ngày</span>
             </div>
             <div className="flex justify-between pt-1 border-t border-slate-100">
               <span className="text-slate-500">Ghi chú yêu cầu:</span>

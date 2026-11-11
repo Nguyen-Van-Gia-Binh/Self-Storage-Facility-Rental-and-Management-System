@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   X,
   AlertTriangle,
-  Clock,
+  Calendar,
   FileCheck,
   RotateCcw,
   Wrench,
@@ -147,8 +147,8 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
                 SĐT: <strong className="text-slate-700">{task.customerPhone}</strong>
               </span>
               <span className="flex items-center gap-1 text-slate-600">
-                <Clock className="w-3 h-3 text-slate-400" />
-                Giờ hẹn: {task.scheduledTime} ({task.scheduledDate})
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                Ngày phân công: <strong className="text-slate-700">{task.scheduledDate}</strong>
               </span>
             </div>
           </div>
@@ -211,7 +211,7 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
                               )}
                             </div>
                             <p className="text-[11px] text-slate-400 mt-0.5">
-                              {staff.shift || 'Ca trực'} · {staff.staffPhone}
+                              {staff.staffPhone} {staff.staffEmail ? `· ${staff.staffEmail}` : ''}
                             </p>
                           </div>
                         </div>

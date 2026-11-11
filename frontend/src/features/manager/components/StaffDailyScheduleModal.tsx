@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import {
   X,
   Calendar,
-  Clock,
   FileCheck,
   RotateCcw,
   Wrench,
@@ -78,11 +77,11 @@ export const StaffDailyScheduleModal: React.FC<StaffDailyScheduleModalProps> = (
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900">
-                Lịch trình Ca trực & Công việc trong ngày
+                Lịch trình Phân công & Công việc trong ngày
               </h3>
               <p className="text-xs text-slate-500">
                 Nhân viên: <strong className="text-slate-800">{staff.staffName}</strong> ·{' '}
-                {staff.shift || 'Ca trực tiêu chuẩn'}
+                {staff.facilityName || 'Cơ sở quản lý'}
               </p>
             </div>
           </div>
@@ -169,8 +168,8 @@ export const StaffDailyScheduleModal: React.FC<StaffDailyScheduleModalProps> = (
                         </div>
                         <div className="text-right">
                           <span className="font-bold text-slate-900 flex items-center gap-1 justify-end">
-                            <Clock className="w-3 h-3 text-slate-400" />
-                            {ci.appointmentTime}
+                            <Calendar className="w-3 h-3 text-slate-400" />
+                            {ci.startDate || 'Trong ngày'}
                           </span>
                           <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 mt-0.5">
                             {ci.status}
@@ -213,8 +212,8 @@ export const StaffDailyScheduleModal: React.FC<StaffDailyScheduleModalProps> = (
                         </div>
                         <div className="text-right">
                           <span className="font-bold text-slate-900 flex items-center gap-1 justify-end">
-                            <Clock className="w-3 h-3 text-slate-400" />
-                            {ret.appointmentTime}
+                            <Calendar className="w-3 h-3 text-slate-400" />
+                            {ret.returnDate || 'Trong ngày'}
                           </span>
                           <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 mt-0.5">
                             {ret.status}

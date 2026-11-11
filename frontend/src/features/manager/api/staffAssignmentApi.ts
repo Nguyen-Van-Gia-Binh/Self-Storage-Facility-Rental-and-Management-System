@@ -51,7 +51,7 @@ export async function getStaffWorkload(facilityId: number): Promise<StaffWorkloa
       facilityName: 'Kho SmartStorage',
       activeTaskCount: 0,
       completedTaskCount: 0,
-      shift: 'Ca sáng (07:00 - 15:30)',
+      shift: 'Trực cơ sở',
       status: 'AVAILABLE',
     },
     {
@@ -63,7 +63,7 @@ export async function getStaffWorkload(facilityId: number): Promise<StaffWorkloa
       facilityName: 'Kho SmartStorage',
       activeTaskCount: 0,
       completedTaskCount: 0,
-      shift: 'Ca chiều (14:30 - 22:30)',
+      shift: 'Trực cơ sở',
       status: 'AVAILABLE',
     },
   ];
@@ -92,7 +92,7 @@ export async function getStaffWorkload(facilityId: number): Promise<StaffWorkloa
         facilityName: item.facilityName || 'Kho SmartStorage',
         activeTaskCount: active,
         completedTaskCount: Number(item.completedTaskCount || 0),
-        shift: 'Ca sáng (07:00 - 15:30)',
+        shift: 'Trực cơ sở',
         status,
       };
     });
@@ -317,7 +317,7 @@ export async function getDailyDispatchTasks(
         customerName: ticket.customerName,
         customerPhone: ticket.customerPhone,
         scheduledDate: extractCreatedDate(ticket.createdAt, ticket.code),
-        scheduledTime: ticket.createdAt ? ticket.createdAt.substring(11, 16) : 'Hôm nay',
+        scheduledTime: '',
         slaDeadline: ticket.slaDueAt,
         priority: ticket.isUrgent ? 'URGENT' : 'NORMAL',
         isUrgent: ticket.isUrgent,
@@ -348,7 +348,7 @@ export async function getDailyDispatchTasks(
           customerName: contract.customerName || 'Khách hàng',
           customerPhone: contract.customerPhone || 'Chưa cập nhật',
           scheduledDate: extractCreatedDate(contract.createdAt, contract.code),
-          scheduledTime: '09:00 - 11:30',
+          scheduledTime: '',
           priority: 'NORMAL',
           isUrgent: false,
           status: dispatchStatus,
@@ -385,7 +385,7 @@ export async function getDailyDispatchTasks(
             contract.returnRequestCreatedAt || contract.returnNoticeDate || contract.createdAt,
             contract.code
           ),
-          scheduledTime: contract.appointmentSlot || '14:00 - 16:30',
+          scheduledTime: '',
           priority: 'NORMAL',
           isUrgent: false,
           status: dispatchStatus,
