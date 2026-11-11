@@ -1,5 +1,6 @@
 package com.swp391.selfstorage.contract.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,6 +17,8 @@ public interface ContractRenewalRepository extends JpaRepository<ContractRenewal
      * đầu).
      */
     List<ContractRenewal> findByContractIdOrderByCreatedAtDesc(Long contractId);
+
+    List<ContractRenewal> findByContractIdInOrderByCreatedAtDesc(Collection<Long> contractIds);
 
     /**
      * Lấy lần gia hạn gần nhất của hợp đồng.

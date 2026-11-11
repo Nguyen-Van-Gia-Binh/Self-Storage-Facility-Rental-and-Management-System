@@ -18,6 +18,8 @@ import com.swp391.selfstorage.user.repository.UserFacilityAssignmentRepository;
 import com.swp391.selfstorage.user.repository.UserRepository;
 import com.swp391.selfstorage.auth.service.UserPrincipal;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -123,6 +125,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CacheEvict(value = "userDetails", key = "#result.email", condition = "#result != null && #result.email != null")
     public UserResponse updateUser(Long id, UpdateUserRequest request) {
         AppUser user = findUserById(id);
         userMapper.updateEntity(user, request);
@@ -132,6 +135,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "userDetails", key = "#result.email", condition = "#result != null && #result.email != null"),
+            @CacheEvict(value = "facilities", allEntries = true),
+            @CacheEvict(value = "assignedFacilities", allEntries = true)
+    })
     public UserResponse updateUserRole(Long id, UpdateUserRoleRequest request) {
         AppUser user = findUserById(id);
         validateRoleAndFacilities(request.getRole(), request.getFacilityIds());
@@ -157,6 +165,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CacheEvict(value = "userDetails", key = "#result.email", condition = "#result != null && #result.email != null")
     public UserResponse updateUserStatus(Long id, UpdateUserStatusRequest request) {
         AppUser user = findUserById(id);
         UserStatus oldStatus = user.getStatus();

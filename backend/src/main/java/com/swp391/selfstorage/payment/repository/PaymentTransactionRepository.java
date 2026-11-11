@@ -1,5 +1,6 @@
 package com.swp391.selfstorage.payment.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,7 +22,11 @@ public interface PaymentTransactionRepository
 
     List<PaymentTransaction> findByReservationId(Long reservationId);
 
+    List<PaymentTransaction> findByReservationIdIn(Collection<Long> reservationIds);
+
     List<PaymentTransaction> findByContractId(Long contractId);
+
+    List<PaymentTransaction> findByContractIdIn(Collection<Long> contractIds);
 
     Optional<PaymentTransaction> findByOrderCode(Long orderCode);
 

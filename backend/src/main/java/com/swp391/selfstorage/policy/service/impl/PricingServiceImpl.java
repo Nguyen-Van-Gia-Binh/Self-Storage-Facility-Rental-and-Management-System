@@ -129,7 +129,8 @@ public class PricingServiceImpl implements PricingService {
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "unitTypes", allEntries = true),
-            @CacheEvict(value = "facilities", allEntries = true)
+            @CacheEvict(value = "facilities", allEntries = true),
+            @CacheEvict(value = "assignedFacilities", allEntries = true)
     })
     public FacilityPriceResponse updatePrice(Long facilityId, Long unitTypeId, UpdatePriceRequest request) {
         Facility facility = facilityRepository.findById(facilityId)

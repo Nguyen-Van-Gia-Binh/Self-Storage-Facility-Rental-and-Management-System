@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,4 +52,14 @@ public interface FacilityUnitTypePriceVersionRepository extends JpaRepository<Fa
     }
 
     boolean existsByFacilityIdAndUnitTypeId(Long facilityId, Long unitTypeId);
+
+    @Query("""
+            SELECT v FROM FacilityUnitTypePriceVersion v
+            WHERE v.facilityId IN :facilityIds
+              AND v.effectiveFrom <= :asOf
+            ORDER BY v.facilityId ASC, v.unitTypeId ASC, v.effectiveFrom DESC, v.id DESC
+            """)
+    List<FacilityUnitTypePriceVersion> findAppliedByFacilityIdIn(
+            @Param("facilityIds") Collection<Long> facilityIds,
+            @Param("asOf") LocalDate asOf);
 }

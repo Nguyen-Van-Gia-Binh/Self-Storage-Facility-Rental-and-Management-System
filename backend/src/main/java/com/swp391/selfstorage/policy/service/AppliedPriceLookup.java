@@ -12,8 +12,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Resolve giá đang áp dụng theo phiên bản newest với effective_from &lt;= hôm nay (Asia/Ho_Chi_Minh).
@@ -56,6 +63,68 @@ public class AppliedPriceLookup {
         return priceRepository.findByFacilityIdAndUnitTypeId(facilityId, unitTypeId)
                 .map(FacilityUnitTypePrice::getMonthlyPrice)
                 .filter(p -> p != null && p > 0);
+    }
+
+    /**
+     * Tính giá tháng thấp nhất đang áp dụng theo từng cơ sở trong tối đa 3 batch query
+     * nhằm triệt tiêu lỗi N+1 khi render danh sách cơ sở.
+     */
+    public Map<Long, Long> resolveLowestMonthlyPricesByFacilityIds(Collection<Long> facilityIds) {
+        if (facilityIds == null || facilityIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<FacilityUnitTypePrice> prices = priceRepository.findAllByFacilityIdIn(facilityIds);
+        if (prices == null || prices.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Set<Long> unitTypeIds = prices.stream()
+                .map(FacilityUnitTypePrice::getUnitTypeId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (unitTypeIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Set<Long> activeUnitTypeIds = unitTypeRepository.findAllById(unitTypeIds).stream()
+                .filter(UnitType::isActive)
+                .map(UnitType::getId)
+                .collect(Collectors.toSet());
+        if (activeUnitTypeIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, Long> latestVersionByPair = new HashMap<>();
+        List<FacilityUnitTypePriceVersion> appliedVersions =
+                versionRepository.findAppliedByFacilityIdIn(facilityIds, todayVn());
+        if (appliedVersions != null) {
+            for (FacilityUnitTypePriceVersion version : appliedVersions) {
+                if (version.getFacilityId() != null && version.getUnitTypeId() != null) {
+                    String pairKey = pairKey(version.getFacilityId(), version.getUnitTypeId());
+                    latestVersionByPair.putIfAbsent(pairKey, version.getMonthlyPrice());
+                }
+            }
+        }
+
+        Map<Long, Long> lowestByFacility = new HashMap<>();
+        for (FacilityUnitTypePrice row : prices) {
+            if (row.getFacilityId() == null || row.getUnitTypeId() == null
+                    || !activeUnitTypeIds.contains(row.getUnitTypeId())) {
+                continue;
+            }
+            String pairKey = pairKey(row.getFacilityId(), row.getUnitTypeId());
+            Long resolvedPrice = latestVersionByPair.containsKey(pairKey)
+                    ? latestVersionByPair.get(pairKey)
+                    : row.getMonthlyPrice();
+            if (resolvedPrice != null && resolvedPrice > 0) {
+                lowestByFacility.merge(row.getFacilityId(), resolvedPrice, Math::min);
+            }
+        }
+        return lowestByFacility;
+    }
+
+    private static String pairKey(Long facilityId, Long unitTypeId) {
+        return facilityId + ":" + unitTypeId;
     }
 
     public AppliedPriceInfo describe(Long facilityId, Long unitTypeId) {
