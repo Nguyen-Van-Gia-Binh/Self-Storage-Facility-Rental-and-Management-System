@@ -185,7 +185,7 @@ describe('Facility Manager - Phân công nhân sự Drill-down (FM-05)', () => {
     expect(html).toContain('HD-001');
     expect(html).toContain('Nguyễn Văn A');
     expect(html).toContain('S-101');
-    expect(html).toContain('08:00');
+    expect(html).toContain('2026-11-16');
     expect(html).toContain('Xem chi tiết');
   });
 

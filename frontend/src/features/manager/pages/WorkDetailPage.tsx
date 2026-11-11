@@ -29,6 +29,7 @@ import {
   getStaffWorkload,
   assignStaffToTask,
   getSupportRequestDetail,
+  enrichStaffListWithTasks,
 } from '../api/staffAssignmentApi';
 
 export const WorkDetailPage: React.FC = () => {
@@ -77,9 +78,7 @@ export const WorkDetailPage: React.FC = () => {
               scheduledDate: ticket.createdAt
                 ? ticket.createdAt.split('T')[0]
                 : dateParam,
-              scheduledTime: ticket.createdAt
-                ? ticket.createdAt.substring(11, 16)
-                : 'Hôm nay',
+              scheduledTime: '',
               slaDeadline: ticket.slaDueAt,
               priority: ticket.isUrgent ? 'URGENT' : 'NORMAL',
               isUrgent: ticket.isUrgent,
@@ -103,21 +102,27 @@ export const WorkDetailPage: React.FC = () => {
         }
       }
 
-      // 2. Nếu chưa có matchedTask và có facilityId, tìm trong danh sách dispatch tasks
-      if (!matchedTask && currentFacilityId > 0) {
-        const allTasks = await getDailyDispatchTasks(currentFacilityId, dateParam);
-        matchedTask = allTasks.find((t) => t.id === tId) || null;
+      let allFacilityTasks: DailyDispatchTaskItem[] = [];
+      if (currentFacilityId > 0) {
+        allFacilityTasks = await getDailyDispatchTasks(currentFacilityId, dateParam).catch(() => []);
+        if (!matchedTask) {
+          matchedTask = allFacilityTasks.find((t) => t.id === tId) || null;
+        }
       }
 
       // 3. Nếu chưa có currentFacilityId nhưng task đã có, cập nhật facilityId
       if (matchedTask && !currentFacilityId) {
         currentFacilityId = matchedTask.facilityId;
+        if (allFacilityTasks.length === 0) {
+          allFacilityTasks = await getDailyDispatchTasks(currentFacilityId, dateParam).catch(() => []);
+        }
       }
 
       // 4. Tải danh sách nhân viên của cơ sở để phục vụ phân công
       if (currentFacilityId > 0) {
-        const workload = await getStaffWorkload(currentFacilityId);
-        setStaffList(workload);
+        const workload = await getStaffWorkload(currentFacilityId).catch(() => []);
+        const enriched = enrichStaffListWithTasks(workload, allFacilityTasks);
+        setStaffList(enriched);
       }
 
       // 5. Nếu vẫn chưa tìm thấy (fallback an toàn)
@@ -133,7 +138,7 @@ export const WorkDetailPage: React.FC = () => {
           customerName: 'Khách hàng',
           customerPhone: 'Chưa cập nhật',
           scheduledDate: dateParam,
-          scheduledTime: 'Hôm nay',
+          scheduledTime: '',
           priority: 'NORMAL',
           isUrgent: false,
           status: 'UNASSIGNED',
@@ -169,7 +174,7 @@ export const WorkDetailPage: React.FC = () => {
           assignedStaffName:
             assignedStaff?.staffName ||
             res.updatedTask.assignedStaffName ||
-            'Nhân viên trực ca',
+            'Nhân viên cơ sở',
           status: 'ASSIGNED',
           notes: payload.notes || task.notes,
         });
@@ -235,7 +240,7 @@ export const WorkDetailPage: React.FC = () => {
             </div>
             <h1 className="text-xl font-bold text-slate-900">{task.title}</h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Thời gian hẹn: {task.scheduledDate} · {task.scheduledTime} · Cơ sở: {task.facilityName}
+              Ngày phân công: {task.scheduledDate} · Cơ sở: {task.facilityName}
             </p>
           </div>
 
@@ -301,8 +306,8 @@ export const WorkDetailPage: React.FC = () => {
               <span className="font-medium text-slate-700">{task.scheduledDate}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Giờ thực hiện:</span>
-              <span className="font-medium text-slate-700">{task.scheduledTime}</span>
+              <span className="text-slate-500">Hình thức:</span>
+              <span className="font-medium text-slate-700">Phân công trực theo ngày</span>
             </div>
             <div className="flex justify-between pt-1 border-t border-slate-100">
               <span className="text-slate-500">Ghi chú yêu cầu:</span>
@@ -411,7 +416,7 @@ export const WorkDetailPage: React.FC = () => {
                 <span>Nhiệm vụ chưa được phân công nhân viên</span>
               </div>
               <p className="text-[11px] text-amber-700">
-                Chỉ định nhân viên ca trực để tiến hành tiếp đón hoặc hỗ trợ hiện trường.
+                Chỉ định nhân viên để tiến hành tiếp đón hoặc hỗ trợ hiện trường.
               </p>
               <button
                 type="button"
@@ -491,7 +496,7 @@ export const WorkDetailPage: React.FC = () => {
             </h3>
           </div>
           <p className="text-xs text-slate-600">
-            Nhiệm vụ này dành cho nhân viên trực ca thực hiện đón tiếp khách hàng tại quầy lễ tân hoặc trực tiếp tại kho.
+            Nhiệm vụ này dành cho nhân viên cơ sở thực hiện đón tiếp khách hàng tại quầy lễ tân hoặc trực tiếp tại kho.
             Nhân viên sẽ hướng dẫn khách hàng kiểm tra tình trạng ô kho, hướng dẫn thao tác mã PIN và lập biên bản bàn giao điện tử.
           </p>
           <div className="pt-2 flex items-center gap-3">

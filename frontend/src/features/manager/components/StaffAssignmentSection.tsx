@@ -1,6 +1,6 @@
 // frontend/src/features/manager/components/StaffAssignmentSection.tsx
 import React, { useState } from 'react';
-import { UserCheck, UserX, RefreshCw, Send, Phone, Clock, FileText } from 'lucide-react';
+import { UserCheck, UserX, RefreshCw, Send, Phone, FileText } from 'lucide-react';
 import type { StaffWorkloadItem } from '../types/staffAssignment';
 
 interface StaffAssignmentSectionProps {
@@ -85,8 +85,8 @@ export const StaffAssignmentSection: React.FC<StaffAssignmentSectionProps> = ({
                     {assignedStaffPhone || '0987654321'}
                   </span>
                   <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-slate-400" />
-                    Ca làm việc hiện tại
+                    <UserCheck className="w-3 h-3 text-slate-400" />
+                    Nhân viên cơ sở
                   </span>
                 </div>
               </div>
@@ -110,13 +110,13 @@ export const StaffAssignmentSection: React.FC<StaffAssignmentSectionProps> = ({
           {!assignedStaffId && (
             <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 p-3 rounded-xl border border-amber-200/60">
               <UserX className="w-4 h-4 shrink-0 text-amber-500" />
-              <span>Sự cố hiện chưa có nhân viên phụ trách. Vui lòng phân công nhân viên theo ca trực.</span>
+              <span>Sự cố hiện chưa có nhân viên phụ trách. Vui lòng phân công nhân viên xử lý.</span>
             </div>
           )}
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-2">
-              Chọn nhân viên trực ca tại cơ sở:
+              Chọn nhân viên phụ trách tại cơ sở:
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-56 overflow-y-auto pr-1">
               {staffList.length > 0 ? (
@@ -139,7 +139,7 @@ export const StaffAssignmentSection: React.FC<StaffAssignmentSectionProps> = ({
                       />
                       <div>
                         <span className="font-bold text-xs text-slate-900 block">{s.staffName}</span>
-                        <span className="text-[11px] text-slate-500 block">{s.shift || 'Ca trực'}</span>
+                        <span className="text-[11px] text-slate-500 block">{s.staffPhone || 'Nhân viên cơ sở'}</span>
                       </div>
                     </div>
                     <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-600">

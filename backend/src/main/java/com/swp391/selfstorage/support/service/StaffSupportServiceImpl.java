@@ -236,6 +236,10 @@ public class StaffSupportServiceImpl implements StaffSupportService {
                 long completedTasks = supportRequestRepository.countByAssignedStaffIdAndStatusIn(
                         staff.getId(), List.of(SupportStatus.RESOLVED, SupportStatus.CLOSED, SupportStatus.AUTO_CLOSED)
                 );
+                long dailyCount = staffDailyAssignmentRepository.countByStaffIdAndWorkDate(
+                        staff.getId(), LocalDate.now()
+                );
+                long totalActive = Math.max(activeTasks, dailyCount);
 
                 workloadList.add(StaffWorkloadResponse.builder()
                         .staffId(staff.getId())
@@ -244,7 +248,7 @@ public class StaffSupportServiceImpl implements StaffSupportService {
                         .staffPhone(staff.getPhone())
                         .facilityId(facility.getId())
                         .facilityName(facility.getName())
-                        .activeTaskCount(activeTasks)
+                        .activeTaskCount(totalActive)
                         .completedTaskCount(completedTasks)
                         .build());
             }

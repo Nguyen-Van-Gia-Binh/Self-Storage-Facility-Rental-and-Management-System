@@ -1,47 +1,41 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Phone,
-  PhoneCall,
-  Lock,
   Clock,
   CheckCircle,
   Calendar,
   RefreshCw,
   Search,
-  Filter,
+  FileText,
+  Archive,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import {
   fetchFacilityWaitlists,
-  startContacting,
   rejectWaitlist,
-  followUpWaitlist,
 } from '@/api/waitlist';
 import { CreateDirectContractModal } from '@/features/manager/components/CreateDirectContractModal';
 import type { WaitlistResponse } from '@/types/waitlist';
 import type { FacilityListItem } from '@/types';
-import { useCurrentUser } from '@/utils/useCurrentUser';
 
 export const WaitlistInboxPage: React.FC = () => {
-  const user = useCurrentUser();
+  const navigate = useNavigate();
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
   const [selectedFacilityId, setSelectedFacilityId] = useState<number | null>(null);
   const [waitlists, setWaitlists] = useState<WaitlistResponse[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [statusTab, setStatusTab] = useState<'ACTIVE' | 'CONVERTED' | 'ARCHIVED' | 'ALL'>('ACTIVE');
   const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // Direct Contract Modal State
   const [directModalItem, setDirectModalItem] = useState<WaitlistResponse | null>(null);
 
-  // Reject & FollowUp Modal State
-  const [rejectModalItem, setRejectModalItem] = useState<WaitlistResponse | null>(null);
-  const [rejectReason, setRejectReason] = useState<string>('');
-
-  const [followUpModalItem, setFollowUpModalItem] = useState<WaitlistResponse | null>(null);
-  const [followUpNotes, setFollowUpNotes] = useState<string>('');
+  // Archive (Soft-remove) Modal State
+  const [archiveModalItem, setArchiveModalItem] = useState<WaitlistResponse | null>(null);
+  const [archiveReason, setArchiveReason] = useState<string>('');
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToast({ text, type });
@@ -82,78 +76,72 @@ export const WaitlistInboxPage: React.FC = () => {
     }
   }, [selectedFacilityId, loadWaitlists]);
 
-  // Handle Start Contacting
-  const handleStartContacting = async (item: WaitlistResponse) => {
-    try {
-      setActionLoading(true);
-      await startContacting(item.id);
-      showToast('Đã bắt đầu tư vấn khách hàng');
-      if (selectedFacilityId) loadWaitlists(selectedFacilityId);
-    } catch (err: any) {
-      showToast(err.message || 'Khách hàng này đang được nhân viên khác tư vấn', 'error');
-      if (selectedFacilityId) loadWaitlists(selectedFacilityId);
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  // Open Direct Contract Modal using unified CreateDirectContractModal
+  // Open Direct Contract Modal
   const openDirectContractModal = (item: WaitlistResponse) => {
     setDirectModalItem(item);
   };
 
-  // Submit Reject
-  const handleConfirmReject = async () => {
-    if (!rejectModalItem) return;
+  // Submit Archive (Soft-remove: status -> REJECTED / ARCHIVED)
+  const handleConfirmArchive = async () => {
+    if (!archiveModalItem) return;
     try {
       setActionLoading(true);
-      await rejectWaitlist(rejectModalItem.id, { reason: rejectReason });
-      showToast('Đã ghi nhận khách hàng từ chối');
-      setRejectModalItem(null);
-      setRejectReason('');
-      if (selectedFacilityId) loadWaitlists(selectedFacilityId);
+      await rejectWaitlist(archiveModalItem.id, {
+        reason: archiveReason.trim() || 'Quản lý chuyển sang danh sách lưu trữ',
+      });
+      showToast('Đã chuyển khách hàng vào mục Lưu trữ an toàn (dữ liệu được bảo toàn)', 'success');
+      setArchiveModalItem(null);
+      setArchiveReason('');
+      if (selectedFacilityId) await loadWaitlists(selectedFacilityId);
     } catch (err: any) {
-      showToast(err.message || 'Lỗi khi từ chối', 'error');
+      showToast(err.message || 'Lỗi khi lưu trữ khách hàng', 'error');
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Submit FollowUp
-  const handleConfirmFollowUp = async () => {
-    if (!followUpModalItem) return;
-    try {
-      setActionLoading(true);
-      await followUpWaitlist(followUpModalItem.id, { contactNotes: followUpNotes });
-      showToast('Đã cập nhật ghi chú và mở khóa để hẹn gọi lại sau');
-      setFollowUpModalItem(null);
-      setFollowUpNotes('');
-      if (selectedFacilityId) loadWaitlists(selectedFacilityId);
-    } catch (err: any) {
-      showToast(err.message || 'Lỗi khi lưu ghi chú', 'error');
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  // Safe list
+  const safeWaitlists = Array.isArray(waitlists) ? waitlists : [];
 
   // Filtered waitlists
-  const safeWaitlists = Array.isArray(waitlists) ? waitlists : [];
   const filteredWaitlists = safeWaitlists.filter((item) => {
-    const matchesStatus =
-      statusFilter === 'ALL' || item.status === statusFilter;
+    let matchesTab = true;
+    if (statusTab === 'ACTIVE') {
+      matchesTab = item.status === 'WAITING' || item.status === 'CONTACTING' || item.status === 'PENDING_FOLLOW_UP';
+    } else if (statusTab === 'CONVERTED') {
+      matchesTab = item.status === 'CONVERTED';
+    } else if (statusTab === 'ARCHIVED') {
+      matchesTab = item.status === 'REJECTED' || item.status === 'CANCELLED';
+    }
+
     const matchesSearch =
       !searchTerm ||
       (item.customerName && item.customerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (item.customerPhone && item.customerPhone.includes(searchTerm)) ||
       (item.unitTypeName && item.unitTypeName.toLowerCase().includes(searchTerm.toLowerCase()));
-    return Boolean(matchesStatus && matchesSearch);
+
+    return Boolean(matchesTab && matchesSearch);
   });
 
-  // KPI stats
-  const countWaiting = safeWaitlists.filter((w) => w.status === 'WAITING').length;
-  const countContacting = safeWaitlists.filter((w) => w.status === 'CONTACTING').length;
-  const countFollowUp = safeWaitlists.filter((w) => w.status === 'PENDING_FOLLOW_UP').length;
+  // KPI counts
+  const countActive = safeWaitlists.filter(
+    (w) => w.status === 'WAITING' || w.status === 'CONTACTING' || w.status === 'PENDING_FOLLOW_UP'
+  ).length;
   const countConverted = safeWaitlists.filter((w) => w.status === 'CONVERTED').length;
+  const countArchived = safeWaitlists.filter(
+    (w) => w.status === 'REJECTED' || w.status === 'CANCELLED'
+  ).length;
+
+  // Priority rule check: Check if unassigned reservations exist
+  const hasUnassignedReservations = safeWaitlists.some(
+    (w) =>
+      (w.status === 'WAITING' || w.status === 'CONTACTING' || w.status === 'PENDING_FOLLOW_UP') &&
+      (w.unassignedReservationCount ?? 0) > 0
+  );
+  const totalUnassignedCount = safeWaitlists.reduce(
+    (max, w) => Math.max(max, w.unassignedReservationCount ?? 0),
+    0
+  );
 
   return (
     <div className="space-y-6 p-6">
@@ -171,9 +159,9 @@ export const WaitlistInboxPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Danh sách Chờ & Hộp thư Tư vấn (Telesales CRM)</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Danh sách Chờ (Waitlist)</h1>
           <p className="text-sm text-gray-500">
-            Quản lý tư vấn khách hàng danh sách chờ, kiểm tra công suất trống và tạo hợp đồng trực tiếp hoặc đơn đặt cọc.
+            Quản lý khách hàng đang chờ thuê kho khi cơ sở hết chỗ và hỗ trợ tạo hợp đồng trực tiếp.
           </p>
         </div>
 
@@ -197,7 +185,7 @@ export const WaitlistInboxPage: React.FC = () => {
           </select>
           <button
             onClick={() => selectedFacilityId && loadWaitlists(selectedFacilityId)}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
+            className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
             title="Làm mới dữ liệu"
           >
             <RefreshCw className="h-4 w-4" />
@@ -205,33 +193,44 @@ export const WaitlistInboxPage: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      {/* Priority Alert Banner if unassigned reservations exist */}
+      {hasUnassignedReservations && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-200 text-amber-800 font-bold text-sm shrink-0 mt-0.5">
+                ⚠️
+              </span>
+              <div>
+                <h4 className="font-bold text-sm text-amber-900">
+                  CẢNH BÁO QUY CHẾ ƯU TIÊN: Đang có {totalUnassignedCount} đơn đặt chỗ online chờ gán ô kho
+                </h4>
+                <p className="mt-0.5 text-xs text-amber-800 leading-relaxed">
+                  Cơ sở đang có khách hàng đã thanh toán cọc giữ chỗ trước nhưng chưa được gán ô kho vật lý.
+                  Hệ thống tạm khóa phân bổ Danh sách chờ (Waitlist) nhằm bảo đảm ô kho cho khách đặt trước theo đúng quy chuẩn nghiệp vụ.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate(`/manager/allocation?facilityId=${selectedFacilityId}`)}
+              className="shrink-0 rounded-lg bg-amber-700 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-800 transition flex items-center gap-1.5"
+            >
+              Đi đến Gán ô kho cho khách đặt trước →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* KPI Cards (Clean 3 Cards) */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Đang chờ (FIFO)</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Khách đang chờ</span>
             <Clock className="h-5 w-5 text-amber-500" />
           </div>
-          <div className="mt-2 text-2xl font-bold text-gray-900">{countWaiting}</div>
-          <p className="mt-1 text-xs text-gray-400">Khách đăng ký chưa tư vấn</p>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Đang tư vấn</span>
-            <PhoneCall className="h-5 w-5 text-indigo-500" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-indigo-600">{countContacting}</div>
-          <p className="mt-1 text-xs text-gray-400">Đang tư vấn khách hàng</p>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Hẹn gọi lại</span>
-            <RefreshCw className="h-5 w-5 text-purple-500" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-purple-600">{countFollowUp}</div>
-          <p className="mt-1 text-xs text-gray-400">Khách bận / chăm sóc lại</p>
+          <div className="mt-2 text-2xl font-bold text-gray-900">{countActive}</div>
+          <p className="mt-1 text-xs text-gray-400">Khách hàng cần phục vụ trong danh sách chờ</p>
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -240,65 +239,116 @@ export const WaitlistInboxPage: React.FC = () => {
             <CheckCircle className="h-5 w-5 text-emerald-500" />
           </div>
           <div className="mt-2 text-2xl font-bold text-emerald-600">{countConverted}</div>
-          <p className="mt-1 text-xs text-gray-400">Hợp đồng chuyển đổi từ CRM</p>
+          <p className="mt-1 text-xs text-gray-400">Đã tạo hợp đồng thành công từ danh sách chờ</p>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Đã lưu trữ / Gỡ bỏ</span>
+            <Archive className="h-5 w-5 text-slate-400" />
+          </div>
+          <div className="mt-2 text-2xl font-bold text-slate-600">{countArchived}</div>
+          <p className="mt-1 text-xs text-gray-400">Dữ liệu được lưu trữ an toàn, không bị xóa</p>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1">
+        {/* Segmented Status Tabs */}
+        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setStatusTab('ACTIVE')}
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              statusTab === 'ACTIVE'
+                ? 'bg-white text-slate-900 shadow-sm font-bold'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Đang chờ ({countActive})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusTab('CONVERTED')}
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              statusTab === 'CONVERTED'
+                ? 'bg-white text-emerald-800 shadow-sm font-bold'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Đã tạo HĐ ({countConverted})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusTab('ARCHIVED')}
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              statusTab === 'ARCHIVED'
+                ? 'bg-white text-slate-800 shadow-sm font-bold'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Đã lưu trữ ({countArchived})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusTab('ALL')}
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              statusTab === 'ALL'
+                ? 'bg-white text-slate-900 shadow-sm font-bold'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Tất cả ({safeWaitlists.length})
+          </button>
+        </div>
+
+        {/* Search Input */}
+        <div className="relative min-w-[260px]">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Tìm theo tên khách, số điện thoại, loại kho..."
-            className="w-full rounded-lg border border-gray-300 pl-9 pr-4 py-2 text-sm focus:border-teal-500 focus:outline-none"
+            placeholder="Tìm tên, SĐT, loại kho..."
+            className="w-full rounded-lg border border-gray-300 pl-9 pr-4 py-1.5 text-xs focus:border-teal-500 focus:outline-none"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-gray-500" />
-          <select
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="ALL">Tất cả trạng thái</option>
-            <option value="WAITING">Chờ tư vấn (WAITING)</option>
-            <option value="CONTACTING">Đang liên hệ (CONTACTING)</option>
-            <option value="PENDING_FOLLOW_UP">Hẹn gọi lại (FOLLOW_UP)</option>
-            <option value="CONVERTED">Đã chốt hợp đồng (CONVERTED)</option>
-          </select>
-        </div>
       </div>
 
-      {/* CRM Inbox Table */}
+      {/* Waitlist Table */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         {loading ? (
           <div className="py-12 text-center text-gray-500">Đang tải danh sách chờ...</div>
         ) : filteredWaitlists.length === 0 ? (
-          <div className="py-12 text-center text-gray-500">Không có khách hàng nào trong danh sách chờ.</div>
+          <div className="py-12 text-center text-gray-500">
+            {statusTab === 'ACTIVE'
+              ? 'Không có khách hàng nào trong danh sách chờ.'
+              : statusTab === 'CONVERTED'
+              ? 'Chưa có hợp đồng nào được tạo từ danh sách chờ.'
+              : statusTab === 'ARCHIVED'
+              ? 'Chưa có khách hàng nào trong mục lưu trữ.'
+              : 'Không có khách hàng nào trong danh sách chờ.'}
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-gray-600">
-              <thead className="bg-gray-50 text-xs font-semibold uppercase text-gray-500">
+              <thead className="bg-gray-50 text-xs font-semibold uppercase text-gray-500 border-b border-gray-200">
                 <tr>
                   <th className="px-4 py-3">Khách hàng</th>
-                  <th className="px-4 py-3">Loại kho & Sức chứa trống</th>
-                  <th className="px-4 py-3">Ngày hẹn</th>
-                  <th className="px-4 py-3">Trạng thái & Hạn tư vấn</th>
-                  <th className="px-4 py-3 text-right">Thao tác CRM</th>
+                  <th className="px-4 py-3">Loại kho nhu cầu</th>
+                  <th className="px-4 py-3">Ngày mong muốn</th>
+                  <th className="px-4 py-3">Trạng thái</th>
+                  <th className="px-4 py-3 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredWaitlists.map((item) => {
-                  const isLockedByMe = item.assignedFmId === user?.id;
-                  const isLockedByOther =
-                    item.status === 'CONTACTING' &&
-                    item.assignedFmId &&
-                    item.assignedFmId !== user?.id &&
-                    (item.remainingTimeoutSeconds ?? 0) > 0;
+                  const isActive =
+                    item.status === 'WAITING' ||
+                    item.status === 'CONTACTING' ||
+                    item.status === 'PENDING_FOLLOW_UP';
+                  const isConverted = item.status === 'CONVERTED';
+                  const isArchived = item.status === 'REJECTED' || item.status === 'CANCELLED';
 
                   return (
                     <tr key={item.id} className="hover:bg-gray-50 transition-colors">
@@ -316,23 +366,17 @@ export const WaitlistInboxPage: React.FC = () => {
                         )}
                       </td>
 
-                      {/* Unit Type & Available Capacity Badge */}
+                      {/* Unit Type (Completely removed capacity badges like 'Hết công suất (0)' as requested) */}
                       <td className="px-4 py-3">
-                        <div className="font-medium text-gray-800">{item.unitTypeName}</div>
-                        <div className="mt-1 flex items-center gap-2">
-                          <span
-                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                              (item.availableCapacity ?? 0) > 0
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                          >
-                            {(item.availableCapacity ?? 0) > 0
-                              ? `Còn ${item.availableCapacity} ô trống`
-                              : 'Hết công suất (0)'}
-                          </span>
-                          <span className="text-xs text-gray-400">Thuê {item.rentalMonths} tháng</span>
-                        </div>
+                        <div className="font-medium text-gray-900">{item.unitTypeName}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">Thuê {item.rentalMonths} tháng</div>
+                        {(item.unassignedReservationCount ?? 0) > 0 && (
+                          <div className="mt-1">
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 border border-amber-200">
+                              ⚠️ Ưu tiên {item.unassignedReservationCount} đơn đặt trước
+                            </span>
+                          </div>
+                        )}
                       </td>
 
                       {/* Target Date */}
@@ -343,119 +387,76 @@ export const WaitlistInboxPage: React.FC = () => {
                         </div>
                       </td>
 
-                      {/* Status & Countdown Timer */}
+                      {/* Clean Status */}
                       <td className="px-4 py-3">
-                        {item.status === 'WAITING' && (
-                          <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 border border-amber-200">
-                            Chờ liên hệ
+                        {isConverted ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                            <CheckCircle className="h-3.5 w-3.5" />
+                            Đã tạo HĐ
                           </span>
-                        )}
-
-                        {item.status === 'CONTACTING' && (
-                          <div className="space-y-1">
-                            <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 border border-indigo-200">
-                              <PhoneCall className="h-3 w-3 animate-pulse text-indigo-600" />
-                              Đang tư vấn
-                            </span>
-                            {item.assignedFmName && (
-                              <div className="text-xs text-gray-500">
-                                Nhân sự: <span className="font-medium">{item.assignedFmName}</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {item.status === 'PENDING_FOLLOW_UP' && (
-                          <div className="space-y-1">
-                            <span className="inline-flex items-center rounded-full bg-purple-50 px-2.5 py-1 text-xs font-semibold text-purple-700 border border-purple-200">
-                              Hẹn gọi lại sau
-                            </span>
-                            {item.contactNotes && (
-                              <div className="text-xs text-purple-900 bg-purple-50 rounded p-1 max-w-xs italic">
-                                &quot;{item.contactNotes}&quot;
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {item.status === 'CONVERTED' && (
-                          <div className="space-y-1">
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
-                              <CheckCircle className="h-3 w-3" />
-                              {item.convertedContractId ? 'Đã tạo HĐ trực tiếp' : 'Đã chốt cọc (24h)'}
-                            </span>
-                            {item.convertedContractId ? (
-                              <div className="text-xs font-mono text-teal-800 font-semibold">
-                                HĐ #{item.convertedContractId}
-                              </div>
-                            ) : item.convertedReservationCode ? (
-                              <div className="text-xs font-mono text-emerald-800">
-                                {item.convertedReservationCode}
-                              </div>
-                            ) : null}
-                          </div>
-                        )}
-
-                        {item.status === 'REJECTED' && (
-                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
-                            Khách từ chối
+                        ) : isArchived ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 border border-slate-200">
+                            <Archive className="h-3 w-3 text-slate-400" />
+                            Đã lưu trữ
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
+                            <Clock className="h-3.5 w-3.5" />
+                            Đang chờ
                           </span>
                         )}
                       </td>
 
                       {/* Actions */}
                       <td className="px-4 py-3 text-right">
-                        {/* Case 1: Locked by another FM */}
-                        {isLockedByOther ? (
-                          <div className="flex items-center justify-end gap-1.5 text-xs text-gray-400">
-                            <Lock className="h-3.5 w-3.5" />
-                            <span>Đang được FM {item.assignedFmName || 'khác'} xử lý</span>
-                          </div>
-                        ) : item.status === 'WAITING' || item.status === 'PENDING_FOLLOW_UP' ? (
-                          /* Case 2: Available to start contacting */
-                          <button
-                            onClick={() => handleStartContacting(item)}
-                            disabled={actionLoading}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-teal-700 disabled:opacity-50"
-                          >
-                            <Phone className="h-3.5 w-3.5" />
-                            Bắt đầu tư vấn
-                          </button>
-                        ) : item.status === 'CONTACTING' && isLockedByMe ? (
-                          /* Case 3: Locked by me -> Direct contract or Reservation */
+                        {isActive ? (
                           <div className="flex items-center justify-end gap-2">
+                            {(item.unassignedReservationCount ?? 0) > 0 ? (
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/manager/allocation?facilityId=${selectedFacilityId}`)}
+                                className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-700 flex items-center gap-1 shrink-0"
+                                title={`Đang có ${item.unassignedReservationCount} khách đặt trước chưa gán ô kho. Theo quy chế ưu tiên, cần hoàn tất gán ô kho cho khách đặt trước tại mục "Gán ô kho"!`}
+                              >
+                                Gán ô kho ({item.unassignedReservationCount})
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => openDirectContractModal(item)}
+                                disabled={actionLoading}
+                                className="rounded-lg bg-teal-700 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-teal-800 disabled:opacity-50 flex items-center gap-1.5 shrink-0"
+                                title="Tạo hợp đồng trực tiếp cho khách hàng từ danh sách chờ"
+                              >
+                                <FileText className="h-3.5 w-3.5" />
+                                Tạo HĐ trực tiếp
+                              </button>
+                            )}
+
+                            {/* Nút Remove / Lưu trữ: Chuyển sang mục lưu trữ, không xóa mất dữ liệu khách hàng */}
                             <button
-                              onClick={() => openDirectContractModal(item)}
-                              disabled={actionLoading}
-                              className="rounded-lg bg-teal-700 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-teal-800"
-                              title="Tạo hợp đồng trực tiếp tại quầy / chốt khách đặt trước dài hạn"
-                            >
-                              Tạo HĐ trực tiếp
-                            </button>
-                            <button
+                              type="button"
                               onClick={() => {
-                                setFollowUpModalItem(item);
-                                setFollowUpNotes(item.contactNotes || '');
+                                setArchiveModalItem(item);
+                                setArchiveReason('');
                               }}
                               disabled={actionLoading}
-                              className="rounded-lg border border-purple-300 bg-purple-50 px-2.5 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100"
+                              className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-rose-600 flex items-center gap-1 transition-colors shrink-0"
+                              title="Gỡ khỏi danh sách chờ và chuyển sang mục lưu trữ an toàn (không xóa dữ liệu)"
                             >
-                              Hẹn lại
-                            </button>
-                            <button
-                              onClick={() => {
-                                setRejectModalItem(item);
-                                setRejectReason('');
-                              }}
-                              disabled={actionLoading}
-                              className="rounded-lg border border-red-300 bg-red-50 px-2 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100"
-                            >
-                              Từ chối
+                              <Archive className="h-3.5 w-3.5" />
+                              Gỡ / Lưu trữ
                             </button>
                           </div>
-                        ) : item.status === 'CONVERTED' ? (
-                          <span className="text-xs text-teal-700 font-semibold bg-teal-50 border border-teal-200 px-2 py-1 rounded-md">
-                            {item.convertedContractId ? `HĐ #${item.convertedContractId} sẵn sàng` : 'Đã tạo HĐ trực tiếp'}
+                        ) : isConverted ? (
+                          <span className="text-xs text-teal-700 font-semibold bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-md inline-block">
+                            {item.convertedContractId
+                              ? `HĐ #${item.convertedContractId}`
+                              : item.convertedReservationCode || 'Đã tạo HĐ'}
+                          </span>
+                        ) : isArchived ? (
+                          <span className="text-xs text-slate-500 italic bg-slate-50 border border-slate-200 px-2 py-1 rounded-md inline-block">
+                            {item.contactNotes || 'Đã lưu trữ'}
                           </span>
                         ) : null}
                       </td>
@@ -468,7 +469,7 @@ export const WaitlistInboxPage: React.FC = () => {
         )}
       </div>
 
-      {/* MODAL: Sử dụng chung CreateDirectContractModal hoàn chỉnh */}
+      {/* MODAL 1: Tạo Hợp Đồng Trực Tiếp */}
       {directModalItem && (
         <CreateDirectContractModal
           isOpen={!!directModalItem}
@@ -485,72 +486,61 @@ export const WaitlistInboxPage: React.FC = () => {
         />
       )}
 
-      {/* MODAL 3: Hẹn gọi lại sau (Follow Up) */}
-      {followUpModalItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-gray-900">Ghi chú & Hẹn gọi lại sau</h3>
-            <p className="mt-1 text-xs text-gray-500">
-              Nhập thông tin phản hồi từ khách (khách bận, cần suy nghĩ) để mở khóa cho ca sau hoặc tiếp tục chăm sóc.
-            </p>
-
-            <textarea
-              rows={3}
-              value={followUpNotes}
-              onChange={(e) => setFollowUpNotes(e.target.value)}
-              placeholder="VD: Khách đang họp, hẹn 15h gọi lại tư vấn tiếp..."
-              className="mt-4 w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-teal-500 focus:outline-none"
-            />
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => setFollowUpModalItem(null)}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleConfirmFollowUp}
-                disabled={actionLoading}
-                className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-700 disabled:opacity-50"
-              >
-                Lưu Ghi Chú & Mở Khóa
-              </button>
+      {/* MODAL 2: Gỡ khỏi danh sách chờ & Chuyển sang Lưu Trữ (Bảo toàn dữ liệu khách hàng) */}
+      {archiveModalItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-slate-100 text-slate-700 shrink-0">
+                <Archive className="w-5 h-5 text-slate-700" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Gỡ khỏi danh sách & Lưu trữ</h3>
+                <p className="mt-1 text-xs text-gray-500 leading-relaxed">
+                  Khách hàng <strong>{archiveModalItem.customerName || 'Khách hàng'}</strong> ({archiveModalItem.customerPhone || 'Không có SĐT'}) sẽ được chuyển sang mục <strong>Đã lưu trữ</strong>.
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* MODAL 4: Khách từ chối */}
-      {rejectModalItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-gray-900">Ghi nhận Khách Từ chối</h3>
-            <p className="mt-1 text-xs text-gray-500">
-              Lưu lý do khách không còn nhu cầu để phục vụ phân tích báo cáo tỷ lệ chuyển đổi.
-            </p>
+            <div className="mt-3 rounded-xl bg-slate-50 border border-slate-200 p-3 text-xs text-slate-600">
+              <p className="font-semibold text-slate-800 flex items-center gap-1.5">
+                <CheckCircle className="w-4 h-4 text-teal-600" />
+                Dữ liệu khách hàng được bảo toàn:
+              </p>
+              <p className="mt-1 text-[11px] text-slate-500">
+                Hệ thống chỉ thay đổi trạng thái sang Lưu trữ chứ không xóa bản ghi CSDL, giúp bạn có thể tra cứu lại bất cứ lúc nào tại tab &quot;Đã lưu trữ&quot;.
+              </p>
+            </div>
 
-            <textarea
-              rows={3}
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="VD: Khách đã tìm được kho khác / Giá không phù hợp..."
-              className="mt-4 w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-teal-500 focus:outline-none"
-            />
+            <div className="mt-4">
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Lý do gỡ / Ghi chú lưu trữ:
+              </label>
+              <textarea
+                rows={3}
+                value={archiveReason}
+                onChange={(e) => setArchiveReason(e.target.value)}
+                placeholder="VD: Khách không còn nhu cầu / Đã tìm được chỗ khác / Dời lịch..."
+                className="w-full rounded-xl border border-gray-300 p-3 text-xs focus:border-teal-500 focus:outline-none"
+              />
+            </div>
 
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-5 flex justify-end gap-2.5">
               <button
-                onClick={() => setRejectModalItem(null)}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                type="button"
+                onClick={() => setArchiveModalItem(null)}
+                disabled={actionLoading}
+                className="rounded-xl border border-gray-300 px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 transition"
               >
-                Hủy
+                Hủy bỏ
               </button>
               <button
-                onClick={handleConfirmReject}
+                type="button"
+                onClick={handleConfirmArchive}
                 disabled={actionLoading}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 disabled:opacity-50"
+                className="rounded-xl bg-slate-800 hover:bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-sm disabled:opacity-50 transition flex items-center gap-1.5"
               >
-                Xác nhận Từ chối
+                {actionLoading ? 'Đang lưu trữ...' : 'Xác nhận Lưu trữ'}
               </button>
             </div>
           </div>
@@ -559,5 +549,5 @@ export const WaitlistInboxPage: React.FC = () => {
     </div>
   );
 };
-export default WaitlistInboxPage;
 
+export default WaitlistInboxPage;

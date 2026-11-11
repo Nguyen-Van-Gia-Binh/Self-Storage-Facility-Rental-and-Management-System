@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, X, Clock, AlertTriangle, CheckCircle2, User } from 'lucide-react';
+import { Search, X, Calendar, AlertTriangle, CheckCircle2, User } from 'lucide-react';
 import type { CheckInContract } from '../../../types';
 import { Badge } from '../../../components/ui/Badge';
 
@@ -244,14 +244,14 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
                   </span>
                 </div>
 
-                {/* Thông tin loại kho & giờ hẹn */}
+                {/* Thông tin loại kho & ngày bắt đầu */}
                 <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
                   <span className="truncate max-w-[140px] text-slate-600 font-medium">
                     {contract.unitTypeName}
                   </span>
                   <span className="flex items-center gap-1 font-medium text-slate-600">
-                    <Clock className="w-3 h-3 text-slate-400" />
-                    {contract.appointmentTime}
+                    <Calendar className="w-3 h-3 text-slate-400" />
+                    {contract.startDate || 'Trong ngày'}
                   </span>
                 </div>
 

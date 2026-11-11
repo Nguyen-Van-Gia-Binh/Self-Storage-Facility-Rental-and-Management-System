@@ -30,7 +30,6 @@ export const WorkListPage: React.FC = () => {
   const navigate = useNavigate();
 
   const queryDate = searchParams.get('date') || new Date().toISOString().split('T')[0];
-  const queryShift = searchParams.get('shift') || 'ALL';
   const queryStaffId = searchParams.get('staffId');
 
   const [facility, setFacility] = useState<FacilityListItem | null>(null);
@@ -74,13 +73,13 @@ export const WorkListPage: React.FC = () => {
             customerName: 'Nguyễn Văn A',
             customerPhone: '0901234567',
             scheduledDate: queryDate,
-            scheduledTime: '08:00',
+            scheduledTime: '',
             priority: 'NORMAL',
             isUrgent: false,
             assignedStaffId: 101,
             assignedStaffName: 'Nguyễn Văn A',
             status: 'COMPLETED',
-            notes: 'Đã hoàn thành bàn giao lúc 08:30, kích hoạt mã PIN 123456',
+            notes: 'Đã hoàn thành bàn giao, kích hoạt mã PIN 123456',
             referenceCode: 'HD-001',
           },
           {
@@ -93,7 +92,7 @@ export const WorkListPage: React.FC = () => {
             customerName: 'Trần Thị B',
             customerPhone: '0912345678',
             scheduledDate: queryDate,
-            scheduledTime: '10:00',
+            scheduledTime: '',
             priority: 'NORMAL',
             isUrgent: false,
             assignedStaffId: 102,
@@ -112,7 +111,7 @@ export const WorkListPage: React.FC = () => {
             customerName: 'Lê Văn C',
             customerPhone: '0923456789',
             scheduledDate: queryDate,
-            scheduledTime: '11:15',
+            scheduledTime: '',
             priority: 'HIGH',
             isUrgent: true,
             assignedStaffId: 101,
@@ -131,13 +130,13 @@ export const WorkListPage: React.FC = () => {
             customerName: 'Phạm Thị D',
             customerPhone: '0934567890',
             scheduledDate: queryDate,
-            scheduledTime: '14:30',
+            scheduledTime: '',
             priority: 'NORMAL',
             isUrgent: false,
             assignedStaffId: 103,
             assignedStaffName: 'Lê Văn C',
             status: 'UNASSIGNED',
-            notes: 'Hẹn trước 14:30 chiều',
+            notes: 'Lịch nhận kho trong ngày',
             referenceCode: 'HD-012',
           },
           {
@@ -150,7 +149,7 @@ export const WorkListPage: React.FC = () => {
             customerName: 'Hoàng Văn E',
             customerPhone: '0987654321',
             scheduledDate: queryDate,
-            scheduledTime: '16:00',
+            scheduledTime: '',
             priority: 'NORMAL',
             isUrgent: false,
             assignedStaffId: 104,
@@ -201,8 +200,8 @@ export const WorkListPage: React.FC = () => {
     });
 
     result.sort((a, b) => {
-      if (sortBy === 'TIME_ASC') return (a.scheduledTime || '').localeCompare(b.scheduledTime || '');
-      if (sortBy === 'TIME_DESC') return (b.scheduledTime || '').localeCompare(a.scheduledTime || '');
+      if (sortBy === 'TIME_ASC') return (a.scheduledDate || '').localeCompare(b.scheduledDate || '');
+      if (sortBy === 'TIME_DESC') return (b.scheduledDate || '').localeCompare(a.scheduledDate || '');
       if (sortBy === 'TYPE') return a.taskType.localeCompare(b.taskType);
       return 0;
     });
@@ -229,10 +228,7 @@ export const WorkListPage: React.FC = () => {
   };
 
   const getShiftTitle = () => {
-    if (queryShift === 'MORNING') return 'Ca Sáng (06:00 - 14:00)';
-    if (queryShift === 'AFTERNOON') return 'Ca Chiều (14:00 - 22:00)';
-    if (queryShift === 'NIGHT') return 'Ca Đêm (22:00 - 06:00)';
-    return 'Tất cả các ca';
+    return 'Lịch công việc trong ngày';
   };
 
   const breadcrumbItems = [
@@ -248,7 +244,7 @@ export const WorkListPage: React.FC = () => {
     <div className="space-y-6">
       <Breadcrumb items={breadcrumbItems} />
 
-      {/* Header Thông tin ca & Khối lượng */}
+      {/* Header Thông tin & Khối lượng công việc */}
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -273,7 +269,7 @@ export const WorkListPage: React.FC = () => {
               onClick={() => navigate(`/manager/staff-schedule/facilities/${facilityId}`)}
               className="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
             >
-              ← Về lịch ca trực
+              ← Về bảng điều phối
             </button>
           </div>
         </div>
@@ -302,8 +298,8 @@ export const WorkListPage: React.FC = () => {
               onChange={(e) => setSortBy(e.target.value as any)}
               className="text-xs font-semibold px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-hidden cursor-pointer"
             >
-              <option value="TIME_ASC">Giờ hẹn (Sớm nhất)</option>
-              <option value="TIME_DESC">Giờ hẹn (Muộn nhất)</option>
+              <option value="TIME_ASC">Ngày hẹn (Sớm nhất)</option>
+              <option value="TIME_DESC">Ngày hẹn (Muộn nhất)</option>
               <option value="TYPE">Loại công việc</option>
             </select>
           </div>

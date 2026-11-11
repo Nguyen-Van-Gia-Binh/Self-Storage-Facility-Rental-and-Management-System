@@ -76,6 +76,7 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
     let active = true;
     setLoading(true);
     setError(null);
+    setUnits([]);
 
     fetchStorageUnits(facilityId, { page: 0, size: 500 })
       .then((res) => {
@@ -186,9 +187,9 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
     return 0;
   }, [targetUnitType, targetUnitTypeName]);
 
-  // Kích hoạt Chế độ Đền bù Nâng hạng khi ở chế độ Picker, có yêu cầu loại ô và cơ sở đã hết sạch ô cùng loại
+  // Kích hoạt Chế độ Đền bù Nâng hạng khi đã tải xong dữ liệu (!loading), ở chế độ Picker, có yêu cầu loại ô và cơ sở đã hết sạch ô cùng loại
   const isUpgradeCompensationMode = Boolean(
-    isPickerMode && allowedUnitTypeId && sameTypeAvailableCount === 0
+    !loading && isPickerMode && allowedUnitTypeId && sameTypeAvailableCount === 0
   );
 
   // Kiểm tra một ô kho có phải là ô Nâng hạng đền bù hợp lệ (cùng môi trường, diện tích lớn hơn)
@@ -301,7 +302,9 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
                 {isPickerMode
-                  ? isUpgradeCompensationMode
+                  ? loading
+                    ? 'Đang tải dữ liệu ô kho của cơ sở...'
+                    : isUpgradeCompensationMode
                     ? `Cơ sở hết ô cùng loại. Click vào ô màu vàng hổ phách để nâng hạng đền bù.`
                     : targetUnitTypeName
                     ? `Click vào ô trống màu xanh lá thuộc hạng kho [${targetUnitTypeName}] để phân bổ.`
@@ -319,8 +322,8 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
           </button>
         </div>
 
-        {/* Banner Chế độ Đền bù Nâng hạng khi hết ô cùng loại */}
-        {isUpgradeCompensationMode && (
+        {/* Banner Chế độ Đền bù Nâng hạng khi hết ô cùng loại (chỉ hiển thị sau khi đã tải xong dữ liệu và thực sự hết ô cùng loại) */}
+        {!loading && isUpgradeCompensationMode && (
           <div className="mx-4 sm:mx-5 mt-3 p-3.5 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-300 rounded-2xl flex items-start gap-3 shadow-2xs animate-in fade-in duration-200">
             <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
               <Sparkles className="w-4 h-4 text-white" />
@@ -358,7 +361,7 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
                   <Layers className={`w-3.5 h-3.5 ${isActive ? 'text-brand-600' : 'text-slate-400'}`} />
                   <span>Tầng {floor}</span>
                   <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-brand-50 text-brand-700' : 'bg-slate-200 text-slate-600'}`}>
-                    {count}
+                    {loading ? '...' : count}
                   </span>
                 </button>
               );
@@ -373,11 +376,11 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
               onChange={(e) => setStatusFilter(e.target.value)}
               className="bg-slate-50 border border-slate-200 text-slate-700 rounded-lg px-2.5 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             >
-              <option value="ALL">Tất cả trạng thái ({floorUnits.length})</option>
-              <option value="AVAILABLE">Ô trống ({floorUnits.filter((u) => u.status === 'AVAILABLE').length})</option>
-              <option value="RESERVED">Chờ nhận kho ({floorUnits.filter((u) => u.status === 'RESERVED').length})</option>
-              <option value="OCCUPIED">Đang thuê ({floorUnits.filter((u) => u.status === 'OCCUPIED').length})</option>
-              <option value="MAINTENANCE">Bảo trì ({floorUnits.filter((u) => u.status === 'MAINTENANCE').length})</option>
+              <option value="ALL">Tất cả trạng thái {loading ? '' : `(${floorUnits.length})`}</option>
+              <option value="AVAILABLE">Ô trống {loading ? '' : `(${floorUnits.filter((u) => u.status === 'AVAILABLE').length})`}</option>
+              <option value="RESERVED">Chờ nhận kho {loading ? '' : `(${floorUnits.filter((u) => u.status === 'RESERVED').length})`}</option>
+              <option value="OCCUPIED">Đang thuê {loading ? '' : `(${floorUnits.filter((u) => u.status === 'OCCUPIED').length})`}</option>
+              <option value="MAINTENANCE">Bảo trì {loading ? '' : `(${floorUnits.filter((u) => u.status === 'MAINTENANCE').length})`}</option>
             </select>
           </div>
         </div>

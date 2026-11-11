@@ -161,4 +161,22 @@ describe('FacilityFloorPlanMapModal component — Sơ đồ Mặt bằng 2D & C�
     expect(html).toContain('Nâng hạng đền bù');
     expect(html).toContain('Nâng hạng');
   });
+
+  it('7. Không hiển thị banner Đền bù Nâng hạng khi dữ liệu đang tải (loading)', () => {
+    const rawHtml = renderToString(
+      <FacilityFloorPlanMapModal
+        isOpen={true}
+        onClose={() => {}}
+        facilityId={1}
+        allowedUnitTypeId={99}
+        targetUnitTypeName="Kho Tiêu Chuẩn XS (1m²)"
+        onSelectUnit={() => {}}
+      />
+    );
+    const html = cleanHtml(rawHtml);
+
+    expect(html).not.toContain('Chế độ Đền bù Nâng hạng đã kích hoạt');
+    expect(html).not.toContain('Hết ô cùng loại');
+    expect(html).toContain('Đang tải dữ liệu ô kho của cơ sở');
+  });
 });

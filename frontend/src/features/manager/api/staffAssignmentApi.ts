@@ -51,7 +51,7 @@ export async function getStaffWorkload(facilityId: number): Promise<StaffWorkloa
       facilityName: 'Kho SmartStorage',
       activeTaskCount: 0,
       completedTaskCount: 0,
-      shift: 'Ca sáng (07:00 - 15:30)',
+      shift: '',
       status: 'AVAILABLE',
     },
     {
@@ -63,7 +63,7 @@ export async function getStaffWorkload(facilityId: number): Promise<StaffWorkloa
       facilityName: 'Kho SmartStorage',
       activeTaskCount: 0,
       completedTaskCount: 0,
-      shift: 'Ca chiều (14:30 - 22:30)',
+      shift: '',
       status: 'AVAILABLE',
     },
   ];
@@ -92,7 +92,7 @@ export async function getStaffWorkload(facilityId: number): Promise<StaffWorkloa
         facilityName: item.facilityName || 'Kho SmartStorage',
         activeTaskCount: active,
         completedTaskCount: Number(item.completedTaskCount || 0),
-        shift: 'Ca sáng (07:00 - 15:30)',
+        shift: '',
         status,
       };
     });
@@ -100,6 +100,47 @@ export async function getStaffWorkload(facilityId: number): Promise<StaffWorkloa
     console.warn('Lỗi gọi API /support-requests/staff-workload, sử dụng danh sách nhân viên cơ sở mặc định:', error);
     return fallbackStaff;
   }
+}
+
+/**
+ * Làm giàu danh sách nhân viên cơ sở với số lượng nhiệm vụ thực tế từ bảng điều phối
+ * (Bao gồm Check-in, Trả kho và Sự cố đang phụ trách)
+ */
+export function enrichStaffListWithTasks(
+  staffList: StaffWorkloadItem[],
+  tasks: DailyDispatchTaskItem[]
+): StaffWorkloadItem[] {
+  return staffList.map((staff) => {
+    const activeTasks = (tasks || []).filter(
+      (t) =>
+        (t.assignedStaffId === staff.staffId ||
+          (t.assignedStaffName &&
+            t.assignedStaffName.trim().toLowerCase() === staff.staffName.trim().toLowerCase())) &&
+        t.status !== 'COMPLETED' &&
+        t.status !== 'RESOLVED'
+    );
+    const completedTasks = (tasks || []).filter(
+      (t) =>
+        (t.assignedStaffId === staff.staffId ||
+          (t.assignedStaffName &&
+            t.assignedStaffName.trim().toLowerCase() === staff.staffName.trim().toLowerCase())) &&
+        (t.status === 'COMPLETED' || t.status === 'RESOLVED')
+    );
+
+    const activeCount = Math.max(staff.activeTaskCount || 0, activeTasks.length);
+    const completedCount = Math.max(staff.completedTaskCount || 0, completedTasks.length);
+
+    let status: 'AVAILABLE' | 'NORMAL' | 'OVERLOADED' = 'AVAILABLE';
+    if (activeCount >= 5) status = 'OVERLOADED';
+    else if (activeCount >= 3) status = 'NORMAL';
+
+    return {
+      ...staff,
+      activeTaskCount: activeCount,
+      completedTaskCount: completedCount,
+      status,
+    };
+  });
 }
 
 /**
@@ -317,7 +358,7 @@ export async function getDailyDispatchTasks(
         customerName: ticket.customerName,
         customerPhone: ticket.customerPhone,
         scheduledDate: extractCreatedDate(ticket.createdAt, ticket.code),
-        scheduledTime: ticket.createdAt ? ticket.createdAt.substring(11, 16) : 'Hôm nay',
+        scheduledTime: '',
         slaDeadline: ticket.slaDueAt,
         priority: ticket.isUrgent ? 'URGENT' : 'NORMAL',
         isUrgent: ticket.isUrgent,
@@ -348,7 +389,7 @@ export async function getDailyDispatchTasks(
           customerName: contract.customerName || 'Khách hàng',
           customerPhone: contract.customerPhone || 'Chưa cập nhật',
           scheduledDate: extractCreatedDate(contract.createdAt, contract.code),
-          scheduledTime: '09:00 - 11:30',
+          scheduledTime: '',
           priority: 'NORMAL',
           isUrgent: false,
           status: dispatchStatus,
@@ -385,7 +426,7 @@ export async function getDailyDispatchTasks(
             contract.returnRequestCreatedAt || contract.returnNoticeDate || contract.createdAt,
             contract.code
           ),
-          scheduledTime: contract.appointmentSlot || '14:00 - 16:30',
+          scheduledTime: '',
           priority: 'NORMAL',
           isUrgent: false,
           status: dispatchStatus,

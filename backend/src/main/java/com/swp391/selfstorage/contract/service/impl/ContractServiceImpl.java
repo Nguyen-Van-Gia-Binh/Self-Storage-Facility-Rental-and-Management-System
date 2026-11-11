@@ -2751,6 +2751,28 @@ public class ContractServiceImpl implements ContractService {
 
                 // 5. Kiểm tra tính khả dụng của ô kho (nếu có chỉ định cụ thể) hoặc công suất toàn cơ sở
                 StorageUnit assignedUnit = null;
+                long exploitable = (storageUnitRepository != null)
+                                ? storageUnitRepository.countExploitableUnits(request.getFacilityId(), request.getUnitTypeId(),
+                                                List.of(StorageUnitStatus.MAINTENANCE, StorageUnitStatus.OUT_OF_SERVICE))
+                                : 0L;
+                long busy = (storageUnitRepository != null)
+                                ? storageUnitRepository.countBusyUnits(request.getFacilityId(), request.getUnitTypeId(), startDate, endDateExclusive, bufferDays)
+                                : 0L;
+                long unassigned = (reservationRepository != null)
+                                ? reservationRepository.countUnassignedOverlappingReservations(
+                                                request.getFacilityId(), request.getUnitTypeId(), startDate, endDateExclusive,
+                                                OffsetDateTime.now(ZoneOffset.UTC), bufferDays)
+                                : 0L;
+
+                // Quy tắc ưu tiên sống còn: Khách đặt cọc trước (Reservation) được ưu tiên tuyệt đối so với Danh sách chờ (Waitlist)
+                if (request.getWaitlistId() != null) {
+                        if (unassigned > 0 || (exploitable - busy - unassigned) <= 0) {
+                                throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE,
+                                                "Không thể tạo hợp đồng cho khách từ Danh sách chờ: Hiện có " + unassigned
+                                                + " đơn đặt chỗ của khách đặt trước chưa được gán ô kho. Vui lòng ưu tiên gán ô kho cho khách đặt trước tại mục 'Gán ô kho'!");
+                        }
+                }
+
                 if (request.getStorageUnitId() != null) {
                         assignedUnit = storageUnitRepository.findById(request.getStorageUnitId())
                                         .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND, "Không tìm thấy ô kho đã chọn"));
@@ -2766,17 +2788,21 @@ public class ContractServiceImpl implements ContractService {
                         if (contractRepository.existsOverlappingContractForUnit(request.getStorageUnitId(), startDate, endDateExclusive, bufferDays, 0L)) {
                                 throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Ô kho đã chọn đã có hợp đồng thuê hoạt động trong khoảng thời gian này");
                         }
-                        // Quy tắc tạo hợp đồng trực tiếp tại quầy / qua FM:
-                        // Miễn là ô kho không có ai đang thuê thực tế và đang AVAILABLE, các đơn giữ chỗ trước
-                        // hoặc dự kiến gia hạn không được chặn hợp đồng trực tiếp của FM.
+                        // Bảo vệ đơn đặt cọc trước: Nếu có đơn đặt trước chưa gán (unassigned > 0) và tổng số ô kho trống hiện tại không vượt quá số đơn đặt trước,
+                        // không được chiếm ô kho trống này cho khách mới
+                        if (unassigned > 0 && (exploitable - busy) <= unassigned) {
+                                throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE,
+                                                "Không thể gán ô kho này: Toàn bộ " + (exploitable - busy)
+                                                + " ô kho trống hiện tại phải được ưu tiên gán cho " + unassigned
+                                                + " đơn đặt chỗ trước của khách hàng. Vui lòng vào mục 'Gán ô kho' để xử lý!");
+                        }
                 } else if (storageUnitRepository != null) {
-                        // Late-binding: Kiểm tra số lượng ô kho vật lý thực tế chưa bị chiếm bởi hợp đồng đang chạy
+                        // Late-binding: Kiểm tra số lượng ô kho vật lý thực tế chưa bị chiếm bởi hợp đồng đang chạy và đơn đặt trước
                         storageUnitRepository.lockExploitableUnitIds(request.getFacilityId(), request.getUnitTypeId());
-                        long exploitable = storageUnitRepository.countExploitableUnits(request.getFacilityId(), request.getUnitTypeId(),
-                                        List.of(StorageUnitStatus.MAINTENANCE, StorageUnitStatus.OUT_OF_SERVICE));
-                        long busy = storageUnitRepository.countBusyUnits(request.getFacilityId(), request.getUnitTypeId(), startDate, endDateExclusive, bufferDays);
-                        if (exploitable - busy <= 0) {
-                                throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE, "Cơ sở đã hết ô kho trống cho hạng kho này trong khoảng thời gian đã chọn");
+                        if (exploitable - busy - unassigned <= 0) {
+                                throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE,
+                                                "Cơ sở đã hết ô kho trống khả dụng sau khi trừ " + unassigned
+                                                + " đơn đặt chỗ trước chưa gán ô kho. Vui lòng hoàn tất gán ô kho cho khách đặt trước!");
                         }
                 }
 

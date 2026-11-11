@@ -5,6 +5,7 @@ import {
   PackageOpen,
   Wrench,
   Clock,
+  Calendar,
   User,
   Box,
   ArrowRight,
@@ -151,9 +152,9 @@ export const WorkItemCard: React.FC<WorkItemCardProps> = ({ task, onViewDetails,
             </div>
 
             <div className="flex items-center gap-1.5 text-slate-500">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
-              <span>Giờ hẹn:</span>
-              <span className="font-semibold text-slate-800">{task.scheduledTime || '08:00'}</span>
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <span>Ngày hẹn:</span>
+              <span className="font-semibold text-slate-800">{task.scheduledDate || 'Trong ngày'}</span>
             </div>
 
             {task.assignedStaffName ? (

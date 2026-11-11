@@ -259,9 +259,11 @@ public class WaitlistServiceImpl implements WaitlistService {
                 waitlist.getFacilityId(), waitlist.getUnitTypeId(), startDate, endDateExclusive,
                 OffsetDateTime.now(ZoneOffset.UTC), bufferDays);
 
-        if (exploitable - busy - unassigned <= 0) {
+        if (unassigned > 0 || (exploitable - busy - unassigned) <= 0) {
             // Không chuyển trạng thái sang CONVERTED! Giữ nguyên CONTACTING và ném HTTP 409
-            throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE);
+            throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE,
+                    "Không thể chuyển đổi cho Danh sách chờ: Hiện có " + unassigned
+                            + " đơn đặt chỗ của khách đặt trước chưa được gán ô kho. Theo quy chế ưu tiên, Quản lý phải hoàn tất gán ô kho cho khách đặt trước tại mục 'Gán ô kho'!");
         }
 
         // Tính toán biểu giá
@@ -320,6 +322,25 @@ public class WaitlistServiceImpl implements WaitlistService {
         int months = (request != null && request.getRentalMonths() != null && request.getRentalMonths() > 0)
                 ? request.getRentalMonths()
                 : waitlist.getRentalMonths();
+
+        // Quy tắc ưu tiên sống còn: Kiểm tra đơn đặt trước chưa gán ô kho và năng lực khả dụng
+        PolicyVersion policy = requireActivePolicy();
+        int bufferDays = policy.getRentalBufferDays() != null ? policy.getRentalBufferDays() : 0;
+        storageUnitRepository.lockExploitableUnitIds(waitlist.getFacilityId(), waitlist.getUnitTypeId());
+        long exploitable = storageUnitRepository.countExploitableUnits(
+                waitlist.getFacilityId(), waitlist.getUnitTypeId(),
+                Arrays.asList(StorageUnitStatus.MAINTENANCE, StorageUnitStatus.OUT_OF_SERVICE));
+        long busy = storageUnitRepository.countBusyUnits(
+                waitlist.getFacilityId(), waitlist.getUnitTypeId(), startDate, startDate.plusMonths(months), bufferDays);
+        long unassigned = reservationRepository.countUnassignedOverlappingReservations(
+                waitlist.getFacilityId(), waitlist.getUnitTypeId(), startDate, startDate.plusMonths(months),
+                OffsetDateTime.now(ZoneOffset.UTC), bufferDays);
+
+        if (unassigned > 0 || (exploitable - busy - unassigned) <= 0) {
+            throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE,
+                    "Không thể tạo hợp đồng cho Danh sách chờ: Hiện có " + unassigned
+                            + " đơn đặt chỗ của khách đặt trước chưa được gán ô kho. Theo quy chế ưu tiên, Quản lý phải hoàn tất gán ô kho cho khách đặt trước tại mục 'Gán ô kho'!");
+        }
 
         if (contractService == null) {
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "Dịch vụ hợp đồng chưa sẵn sàng");
@@ -400,11 +421,13 @@ public class WaitlistServiceImpl implements WaitlistService {
         }
         Waitlist waitlist = waitlistRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.WAITLIST_NOT_FOUND));
-        if (waitlist.getStatus() != WaitlistStatus.CONTACTING) {
-            throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION, "Thao tác chỉ hợp lệ khi đang ở trạng thái CONTACTING");
+        if (waitlist.getStatus() != WaitlistStatus.WAITING
+                && waitlist.getStatus() != WaitlistStatus.CONTACTING
+                && waitlist.getStatus() != WaitlistStatus.PENDING_FOLLOW_UP) {
+            throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION, "Đơn chờ đã được xử lý hoặc đã kết thúc");
         }
-        if (waitlist.getAssignedFmId() != null && !waitlist.getAssignedFmId().equals(currentUser.getId())) {
-            throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không phải nhân sự đang giữ quyền tư vấn đơn này");
+        if (waitlist.getAssignedFmId() == null) {
+            waitlist.setAssignedFmId(currentUser.getId());
         }
         return waitlist;
     }
@@ -469,6 +492,7 @@ public class WaitlistServiceImpl implements WaitlistService {
 
             // Tính Available Capacity hiện tại cho Hạng kho này
             long available = 0L;
+            long unassignedCount = 0L;
             if (storageUnitRepository != null) {
                 LocalDate start = LocalDate.now();
                 LocalDate end = start.plusMonths(Math.max(1, w.getRentalMonths()));
@@ -479,6 +503,7 @@ public class WaitlistServiceImpl implements WaitlistService {
                         w.getFacilityId(), w.getUnitTypeId(), start, end, bufferDays);
                 long unassigned = reservationRepository.countUnassignedOverlappingReservations(
                         w.getFacilityId(), w.getUnitTypeId(), start, end, now, bufferDays);
+                unassignedCount = unassigned;
                 available = Math.max(0, exploitable - busy - unassigned);
             }
 
@@ -513,6 +538,7 @@ public class WaitlistServiceImpl implements WaitlistService {
                     .convertedReservationCode(rsv != null ? rsv.getCode() : null)
                     .convertedContractId(w.getConvertedContractId())
                     .availableCapacity(available)
+                    .unassignedReservationCount(unassignedCount)
                     .remainingTimeoutSeconds(remainingSecs)
                     .createdAt(w.getCreatedAt())
                     .updatedAt(w.getUpdatedAt())

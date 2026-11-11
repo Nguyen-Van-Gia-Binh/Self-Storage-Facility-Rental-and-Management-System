@@ -219,7 +219,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
               )}
             </div>
             <p className="text-xs text-slate-500 truncate mt-0.5">
-              {item.facilityName || 'Cơ sở phụ trách'} • Hẹn tiếp đón: {item.scheduledStartTime && item.scheduledEndTime ? `${item.scheduledStartTime} - ${item.scheduledEndTime}` : item.appointmentTime || ('startDate' in item ? (item as any).startDate : '')}
+              {item.facilityName || 'Cơ sở phụ trách'} • Ngày bắt đầu: {item.startDate || ('scheduledDate' in item ? (item as any).scheduledDate : 'Hôm nay')}
             </p>
           </div>
         </div>
@@ -288,7 +288,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
               )}
             </div>
             <p className="text-xs text-slate-500 truncate mt-0.5">
-              {item.facilityName || 'Cơ sở phụ trách'} • Trả kho: {item.appointmentTime || ('returnDate' in item ? (item as any).returnDate : '')}
+              {item.facilityName || 'Cơ sở phụ trách'} • Ngày hẹn trả: {item.returnDate || ('scheduledDate' in item ? (item as any).scheduledDate : 'Hôm nay')}
             </p>
           </div>
         </div>

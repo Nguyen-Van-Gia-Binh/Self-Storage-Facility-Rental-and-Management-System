@@ -1134,6 +1134,44 @@ class ContractServiceTest {
     }
 
     @Test
+    @DisplayName("createDirectContract: Chặn tạo hợp đồng từ Waitlist khi còn đơn đặt trước chưa gán ô kho")
+    void createDirectContract_WithWaitlistId_BlockedWhenUnassignedReservationsExist() {
+        UserPrincipal fmUser = new UserPrincipal(20L, "fm@smartstorage.vn", "pass", "Quản lý",
+                UserRole.FACILITY_MANAGER, UserStatus.ACTIVE, List.of(1L), List.of());
+
+        Facility facility = new Facility();
+        facility.setId(1L);
+        facility.setStatus(FacilityStatus.ACTIVE);
+
+        UnitType unitType = new UnitType();
+        unitType.setId(7L);
+        unitType.setActive(true);
+
+        org.springframework.test.util.ReflectionTestUtils.setField(contractService, "userRepository", userRepository);
+        when(userRepository.findById(15L)).thenReturn(Optional.of(new AppUser()));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(facility));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+        when(storageUnitRepository.countExploitableUnits(eq(1L), eq(7L), any())).thenReturn(2L);
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(7L), any(), any(), anyInt())).thenReturn(0L);
+        // Có 2 đơn đặt trước chưa gán ô kho
+        when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(7L), any(), any(), any(), anyInt())).thenReturn(2L);
+
+        CreateDirectContractRequest req = CreateDirectContractRequest.builder()
+                .customerId(15L)
+                .facilityId(1L)
+                .unitTypeId(7L)
+                .startDate(LocalDate.now().plusDays(2))
+                .rentalMonths(3)
+                .paymentMethod("CASH")
+                .waitlistId(99L)
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> contractService.createDirectContract(req, fmUser));
+        assertEquals(ErrorCode.CAPACITY_NOT_AVAILABLE, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("Hiện có 2 đơn đặt chỗ của khách đặt trước chưa được gán ô kho"));
+    }
+
+    @Test
     @DisplayName("createDirectContract: Chặn tạo hợp đồng đè lên ô kho đã có hợp đồng khác thuê trùng lịch")
     void createDirectContract_ThrowsWhenOverlappingContractExists() {
         UserPrincipal fmUser = new UserPrincipal(20L, "fm@smartstorage.vn", "pass", "Quản lý",

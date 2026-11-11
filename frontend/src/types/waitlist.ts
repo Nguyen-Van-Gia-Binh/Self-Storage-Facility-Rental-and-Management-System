@@ -31,6 +31,7 @@ export interface WaitlistResponse {
   convertedReservationCode?: string;
   convertedContractId?: number;
   availableCapacity?: number;
+  unassignedReservationCount?: number;
   remainingTimeoutSeconds?: number;
   createdAt: string;
   updatedAt: string;
