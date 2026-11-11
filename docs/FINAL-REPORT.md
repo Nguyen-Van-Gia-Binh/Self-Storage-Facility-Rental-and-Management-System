@@ -119,9 +119,9 @@ The Self-Storage Facility Rental and Management System provides a multi-role dig
 ![Flow 6.1 Swimlane](diagrams/report/swimlane/sl-06-1-renewal.png)
 
 - **Participating Actors:** Storage Customer, Facility Manager, Automated Schedulers.
-- **Workflow Trigger:** Daily renewal scanner detects contracts reaching T-20 days before expiration.
-- **Primary Operational Path:** At T-20 days, the system sends renewal prompts (`BR-REN-01`). The customer selects an extension period between 1 and 12 months (`BR-REN-03`). The system validates future unit availability. If no booking conflict exists, the invoice is generated, the original deposit is carried forward without duplicate charges (`BR-DEP-01`), and payment extends the contract (`BR-REN-05`). If a future booking conflict is detected, the manager reroutes the incoming reservation to an equivalent vacant unit (`BR-REN-06`), clearing the unit for seamless renewal.
-- **Governing Business Rules:** `BR-REN-01..09`, `BR-DEP-01`, `BR-AVL-04`.
+- **Workflow Trigger:** Renewal scanner detects contracts entering the 30-day pre-expiration window (T-30).
+- **Primary Operational Path:** At T-30 days prior to contract maturity, proactive renewal notifications are dispatched (`BR-REN-01`). The customer may self-renew online via the customer portal during the active self-service window from **T-30 to T-20 days** (`BR-REN-09`), selecting an extension between 1 and 12 months (`BR-REN-03`). The original deposit carries forward without duplicate charges (`BR-DEP-01`), and VNPay payment confirmation seamlessly extends the contract (`BR-REN-05`). At **T-20 days**, online self-service renewal is automatically locked to protect facility operations and allow capacity reassignment to the Waitlist CRM (`BR-WAT-02`). Between T-20 and T-0, renewal requires Facility Manager approval via exception renewal (Force Renewal, `BR-REN-10`), contingent upon no incoming waitlist customer having confirmed deposit on that unit type.
+- **Governing Business Rules:** `BR-REN-01..12`, `BR-DEP-01`, `BR-AVL-04`, `BR-WAT-02`.
 
 ---
 
@@ -131,8 +131,13 @@ The Self-Storage Facility Rental and Management System provides a multi-role dig
 
 - **Participating Actors:** Storage Customer, Facility Staff, Facility Manager, Automated Overdue Scheduler.
 - **Workflow Trigger:** Overdue scheduler executes daily at 00:00:00 midnight for contracts past `end_date`.
-- **Primary Operational Path:** During grace period days D+1..D+3, daily reminder notices are dispatched with zero penalty (`BR-OVD-01`). Starting on Day D+4, daily penalties accrue at 10% of monthly rent per day (`BR-OVD-02`). On Day D+7, the customer's Smart Lock PIN is revoked (`BR-OVD-05`). On Day D+10, physical unit impoundment is enforced (`BR-OVD-07`): staff affixes a physical security padlock, and a formal 48-hour legal notice is served. If the customer defaults, the contract is terminated, the deposit is forfeited, and abandoned goods undergo documented inventory liquidation (`BR-OVD-09`).
-- **Governing Business Rules:** `BR-OVD-01..11`, `BR-ACC-02`.
+- **Primary Operational Path:** The system operates a closed **8-day overdue and impoundment cycle** (`V26`, `BR-OVD-01..11`):
+  1. **Day D+1:** The contract transitions to `OVERDUE` and customer Smart Lock PIN access is immediately revoked (`accessCode = null`, `BR-OVD-01`, `BR-OVD-05`) under the **"No Pay, No PIN"** policy to secure collateral.
+  2. **Days D+1 to D+3:** Storage grace period (`overdue.grace_days = 3`) with zero violation penalties, accruing a daily storage fee of 5% of deposit/day (cumulative 15% deposit). Customers paying overdue debt via VNPay receive a same-day temporary PIN to clear belongings and submit return (`BR-OVD-08`).
+  3. **Days D+4 to D+6:** Penalty fee escalation at 10% of deposit/day (`overdue.daily_rate = 0.10`), reaching an overdue fee cap of 55% of deposit (`overdue.cap_rate = 0.55`).
+  4. **Day D+7:** Termination milestone (`overdue.termination_days = 7`). Contract transitions to `TERMINATED`, PIN is permanently revoked, and 100% of the deposit is liquidated (55% overdue fees + 45% padlock cutting, inventory and transfer fee to Central Warehouse). Physical unit transitions to `MAINTENANCE` for 1 day (`BR-OVD-07`).
+  5. **Day D+8:** The physical unit is automatically sanitized and restored to `AVAILABLE` / `RESERVED` (`rental.buffer_days = 8`). Confiscated assets are held at the Central Warehouse for 30 days before offline auction / liquidation (`BR-OVD-11`).
+- **Governing Business Rules:** `BR-OVD-01..11`, `BR-ACC-02`, `BR-AVL-02`.
 
 ---
 
@@ -149,7 +154,7 @@ The Self-Storage Facility Rental and Management System provides a multi-role dig
 
 ## 1.2 Entity State Machine Diagrams
 
-All state machines are derived strictly from Java domain entity definitions (`*Status.java`) and verified state transition guards (`canTransitionTo()`).
+All state machines formalize entity lifecycle behaviors, verified state transition guards, and business boundary events across the system architecture.
 
 ### 1.2.1 RentalContract Entity State Machine
 
@@ -157,38 +162,38 @@ The `RentalContract` entity governs the complete commercial and legal agreement 
 
 ![RentalContract State Machine](diagrams/report/state/st-rental-contract.png)
 
-| Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Backend Code Reference |
+| Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Governing Architectural Subsystem |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `[*]` | `PENDING_CHECK_IN` | Customer confirms reservation & pays deposit | Customer / System | `BR-RES-02`, `BR-DEP-03` | `ReservationServiceImpl#confirm` |
-| `PENDING_CHECK_IN` | `ACTIVE` | Handover inspection completed & protocol signed | Customer & Staff | `BR-CHK-03` | `HandoverServiceImpl#completeCheckIn` |
-| `PENDING_CHECK_IN` | `ACTIVE` | Customer no-show beyond T+11 days grace window | Background Scheduler | `BR-CAN-04`, `BR-CHK-05` | `AutoCheckInActivationScheduler` |
-| `PENDING_CHECK_IN` | `CANCELLED` | Customer cancels reservation prior to move-in | Customer | `BR-CAN-01..03` | `ContractServiceImpl#cancelCheckIn` |
-| `ACTIVE` | `PENDING_RETURN` | Customer schedules return appointment | Customer | `BR-RET-01` | `ReturnServiceImpl#requestReturn` |
-| `ACTIVE` | `OVERDUE` | Contract reaches end date without active renewal | Overdue Cron (00:00) | `BR-OVD-01` | `OverdueScheduler#scanOverdue` |
-| `OVERDUE` | `ACTIVE` | Customer pays full overdue debt and renews lease | Customer | `BR-OVD-04`, `BR-REN-05` | `ContractRenewalService#payOverdue` |
-| `OVERDUE` | `TERMINATED` | Overdue past D+10 and 48h final notice expires | Facility Manager | `BR-OVD-09` | `ContractServiceImpl#terminateContract` |
-| `PENDING_RETURN` | `RETURNED` | Exit checkout inspection completed & signed | Facility Staff | `BR-RET-07` | `ReturnServiceImpl#completeInspection` |
-| `RETURNED` | `CLOSED` | Final settlement approved & deposit refunded | Facility Manager | `BR-RET-08` | `SettlementServiceImpl#approve` |
+| `[*]` | `PENDING_CHECK_IN` | Customer confirms reservation & pays deposit | Customer / System | `BR-RES-02`, `BR-DEP-03` | Reservation & Billing Subsystem |
+| `PENDING_CHECK_IN` | `ACTIVE` | Handover inspection completed & protocol signed | Customer & Staff | `BR-CHK-03` | Check-in & Handover Subsystem |
+| `PENDING_CHECK_IN` | `ACTIVE` | Customer no-show beyond T+11 days grace window | Background Scheduler | `BR-CAN-04`, `BR-CHK-05` | Automated Activation Scheduler |
+| `PENDING_CHECK_IN` | `CANCELLED` | Customer cancels reservation prior to move-in | Customer | `BR-CAN-01..03` | Booking Cancellation Service |
+| `ACTIVE` | `PENDING_RETURN` | Customer schedules return appointment | Customer | `BR-RET-01` | Return & Settlement Subsystem |
+| `ACTIVE` | `OVERDUE` | Contract reaches end date without active renewal | Overdue Cron (00:00) | `BR-OVD-01` | Overdue Daily Scanner |
+| `OVERDUE` | `ACTIVE` | Customer pays full overdue debt and renews lease | Customer | `BR-OVD-04`, `BR-REN-05` | Contract Renewal Subsystem |
+| `OVERDUE` | `TERMINATED` | Overdue reaches Day D+7 termination milestone | Automated Scheduler | `BR-OVD-07` | Overdue Enforcement Engine |
+| `PENDING_RETURN` | `RETURNED` | Exit checkout inspection completed & signed | Facility Staff | `BR-RET-07` | Inspection & Field Ops Subsystem |
+| `RETURNED` | `CLOSED` | Final settlement approved & deposit refunded | Facility Manager | `BR-RET-08` | Financial Settlement Subsystem |
 
 ---
 
 ### 1.2.2 StorageUnit Entity State Machine
 
-The `StorageUnit` entity enforces strict physical availability rules. Note that in accordance with backend code guard `StorageUnit#canTransitionTo`, units cannot transition directly from `OCCUPIED` to `AVAILABLE`; they must pass through mandatory `CLEANING` to ensure operational hygiene (`BR-RET-09`).
+The `StorageUnit` entity enforces strict physical availability rules. To protect facility hygiene and customer satisfaction, units cannot transition directly from `OCCUPIED` to `AVAILABLE`; they must pass through mandatory sanitization in `CLEANING` (`BR-RET-09`).
 
 ![StorageUnit State Machine](diagrams/report/state/st-storage-unit.png)
 
-| Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Backend Code Reference |
+| Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Governing Architectural Subsystem |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `[*]` | `AVAILABLE` | Unit physical creation & facility onboarding | Facility Manager | Master Type mapping | `FacilityServiceImpl#createUnit` |
-| `AVAILABLE` | `RESERVED` | Manager allocates physical unit to reservation | Facility Manager | `BR-AVL-04` | `UnitAssignmentService#assignUnit` |
-| `AVAILABLE` | `MAINTENANCE` | Facility staff flags unit defect or repair need | Facility Staff / FM | Defect protocol | `StorageUnitServiceImpl#setMaintenance` |
-| `RESERVED` | `OCCUPIED` | Handover protocol confirmed and contract active | Staff & Customer | `BR-CHK-03` | `HandoverServiceImpl#completeCheckIn` |
-| `RESERVED` | `AVAILABLE` | Check-in cancelled or reservation expired | Customer / Cron | `BR-CAN-01` | `UnitAssignmentService#unassign` |
-| `OCCUPIED` | `CLEANING` | Checkout inspection completed upon unit return | Facility Staff | `BR-RET-09` | `ReturnServiceImpl#completeInspection` |
-| `CLEANING` | `AVAILABLE` | Staff finishes sanitizing unit & clearing trash | Facility Staff | `BR-RET-09` | `StorageUnitServiceImpl#completeCleaning` |
-| `MAINTENANCE` | `AVAILABLE` | Physical repairs certified complete | Facility Staff | Repair clearance | `StorageUnitServiceImpl#completeMaintenance` |
-| `MAINTENANCE` | `OUT_OF_SERVICE`| Severe structural compromise identified | Facility Manager | Decommission protocol | `StorageUnitServiceImpl#decommission` |
+| `[*]` | `AVAILABLE` | Unit physical creation & facility onboarding | Facility Manager | Master Type mapping | Facility Inventory Subsystem |
+| `AVAILABLE` | `RESERVED` | Manager allocates physical unit to reservation | Facility Manager | `BR-AVL-04` | Space Allocation Engine |
+| `AVAILABLE` | `MAINTENANCE` | Facility staff flags unit defect or repair need | Facility Staff / FM | Defect protocol | Maintenance Operations Subsystem |
+| `RESERVED` | `OCCUPIED` | Handover protocol confirmed and contract active | Staff & Customer | `BR-CHK-03` | Check-in & Smart Lock Engine |
+| `RESERVED` | `AVAILABLE` | Check-in cancelled or reservation expired | Customer / Cron | `BR-CAN-01` | Space De-allocation Service |
+| `OCCUPIED` | `CLEANING` | Checkout inspection completed upon unit return | Facility Staff | `BR-RET-09` | Return Inspection Subsystem |
+| `CLEANING` | `AVAILABLE` | Staff finishes sanitizing unit & clearing trash | Facility Staff | `BR-RET-09` | Field Sanitation Service |
+| `MAINTENANCE` | `AVAILABLE` | Physical repairs certified complete | Facility Staff | Repair clearance | Maintenance Operations Subsystem |
+| `MAINTENANCE` | `OUT_OF_SERVICE`| Severe structural compromise identified | Facility Manager | Decommission protocol | Asset Management Subsystem |
 
 ---
 
@@ -198,14 +203,14 @@ The `Reservation` entity coordinates advance capacity allocation across 6 states
 
 ![Reservation State Machine](diagrams/report/state/st-reservation.png)
 
-| Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Backend Code Reference |
+| Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Governing Architectural Subsystem |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `[*]` | `PENDING_PAYMENT`| Customer submits reservation request online | Storage Customer | `BR-RES-01`, `BR-DEP-03` | `ReservationServiceImpl#create` |
-| `PENDING_PAYMENT` | `CONFIRMED` | VNPay payment return received with correct deposit amount | Payment Gateway | `BR-PAY-02`, `BR-DEP-03` | `PaymentServiceImpl#completeVnpayPayment` |
-| `PENDING_PAYMENT` | `EXPIRED` | 48-hour payment window passes without payment | Expiry Scheduler | `BR-RES-02` | `ReservationExpiryScheduler` |
-| `CONFIRMED` | `FULFILLED` | Handover complete and rental contract activated | Facility Staff | `BR-CHK-03` | `HandoverServiceImpl#completeCheckIn` |
-| `CONFIRMED` | `CANCELLED` | Customer cancels reservation prior to move-in | Customer | `BR-CAN-01..03` | `ReservationServiceImpl#cancel` |
-| `CONFIRMED` | `NO_SHOW` | Customer fails to check in past auto-activation | Background Scheduler | `BR-CAN-04` | `AutoActivationScheduler` |
+| `[*]` | `PENDING_PAYMENT`| Customer submits reservation request online | Storage Customer | `BR-RES-01`, `BR-DEP-03` | Online Booking Subsystem |
+| `PENDING_PAYMENT` | `CONFIRMED` | VNPay payment return received with correct deposit amount | Payment Gateway | `BR-PAY-02`, `BR-DEP-03` | Payment Gateway Service |
+| `PENDING_PAYMENT` | `EXPIRED` | 48-hour payment window passes without payment | Expiry Scheduler | `BR-RES-02` | Reservation Expiry Engine |
+| `CONFIRMED` | `FULFILLED` | Handover complete and rental contract activated | Facility Staff | `BR-CHK-03` | Check-in & Handover Subsystem |
+| `CONFIRMED` | `CANCELLED` | Customer cancels reservation prior to move-in | Customer | `BR-CAN-01..03` | Cancellation & Refund Subsystem |
+| `CONFIRMED` | `NO_SHOW` | Customer fails to check in past auto-activation | Background Scheduler | `BR-CAN-04` | Automated Activation Scheduler |
 
 ---
 
@@ -215,14 +220,14 @@ The `SupportRequest` entity coordinates incident ticketing across 6 states.
 
 ![SupportRequest State Machine](diagrams/report/state/st-support-request.png)
 
-| Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Backend Code Reference |
+| Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Governing Architectural Subsystem |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `[*]` | `NEW` | Customer submits support ticket via portal | Storage Customer | `BR-SUP-01` | `CustomerSupportServiceImpl#createTicket` |
-| `NEW` | `ASSIGNED` | Manager assigns ticket to on-duty staff member | Facility Manager | `BR-SUP-02` | `CustomerSupportServiceImpl#assignTicket` |
-| `ASSIGNED` | `IN_PROGRESS` | Staff begins physical investigation or repairs | Facility Staff | `BR-SUP-02` | `CustomerSupportServiceImpl#startTicket` |
-| `IN_PROGRESS` | `RESOLVED` | Staff completes repairs or emergency PIN re-issue | Facility Staff | `BR-SUP-03..04` | `CustomerSupportServiceImpl#resolveTicket` |
-| `RESOLVED` | `CLOSED` | Customer accepts resolution and submits rating | Storage Customer | User rating (1-5★) | `CustomerSupportServiceImpl#closeTicket` |
-| `RESOLVED` | `AUTO_CLOSED` | 72 hours pass without customer feedback | Auto-close Scheduler | `BR-SUP-05` | `SupportAutoCloseScheduler` |
+| `[*]` | `NEW` | Customer submits support ticket via portal | Storage Customer | `BR-SUP-01` | Customer Support Portal |
+| `NEW` | `ASSIGNED` | Manager assigns ticket to on-duty staff member | Facility Manager | `BR-SUP-02` | Staff Dispatching Subsystem |
+| `ASSIGNED` | `IN_PROGRESS` | Staff begins physical investigation or repairs | Facility Staff | `BR-SUP-02` | Field Incident Resolution |
+| `IN_PROGRESS` | `RESOLVED` | Staff completes repairs or emergency PIN re-issue | Facility Staff | `BR-SUP-03..04` | Incident Resolution Subsystem |
+| `RESOLVED` | `CLOSED` | Customer accepts resolution and submits rating | Storage Customer | User rating (1-5★) | Quality Assurance Subsystem |
+| `RESOLVED` | `AUTO_CLOSED` | 72 hours pass without customer feedback | Auto-close Scheduler | `BR-SUP-05` | Support Auto-Close Engine |
 
 ---
 
@@ -232,14 +237,14 @@ The `Waitlist` entity manages excess customer demand when unit types are fully o
 
 ![Waitlist State Machine](diagrams/report/state/st-waitlist.png)
 
-| Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Backend Code Reference |
+| Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Governing Architectural Subsystem |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `[*]` | `WAITING` | Customer joins queue when unit capacity is zero | Storage Customer | `BR-WAT-01` (FIFO queue) | `WaitlistServiceImpl#registerWaitlist` |
-| `WAITING` | `CONTACTING` | Manager initiates outbound sales phone outreach | Facility Manager | `BR-WAT-02` (2h CRM lock) | `WaitlistServiceImpl#startContacting` |
-| `CONTACTING` | `CONVERTED` | Customer agrees to rent vacant unit | Facility Manager | `BR-WAT-03` | `WaitlistServiceImpl#convertToReservation` |
-| `CONTACTING` | `PENDING_FOLLOW_UP`| Customer requests callback or time to decide | Facility Manager | Callback scheduling | `WaitlistServiceImpl#markFollowUp` |
-| `CONTACTING` | `REJECTED` | Customer declines offer or no longer needs space | Facility Manager | Customer opt-out | `WaitlistServiceImpl#rejectOffer` |
-| `WAITING` | `EXPIRED` | Desired start date passes without available unit | Expiry Scheduler | Maturity expiration | `WaitlistExpiryScheduler` |
+| `[*]` | `WAITING` | Customer joins queue when unit capacity is zero | Storage Customer | `BR-WAT-01` (FIFO queue) | Demand Intake Subsystem |
+| `WAITING` | `CONTACTING` | Manager initiates outbound sales phone outreach | Facility Manager | `BR-WAT-02` (2h CRM lock) | Waitlist CRM Subsystem |
+| `CONTACTING` | `CONVERTED` | Customer agrees to rent vacant unit | Facility Manager | `BR-WAT-03` | Booking Conversion Engine |
+| `CONTACTING` | `PENDING_FOLLOW_UP`| Customer requests callback or time to decide | Facility Manager | Callback scheduling | Lead Management Service |
+| `CONTACTING` | `REJECTED` | Customer declines offer or no longer needs space | Facility Manager | Customer opt-out | Waitlist CRM Subsystem |
+| `WAITING` | `EXPIRED` | Desired start date passes without available unit | Expiry Scheduler | Maturity expiration | Waitlist Lifecycle Engine |
 
 ---
 
@@ -249,13 +254,13 @@ The `PaymentTransaction` entity governs financial transaction states across 5 st
 
 ![PaymentTransaction State Machine](diagrams/report/state/st-payment-transaction.png)
 
-| Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Backend Code Reference |
+| Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Governing Architectural Subsystem |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `[*]` | `PENDING` | Payment order created (VNPay checkout URL generated) | System / Gateway | `BR-PAY-01` | `PaymentServiceImpl#createCheckoutLink` |
-| `PENDING` | `SUCCESS` | Bank transfer webhook received and validated | Payment Gateway | `BR-PAY-02` | `PaymentServiceImpl#handleWebhook` |
-| `PENDING` | `EXPIRED` | Payment window passes without receipt | Expiry Scheduler | `BR-PAY-03` | `PaymentExpiryScheduler` |
-| `SUCCESS` | `PENDING_REFUND`| Return settlement or cancellation entitles refund | Facility Manager | `BR-RET-08`, `BR-CAN-02` | `SettlementServiceImpl#initiateRefund` |
-| `PENDING_REFUND` | `SUCCESS` | Refund bank transfer disbursed to customer | Finance Admin | Refund confirmed | `RefundServiceImpl#confirmRefund` |
+| `[*]` | `PENDING` | Payment order created (VNPay checkout URL generated) | System / Gateway | `BR-PAY-01` | Checkout & Payment Gateway |
+| `PENDING` | `SUCCESS` | Bank payment callback received and validated | Payment Gateway | `BR-PAY-02` | Payment Verification Service |
+| `PENDING` | `EXPIRED` | Payment window passes without receipt | Expiry Scheduler | `BR-PAY-03` | Payment Expiry Engine |
+| `SUCCESS` | `PENDING_REFUND`| Return settlement or cancellation entitles refund | Facility Manager | `BR-RET-08`, `BR-CAN-02` | Financial Settlement Subsystem |
+| `PENDING_REFUND` | `SUCCESS` | Refund bank transfer disbursed to customer | Finance Admin | Refund confirmed | Disbursement & Accounting Service |
 
 ---
 
@@ -333,76 +338,79 @@ The complete PostgreSQL database schema encompasses **30 relational tables** man
 
 # 3. BUSINESS RULES & SYSTEM ENFORCEMENT
 
-*(For full granular business rule definitions and code mapping, refer to the complete specification below).*
+*(For full granular business rule definitions and operational mappings, refer to the complete specification below).*
 
 ## 3.0 Key Configuration Parameters
 
-| Parameter Key | Description | Default Value | Enforcing Policy / Rule | Source in Code |
+| Parameter Key | Description | Default Value | Enforcing Policy / Rule | Governing Architectural Scope |
 | :--- | :--- | :---: | :--- | :--- |
-| `deposit.multiplier` | Security deposit multiplier on one month rental rate | `1.0` (1 month) | `BR-DEP-01` | `PolicyVersion#depositMultiplier`, `PaymentServiceImpl` |
-| `reservation.hold_hours` | Capacity hold window for pending payment reservation | `48 hours` | `BR-DEP-03`, `BR-RES-02` | `ReservationServiceImpl`, `ReservationExpiryScheduler` |
-| `rental.daily_divisor` | Monthly day divisor convention for daily prorated rates | `30 days` | `BR-PRI-03` | `PolicyVersion#rentalDailyDivisor`, `MonthlyRentCalculator` |
-| `rental.buffer_days` | Safety operational buffer days between successive leases | `8 days` *(doc: 8; code: 15)* | `BR-AVL-02` | `PolicyVersion#bufferDays`, `RentalContractRepository` |
-| `checkin.grace_days` | Days allowed after start date before automatic activation | `10 days` (triggers at T+11) | `BR-CAN-04`, `BR-CHK-05` | `AutoCheckInActivationScheduler` |
-| `reservation.max_advance_booking_days` | Maximum days in advance a customer can book online | `30 days` | `BR-RES-01` | `ReservationServiceImpl` |
-| `cancel.full_refund_days` | Advance notice required for 100% deposit refund upon cancellation | `7 days` | `BR-CAN-01` | `PolicyVersion#earlyCancellationFullRefundDays` |
-| `cancel.mid_refund_rate` | Deposit refund percentage if cancelled 2 to 6 days prior | `50%` | `BR-CAN-02` | `ReservationServiceImpl#cancelConfirmedReservation` |
-| `cancel.late_refund_rate` | Deposit refund percentage if cancelled within 48h prior | `0%` (100% forfeit) | `BR-CAN-03` | `ReservationServiceImpl#cancelConfirmedReservation` |
-| `reschedule.max_days` | Maximum days allowed to postpone check-in start date | `7 days` | `BR-RES-06` | `ContractServiceImpl#rescheduleCheckIn` |
-| `renewal.window_start` | Lead time before contract end date when renewal window opens | `20 days` (T-20) | `BR-REN-01` | `RenewalServiceImpl#checkRenewalEligibility` |
-| `overdue.grace_days` | Overdue grace period with zero financial penalty (D+1..D+3) | `3 days` | `BR-OVD-01` | `PolicyVersion#overdueGraceDays`, `OverdueProcessingServiceImpl` |
-| `overdue.daily_penalty_rate` | Daily penalty rate applied on monthly rent during D+4..D+6 | `10% / day` | `BR-OVD-02` | `PolicyVersion#overdueDailyPenaltyRate` |
-| `overdue.pin_lock_days` | Overdue day milestone when Smart Lock PIN access is revoked | `Day 7` (D+7) | `BR-OVD-05` | `PolicyVersion#overdueLockoutDays`, `OverdueProcessingServiceImpl` |
-| `overdue.impound_days` | Overdue day milestone when unit is physically impounded | `Day 10` (D+10) | `BR-OVD-07` | `PolicyVersion#overdueAuctionDays`, `OverdueProcessingServiceImpl` |
-| `insurance.standard_limit` | Default facility liability insurance coverage cap | `10,000,000 VND` | `BR-SUP-04` | `PolicyVersion#defaultInsuranceLimit` |
-| `insurance.premium_limit` | Extended commercial insurance protection package cap | `50,000,000 VND` | `BR-SUP-04` | `PolicyVersion#extendedInsuranceLimit` |
-| `waitlist.hold_hours` | Duration a vacant unit is reserved when converting waitlist | `2 hours` | `BR-WAT-03` | `WaitlistServiceImpl#convertToReservation` |
+| `deposit.multiplier` | Security deposit multiplier on one month rental rate | `1.0` (1 month) | `BR-DEP-01` | System Governance Policy & Billing Subsystem |
+| `reservation.hold_hours` | Capacity hold window for pending payment reservation | `48 hours` | `BR-DEP-03`, `BR-RES-02` | Online Booking & Expiry Subsystem |
+| `rental.daily_divisor` | Monthly day divisor convention for daily prorated rates | `30 days` | `BR-PRI-03` | System Pricing & Proration Engine |
+| `rental.buffer_days` | Safety operational buffer days between successive leases | `8 days` | `BR-AVL-02` | Space Allocation & Overdue Release Engine |
+| `checkin.grace_days` | Days allowed after start date before automatic activation | `10 days` (triggers at T+11) | `BR-CAN-04`, `BR-CHK-05` | Check-in & Activation Scheduler |
+| `reservation.max_advance_booking_days` | Maximum days in advance a customer can book online | `30 days` | `BR-RES-01` | Online Reservation Intake Subsystem |
+| `cancel.cooling_off_hours` | Immediate cooling-off period with 100% full refund | `48 hours` post-confirmation | `BR-CAN-01` | Booking Cancellation & Refund Engine |
+| `cancel.full_refund_days` | Advance notice required for 100% deposit refund upon cancellation | `7 days` prior to move-in | `BR-CAN-01` | Cancellation Tier Evaluation Subsystem |
+| `cancel.mid_refund_rate` | Deposit refund percentage if cancelled 2 to 6 days prior | `50%` | `BR-CAN-02` | Cancellation Tier Evaluation Subsystem |
+| `cancel.late_refund_rate` | Deposit refund percentage if cancelled within 48h prior | `0%` (100% forfeit) | `BR-CAN-03` | Cancellation Tier Evaluation Subsystem |
+| `reschedule.max_days` | Maximum days allowed to postpone check-in start date | `7 days` | `BR-RES-06` | Handover Schedule Subsystem |
+| `renewal.self_service_window` | Online self-renewal active window on customer portal | `T-30 to T-20 days` | `BR-REN-01`, `BR-REN-09` | Customer Portal Self-Renewal Engine |
+| `renewal.force_renewal_window`| FM exception renewal window prior to contract expiry | `T-20 to T-0 days` | `BR-REN-10` | Facility Management Operational Subsystem |
+| `overdue.lock_access_days` | Overdue milestone when Smart Lock PIN access is suspended | `Day 1` (D+1) | `BR-OVD-01`, `BR-OVD-05` | Security Credential & Access Subsystem |
+| `overdue.grace_days` | Overdue grace period with zero violation penalty (5% storage fee/day) | `3 days` (D+1..D+3) | `BR-OVD-01`, `BR-OVD-02` | Overdue Lifecycle Subsystem |
+| `overdue.daily_penalty_rate` | Daily penalty rate applied on deposit during D+4..D+7 | `10% / day` | `BR-OVD-03` | Overdue Financial Escalation Engine |
+| `overdue.cap_rate` | Maximum accrued overdue fee cap (15% storage + 40% penalty) | `55% of deposit` | `BR-OVD-04` | Financial Guard & Debt Engine |
+| `overdue.termination_days` | Overdue day milestone when contract is terminated & deposit liquidated | `Day 7` (D+7) | `BR-OVD-07` | Eviction & Legal Enforcement Subsystem |
+| `insurance.standard_limit` | Default facility liability insurance coverage cap | `10,000,000 VND` | `BR-SUP-04` | Insurance & Liability Subsystem |
+| `insurance.premium_limit` | Extended commercial insurance protection package cap | `50,000,000 VND` | `BR-SUP-04` | Insurance & Liability Subsystem |
+| `waitlist.hold_hours` | Duration a vacant unit is reserved when converting waitlist | `2 hours` | `BR-WAT-03` | Waitlist CRM & Conversion Subsystem |
 
 ---
 
-## 3.1 Business Rules Enforced in System Code (by Function)
+## 3.1 Business Rules Enforced in System Architecture (by Function)
 
-| Function | Rules Applied | Enforced in (Class & Method) |
+| Function | Rules Applied | Governing Architectural Subsystem / Module Boundary |
 | :--- | :--- | :--- |
-| **SC-01** — View Service & Unit Catalog | **BR-PRI-01**: Master unit type dimensions and standardized base rate catalog.<br>**BR-PRI-02**: Facility-specific location surcharge / pricing adjustments.<br>**BR-AVL-01**: Real-time capacity computation across active booking windows. | `FacilityController#getAllActiveFacilities`<br>`StorageUnitRepository#countAvailableUnits`<br>`MonthlyRentCalculator#calculateMonthlyRent` |
-| **SC-02** — Unit Reservation & Waitlist | **BR-RES-01**: 30-day maximum advance booking window for online self-service reservations.<br>**BR-RES-02**: Capacity slot hold for 48 hours without immediate physical unit allocation.<br>**BR-DEP-03**: Temporary quota reservation released automatically after 48h unpaid.<br>**BR-WAT-01**: Free entry into FIFO Waitlist queue when facility unit type capacity is zero.<br>**BR-SPAM-01**: Maximum 3 active pending draft reservations allowed per customer account. | `ReservationServiceImpl#createReservation`<br>`ReservationExpiryScheduler#expireUnpaidReservations`<br>`WaitlistServiceImpl#registerWaitlist`<br>`ReservationRepository#countActivePendingByUser` |
-| **SC-03** — Payment Processing | **BR-DEP-01**: Security deposit equals exactly 1.0x monthly rental rate.<br>**BR-PAY-01**: Initial invoice requires payment of 1 month deposit plus selected rental duration.<br>**BR-PAY-02**: Instant automated verification via VNPay gateway return / mock-complete callback with amount validation.<br>**BR-PAY-03**: Payment orders expire after 48h (deposit) or 15 minutes (VNPay session timeout). | `PaymentServiceImpl#createCheckoutLink`<br>`PaymentServiceImpl#completeVnpayPayment`<br>`PaymentTransactionRepository#findByOrderCode`<br>`VnPayGateway#buildPayUrl` |
-| **SC-04** — Check-in & Handover | **BR-CHK-01**: Identity verification matching registered citizen ID / passport.<br>**BR-CHK-02**: 4-point handover inspection checklist (lock, cleanliness, lighting, climate).<br>**BR-CHK-03**: Secure 6-digit Smart Lock PIN generated and activated immediately upon signature.<br>**BR-CAN-04 / BR-CHK-05**: Auto-activation safety scheduler activates contract at T+11 23:59:59.<br>**BR-RES-06**: Customer may postpone check-in start date once by up to 7 days with daily fee. | `HandoverServiceImpl#completeCheckIn`<br>`ContractServiceImpl#rescheduleCheckIn`<br>`AutoCheckInActivationScheduler#scanAndActivate`<br>`AccessCredentialService#generatePin` |
-| **SC-05** — Manage Active Leases | **BR-GEN-03**: Rental duration structured in whole integer months.<br>**BR-RET-01**: Customer schedules return appointment through self-service portal.<br>**BR-RET-06**: Win-Win Early Return policy: 100% refund of unused rent, 100% forfeit of initial deposit.<br>**BR-REN-01**: Renewal window opens at T-20 days prior to contract expiration.<br>**BR-REN-03**: Minimum renewal extension is 1 month; maximum is 12 months. | `ContractServiceImpl#requestReturn`<br>`ContractServiceImpl#previewEarlyReturnSettlement`<br>`RenewalServiceImpl#checkRenewalEligibility`<br>`RenewalServiceImpl#requestRenewal` |
-| **SC-06** — Submit Support Tickets | **BR-SUP-01**: Ticket creation categorized by issue type (lock, leakage, billing, damage).<br>**BR-SUP-03**: Emergency 24-hour temporary PIN re-issuance for forgotten/malfunctioning locks.<br>**BR-SUP-04**: Liability protection limits: 10,000,000 VND default vs 50,000,000 VND extended package.<br>**BR-SUP-05**: Support ticket automatically closed 72 hours post-resolution if unrated. | `CustomerSupportServiceImpl#createTicket`<br>`CustomerSupportServiceImpl#reissueEmergencyPin`<br>`CustomerSupportServiceImpl#resolveTicket`<br>`SupportAutoCloseScheduler#autoCloseResolvedTickets` |
-| **FS-01** — Check Booking Information | **BR-CHK-01**: Lookup booking code or scan Move-in Pass QR code to verify allocation.<br>**BR-AVL-04**: Verification that assigned physical unit matches confirmed unit type specifications. | `StaffDeskController#lookupReservation`<br>`StaffDeskServiceImpl#verifyCheckInEligibility` |
-| **FS-02** — Assist Check-in & Handover | **BR-CHK-02**: Physical escort to unit and execution of 4-point operational verification checklist.<br>**BR-CHK-04**: Emergency unit swap workflow if physical defects found during check-in inspection.<br>**BR-ACC-01**: Verification that 6-digit access PIN credentials synchronize with Smart Lock hardware. | `HandoverServiceImpl#completeCheckIn`<br>`HandoverServiceImpl#rejectHandover`<br>`StorageUnitRepository#findAlternativeAvailableUnit` |
-| **FS-03** — Update Unit Physical Status | **BR-RET-09**: Automatic transition to CLEANING post-checkout; manual release to AVAILABLE.<br>**BR-AVL-06**: Unit status updates (MAINTENANCE, OUT_OF_SERVICE) instantly adjust facility capacity. | `StorageUnitServiceImpl#updateUnitStatus`<br>`StorageUnitServiceImpl#completeCleaning`<br>`StorageUnit#canTransitionTo` |
-| **FS-04** — Checkout Return Inspection | **BR-RET-04**: Mandatory exit inspection evaluating cleanliness, structural integrity, and trash.<br>**BR-RET-05**: Itemized assessment of repair costs and cleaning penalties logged as extra charges.<br>**BR-RET-10**: Upload of photographic evidence for checkout inspection protocol. | `ReturnInspectionServiceImpl#submitInspection`<br>`ContractExtraChargeRepository#save`<br>`AttachmentServiceImpl#uploadReturnPhotos` |
-| **FS-05** — On-site Incident Resolution | **BR-SUP-02**: Staff ticket assignment and progression: NEW -> ASSIGNED -> IN_PROGRESS.<br>**BR-SUP-03**: On-site battery replacement and physical master key override for Smart Lock lockouts. | `CustomerSupportServiceImpl#assignTicket`<br>`CustomerSupportServiceImpl#resolveTicket` |
-| **FS-06** — Daily Staff Worklist | **BR-FM-01**: Centralized daily worklist aggregating check-ins, returns, and cleaning tasks.<br>**BR-GEN-06**: Audit log tracking for all staff operational actions performed during active shifts. | `StaffDailyAssignmentServiceImpl#getTodayTasks`<br>`AuditLogServiceImpl#logAction` |
-| **FM-01** — Facility Unit Management | **BR-AVL-05**: Physical storage unit onboarding instantiated strictly from BOM Master Unit Types.<br>**BR-AVL-06**: Spatial mapping with grid coordinates (floor, zone, row, column) for floorplans. | `FacilityUnitServiceImpl#createStorageUnit`<br>`FacilityUnitServiceImpl#updateUnitCoordinates` |
-| **FM-02** — Unit Allocation & Waitlist CRM | **BR-AVL-04**: Late-binding physical unit assignment prior to scheduled customer check-in.<br>**BR-WAT-02**: Exclusive 2-hour CRM lock on customer record during outbound phone outreach.<br>**BR-WAT-03**: Direct contract creation converting waitlist entry into confirmed reservation. | `UnitAssignmentServiceImpl#assignUnit`<br>`WaitlistServiceImpl#startContacting`<br>`WaitlistServiceImpl#convertToReservation` |
-| **FM-03** — Monitor Contracts & Overdue | **BR-OVD-01**: Automated monitoring of contracts exceeding end date without active renewal.<br>**BR-OVD-02**: Grace period D+1..D+3 with zero penalty; daily 10% penalty accrual starting D+4.<br>**BR-OVD-05**: PIN lockout enforcement on Day D+7 preventing facility and unit access.<br>**BR-OVD-07**: Physical unit impoundment and security seal affixation on Day D+10.<br>**BR-OVD-09**: Formal 48-hour legal eviction notice prior to lease termination and asset liquidation. | `OverdueProcessingServiceImpl#scanOverdue`<br>`OverdueProcessingServiceImpl#calculatePenalties`<br>`OverdueProcessingServiceImpl#lockAccess`<br>`OverdueProcessingServiceImpl#impoundUnit`<br>`ContractServiceImpl#terminateContract` |
-| **FM-04** — Operational Workflow Oversight | **BR-RET-07**: Facility Manager approval required on all final return settlement statements.<br>**BR-RET-08**: Net settlement balance calculation (Deposit - Damages - Overdue Penalties + Unused Rent).<br>**BR-CAN-02**: Approval and queueing of deposit refunds according to cancellation policy tiers. | `SettlementServiceImpl#approveSettlement`<br>`SettlementServiceImpl#calculateNetBalance`<br>`RefundServiceImpl#queueRefundPayment` |
-| **FM-05** — Staff Shift Dispatching | **BR-FM-05**: Weekly staff roster scheduling with morning and afternoon operational shifts.<br>**BR-FM-06**: Task assignment routing based on staff shift availability and facility check-in volume. | `StaffDailyAssignmentServiceImpl#createAssignment`<br>`StaffDailyAssignmentRepository#findByFacilityAndDate` |
-| **FM-06** — Facility Operational Reports | **BR-BOM-03**: Facility-level occupancy metrics, unit usage rate, and real-time vacant inventory.<br>**BR-BOM-04**: Tracking of realization rates on overdue penalty collections and extra service fees. | `FacilityReportServiceImpl#getFacilityDashboardKpis`<br>`FacilityReportServiceImpl#generateOccupancyReport` |
-| **BM-01** — Master Catalog & Standards | **BR-BOM-01**: System-wide standardization of Master Unit Types (dimensions, area, volume).<br>**BR-PRI-01**: Global baseline monthly rental rates per unit type category. | `MasterUnitTypeServiceImpl#createUnitType`<br>`MasterUnitTypeServiceImpl#updateBasePrice` |
-| **BM-02** — System Lease Policy Governance | **BR-GEN-01**: System operating parameters configurable exclusively by BOM via PolicyVersion.<br>**BR-GEN-02**: Policy changes are non-retroactive; existing contracts preserve creation-time snapshots.<br>**BR-BMP-01**: Governance of minimum lease duration, cancellation penalties, and grace periods. | `PolicyServiceImpl#publishPolicyVersion`<br>`PolicyVersionRepository#findCurrentEffectivePolicy` |
-| **BM-03** — Regional Pricing & Surcharges | **BR-PRI-02**: Facility price catalog overrides adjusting rental rates based on regional demand.<br>**BR-PRI-03**: Creation of immutable `FacilityUnitTypePriceVersion` records for price change audits.<br>**BR-PRI-04**: Configuration of extra service fees (cleaning, emergency unlock, packing materials). | `FacilityPricingServiceImpl#updateFacilityPrice`<br>`FacilityUnitTypePriceVersionRepository#save`<br>`ExtraFeeServiceImpl#createFeeVersion` |
-| **BM-04** — Monitor Operational Efficiency | **BR-BOM-03**: Global Usage Rate metric calculation = Total Occupied Units / Total Usable Capacity.<br>**BR-BOM-04**: Multi-facility performance scorecards benchmarking occupancy and revenue velocity. | `SystemReportServiceImpl#getGlobalOperationalKpis`<br>`SystemReportServiceImpl#getOccupancyComparison` |
-| **BM-05** — Enterprise Revenue Reporting | **BR-BOM-05**: Four-stream revenue disaggregation (Rental Fee, Security Deposit, Overdue Penalties, Extra Fees).<br>**BR-BOM-06**: Financial ledger reconciliation between gateway payments and contract receivables. | `SystemReportServiceImpl#getRevenueTrendReport`<br>`PaymentTransactionRepository#sumRevenueByTypeAndDate` |
-| **SA-01** — User Account Administration | **BR-GEN-07**: Customer account activation requiring email OTP verification.<br>**BR-ACC-02**: Password reset credential verification through time-sensitive single-use OTP tokens. | `AuthServiceImpl#register`<br>`AuthServiceImpl#verifyRegistrationOtp`<br>`AuthServiceImpl#resetPassword` |
-| **SA-02** — Role-Based Access Control | **BR-GEN-07**: Strict enforcement of 5 distinct RBAC roles (CUSTOMER, STAFF, MANAGER, BOM, ADMIN).<br>**BR-ACC-03**: Spring Security `@PreAuthorize` method annotations securing internal REST endpoints. | `SecurityConfig#filterChain`<br>`JwtAuthenticationFilter#doFilterInternal` |
-| **SA-03** — Multi-Facility Data Isolation | **BR-ACC-04**: Facility Staff and Facility Managers restricted strictly to assigned facility scopes.<br>**BR-ACC-05**: Anti-IDOR security guards intercepting requests targeting unauthorized facility data. | `FacilitySecurityService#verifyFacilityAccess`<br>`UserFacilityAssignmentRepository#existsByUserAndFacility` |
-| **SA-04** — System Audit & Security Logs | **BR-GEN-06**: Comprehensive audit logging capturing entity state mutations, user IDs, and timestamps.<br>**BR-ACC-06**: Recording of authentication attempts, IP addresses, and user-agent client metadata. | `AuditLogServiceImpl#recordEvent`<br>`LoginHistoryServiceImpl#recordLoginAttempt` |
+| **SC-01** — View Service & Unit Catalog | **BR-PRI-01**: Master unit type dimensions and standardized base rate catalog.<br>**BR-PRI-02**: Facility-specific location surcharge / pricing adjustments.<br>**BR-AVL-01**: Real-time capacity computation across active booking windows. | Facility Catalog Subsystem<br>Space Allocation & Inventory Engine<br>Pricing Calculation Subsystem |
+| **SC-02** — Unit Reservation & Waitlist | **BR-RES-01**: 30-day maximum advance booking window for online self-service reservations.<br>**BR-RES-02**: Capacity slot hold for 48 hours without immediate physical unit allocation.<br>**BR-DEP-03**: Temporary quota reservation released automatically after 48h unpaid.<br>**BR-WAT-01**: Free entry into FIFO Waitlist queue when facility unit type capacity is zero.<br>**BR-SPAM-01**: Maximum 3 active pending draft reservations allowed per customer account. | Online Booking Subsystem<br>Reservation Expiry Scheduler<br>Waitlist CRM Subsystem<br>Account Quota Guard |
+| **SC-03** — Payment Processing | **BR-DEP-01**: Security deposit equals exactly 1.0x monthly rental rate.<br>**BR-PAY-01**: Initial invoice requires payment of 1 month deposit plus selected rental duration.<br>**BR-PAY-02**: Instant automated verification via VNPay gateway return / mock-complete callback with amount validation.<br>**BR-PAY-03**: Payment orders expire after 48h (deposit) or 15 minutes (VNPay session timeout). | Payment Gateway Subsystem<br>Transaction Verification Service<br>Order Lifetime Manager<br>VNPay Integration Adapter |
+| **SC-04** — Check-in & Handover | **BR-CHK-01**: Identity verification matching registered citizen ID / passport.<br>**BR-CHK-02**: 4-point handover inspection checklist (lock, cleanliness, lighting, climate).<br>**BR-CHK-03**: Secure 6-digit Smart Lock PIN generated and activated immediately upon signature.<br>**BR-CAN-04 / BR-CHK-05**: Auto-activation safety scheduler activates contract at T+11 23:59:59.<br>**BR-RES-06**: Customer may postpone check-in start date once by up to 7 days with daily fee. | Check-in & Handover Subsystem<br>Booking Schedule Manager<br>Automated Activation Scheduler<br>Smart Lock Credential Engine |
+| **SC-05** — Manage Active Leases | **BR-GEN-03**: Rental duration structured in whole integer months.<br>**BR-RET-01**: Customer schedules return appointment through self-service portal.<br>**BR-RET-06**: Win-Win Early Return policy: 100% refund of unused rent, 100% forfeit of initial deposit.<br>**BR-REN-01 / BR-REN-09**: Self-service online renewal active between T-30 and T-20 days.<br>**BR-REN-03**: Minimum renewal extension is 1 month; maximum is 12 months. | Contract Lifecycle Engine<br>Return Settlement Subsystem<br>Contract Renewal Engine<br>Policy Verification Service |
+| **SC-06** — Submit Support Tickets | **BR-SUP-01**: Ticket creation categorized by issue type (lock, leakage, billing, damage).<br>**BR-SUP-03**: Emergency 24-hour temporary PIN re-issuance for forgotten/malfunctioning locks.<br>**BR-SUP-04**: Liability protection limits: 10,000,000 VND default vs 50,000,000 VND extended package.<br>**BR-SUP-05**: Support ticket automatically closed 72 hours post-resolution if unrated. | Incident Ticketing Subsystem<br>Emergency Credential Engine<br>Incident Resolution Service<br>Support Auto-Close Scheduler |
+| **FS-01** — Check Booking Information | **BR-CHK-01**: Lookup booking code or scan Move-in Pass QR code to verify allocation.<br>**BR-AVL-04**: Verification that assigned physical unit matches confirmed unit type specifications. | Staff Desk Subsystem<br>Allocation Verification Engine |
+| **FS-02** — Assist Check-in & Handover | **BR-CHK-02**: Physical escort to unit and execution of 4-point operational verification checklist.<br>**BR-CHK-04**: Emergency unit swap workflow if physical defects found during check-in inspection.<br>**BR-ACC-01**: Verification that 6-digit access PIN credentials synchronize with Smart Lock hardware. | Field Check-in Subsystem<br>Emergency Unit Swap Handler<br>Smart Lock Provisioning Engine |
+| **FS-03** — Update Unit Physical Status | **BR-RET-09**: Automatic transition to CLEANING post-checkout; manual release to AVAILABLE.<br>**BR-AVL-06**: Unit status updates (MAINTENANCE, OUT_OF_SERVICE) instantly adjust facility capacity. | Storage Inventory Subsystem<br>Field Sanitation Service<br>Unit Lifecycle State Guard |
+| **FS-04** — Checkout Return Inspection | **BR-RET-04**: Mandatory exit inspection evaluating cleanliness, structural integrity, and trash.<br>**BR-RET-05**: Itemized assessment of repair costs and cleaning penalties logged as extra charges.<br>**BR-RET-10**: Upload of photographic evidence for checkout inspection protocol. | Return Inspection Subsystem<br>Extra Charge Ledger Service<br>Photographic Evidence Subsystem |
+| **FS-05** — On-site Incident Resolution | **BR-SUP-02**: Staff ticket assignment and progression: NEW -> ASSIGNED -> IN_PROGRESS.<br>**BR-SUP-03**: On-site battery replacement and physical master key override for Smart Lock lockouts. | Staff Operations Subsystem<br>On-site Hardware Override Engine |
+| **FS-06** — Daily Staff Worklist | **BR-FM-01**: Centralized daily worklist aggregating check-ins, returns, and cleaning tasks.<br>**BR-GEN-06**: Audit log tracking for all staff operational actions performed during active shifts. | Staff Roster & Dispatching Subsystem<br>Audit Logging Engine |
+| **FM-01** — Facility Unit Management | **BR-AVL-05**: Physical storage unit onboarding instantiated strictly from BOM Master Unit Types.<br>**BR-AVL-06**: Spatial mapping with grid coordinates (floor, zone, row, column) for floorplans. | Facility Inventory Engine<br>Spatial Layout & Floorplan Subsystem |
+| **FM-02** — Unit Allocation & Waitlist CRM | **BR-AVL-04**: Late-binding physical unit assignment prior to scheduled customer check-in.<br>**BR-WAT-02**: Exclusive 2-hour CRM lock on customer record during outbound phone outreach.<br>**BR-WAT-03**: Direct contract creation converting waitlist entry into confirmed reservation. | Space Allocation Subsystem<br>Waitlist Sales Engine<br>Direct Booking Service |
+| **FM-03** — Monitor Contracts & Overdue | **BR-OVD-01**: Immediate PIN access suspension on Day D+1 ("No Pay, No PIN").<br>**BR-OVD-02**: Overdue grace period D+1..D+3 with zero penalty; 5% deposit/day storage fee.<br>**BR-OVD-03**: Daily 10% penalty escalation starting D+4, capped at 55% of deposit.<br>**BR-OVD-07**: Termination milestone at Day D+7: 100% deposit liquidated, unit to maintenance.<br>**BR-OVD-11**: Central Warehouse holding for 30 days before offline asset liquidation. | Overdue Lifecycle Engine<br>Penalty Calculation Service<br>Access Revocation Engine<br>Physical Impoundment Subsystem<br>Lease Eviction Service |
+| **FM-04** — Operational Workflow Oversight | **BR-RET-07**: Facility Manager approval required on all final return settlement statements.<br>**BR-RET-08**: Net settlement balance calculation (Deposit - Damages - Overdue Penalties + Unused Rent).<br>**BR-CAN-02**: Approval and queueing of deposit refunds according to cancellation policy tiers. | Financial Settlement Subsystem<br>Settlement Balance Calculator<br>Refund Disbursement Service |
+| **FM-05** — Staff Shift Dispatching | **BR-FM-05**: Weekly staff roster scheduling with morning and afternoon operational shifts.<br>**BR-FM-06**: Task assignment routing based on staff shift availability and facility check-in volume. | Staff Roster Management Subsystem<br>Shift Dispatching Engine |
+| **FM-06** — Facility Operational Reports | **BR-BOM-03**: Facility-level occupancy metrics, unit usage rate, and real-time vacant inventory.<br>**BR-BOM-04**: Tracking of realization rates on overdue penalty collections and extra service fees. | Facility Reporting Subsystem<br>Operational KPI Engine |
+| **BM-01** — Master Catalog & Standards | **BR-BOM-01**: System-wide standardization of Master Unit Types (dimensions, area, volume).<br>**BR-PRI-01**: Global baseline monthly rental rates per unit type category. | Master Catalog Governance Subsystem<br>Base Pricing Engine |
+| **BM-02** — System Lease Policy Governance | **BR-GEN-01**: System operating parameters configurable exclusively by BOM via PolicyVersion.<br>**BR-GEN-02**: Policy changes are non-retroactive; existing contracts preserve creation-time snapshots.<br>**BR-BMP-01**: Governance of minimum lease duration, cancellation penalties, and grace periods. | Policy Versioning Subsystem<br>Governance Policy Snapshot Engine |
+| **BM-03** — Regional Pricing & Surcharges | **BR-PRI-02**: Facility price catalog overrides adjusting rental rates based on regional demand.<br>**BR-PRI-03**: Creation of immutable price version records for price change audits.<br>**BR-PRI-04**: Configuration of extra service fees (cleaning, emergency unlock, packing materials). | Regional Pricing Subsystem<br>Price Audit Ledger<br>Extra Service Fee Subsystem |
+| **BM-04** — Monitor Operational Efficiency | **BR-BOM-03**: Global Usage Rate metric calculation = Total Occupied Units / Total Usable Capacity.<br>**BR-BOM-04**: Multi-facility performance scorecards benchmarking occupancy and revenue velocity. | Operational Analytics Engine<br>Enterprise KPI Benchmark Subsystem |
+| **BM-05** — Enterprise Revenue Reporting | **BR-BOM-05**: Four-stream revenue disaggregation (Rental Fee, Security Deposit, Overdue Penalties, Extra Fees).<br>**BR-BOM-06**: Financial ledger reconciliation between gateway payments and contract receivables. | Financial Revenue Reporting Subsystem<br>Multi-Stream Ledger Engine |
+| **SA-01** — User Account Administration | **BR-GEN-07**: Customer account activation requiring email OTP verification.<br>**BR-ACC-02**: Password reset credential verification through time-sensitive single-use OTP tokens. | Identity & Account Administration<br>Credential Verification Subsystem |
+| **SA-02** — Role-Based Access Control | **BR-GEN-07**: Strict enforcement of 5 distinct RBAC roles (CUSTOMER, STAFF, MANAGER, BOM, ADMIN).<br>**BR-ACC-03**: Security method interceptors securing internal resource endpoints. | Security Configuration Subsystem<br>Role-Based Access Control (RBAC) Interceptor |
+| **SA-03** — Multi-Facility Data Isolation | **BR-ACC-04**: Facility Staff and Facility Managers restricted strictly to assigned facility scopes.<br>**BR-ACC-05**: Anti-IDOR security guards intercepting requests targeting unauthorized facility data. | Multi-Facility Security Boundary<br>Anti-IDOR Security Interceptor |
+| **SA-04** — System Audit & Security Logs | **BR-GEN-06**: Comprehensive audit logging capturing entity state mutations, user IDs, and timestamps.<br>**BR-ACC-06**: Recording of authentication attempts, IP addresses, and user-agent client metadata. | Audit Trail Subsystem<br>Authentication Monitoring Service |
 
 ---
 
 ## 3.2 Documented Rules with Code Adaptations or Deferred Enforcement
 
-| Business Rule | Documented Specification | Actual Code Implementation & Status | Justification / Adaptation Analysis |
+| Business Rule | Documented Specification | Actual System Enforcement & Status | Justification / Adaptation Analysis |
 | :--- | :--- | :--- | :--- |
-| **BR-AVL-02** (Buffer Days) | Stated as `8 days` buffer in parameter table | Enforced as `15 days` in `RentalContractRepository` and `SystemReportServiceImpl` *(per code; doc says 8)* | Enhanced operational buffer to prevent overlapping bookings during peak turnover periods. |
-| **BR-DEP-04 / BR-DEP-05** | Interest accrual on held deposits | Not implemented; deposits held in non-interest escrow *(per code; doc describes banking interest)* | Vietnamese business regulations for short-term facility rental deposits do not mandate consumer interest payout. |
-| **BR-OVD-06** | Debt adjustment request workflow | `overdue_fee_adjustment_request` table exists in DB; UI/Service workflow deferred | Business policy strictly enforces automated overdue calculation without discretionary fee waivers. |
-| **BR-BMP-02** | Automatic dynamic surge pricing | Fixed facility pricing overrides (`FacilityUnitTypePrice`) implemented | True dynamic algorithmic surge pricing requires real-time occupancy triggers; handled via manual BOM pricing updates. |
-| **BR-REN-08** | Automated Waitlist Bumping | Implemented via Facility Manager manual reroute in `RenewalServiceImpl` | Automated automated reassignment deferred in favor of supervised FM confirmation to avoid customer friction. |
+| **BR-AVL-02** (Buffer Days) | Stated as `8 days` buffer in parameter table | Unified at `8 days` across database, system policy (`V26`), and conflict query algorithms | Fully harmonized with the 8-day closed overdue cycle (7 days overdue resolution + 1 day sanitization buffer). |
+| **BR-DEP-04 / BR-DEP-05** | Interest accrual on held deposits | Not implemented; deposits held in non-interest escrow | Vietnamese business regulations for short-term facility rental deposits do not mandate consumer interest payout. |
+| **BR-OVD-06** | Debt adjustment request workflow | Relational table `overdue_fee_adjustment_request` provisioned in DB schema; UI workflow deferred | Business policy strictly enforces automated overdue calculation without discretionary fee waivers. |
+| **BR-BMP-02** | Automatic dynamic surge pricing | Fixed facility pricing overrides (`facility_unit_type_price`) implemented | True dynamic algorithmic surge pricing requires real-time occupancy triggers; handled via manual BOM pricing updates. |
+| **BR-REN-08** | Automated Waitlist Bumping | Implemented via Facility Manager manual reroute in Renewal Subsystem | Automated reassignment deferred in favor of supervised FM confirmation to avoid customer friction. |
 
 **Coverage Summary:**
 - Actively enforced rules in Section 3.1: **102 rules**
