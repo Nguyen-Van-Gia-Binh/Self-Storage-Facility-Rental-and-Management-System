@@ -1,0 +1,22 @@
+@startuml st-payment-transaction
+!pragma layout smetana
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+
+title State Machine Diagram — PaymentTransaction Entity (5 States)
+
+[*] --> PENDING : Payment link generated (VietQR / VNPay)\n[Drafting reservation, renewal, overdue, or extra fee]\n/ PaymentService#createTransaction (BR-PAY-01)
+
+PENDING --> SUCCESS : Bank transfer webhook received & validated\n[Correct amount & transfer reference code matching]\n/ PaymentService#handleWebhook (BR-PAY-02)
+PENDING --> FAILED : Payment gateway reports processing error / invalid transaction\n/ PaymentService#handleFailedWebhook
+PENDING --> EXPIRED : Payment window expires (48h for deposit, 15m for dynamic QR)\n/ PaymentExpiryScheduler (BR-PAY-03)
+
+SUCCESS --> PENDING_REFUND : Return settlement or early cancellation entitles refund\n[Refund calculation approved by FM]\n/ SettlementService#initiateRefund (BR-RET-08, BR-CAN-02)
+
+PENDING_REFUND --> SUCCESS : Bank refund transfer executed successfully\n[Ledger transaction marked complete]\n/ RefundService#confirmRefundCompleted
+
+FAILED --> [*]
+EXPIRED --> [*]
+SUCCESS --> [*]
+@enduml

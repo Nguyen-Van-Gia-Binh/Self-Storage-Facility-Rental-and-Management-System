@@ -1,0 +1,76 @@
+@startuml sl-00-end-to-end
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam conditionStyle inside
+
+title Main Flow — End-to-End Operational Lifecycle Overview
+
+|Storage Customer|
+start
+:Browse facilities and select unit type;
+:Submit reservation request with rental dates (BR-GEN-03);
+
+|System|
+:Check capacity availability (BR-AVL-01);
+:Hold capacity slot for 48 hours (BR-DEP-03, BR-RES-02);
+
+|Storage Customer|
+:Review quote & pay deposit and first month via VietQR (BR-PAY-01);
+
+|System|
+:Verify payment & mark Reservation CONFIRMED;
+
+|Facility Manager|
+:Review confirmed reservation & assign physical storage unit (BR-AVL-04);
+
+|System|
+:Generate RentalContract (PENDING_CHECK_IN) & Move-in Pass;
+
+|Storage Customer|
+:Arrive at facility on scheduled check-in date;
+
+|Facility Staff|
+:Verify customer ID/Pass and inspect storage unit (BR-CHK-01, BR-CHK-02);
+:Sign electronic handover protocol;
+
+|System|
+:Activate contract (ACTIVE) and issue 6-digit PIN code (BR-CHK-03);
+
+|Storage Customer|
+:Use storage unit with secure access PIN;
+
+if (Customer decides to renew?) then (yes)
+  |Storage Customer|
+  :Request online contract renewal (T-20 to T-3 window) (BR-REN-01);
+  |System|
+  :Verify unit availability and process renewal payment (BR-REN-04);
+  :Extend contract end date;
+else (no / overdue)
+  if (Rental contract reaches end date without renewal?) then (overdue)
+    |System|
+    :Trigger Overdue Cron at 00:00:00 (BR-OVD-01);
+    :Transition contract to OVERDUE;
+    :Apply daily late penalties & notify customer (BR-OVD-02);
+  else (return)
+    |Storage Customer|
+    :Submit return request with appointment date (BR-RET-01);
+  endif
+endif
+
+|Facility Staff|
+:Conduct exit checkout inspection (cleanliness, damages) (BR-RET-04);
+:Submit return inspection report;
+
+|Facility Manager|
+:Review and approve final return settlement (BR-RET-07);
+
+|System|
+:Process deposit refund or debt settlement (BR-RET-08);
+:Transition contract to RETURNED / CLOSED;
+:Transition storage unit to CLEANING then AVAILABLE (BR-RET-09);
+
+|Storage Customer|
+:Receive final settlement statement & deposit refund;
+stop
+@enduml

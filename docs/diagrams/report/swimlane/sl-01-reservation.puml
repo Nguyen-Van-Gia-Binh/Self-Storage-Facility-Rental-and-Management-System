@@ -1,0 +1,76 @@
+@startuml sl-01-reservation
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam conditionStyle inside
+
+title Flow 1 — Storage Unit Reservation & Waitlist CRM (Activity Swimlane)
+
+|Storage Customer|
+start
+:Access Customer Portal & filter facility by city/district;
+:View unit type catalog, dimensions and pricing (BR-PRI-01);
+:Select preferred unit type, start date, and rental duration (BR-GEN-03);
+
+|System|
+:Check capacity availability in 30-day booking window (BR-RES-01, BR-AVL-01);
+
+if (Capacity available?) then (yes)
+  |System|
+  :Calculate deposit (1 month) + initial rental fee (BR-DEP-01);
+  :Generate reservation record with status PENDING_PAYMENT;
+  :Hold capacity quota for 48 hours (BR-DEP-03, BR-RES-02);
+  :Generate VietQR payment link;
+
+  |Storage Customer|
+  :Scan VietQR & complete bank transfer;
+
+  |System|
+  :Receive payment webhook notification (BR-PAY-02);
+  :Validate amount & mark PaymentTransaction SUCCESS;
+  :Transition Reservation status to CONFIRMED;
+
+  |Facility Manager|
+  :View Confirmed Reservations in Facility Dashboard;
+  :Select matching AVAILABLE storage unit & assign to reservation (BR-AVL-04);
+
+  |System|
+  :Update StorageUnit status to RESERVED;
+  :Create RentalContract with status PENDING_CHECK_IN;
+  :Generate Digital Move-in Pass & QR Code;
+  :Send booking confirmation & check-in appointment to customer;
+
+  |Storage Customer|
+  :Receive Digital Move-in Pass & prepare for move-in;
+  stop
+
+else (no capacity - fully booked)
+  |Storage Customer|
+  :Receive out-of-capacity notification;
+  :Opt into Waitlist queue with contact info & preferred date (BR-WAT-01);
+
+  |System|
+  :Create Waitlist entry with status WAITING (FIFO order);
+
+  |Facility Manager|
+  :Monitor Waitlist CRM queue;
+  if (Storage unit becomes vacant?) then (unit freed)
+    :Select highest-priority Waitlist entry (BR-WAT-02);
+    :Contact customer via phone & transition Waitlist to CONTACTING;
+    if (Customer confirms interest?) then (agreed)
+      :Convert Waitlist to Reservation (CONVERTED);
+      |System|
+      :Generate Reservation & hold unit for 2 hours (BR-WAT-03);
+      |Storage Customer|
+      :Proceed to payment step;
+      stop
+    else (declined / no answer)
+      |Facility Manager|
+      :Mark Waitlist as REJECTED or PENDING_FOLLOW_UP;
+      stop
+    endif
+  else (no vacancy)
+    stop
+  endif
+endif
+@enduml

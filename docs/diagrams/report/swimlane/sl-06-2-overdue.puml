@@ -1,0 +1,73 @@
+@startuml sl-06-2-overdue
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam conditionStyle inside
+
+title Flow 6.2 — Overdue Handling, Penalty Escalation & Eviction (Activity Swimlane)
+
+|System|
+start
+:Execute daily OverdueScheduler at 00:00:00 midnight (BR-OVD-01);
+:Query ACTIVE contracts past their end_date with no active renewal;
+:Transition RentalContract status: ACTIVE -> OVERDUE;
+
+if (Days overdue count) then (D+1 to D+3: Grace Period)
+  |System|
+  :Send urgent overdue alert to customer (BR-OVD-01);
+  :No financial penalty applied during grace period (BR-OVD-01);
+  |Storage Customer|
+  :Receive grace period reminder; pay overdue rent or schedule return;
+
+else if (D+4 to D+6: Penalty Accrual)
+  |System|
+  :Calculate daily penalty rate = 10% of monthly rent / day (BR-OVD-02);
+  :Accrue ContractExtraCharge penalty balance (BR-OVD-03);
+  :Send escalated debt notification to customer;
+
+else if (D+7 to D+9: Access Suspension)
+  |System|
+  :Revoke Smart Lock access PIN code (PIN Lockout) (BR-OVD-05);
+  :Deactivate facility entry gate access;
+  :Accrue continued daily penalty charges;
+  :Send physical lockout notification to customer;
+
+else (D+10+: Physical Impoundment & Eviction)
+  |System|
+  :Trigger Physical Unit Impoundment order (BR-OVD-07);
+  :Assign impoundment task to Facility Staff;
+
+  |Facility Staff|
+  :Place physical security seal / facility padlock on unit door;
+  :Affix formal impoundment notice on door;
+  :Upload photos of physical lock seal into system;
+
+  |Facility Manager|
+  :Issue final 48-hour formal legal notice to customer (BR-OVD-08);
+
+  if (Customer settles entire overdue rent & penalties?) then (settled)
+    |Storage Customer|
+    :Pay full accumulated debt balance via online portal or reception;
+    |Facility Manager|
+    :Approve payment & order seal removal;
+    |Facility Staff|
+    :Remove physical padlock / seal;
+    |System|
+    :Restore PIN access credentials or proceed with immediate checkout;
+    stop
+  else (customer defaults / abandons)
+    |Facility Manager|
+    :Form liquidation inventory committee (FM, Staff, Security);
+    |Facility Staff|
+    :Open unit and document inventory of remaining abandoned property;
+    |Facility Manager|
+    :Execute contract termination (BR-OVD-09);
+    |System|
+    :Transition RentalContract status: OVERDUE -> TERMINATED;
+    :Forfeit entire security deposit;
+    :Transition StorageUnit status: OCCUPIED -> CLEANING -> AVAILABLE;
+    stop
+  endif
+endif
+stop
+@enduml

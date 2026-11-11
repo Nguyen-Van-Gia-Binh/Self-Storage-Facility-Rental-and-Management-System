@@ -1,0 +1,76 @@
+@startuml conceptual-model
+!pragma layout smetana
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam shadowing false
+hide circle
+hide empty members
+
+title Conceptual Data Model (CDM) — Core Business Entities
+
+package "Identity & Facility Domain" {
+  entity "AppUser" as User #E0F2FE
+  entity "Facility" as Facility #E0F2FE
+  entity "UnitType" as UnitType #E0F2FE
+  entity "StorageUnit" as StorageUnit #E0F2FE
+  entity "FacilityUnitTypePrice" as FacilityPrice #E0F2FE
+}
+
+package "Booking & Contract Domain" {
+  entity "Reservation" as Reservation #F5F3FF
+  entity "Waitlist" as Waitlist #F5F3FF
+  entity "RentalContract" as Contract #F5F3FF
+  entity "ContractRenewal" as Renewal #F5F3FF
+  entity "HandoverRecord" as Handover #F5F3FF
+  entity "ReturnRequest" as ReturnReq #F5F3FF
+}
+
+package "Finance & Policy Domain" {
+  entity "PaymentTransaction" as Payment #FEF3C7
+  entity "ContractExtraCharge" as ExtraCharge #FEF3C7
+  entity "PolicyVersion" as Policy #FEF3C7
+  entity "DiscountProgram" as Discount #FEF3C7
+}
+
+package "Operations & Support Domain" {
+  entity "SupportRequest" as Support #ECFEFF
+  entity "StaffDailyAssignment" as Assignment #ECFEFF
+}
+
+' Relationships
+User ||--o{ Reservation : "places"
+User ||--o{ Contract : "signs"
+User ||--o{ Waitlist : "joins"
+User ||--o{ Support : "submits"
+User ||--o{ Assignment : "is assigned"
+
+Facility ||--|{ StorageUnit : "contains"
+Facility ||--|{ FacilityPrice : "defines pricing"
+Facility ||--o{ Reservation : "hosts"
+Facility ||--o{ Contract : "executes"
+Facility ||--o{ Assignment : "schedules shifts"
+
+UnitType ||--|{ StorageUnit : "classifies"
+UnitType ||--|{ FacilityPrice : "priced at"
+UnitType ||--o{ Reservation : "booked as"
+UnitType ||--o{ Waitlist : "queued for"
+
+StorageUnit ||--o{ Contract : "leased in"
+StorageUnit |o--o{ Reservation : "allocated to"
+
+Reservation ||--o| Contract : "converts into"
+Reservation ||--o{ Payment : "deposit paid via"
+Reservation |o--o| Discount : "benefits from"
+Reservation |o--o| Policy : "governed by"
+
+Contract ||--o{ Renewal : "extended by"
+Contract ||--o| Handover : "checked in via"
+Contract ||--o{ ReturnReq : "settled via"
+Contract ||--o{ ExtraCharge : "incurs"
+Contract ||--o{ Payment : "rent paid via"
+Contract ||--o{ Support : "has incident on"
+
+Policy ||--o{ Contract : "dictates terms"
+
+@enduml

@@ -1,0 +1,145 @@
+@startuml erd-3-finance-policy
+!pragma layout smetana
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam shadowing false
+hide circle
+
+title Physical ERD — Part 3: Financial Ledger, Payment & Policy Domain
+
+' Reference stubs
+entity "app_user" as app_user {
+  * id : BIGINT <<PK>>
+}
+entity "rental_contract" as rental_contract {
+  * id : BIGINT <<PK>>
+}
+entity "reservation" as reservation {
+  * id : BIGINT <<PK>>
+}
+
+entity "policy_version" as policy_version {
+  * id : BIGINT <<PK, GENERATED>>
+  --
+  * version_number : INT <<UNIQUE>>
+  * overdue_grace_days : INT
+  * overdue_daily_penalty_rate : NUMERIC(5,4)
+  * overdue_lockout_days : INT
+  * overdue_auction_days : INT
+  * default_insurance_limit : NUMERIC(12,2)
+  * extended_insurance_limit : NUMERIC(12,2)
+  * early_cancellation_full_refund_days : INT
+  * effective_from : TIMESTAMPTZ
+  effective_to : TIMESTAMPTZ
+  created_by : BIGINT <<FK>>
+}
+
+entity "extra_fee_type" as extra_fee_type {
+  * id : BIGINT <<PK, GENERATED>>
+  --
+  * code : VARCHAR(50) <<UNIQUE>>
+  * name : VARCHAR(100)
+  description : TEXT
+  * is_active : BOOLEAN
+}
+
+entity "extra_fee_version" as extra_fee_version {
+  * id : BIGINT <<PK, GENERATED>>
+  --
+  * extra_fee_type_id : BIGINT <<FK>>
+  * version_number : INT
+  * amount : NUMERIC(12,2)
+  * effective_from : TIMESTAMPTZ
+  effective_to : TIMESTAMPTZ
+  created_by : BIGINT <<FK>>
+}
+
+entity "discount_program" as discount_program {
+  * id : BIGINT <<PK, GENERATED>>
+  --
+  * code : VARCHAR(50) <<UNIQUE>>
+  * name : VARCHAR(100)
+  * discount_percentage : NUMERIC(5,2)
+  * valid_from : DATE
+  * valid_to : DATE
+  min_duration_months : INT
+  max_discount_amount : NUMERIC(12,2)
+  * is_active : BOOLEAN
+  created_by : BIGINT <<FK>>
+}
+
+entity "payment_transaction" as payment_transaction {
+  * id : BIGINT <<PK, GENERATED>>
+  --
+  * transaction_code : VARCHAR(100) <<UNIQUE>>
+  reservation_id : BIGINT <<FK>>
+  contract_id : BIGINT <<FK>>
+  * amount : NUMERIC(12,2)
+  * payment_method : VARCHAR(50)
+  * transaction_type : VARCHAR(50)
+  * status : VARCHAR(30)
+  gateway_transaction_id : VARCHAR(100)
+  gateway_response : TEXT
+  paid_at : TIMESTAMPTZ
+  created_at : TIMESTAMPTZ
+}
+
+entity "ledger_entry" as ledger_entry {
+  * id : BIGINT <<PK, GENERATED>>
+  --
+  payment_transaction_id : BIGINT <<FK>>
+  contract_id : BIGINT <<FK>>
+  * entry_type : VARCHAR(50)
+  * amount : NUMERIC(12,2)
+  * balance_after : NUMERIC(12,2)
+  description : TEXT
+  * created_at : TIMESTAMPTZ
+}
+
+entity "contract_extra_charge" as contract_extra_charge {
+  * id : BIGINT <<PK, GENERATED>>
+  --
+  * contract_id : BIGINT <<FK>>
+  extra_fee_type_id : BIGINT <<FK>>
+  * description : VARCHAR(255)
+  * amount : NUMERIC(12,2)
+  * status : VARCHAR(20)
+  incurred_date : DATE
+  created_at : TIMESTAMPTZ
+}
+
+entity "overdue_fee_adjustment_request" as overdue_fee_adjustment_request {
+  * id : BIGINT <<PK, GENERATED>>
+  --
+  * contract_id : BIGINT <<FK>>
+  * requested_by : BIGINT <<FK>>
+  reviewed_by : BIGINT <<FK>>
+  * original_amount : NUMERIC(12,2)
+  * proposed_amount : NUMERIC(12,2)
+  * reason : TEXT
+  * status : VARCHAR(20)
+  created_at : TIMESTAMPTZ
+  reviewed_at : TIMESTAMPTZ
+}
+
+' Links
+app_user |o--o{ policy_version : "created_by"
+app_user |o--o{ extra_fee_version : "created_by"
+app_user |o--o{ discount_program : "created_by"
+extra_fee_type ||--o{ extra_fee_version : "extra_fee_type_id"
+
+reservation |o--o{ payment_transaction : "reservation_id"
+rental_contract |o--o{ payment_transaction : "contract_id"
+
+payment_transaction |o--o{ ledger_entry : "payment_transaction_id"
+rental_contract |o--o{ ledger_entry : "contract_id"
+
+rental_contract ||--o{ contract_extra_charge : "contract_id"
+extra_fee_type |o--o{ contract_extra_charge : "extra_fee_type_id"
+
+rental_contract ||--o{ overdue_fee_adjustment_request : "contract_id"
+app_user ||--o{ overdue_fee_adjustment_request : "requested_by"
+app_user |o--o{ overdue_fee_adjustment_request : "reviewed_by"
+
+@enduml

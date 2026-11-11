@@ -1,0 +1,71 @@
+@startuml sl-07-support
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam conditionStyle inside
+
+title Flow 7 — Customer Support, Incident Management & Compensation (Activity Swimlane)
+
+|Storage Customer|
+start
+:Access Support Portal & submit new support request (ticket);
+:Select category (Smart Lock Failure, Unit Water Leakage, Lighting Defect, Billing Query);
+:Describe incident and attach photos / videos;
+
+|System|
+:Create SupportRequest record with status NEW (BR-SUP-01);
+:Route ticket to facility queue based on customer contract facility;
+
+|Facility Staff|
+:Review incoming support ticket in Staff Desk;
+:Acknowledge ticket & transition status: NEW -> ASSIGNED -> IN_PROGRESS (BR-SUP-02);
+
+if (Incident type) then (PIN Forgotten / Lock Malfunction)
+  |Facility Staff|
+  :Verify customer identity on file;
+  :Generate temporary emergency 6-digit PIN code (valid 24h) (BR-SUP-03);
+  |System|
+  :Send emergency PIN SMS directly to registered phone number;
+  |Storage Customer|
+  :Access storage unit with temporary PIN;
+
+else if (Facility Defect: Water Leak / Structural Failure)
+  |Facility Staff|
+  :Conduct urgent physical inspection at unit location;
+  :Assess damaged customer property & log damage evaluation report;
+  if (Unit unusable and customer requires alternative storage?) then (yes)
+    |Facility Manager|
+    :Approve emergency unit swap without extra charge (BR-SUP-04);
+    |System|
+    :Transition contract storage unit to new AVAILABLE unit;
+    :Mark old unit MAINTENANCE;
+  endif
+  |Facility Manager|
+  :Assess compensation claim under Standard (10M VND) or Premium (50M VND) protection (BR-SUP-04);
+  :Approve compensation disbursement;
+  |System|
+  :Credit approved compensation to customer account or process bank refund;
+
+else (General Inquiry / Minor Maintenance)
+  |Facility Staff|
+  :Resolve physical maintenance or answer customer question;
+endif
+
+|Facility Staff|
+:Document resolution notes & capture completion photos;
+:Transition SupportRequest status: IN_PROGRESS -> RESOLVED;
+
+|Storage Customer|
+:Receive resolution notification and rate service quality (1 to 5 stars);
+
+if (Customer accepts resolution or 72h passes without feedback?) then (auto close)
+  |System|
+  :Transition SupportRequest status: RESOLVED -> CLOSED / AUTO_CLOSED (BR-SUP-05);
+else (customer reopens)
+  |Storage Customer|
+  :Submit follow-up comment;
+  |System|
+  :Reopen SupportRequest to IN_PROGRESS;
+endif
+stop
+@enduml

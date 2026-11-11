@@ -1,0 +1,25 @@
+@startuml st-support-request
+!pragma layout smetana
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+
+title State Machine Diagram — SupportRequest Entity (6 States)
+
+[*] --> NEW : Customer files support ticket on portal\n/ SupportService#createTicket (BR-SUP-01)
+
+NEW --> ASSIGNED : FM assigns ticket to on-duty Facility Staff\n/ SupportService#assignTicket (BR-SUP-02)
+NEW --> IN_PROGRESS : Staff directly picks up ticket from facility queue\n/ SupportService#startTicket
+
+ASSIGNED --> IN_PROGRESS : Assigned staff begins investigation/repair\n/ SupportService#startTicket (BR-SUP-02)
+
+IN_PROGRESS --> RESOLVED : Staff completes inspection/repair/PIN re-issue\n[Resolution details & evidence logged]\n/ SupportService#resolveTicket (BR-SUP-03, BR-SUP-04)
+IN_PROGRESS --> ASSIGNED : Staff transfers ticket to another specialist staff\n/ SupportService#reassignTicket
+
+RESOLVED --> CLOSED : Customer accepts resolution & submits rating (1-5 stars)\n/ SupportService#closeTicket
+RESOLVED --> AUTO_CLOSED : 72 hours pass without customer feedback\n/ SupportAutoCloseScheduler (BR-SUP-05)
+RESOLVED --> IN_PROGRESS : Customer reports issue unresolved (reopens ticket)\n/ SupportService#reopenTicket
+
+CLOSED --> [*]
+AUTO_CLOSED --> [*]
+@enduml

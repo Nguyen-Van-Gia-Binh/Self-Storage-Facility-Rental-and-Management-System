@@ -1,0 +1,48 @@
+@startuml sl-05-facility-staff
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam roundcorner 6
+skinparam conditionStyle inside
+
+title Flow 5 — Facility Unit Layout Management & Staff Shift Scheduling
+
+|Facility Manager|
+start
+:Access Facility Manager Operations Portal;
+
+fork
+  :Manage Physical Storage Units & Facility Layout (FM-01);
+  :Select facility floor and zone;
+  :Add new physical storage units mapped to Master Unit Types;
+  :Assign visual grid coordinates (row, column, floor level);
+  if (Need maintenance or deep cleaning?) then (yes)
+    :Update StorageUnit status: AVAILABLE -> MAINTENANCE / OUT_OF_SERVICE;
+  else (operational)
+    :Maintain unit in AVAILABLE status;
+  endif
+fork again
+  :Organize Weekly Staff Roster & Daily Shift Dispatching (FM-05);
+  :Select calendar week and facility staff members;
+  :Assign morning/afternoon shifts and primary responsibilities (Check-in, Checkout, Inspection, Support);
+  :Publish weekly schedule;
+end fork
+
+|System|
+:Persist storage unit catalog and spatial floorplan layout in database;
+:Create StaffDailyAssignment records for scheduled staff members;
+:Publish shift notifications to staff members' daily desks;
+
+|Facility Staff|
+:Log into Facility Staff Portal at start of shift (FS-06);
+:Review Assigned Daily Tasks (Pending Check-ins, Scheduled Returns, Support Tickets);
+:Confirm on-duty attendance for scheduled facility shift;
+:Execute physical operations (Check-in handover, exit inspection, unit cleaning, patrol);
+:Mark completed tasks throughout the shift;
+
+|System|
+:Update task completion logs and audit history in realtime;
+
+|Facility Manager|
+:Monitor live staff attendance and daily task progress in FM dashboard;
+stop
+@enduml
