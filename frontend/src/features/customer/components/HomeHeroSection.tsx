@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { ArrowRight, Plus, Minus, RotateCcw } from 'lucide-react';
 import type { UnitTypeResponse } from '@/types/unit';
-import heroCofounderImg from '@/assets/images/hero-cofounder-clean.webp';
+import heroCofounderImg from '@/assets/images/hero-cofounder-realistic.jpg';
 import { resolveSizeCategory } from '../utils/unitPickerHelpers';
 import { StorageUnit3DPreview, type UnitSpec3D } from './StorageUnit3DPreview';
 import {
@@ -211,18 +211,6 @@ export const HomeHeroSection: React.FC<HomeHeroSectionProps> = ({
               aria-hidden="true"
               className="hidden md:block absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top_left,rgba(4,24,48,0.55)_0%,transparent_65%)]"
             />
-
-            {/* Nhịp sáng nhẹ trên màn tablet QR & mã PIN ở góc phải dưới */}
-            <div
-              aria-hidden="true"
-              style={{ left: '81.6%', top: '76.5%' }}
-              className="hidden lg:flex absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-            >
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-85" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.95)]" />
-              </span>
-            </div>
           </div>
 
           {/* Nội dung Hero duy nhất: Mobile xếp trên ảnh nền xanh đậm; Desktop nằm trên vùng scrim tối góc trái */}
