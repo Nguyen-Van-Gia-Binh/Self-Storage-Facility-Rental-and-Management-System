@@ -650,27 +650,23 @@ export const AllocationPage: React.FC = () => {
               </button>
             </div>
           </div>
-          <span className="text-xs text-slate-500">
-            Cơ sở: <strong className="text-slate-800 font-semibold">{facilityId == null ? 'Tất cả cơ sở quản lý' : (selectedFacility?.name || '---')}</strong>
-          </span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-slate-50/90 text-slate-600 text-xs font-semibold border-b border-slate-100 uppercase tracking-wider">
               <tr>
-                <th className="px-4 py-3">Mã đơn & Khách hàng</th>
-                <th className="px-4 py-3">Hạng kho khách đặt</th>
-                <th className="px-4 py-3">Ngày nhận kho</th>
-                <th className="px-4 py-3">Thời hạn thuê</th>
-                <th className="px-4 py-3">Trạng thái</th>
-                <th className="px-4 py-3 text-right">Thao tác</th>
+                <th className="px-4 py-3 w-[28%]">Mã đơn & Khách hàng</th>
+                <th className="px-4 py-3 w-[24%]">Hạng kho khách đặt</th>
+                <th className="px-4 py-3 w-[20%]">Ngày nhận kho</th>
+                <th className="px-4 py-3 w-[16%]">Trạng thái</th>
+                <th className="px-4 py-3 w-[12%] text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-slate-500 text-center">
+                  <td colSpan={5} className="px-4 py-12 text-slate-500 text-center">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <RefreshCw className="w-5 h-5 animate-spin text-brand-600" />
                       <span className="text-xs font-medium">Đang tải danh sách nhiệm vụ gán ô...</span>
@@ -679,7 +675,7 @@ export const AllocationPage: React.FC = () => {
                 </tr>
               ) : displayedQueue.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-14 text-center">
+                  <td colSpan={5} className="px-4 py-14 text-center">
                     <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
                       <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                         <CheckCircle2 className="w-6 h-6" />
@@ -738,7 +734,10 @@ export const AllocationPage: React.FC = () => {
 
                       {/* Cột 2: Hạng kho */}
                       <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-1.5 font-medium text-slate-800">
+                        <div
+                          className="flex items-center gap-1.5 font-medium text-slate-800"
+                          title={row.rentalMonths ? `Thời hạn thuê: ${row.rentalMonths} tháng` : undefined}
+                        >
                           <Layers className="w-4 h-4 text-brand-600 shrink-0" />
                           <span>{cleanUnitTypeName(row.unitTypeName) || `Loại kho #${row.unitTypeId}`}</span>
                         </div>
@@ -758,17 +757,7 @@ export const AllocationPage: React.FC = () => {
                         </div>
                       </td>
 
-                      {/* Cột 4: Thời hạn thuê */}
-                      <td className="px-4 py-3.5 text-xs text-slate-600 font-medium">
-                        {row.rentalMonths} tháng
-                        {row.endDateExclusive && (
-                          <span className="text-slate-400 block text-[11px]">
-                            Đến {formatDate(row.endDateExclusive)}
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Cột 5: Trạng thái */}
+                      {/* Cột 4: Trạng thái */}
                       <td className="px-4 py-3.5">
                         {row.kind === 'CONTRACT_RELOCATION' ? (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
@@ -792,12 +781,12 @@ export const AllocationPage: React.FC = () => {
                         )}
                       </td>
 
-                      {/* Cột 6: Nút hành động mở Sơ đồ 2D */}
+                      {/* Cột 5: Nút hành động mở Sơ đồ 2D */}
                       <td className="px-4 py-3.5 text-right">
                         <button
                           type="button"
                           onClick={() => handleOpenFloorPlan(row)}
-                          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer ${
+                          className={`inline-flex items-center justify-center w-[108px] gap-1.5 px-3 py-2 rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer ${
                             row.kind === 'CONTRACT_RELOCATION'
                               ? 'bg-amber-600 hover:bg-amber-700 text-white'
                               : row.isAssigned

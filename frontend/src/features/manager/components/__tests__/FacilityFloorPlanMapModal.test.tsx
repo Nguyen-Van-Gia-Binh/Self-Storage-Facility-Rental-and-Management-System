@@ -31,6 +31,17 @@ describe('FacilityFloorPlanMapModal component — Sơ đồ Mặt bằng 2D & C�
       monthlyPrice: 800000,
     },
     {
+      id: 103,
+      facilityId: 1,
+      unitTypeId: 10,
+      unitTypeName: 'Kho Nhỏ (4m²)',
+      code: 'CG-S103',
+      floor: 1,
+      position: 'Khu A',
+      status: 'MAINTENANCE',
+      monthlyPrice: 800000,
+    },
+    {
       id: 201,
       facilityId: 1,
       unitTypeId: 10,
@@ -88,7 +99,7 @@ describe('FacilityFloorPlanMapModal component — Sơ đồ Mặt bằng 2D & C�
     expect(html).toContain('Chuyển sang Tầng 2');
   });
 
-  it('3. Hiển thị bảng chú giải màu sắc đầy đủ 6 trạng thái', () => {
+  it('3. Hiển thị bảng chú giải màu sắc đầy đủ các trạng thái', () => {
     const rawHtml = renderToString(
       <FacilityFloorPlanMapModal
         isOpen={true}
@@ -100,30 +111,33 @@ describe('FacilityFloorPlanMapModal component — Sơ đồ Mặt bằng 2D & C�
     const html = cleanHtml(rawHtml);
 
     expect(html).toContain('Trống khả dụng');
+    expect(html).toContain('Nâng hạng đền bù');
     expect(html).toContain('Chờ nhận kho');
     expect(html).toContain('Đang thuê');
     expect(html).toContain('Quá hạn');
     expect(html).toContain('Bảo trì');
-    expect(html).toContain('Ô bàn giao');
   });
 
-  it('4. Chế độ Locator: làm nổi bật ô kho bàn giao khi có highlightUnitId', () => {
+  it('4. Chế độ Locator: làm nổi bật ô kho bàn giao khi có highlightUnitId và giữ đúng màu trạng thái BẢO TRÌ (đỏ/hồng, không bị biến thành xanh)', () => {
     const rawHtml = renderToString(
       <FacilityFloorPlanMapModal
         isOpen={true}
         onClose={() => {}}
         facilityId={1}
-        highlightUnitId={101}
+        highlightUnitId={103}
         initialUnits={mockUnits}
       />
     );
     const html = cleanHtml(rawHtml);
 
-    expect(html).toContain('CG-S101');
+    expect(html).toContain('CG-S103');
     expect(html).toContain('Ô bàn giao');
+    expect(html).toContain('bg-rose-100');
+    expect(html).toContain('border-rose-400');
+    expect(html).not.toContain('bg-brand-600 text-white');
   });
 
-  it('5. Chế độ Picker: hiển thị nhãn Chế độ Chọn ô trực quan và nút đóng', () => {
+  it('5. Chế độ Picker: không hiển thị nhãn rườm rà, hiển thị hạng kho mục tiêu và nút đóng', () => {
     const rawHtml = renderToString(
       <FacilityFloorPlanMapModal
         isOpen={true}
@@ -137,12 +151,12 @@ describe('FacilityFloorPlanMapModal component — Sơ đồ Mặt bằng 2D & C�
     );
     const html = cleanHtml(rawHtml);
 
-    expect(html).toContain('Chế độ Chọn ô trực quan');
+    expect(html).not.toContain('Chế độ Chọn ô trực quan');
     expect(html).toContain('Kho Nhỏ (4m²)');
     expect(html).toContain('Đóng sơ đồ');
   });
 
-  it('6. Kích hoạt Chế độ Đền bù Nâng hạng khi cơ sở hết ô trống cùng loại', () => {
+  it('6. Kích hoạt Chế độ Đền bù Nâng hạng khi cơ sở hết ô trống cùng loại (tinh gọn)', () => {
     const rawHtml = renderToString(
       <FacilityFloorPlanMapModal
         isOpen={true}
@@ -156,13 +170,13 @@ describe('FacilityFloorPlanMapModal component — Sơ đồ Mặt bằng 2D & C�
     );
     const html = cleanHtml(rawHtml);
 
-    expect(html).toContain('Chế độ Đền bù Nâng hạng đã kích hoạt');
+    expect(html).toContain('Chế độ Đền bù Nâng hạng');
     expect(html).toContain('Hết ô cùng loại');
     expect(html).toContain('Nâng hạng đền bù');
     expect(html).toContain('Nâng hạng');
   });
 
-  it('7. Không hiển thị banner Đền bù Nâng hạng khi dữ liệu đang tải (loading)', () => {
+  it('7. Không hiển thị huy hiệu Đền bù Nâng hạng khi dữ liệu đang tải (loading)', () => {
     const rawHtml = renderToString(
       <FacilityFloorPlanMapModal
         isOpen={true}
@@ -175,7 +189,7 @@ describe('FacilityFloorPlanMapModal component — Sơ đồ Mặt bằng 2D & C�
     );
     const html = cleanHtml(rawHtml);
 
-    expect(html).not.toContain('Chế độ Đền bù Nâng hạng đã kích hoạt');
+    expect(html).not.toContain('Chế độ Đền bù Nâng hạng');
     expect(html).not.toContain('Hết ô cùng loại');
     expect(html).toContain('Đang tải dữ liệu ô kho của cơ sở');
   });

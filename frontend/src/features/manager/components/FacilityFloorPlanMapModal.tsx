@@ -10,7 +10,6 @@ import {
   AlertTriangle,
   Info,
   ArrowRight,
-  ShieldAlert,
   Sparkles,
 } from 'lucide-react';
 import type { StorageUnitResponse, UnitTypeResponse } from '@/types/unit';
@@ -89,7 +88,11 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
           const target = list.find((u) => u.id === highlightUnitId);
           if (target && target.floor) {
             setCurrentFloor(target.floor);
-            setSelectedUnit(target);
+            // Trong chế độ Picker (chọn ô phân bổ), không tự động chọn ô cũ gặp sự cố/bảo trì
+            // để tránh hiện thanh preview thừa thãi ở chân trang
+            if (!isPickerMode) {
+              setSelectedUnit(target);
+            }
           }
         }
       })
@@ -232,11 +235,27 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
     isSelectable: boolean,
     isUpgrade?: boolean
   ) => {
-    if (isHighlighted) {
-      return 'bg-brand-600 text-white border-brand-500 ring-4 ring-brand-500/50 shadow-md scale-105 z-20 font-extrabold animate-pulse';
-    }
+    // 1. Ô đang được chọn
     if (isSelected) {
       return 'bg-emerald-600 text-white border-emerald-500 ring-4 ring-emerald-500/40 shadow-md scale-105 z-20 font-bold';
+    }
+
+    // 2. Ô được làm nổi bật (ô bàn giao / ô sự cố ban đầu của hợp đồng)
+    // BẮT BUỘC giữ đúng màu trạng thái thực tế: BẢO TRÌ phải có màu đỏ/hồng, không bị ép thành màu xanh
+    if (isHighlighted) {
+      switch (status) {
+        case 'MAINTENANCE':
+          return 'bg-rose-100 text-rose-950 border-rose-400 ring-4 ring-rose-400/60 shadow-md scale-105 z-20 font-bold';
+        case 'OCCUPIED':
+          return 'bg-indigo-100 text-indigo-950 border-indigo-400 ring-4 ring-indigo-400/60 shadow-md scale-105 z-20 font-bold';
+        case 'OVERDUE':
+          return 'bg-amber-100 text-amber-950 border-amber-400 ring-4 ring-amber-400/60 shadow-md scale-105 z-20 font-bold';
+        case 'RESERVED':
+          return 'bg-sky-100 text-sky-950 border-sky-400 ring-4 ring-sky-400/60 shadow-md scale-105 z-20 font-bold';
+        case 'AVAILABLE':
+        default:
+          return 'bg-emerald-100 text-emerald-950 border-emerald-500 ring-4 ring-emerald-500/60 shadow-md scale-105 z-20 font-bold';
+      }
     }
 
     if (isPickerMode && !isSelectable) {
@@ -293,22 +312,14 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
                 <h3 className="text-base sm:text-lg font-bold text-slate-900">
                   Sơ đồ Mặt bằng 2D Ô kho — {facilityName}
                 </h3>
-                {isPickerMode && (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-300">
-                    <Sparkles className="w-3 h-3 text-amber-600" />
-                    Chế độ Chọn ô trực quan
-                  </span>
-                )}
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                {isPickerMode
-                  ? loading
-                    ? 'Đang tải dữ liệu ô kho của cơ sở...'
-                    : isUpgradeCompensationMode
-                    ? `Cơ sở hết ô cùng loại. Click vào ô màu vàng hổ phách để nâng hạng đền bù.`
-                    : targetUnitTypeName
-                    ? `Click vào ô trống màu xanh lá thuộc hạng kho [${targetUnitTypeName}] để phân bổ.`
-                    : 'Click vào ô trống màu xanh lá để phân bổ cho hợp đồng.'
+                {loading
+                  ? 'Đang tải dữ liệu ô kho của cơ sở...'
+                  : isPickerMode
+                  ? targetUnitTypeName
+                    ? `Click vào ô trống [${targetUnitTypeName}] để phân bổ.`
+                    : 'Click vào ô trống trên sơ đồ để phân bổ.'
                   : 'Sơ đồ định vị không gian thực địa, phân tầng và trạng thái trực quan các ô kho.'}
               </p>
             </div>
@@ -322,50 +333,45 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
           </button>
         </div>
 
-        {/* Banner Chế độ Đền bù Nâng hạng khi hết ô cùng loại (chỉ hiển thị sau khi đã tải xong dữ liệu và thực sự hết ô cùng loại) */}
-        {!loading && isUpgradeCompensationMode && (
-          <div className="mx-4 sm:mx-5 mt-3 p-3.5 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-300 rounded-2xl flex items-start gap-3 shadow-2xs animate-in fade-in duration-200">
-            <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
-            <div className="text-xs text-amber-950 leading-relaxed">
-              <div className="font-bold text-sm text-amber-900 flex items-center gap-2 mb-0.5">
-                <span>Chế độ Đền bù Nâng hạng đã kích hoạt</span>
-                <span className="text-[10px] bg-rose-100 text-rose-800 px-2 py-0.2 rounded-full border border-rose-300 font-bold uppercase tracking-tight">
-                  Hết ô cùng loại ({targetUnitTypeName || targetUnitType?.name || 'Size ban đầu'})
-                </span>
-              </div>
-              Cơ sở hiện đã hết ô trống cùng loại. Bạn có thể chọn các ô màu <strong className="text-amber-900">vàng hổ phách (kích thước lớn hơn cùng môi trường)</strong> để nâng hạng đền bù cho khách hàng. Hệ thống bảo lưu nguyên vẹn giá thuê và tiền cọc theo hợp đồng ban đầu.
-            </div>
-          </div>
-        )}
-
         {/* Thanh Điều hướng Tầng & Bộ lọc */}
         <div className="px-4 sm:px-5 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-white">
-          {/* Bộ chọn Tầng (Floor Switcher Tabs) */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl">
-            {availableFloors.map((floor) => {
-              const count = units.filter((u) => (u.floor ?? 1) === floor).length;
-              const isActive = floor === currentFloor;
-              return (
-                <button
-                  key={floor}
-                  type="button"
-                  onClick={() => setCurrentFloor(floor)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    isActive
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Layers className={`w-3.5 h-3.5 ${isActive ? 'text-brand-600' : 'text-slate-400'}`} />
-                  <span>Tầng {floor}</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-brand-50 text-brand-700' : 'bg-slate-200 text-slate-600'}`}>
-                    {loading ? '...' : count}
-                  </span>
-                </button>
-              );
-            })}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Bộ chọn Tầng (Floor Switcher Tabs) */}
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl">
+              {availableFloors.map((floor) => {
+                const count = units.filter((u) => (u.floor ?? 1) === floor).length;
+                const isActive = floor === currentFloor;
+                return (
+                  <button
+                    key={floor}
+                    type="button"
+                    onClick={() => setCurrentFloor(floor)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      isActive
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Layers className={`w-3.5 h-3.5 ${isActive ? 'text-brand-600' : 'text-slate-400'}`} />
+                    <span>Tầng {floor}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-brand-50 text-brand-700' : 'bg-slate-200 text-slate-600'}`}>
+                      {loading ? '...' : count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Chế độ đền bù nâng hạng gọn gàng */}
+            {!loading && isUpgradeCompensationMode && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-200 px-2.5 py-1 rounded-xl">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span className="font-bold">Chế độ Đền bù Nâng hạng</span>
+                <span className="text-[11px] text-amber-700">
+                  (Hết ô cùng loại • Nâng hạng đền bù)
+                </span>
+              </span>
+            )}
           </div>
 
           {/* Lọc trạng thái nhanh */}
@@ -400,67 +406,50 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
           ) : (
             <div className="space-y-4">
               
-              {/* Layout Mặt bằng: Cột Cầu thang tương tác + Ma trận Ô kho */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                
-                {/* 1. KHỐI CẦU THANG BỘ & THANG MÁY TƯƠNG TÁC (3 cols) */}
-                <div className="lg:col-span-3">
-                  <div
-                    data-testid="interactive-staircase-hub"
-                    onClick={() => setCurrentFloor(nextFloorForStaircase)}
-                    className="group relative p-4 rounded-2xl border-2 border-dashed border-indigo-300 bg-linear-to-b from-indigo-50/80 to-purple-50/80 hover:from-indigo-100 hover:to-purple-100 hover:border-indigo-500 transition-all cursor-pointer shadow-xs flex flex-col justify-between h-full min-h-[140px]"
-                    title={`Click để chuyển sang sơ đồ Tầng ${nextFloorForStaircase}`}
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs">
-                          <TrendingUp className="w-4 h-4" />
-                        </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-100/90 px-2 py-0.5 rounded-full">
-                          Lối chuyển tầng
-                        </span>
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-indigo-950 group-hover:text-indigo-800">
-                          Cầu thang & Thang máy
-                        </h4>
-                        <p className="text-[11px] text-indigo-700 mt-1 leading-snug">
-                          {currentFloor === 1
-                            ? '↗ Click để lên sơ đồ Tầng 2'
-                            : `↙ Click để xuống sơ đồ Tầng ${nextFloorForStaircase}`}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 pt-3 border-t border-indigo-200/80 flex items-center justify-between text-[11px] font-bold text-indigo-900">
-                      <span>Chuyển sang Tầng {nextFloorForStaircase}</span>
-                      <ArrowRight className="w-4 h-4 text-indigo-600 group-hover:translate-x-1 transition-transform" />
-                    </div>
+              {/* Sơ đồ mặt bằng ô kho toàn màn hình */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-2xs space-y-3.5">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-brand-600 shrink-0" />
+                    <span className="font-bold text-slate-800">Mặt bằng Tầng {currentFloor}</span>
+                    <span className="text-slate-400">•</span>
+                    <span className="text-slate-500 text-[11px]">{filteredFloorUnits.length} ô kho</span>
                   </div>
-                </div>
 
-                {/* 2. MA TRẬN LƯỚI CÁC Ô KHO (9 cols) */}
-                <div className="lg:col-span-9 bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3">
-                  <div className="flex items-center justify-between text-xs pb-2 border-b border-slate-100">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-brand-600" />
-                      <span className="font-bold text-slate-800">Mặt bằng Tầng {currentFloor}</span>
-                      <span className="text-slate-400">•</span>
-                      <span className="text-slate-500 text-[11px]">{filteredFloorUnits.length} ô kho</span>
-                    </div>
+                  <div className="flex items-center gap-2 flex-wrap">
                     {currentFloor === 1 && (
                       <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                         Cổng vào & Quầy tiếp tân ➔
                       </span>
                     )}
-                  </div>
 
-                  {filteredFloorUnits.length === 0 ? (
-                    <div className="py-12 text-center text-xs text-slate-400 font-medium">
-                      Không có ô kho nào phù hợp với bộ lọc tại Tầng {currentFloor}.
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+                    {/* Lối chuyển tầng nhỏ gọn, không chiếm diện tích */}
+                    <button
+                      type="button"
+                      data-testid="interactive-staircase-hub"
+                      onClick={() => setCurrentFloor(nextFloorForStaircase)}
+                      className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-indigo-200 bg-indigo-50/80 hover:bg-indigo-100 hover:border-indigo-300 text-indigo-900 transition-all cursor-pointer shadow-2xs"
+                      title={`Click để chuyển sang sơ đồ Tầng ${nextFloorForStaircase}`}
+                    >
+                      <TrendingUp className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                      <span>Cầu thang & Thang máy</span>
+                      <span className="text-[11px] text-indigo-600 font-normal">
+                        {currentFloor === 1 ? '(Click để lên sơ đồ Tầng 2)' : `(Chuyển sang Tầng ${nextFloorForStaircase})`}
+                      </span>
+                      <span className="hidden sm:inline text-indigo-700 font-semibold">
+                        Chuyển sang Tầng {nextFloorForStaircase}
+                      </span>
+                      <ArrowRight className="w-3.5 h-3.5 text-indigo-500 group-hover:translate-x-0.5 transition-transform" />
+                    </button>
+                  </div>
+                </div>
+
+                {filteredFloorUnits.length === 0 ? (
+                  <div className="py-12 text-center text-xs text-slate-400 font-medium">
+                    Không có ô kho nào phù hợp với bộ lọc tại Tầng {currentFloor}.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
                       {filteredFloorUnits.map((unit) => {
                         const isHighlighted = unit.id === highlightUnitId;
                         const isSelected = selectedUnit?.id === unit.id;
@@ -473,9 +462,15 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
                             key={unit.id}
                             data-testid={`unit-tile-${unit.code}`}
                             onClick={() => {
-                              setSelectedUnit(unit);
-                              if (isPickerMode && isSelectable && onSelectUnit) {
-                                onSelectUnit(unit);
+                              if (isPickerMode) {
+                                if (isSelectable) {
+                                  setSelectedUnit(unit);
+                                  if (onSelectUnit) {
+                                    onSelectUnit(unit);
+                                  }
+                                }
+                              } else {
+                                setSelectedUnit(unit);
                               }
                             }}
                             className={`relative p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-between min-h-[72px] ${getStatusColor(
@@ -491,7 +486,9 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
                           >
                             {/* Badges đặc biệt */}
                             {isHighlighted && (
-                              <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-brand-700 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full whitespace-nowrap shadow-xs">
+                              <span className={`absolute -top-2 left-1/2 -translate-x-1/2 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full whitespace-nowrap shadow-xs ${
+                                unit.status === 'MAINTENANCE' ? 'bg-rose-700' : 'bg-brand-700'
+                              }`}>
                                 Ô bàn giao
                               </span>
                             )}
@@ -526,8 +523,6 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
                   )}
                 </div>
 
-              </div>
-
               {/* Panel xem trước thông tin ô kho khi click */}
               {selectedUnit && (
                 <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -553,49 +548,42 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        Tầng {selectedUnit.floor ?? 1} • {selectedUnit.position || 'Khu A'} • {selectedUnit.locationNote || selectedUnit.unitTypeName || 'Hạng tiêu chuẩn'}
+                        Tầng {selectedUnit.floor ?? 1} • {selectedUnit.position || 'Khu A'} • {selectedUnit.unitTypeName || 'Hạng tiêu chuẩn'}
                         {selectedUnit.monthlyPrice ? ` • ${new Intl.NumberFormat('vi-VN').format(selectedUnit.monthlyPrice)} đ/tháng` : ''}
                       </p>
                     </div>
                   </div>
 
-                  {isPickerMode && (
+                  {isPickerMode && selectedUnit.status === 'AVAILABLE' && (
                     <div>
-                      {selectedUnit.status === 'AVAILABLE' ? (
-                        checkIsUpgradeUnit(selectedUnit) ? (
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                            <span className="text-xs text-amber-900 bg-amber-100 px-3 py-1.5 rounded-xl border border-amber-300 font-semibold flex items-center gap-1.5 shadow-2xs">
-                              <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-                              <span>Nâng hạng đền bù (Khách giữ nguyên giá)</span>
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => onSelectUnit && onSelectUnit(selectedUnit)}
-                              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5 w-full sm:w-auto justify-center"
-                            >
-                              <Sparkles className="w-4 h-4 text-amber-200" />
-                              <span>Xác nhận nâng hạng sang ô {selectedUnit.code}</span>
-                            </button>
-                          </div>
-                        ) : (!allowedUnitTypeId || selectedUnit.unitTypeId === allowedUnitTypeId) ? (
+                      {checkIsUpgradeUnit(selectedUnit) ? (
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                          <span className="text-xs text-amber-900 bg-amber-100 px-3 py-1.5 rounded-xl border border-amber-300 font-semibold flex items-center gap-1.5 shadow-2xs">
+                            <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                            <span>Nâng hạng đền bù (Khách giữ nguyên giá)</span>
+                          </span>
                           <button
                             type="button"
                             onClick={() => onSelectUnit && onSelectUnit(selectedUnit)}
-                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5 w-full sm:w-auto justify-center"
+                            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5 w-full sm:w-auto justify-center"
                           >
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>Xác nhận phân bổ ô {selectedUnit.code}</span>
+                            <Sparkles className="w-4 h-4 text-amber-200" />
+                            <span>Xác nhận nâng hạng sang ô {selectedUnit.code}</span>
                           </button>
-                        ) : (
-                          <span className="text-xs text-amber-700 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 flex items-center gap-1.5">
-                            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                            Khác hạng kho hợp đồng
-                          </span>
-                        )
+                        </div>
+                      ) : (!allowedUnitTypeId || selectedUnit.unitTypeId === allowedUnitTypeId) ? (
+                        <button
+                          type="button"
+                          onClick={() => onSelectUnit && onSelectUnit(selectedUnit)}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5 w-full sm:w-auto justify-center"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Xác nhận phân bổ ô {selectedUnit.code}</span>
+                        </button>
                       ) : (
-                        <span className="text-xs text-rose-700 bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-200 flex items-center gap-1.5">
-                          <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
-                          Ô không khả dụng (Đang bận / Bảo trì)
+                        <span className="text-xs text-amber-700 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 flex items-center gap-1.5">
+                          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                          Khác hạng kho hợp đồng
                         </span>
                       )}
                     </div>
@@ -636,10 +624,6 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-md bg-rose-500 shadow-2xs" />
               <span>Bảo trì</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-brand-600 ring-2 ring-brand-500/30" />
-              <span className="font-bold text-brand-900">Ô bàn giao</span>
             </div>
           </div>
 

@@ -32,7 +32,7 @@ describe('RevenueStreamDonut Component', () => {
     expect(svg).toBeInTheDocument();
 
     // Kiểm tra dòng tiền Net Cash Flow
-    expect(screen.getByText(/Khoản tiền đã xử lý \/ hoàn trả khách hàng:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Đối soát hoàn tiền & thực nhận ròng:/i)).toBeInTheDocument();
     expect(screen.getByText(/- 44\.840\.000/i)).toBeInTheDocument();
   });
 

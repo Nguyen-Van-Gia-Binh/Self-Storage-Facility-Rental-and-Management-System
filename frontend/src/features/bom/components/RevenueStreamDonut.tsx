@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PieChart, Info, AlertTriangle, RotateCcw } from 'lucide-react';
+import { PieChart, RotateCcw } from 'lucide-react';
 import type { SystemRevenueReport } from '@/types';
 import { formatCurrency } from '@/utils/format';
 
@@ -155,11 +155,8 @@ export const RevenueStreamDonut: React.FC<RevenueStreamDonutProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
-                Cơ Cấu Nguồn Thu & Đồng Tiền Toàn Hệ Thống
+                Cơ Cấu Nguồn Thu & Dòng Tiền Toàn Hệ Thống
               </h3>
-              <p className="text-xs text-slate-500">
-                Phân bổ doanh thu gộp theo từng cấu phần dòng tiền trong kỳ
-              </p>
             </div>
           </div>
 
@@ -275,11 +272,6 @@ export const RevenueStreamDonut: React.FC<RevenueStreamDonutProps> = ({
                 </div>
               )}
             </div>
-
-            <p className="text-[11px] text-slate-400 text-center mt-2 flex items-center gap-1">
-              <Info className="w-3 h-3 shrink-0" />
-              <span>Rê chuột để xem; Nhấn lát cắt để lọc nhanh bảng ma trận</span>
-            </p>
           </div>
 
           {/* Cột phải: Danh sách chú giải (Legend) */}
@@ -338,35 +330,30 @@ export const RevenueStreamDonut: React.FC<RevenueStreamDonutProps> = ({
           </div>
         </div>
 
-        {/* Thanh ghi nhận Hoàn Tiền & Đối soát Thực Thu (Net Cash Flow) */}
+        {/* Dải đối soát Hoàn Tiền & Thực Nhận Ròng (Net Cash Flow) */}
         <div className="pt-3 border-t border-slate-100">
-          <div className="p-3 bg-amber-50/80 border border-amber-200/70 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-            <div className="flex items-start sm:items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 sm:mt-0" />
-              <div>
-                <span className="font-bold text-amber-950">
-                  Khoản tiền đã xử lý / hoàn trả khách hàng:
-                </span>{' '}
-                <span className="text-amber-800">
-                  (Hủy lịch đặt trước, chấm dứt hợp đồng sớm & cọc dư hoàn sau kiểm tra đồ)
-                </span>
-              </div>
-            </div>
+          <div className="p-2.5 sm:px-4 bg-slate-50 border border-slate-200/80 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+            <span className="text-slate-600 font-medium">
+              Đối soát hoàn tiền & thực nhận ròng:
+            </span>
 
             <div className="flex items-center gap-4 self-end sm:self-auto shrink-0">
-              <span className="font-mono font-bold text-rose-700 text-sm">
-                - {formatCurrency(refund)}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-500">Hoàn trả khách:</span>
+                <span className="font-mono font-bold text-rose-600 text-sm">
+                  {refund > 0 ? `- ${formatCurrency(refund)}` : formatCurrency(0)}
+                </span>
+              </div>
               <span className="text-slate-300">|</span>
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-600 font-medium">Thực nhận ròng (Net):</span>
+                <span className="text-slate-600 font-semibold">Thực nhận ròng (Net):</span>
                 <span className="font-mono font-bold text-emerald-700 text-sm">
                   {formatCurrency(netRevenue)}
                 </span>
               </div>
             </div>
           </div>
+        </div>
       </div>
-    </div>
   );
 };
