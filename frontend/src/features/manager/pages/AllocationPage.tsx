@@ -495,8 +495,6 @@ export const AllocationPage: React.FC = () => {
           storageUnitId: modalUnit.id,
           staffId: targetStaffId,
           scheduledDate: selected.startDate,
-          scheduledStartTime: '08:00',
-          scheduledEndTime: '17:00',
         });
 
         if (selectedStaffId && selected.assignedStaffId && selectedStaffId !== selected.assignedStaffId) {

@@ -258,8 +258,6 @@ describe('AllocationPage Component (Gán ô kho)', () => {
         storageUnitId: 42,
         staffId: 2,
         scheduledDate: '2026-11-15',
-        scheduledStartTime: '08:00',
-        scheduledEndTime: '17:00',
       });
     });
   });
