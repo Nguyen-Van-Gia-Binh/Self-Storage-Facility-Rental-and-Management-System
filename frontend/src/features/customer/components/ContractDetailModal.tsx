@@ -246,7 +246,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                         <span>Biên bản chấm dứt hợp đồng &amp; niêm phong Kho Tổng</span>
                       </div>
                       <span className="text-[11px] font-mono font-bold bg-purple-200 text-purple-900 px-2 py-0.5 rounded">
-                        Niêm phong Kho Tổng (D+7)
+                        Bị niêm phong
                       </span>
                     </div>
                     <p className="text-xs text-purple-900 leading-relaxed">
@@ -499,7 +499,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                   )}
                   {isOverdueTerminated && (
                     <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
-                      Niêm phong Kho Tổng (D+7)
+                      Bị niêm phong
                     </span>
                   )}
                   {isPendingCheckin && (
