@@ -10,7 +10,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts';
-import { BarChart3, LineChart as LineChartIcon, Info } from 'lucide-react';
+import { BarChart3, LineChart as LineChartIcon } from 'lucide-react';
 import type { MonthlyRevenueTrend } from '@/types';
 import { formatCurrency } from '@/utils/format';
 
@@ -207,11 +207,6 @@ export const RevenueTrendCharts: React.FC<RevenueTrendChartsProps> = ({
             </ResponsiveContainer>
           </div>
         </div>
-
-        <div className="mt-2 pt-2 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between">
-          <span>Đơn vị: VNĐ • Cột chồng thể hiện cơ cấu tiền thực thu từng tháng</span>
-          <span className="font-mono text-[10px] text-slate-400">12 Kỳ gần nhất</span>
-        </div>
       </div>
 
       {/* 2. Biểu đồ Đường So Sánh (Line Chart) - 40% chiều ngang (lg:col-span-5) */}
@@ -276,13 +271,6 @@ export const RevenueTrendCharts: React.FC<RevenueTrendChartsProps> = ({
               </LineChart>
             </ResponsiveContainer>
           </div>
-        </div>
-
-        <div className="mt-2 pt-2 border-t border-slate-100 flex items-start gap-1.5 text-[11px] text-slate-500">
-          <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-          <span>
-            Nếu Cash Flow tụt dưới đường MRR nét đứt, hệ thống cảnh báo khách hàng có xu hướng chậm thanh toán hoặc nợ quá hạn.
-          </span>
         </div>
       </div>
     </div>

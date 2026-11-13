@@ -43,7 +43,7 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* 1. Dòng tiền thực thu (Cash Flow) */}
-      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-emerald-300 transition-colors">
+      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-emerald-300 transition-colors flex flex-col justify-between">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
             Dòng Tiền Thực Thu (Cash)
@@ -54,19 +54,21 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
           <div className="text-2xl lg:text-3xl font-bold font-mono tabular-nums tracking-tight text-slate-900">
             {formatCurrency(totalRev)}
           </div>
-          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-rose-600 font-semibold font-mono">
-              Tiền ra: {refundAmount > 0 ? '-' : ''}{formatCurrency(refundAmount)}
-            </span>
+          <div className="mt-2 text-xs flex items-center gap-2 text-slate-500">
             <span className="text-emerald-700 font-bold font-mono">
               Ròng: {formatCurrency(Math.max(0, totalRev - refundAmount))}
             </span>
+            {refundAmount > 0 && (
+              <span className="text-rose-500 font-mono text-[11px]">
+                (Tiền ra: -{formatCurrency(refundAmount)})
+              </span>
+            )}
           </div>
         </div>
       </div>
 
       {/* 2. Doanh thu định kỳ (Net MRR) */}
-      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-sky-300 transition-colors">
+      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-sky-300 transition-colors flex flex-col justify-between">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
             Doanh Thu Định Kỳ (MRR)
@@ -77,14 +79,14 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
           <div className="text-2xl lg:text-3xl font-bold font-mono tabular-nums tracking-tight text-slate-900">
             {formatCurrency(netMrr)}
           </div>
-          <div className="mt-1.5 text-xs text-slate-500">
+          <div className="mt-2 text-xs text-slate-500">
             <span className="font-semibold text-slate-700">{activeContracts}</span> hợp đồng ACTIVE đang hiệu lực
           </div>
         </div>
       </div>
 
       {/* 3. Tiền cọc đang giữ (Deposit Liability) - Nợ Phải Trả */}
-      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-slate-300 transition-colors">
+      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-slate-300 transition-colors flex flex-col justify-between">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
@@ -107,7 +109,7 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
           <div className="text-2xl lg:text-3xl font-bold font-mono tabular-nums tracking-tight text-slate-700">
             {formatCurrency(depositLiability)}
           </div>
-          <div className="mt-1.5 text-xs text-slate-400 flex items-center gap-1">
+          <div className="mt-2 text-xs text-slate-400 flex items-center gap-1">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-400" />
             Nợ phải trả (Không tính vào DT)
           </div>
@@ -115,7 +117,7 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
       </div>
 
       {/* 4. Nợ quá hạn (Overdue Bad Debt Risk) */}
-      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-rose-300 transition-colors">
+      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-rose-300 transition-colors flex flex-col justify-between">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
             Nợ Quá Hạn & Rủi Ro
@@ -128,7 +130,7 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
           }`}>
             {formatCurrency(overdueFee)}
           </div>
-          <div className="mt-1.5 text-xs text-slate-500">
+          <div className="mt-2 text-xs text-slate-500">
             {overdueCount > 0 ? (
               <span className="text-rose-600 font-medium">
                 {overdueCount} hợp đồng quá hạn cần thu hồi
