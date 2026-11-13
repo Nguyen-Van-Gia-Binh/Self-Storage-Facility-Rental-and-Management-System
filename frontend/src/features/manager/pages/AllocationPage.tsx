@@ -23,6 +23,7 @@ import type { StaffWorkloadItem } from '@/features/manager/types/staffAssignment
 import { Badge } from '@/components/ui/Badge';
 import type { FacilityListItem } from '@/types';
 import type { StorageUnitResponse } from '@/types/unit';
+import { tokenStorage } from '@/utils/tokenStorage';
 import { FacilityFloorPlanMapModal } from '../components/FacilityFloorPlanMapModal';
 
 function daysUntil(isoDate: string): number {
@@ -96,7 +97,23 @@ function getCustomerInfo(row: ReservationResponse) {
 
 export const AllocationPage: React.FC = () => {
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
-  const [facilityId, setFacilityId] = useState<number | null>(null);
+  const [facilitiesLoading, setFacilitiesLoading] = useState<boolean>(true);
+  const [facilityId, setFacilityId] = useState<number | null>(() => {
+    const saved = localStorage.getItem('manager_selected_facility_id');
+    if (saved === 'ALL') return null;
+    if (saved && Number(saved) > 0) return Number(saved);
+    const user = tokenStorage.getUser();
+    return user?.facilityId ? Number(user.facilityId) : null;
+  });
+  const [isFacilityResolved, setIsFacilityResolved] = useState<boolean>(() => {
+    const saved = localStorage.getItem('manager_selected_facility_id');
+    if (saved === 'ALL') return true;
+    if (saved && Number(saved) > 0) return true;
+    const user = tokenStorage.getUser();
+    return Boolean(user?.facilityId);
+  });
+  const facilitiesRef = React.useRef<FacilityListItem[]>(facilities);
+  facilitiesRef.current = facilities;
   const [facilityCounts, setFacilityCounts] = useState<Record<string | number, number>>({});
   const [filterTab, setFilterTab] = useState<'ALL' | 'UNASSIGNED' | 'ASSIGNED'>('ALL');
   const [queue, setQueue] = useState<AllocationQueueItem[]>([]);
@@ -308,7 +325,7 @@ export const AllocationPage: React.FC = () => {
       const merged = [...pendingContractAllocations, ...pendingRsv, ...relocationContracts]
         .map((item) => {
           if (!item.facilityName) {
-            const fac = facilities.find((f) => f.id === item.facilityId);
+            const fac = facilitiesRef.current.find((f) => f.id === item.facilityId);
             return {
               ...item,
               facilityName: fac ? fac.name : item.facilityId ? `Cơ sở #${item.facilityId}` : '',
@@ -334,6 +351,11 @@ export const AllocationPage: React.FC = () => {
           }
         }
         setFacilityCounts(counts);
+      } else {
+        setFacilityCounts((prev) => ({
+          ...prev,
+          [id]: merged.length,
+        }));
       }
 
       setQueue(merged);
@@ -346,7 +368,7 @@ export const AllocationPage: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [facilities]);
+  }, []);
 
   const loadStaff = useCallback(async (id: number) => {
     try {
@@ -362,25 +384,32 @@ export const AllocationPage: React.FC = () => {
     let active = true;
     (async () => {
       try {
+        setFacilitiesLoading(true);
         const list = await fetchMyAssignedFacilities();
         if (!active) return;
-        setFacilities(list || []);
-        if (list && list.length > 0) {
+        const assignedList = list || [];
+        setFacilities(assignedList);
+
+        if (assignedList.length > 0) {
           const saved = localStorage.getItem('manager_selected_facility_id');
           if (saved === 'ALL') {
             setFacilityId(null);
           } else if (saved && Number(saved) > 0) {
             const targetId = Number(saved);
-            const found = list.find((f) => f.id === targetId) ? targetId : list[0].id;
+            const found = assignedList.find((f) => f.id === targetId) ? targetId : assignedList[0].id;
             setFacilityId(found);
           } else {
             // Mặc định nạp cơ sở đầu tiên nếu có
-            setFacilityId(list[0].id);
+            setFacilityId((prev) => (prev != null && assignedList.some((f) => f.id === prev) ? prev : assignedList[0].id));
           }
         }
+        setIsFacilityResolved(true);
       } catch (err) {
         if (!active) return;
         showToast(err instanceof Error ? err.message : 'Không tải được danh mục cơ sở', 'error');
+        setIsFacilityResolved(true);
+      } finally {
+        if (active) setFacilitiesLoading(false);
       }
     })();
     return () => {
@@ -388,8 +417,9 @@ export const AllocationPage: React.FC = () => {
     };
   }, []);
 
-  // 2. Khi đổi cơ sở: Tải hàng đợi cần gán ô và danh sách nhân viên cơ sở
+  // 2. Khi cơ sở sẵn sàng hoặc thay đổi: Tải hàng đợi cần gán ô và danh sách nhân viên cơ sở
   useEffect(() => {
+    if (!isFacilityResolved) return;
     let active = true;
     (async () => {
       try {
@@ -405,7 +435,7 @@ export const AllocationPage: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [facilityId, loadQueue, loadStaff]);
+  }, [facilityId, isFacilityResolved, loadQueue, loadStaff]);
 
   const selected = activeItem || (queue.find((row) => row.id === selectedId) ?? null);
 
@@ -573,7 +603,12 @@ export const AllocationPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
-          {facilities.length > 0 && (
+          {facilitiesLoading ? (
+            <div className="h-9 px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 text-xs sm:text-sm font-semibold text-slate-400 flex items-center gap-2 animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-slate-300" />
+              <span>Đang tải cơ sở...</span>
+            </div>
+          ) : facilities.length > 0 ? (
             <select
               className="border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm bg-white shadow-2xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
               value={facilityId ?? 'ALL'}
@@ -592,13 +627,13 @@ export const AllocationPage: React.FC = () => {
                 </option>
               ))}
             </select>
-          )}
+          ) : null}
 
           <button
             type="button"
             onClick={() => loadQueue(facilityId, true)}
-            disabled={refreshing}
-            className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer shrink-0"
+            disabled={refreshing || loading}
+            className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
             title="Làm mới danh sách"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
