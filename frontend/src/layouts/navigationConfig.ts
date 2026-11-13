@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Home, Archive,
   ClipboardCheck, PhoneCall,
-  Layers, FileText, BarChart3, Wrench, Users,
+  Layers, FileText, Wrench, Users,
   Map, DollarSign, TrendingUp, History,
   UserCog, Activity,
 } from 'lucide-react';
@@ -53,7 +53,6 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
       { label: 'Giám sát hợp đồng',  href: '/manager/contracts',        icon: FileText },
       { label: 'Phân công nhân sự',  href: '/manager/staff-schedule',   icon: Users },
       { label: 'Xử lý sự cố',        href: '/manager/incidents',        icon: Wrench },
-      { label: 'Báo cáo cơ sở',      href: '/manager/reports',          icon: BarChart3 },
     ],
   },
   BOM: {
