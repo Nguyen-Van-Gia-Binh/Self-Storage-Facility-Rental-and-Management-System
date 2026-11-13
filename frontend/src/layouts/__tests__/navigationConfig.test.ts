@@ -8,4 +8,10 @@ describe('navigationConfig for BOM role', () => {
     expect(policyItem).toBeUndefined();
     expect(bomNav.navItems.some((item) => item.href === '/bom/pricing')).toBe(true);
   });
+
+  it('does not contain /manager/reports in MANAGER navigation (handled by BOM)', () => {
+    const managerNav = getNavigationForRole('MANAGER');
+    const reportItem = managerNav.navItems.find((item) => item.href === '/manager/reports');
+    expect(reportItem).toBeUndefined();
+  });
 });
