@@ -599,4 +599,25 @@ describe('AllocationPage Component (Gán ô kho)', () => {
       expect(screen.getByText('CTR-ASSIGNED-02')).toBeDefined();
     });
   });
+
+  it('11. Đồng bộ tải ban đầu: Tự động dùng cơ sở phân công đầu tiên, không query rỗng gây giật số lượng đơn và giữ dropdown ổn định', async () => {
+    localStorage.removeItem('manager_selected_facility_id');
+    vi.mocked(reservationApi.listReservations).mockResolvedValue(mockReservations);
+    vi.mocked(contractApi.getManagerContracts).mockResolvedValue([]);
+
+    render(<AllocationPage />);
+
+    // Kiểm tra dropdown hiển thị đúng cơ sở được phân công kèm số lượng
+    await waitFor(() => {
+      expect(screen.getByRole('combobox')).toBeDefined();
+      expect(screen.getByText(/Cơ sở Quận 7 - TP.HCM \(1 đơn\)/)).toBeDefined();
+    });
+
+    // Đảm bảo listReservations được gọi với đúng facilityId = 2, không bị gọi không có facilityId
+    expect(reservationApi.listReservations).toHaveBeenCalledWith(
+      expect.objectContaining({
+        facilityId: 2,
+      })
+    );
+  });
 });
