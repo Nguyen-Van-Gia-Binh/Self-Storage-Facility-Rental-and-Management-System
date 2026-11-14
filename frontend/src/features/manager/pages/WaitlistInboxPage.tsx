@@ -132,17 +132,6 @@ export const WaitlistInboxPage: React.FC = () => {
     (w) => w.status === 'REJECTED' || w.status === 'CANCELLED'
   ).length;
 
-  // Priority rule check: Check if unassigned reservations exist
-  const hasUnassignedReservations = safeWaitlists.some(
-    (w) =>
-      (w.status === 'WAITING' || w.status === 'CONTACTING' || w.status === 'PENDING_FOLLOW_UP') &&
-      (w.unassignedReservationCount ?? 0) > 0
-  );
-  const totalUnassignedCount = safeWaitlists.reduce(
-    (max, w) => Math.max(max, w.unassignedReservationCount ?? 0),
-    0
-  );
-
   return (
     <div className="space-y-6 p-6">
       {/* Toast Alert */}
@@ -192,35 +181,6 @@ export const WaitlistInboxPage: React.FC = () => {
           </button>
         </div>
       </div>
-
-      {/* Priority Alert Banner if unassigned reservations exist */}
-      {hasUnassignedReservations && (
-        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-200 text-amber-800 font-bold text-sm shrink-0 mt-0.5">
-                ⚠️
-              </span>
-              <div>
-                <h4 className="font-bold text-sm text-amber-900">
-                  CẢNH BÁO QUY CHẾ ƯU TIÊN: Đang có {totalUnassignedCount} đơn đặt chỗ online chờ gán ô kho
-                </h4>
-                <p className="mt-0.5 text-xs text-amber-800 leading-relaxed">
-                  Cơ sở đang có khách hàng đã thanh toán cọc giữ chỗ trước nhưng chưa được gán ô kho vật lý.
-                  Hệ thống tạm khóa phân bổ Danh sách chờ (Waitlist) nhằm bảo đảm ô kho cho khách đặt trước theo đúng quy chuẩn nghiệp vụ.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate(`/manager/allocation?facilityId=${selectedFacilityId}`)}
-              className="shrink-0 rounded-lg bg-amber-700 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-800 transition flex items-center gap-1.5"
-            >
-              Đi đến Gán ô kho cho khách đặt trước →
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* KPI Cards (Clean 3 Cards) */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

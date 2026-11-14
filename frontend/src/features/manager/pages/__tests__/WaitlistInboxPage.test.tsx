@@ -134,7 +134,6 @@ describe('WaitlistInboxPage (FM Telesales CRM)', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/CẢNH BÁO QUY CHẾ ƯU TIÊN/i)).toBeDefined();
       expect(screen.getByText(/Ưu tiên 2 đơn đặt trước/i)).toBeDefined();
       expect(screen.getByRole('button', { name: /Gán ô kho \(2\)/i })).toBeDefined();
     });
