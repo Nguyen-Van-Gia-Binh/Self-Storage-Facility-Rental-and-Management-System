@@ -62,8 +62,10 @@ export const OverduePenaltyPaymentModal: React.FC<OverduePenaltyPaymentModalProp
           amount: totalAmount,
           description: `NO PHAT KHO ${unitNumber}`.slice(0, 25),
         });
-        if (res && res.orderCode) {
-          setOrderCode(res.orderCode);
+        const checkoutData = (res as any)?.data || res;
+        const code = checkoutData?.orderCode || checkoutData?.id;
+        if (code) {
+          setOrderCode(Number(code));
         } else {
           setPaymentNotice('Không thể khởi tạo mã giao dịch VNPay. Vui lòng thử lại sau.');
         }

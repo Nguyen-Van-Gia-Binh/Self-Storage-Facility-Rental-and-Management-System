@@ -69,6 +69,11 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
     };
   }, []);
 
+  // Tự động đóng chi tiết khi chuyển ngày để quay lại danh sách công việc của ngày mới
+  useEffect(() => {
+    setActiveTaskView(null);
+  }, [selectedDate]);
+
   // Helper nhận diện công việc đã xong
   const isCheckInDone = (c: any) => Boolean(c.completed || c.status === 'COMPLETED' || c.status === 'ACTIVE');
   const isReturnDone = (r: any) => Boolean(r.completed || r.status === 'COMPLETED' || r.status === 'INSPECTED' || r.status === 'RETURNED');

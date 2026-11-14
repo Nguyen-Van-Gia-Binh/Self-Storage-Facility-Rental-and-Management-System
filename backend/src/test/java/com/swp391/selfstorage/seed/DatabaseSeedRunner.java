@@ -61,7 +61,7 @@ public class DatabaseSeedRunner {
             }
         }
 
-        System.out.println(">>> DANG KET NOI VAO NEON CLOUD DATABASE DE SEED 8 KICH BAN THU NGHIEM VANG...");
+        System.out.println(">>> DANG KET NOI VAO NEON CLOUD DATABASE DE SEED 12 KICH BAN THU NGHIEM VANG...");
         System.out.println("========================================================================================================================");
 
         try (Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
@@ -69,7 +69,7 @@ public class DatabaseSeedRunner {
 
             stmt.execute(sqlContent);
 
-            System.out.println(">>> SEED DU LIEU THANH CONG! DANH SACH 8 HOP DONG TEST MAU (CO SO QUAN 1 - FAC-Q1):");
+            System.out.println(">>> SEED DU LIEU THANH CONG! DANH SACH 12 HOP DONG TEST MAU (CO SO QUAN 1 - FAC-Q1):");
             System.out.println("------------------------------------------------------------------------------------------------------------------------");
             System.out.printf("%-15s | %-10s | %-15s | %-15s | %-12s | %-15s | %-15s | %-18s%n",
                     "MA HOP DONG", "O KHO", "TRANG THAI HD", "KHO VAT LY", "HET HAN", "TIEN COC (VND)", "NO PHAT (VND)", "MA PIN");
@@ -106,7 +106,7 @@ public class DatabaseSeedRunner {
                             rs.getLong("overdue_fee"),
                             rs.getString("pin_state"));
                 }
-                assertThat(count).isEqualTo(8);
+                assertThat(count).isEqualTo(12);
             }
             System.out.println("------------------------------------------------------------------------------------------------------------------------");
             System.out.println(">>> TAI KHOAN DANG NHAP DE TEST (MAT KHAU: password123):");

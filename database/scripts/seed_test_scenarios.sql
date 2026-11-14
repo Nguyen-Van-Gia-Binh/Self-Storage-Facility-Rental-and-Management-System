@@ -3,8 +3,12 @@
 -- Đường dẫn: database/scripts/seed_test_scenarios.sql
 -- Tác giả: Nguyễn Văn Gia Bình (WS2 Lead - SWP391)
 --
--- Mục tiêu: Cung cấp các Kịch bản Thử nghiệm Vàng (Golden Test Scenarios)
---           bao phủ các Flow nghiệp vụ trọng yếu (Trả kho, Quá hạn, Đặt chỗ, Check-in).
+-- Mục tiêu: Cung cấp 12 Kịch bản Thử nghiệm Vàng (Golden Test Scenarios)
+--           bao phủ 100% các Flow nghiệp vụ trọng yếu:
+--           - Flow 3: Trả sớm Win-Win, Quyết toán hoàn cọc & Quyết toán âm
+--           - Flow 6.2: Vòng đời Quá hạn 8 ngày (No Pay No PIN, Đóng phạt nhận PIN tạm)
+--           - Flow 2: Khách chờ nhận kho (Check-in & Handover tại quầy)
+--           - Sơ đồ kho: Đầy đủ các trạng thái OCCUPIED, CLEANING, RESERVED, MAINTENANCE, AVAILABLE.
 --
 -- Đặc điểm: IDEMPOTENT (Chạy lại nhiều lần an toàn, tự động dọn dẹp data test cũ).
 --
@@ -70,7 +74,7 @@ BEGIN
 END $$;
 
 -- -----------------------------------------------------------------------------
--- BƯỚC 2: TẠO 8 ĐƠN ĐẶT CHỖ MẪU (RESERVATION TEST 9001..9008)
+-- BƯỚC 2: TẠO 12 ĐƠN ĐẶT CHỖ MẪU (RESERVATION TEST 9001..9012)
 -- -----------------------------------------------------------------------------
 INSERT INTO reservation (
     id, code, customer_id, facility_id, unit_type_id, storage_unit_id,
@@ -79,49 +83,69 @@ INSERT INTO reservation (
     status, hold_expires_at, confirmed_at, fulfilled_at
 )
 VALUES
--- RES 9001: Cho HĐ CTR-TEST-001 (Kho Q1-A101, UT-SMALL)
+-- RES 9001: Cho HĐ CTR-TEST-001 (Kho Q1-A101, UT 1: UT-STD-S)
 (9001, 'RES-TEST-001', 10, 5, 1, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-A101'),
  CURRENT_DATE - INTERVAL '30 day', 3, CURRENT_DATE + INTERVAL '60 day', 1000000,
  1, 1000000, 3000000, 4000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
--- RES 9002: Cho HĐ CTR-TEST-002 (Kho Q1-A102, UT-SMALL)
+-- RES 9002: Cho HĐ CTR-TEST-002 (Kho Q1-A102, UT 1: UT-STD-S)
 (9002, 'RES-TEST-002', 10, 5, 1, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-A102'),
  CURRENT_DATE - INTERVAL '80 day', 3, CURRENT_DATE + INTERVAL '10 day', 1000000,
  1, 1000000, 3000000, 4000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
--- RES 9003: Cho HĐ CTR-TEST-003 (Kho Q1-A103, UT-MEDIUM)
+-- RES 9003: Cho HĐ CTR-TEST-003 (Kho Q1-A103, UT 2: UT-STD-M)
 (9003, 'RES-TEST-003', 10, 5, 2, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-A103'),
  CURRENT_DATE - INTERVAL '90 day', 3, CURRENT_DATE - INTERVAL '1 day', 1600000,
  1, 1600000, 4800000, 6400000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
--- RES 9004: Cho HĐ CTR-TEST-004 (Kho Q1-B201, UT-LARGE)
+-- RES 9004: Cho HĐ CTR-TEST-004 (Kho Q1-B201, UT 3: UT-STD-L)
 (9004, 'RES-TEST-004', 10, 5, 3, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-B201'),
  CURRENT_DATE - INTERVAL '180 day', 6, CURRENT_DATE - INTERVAL '2 day', 2000000,
  1, 2000000, 12000000, 14000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
--- RES 9005: Cho HĐ CTR-TEST-005 (Kho Q1-C101, UT-CLIMATE)
+-- RES 9005: Cho HĐ CTR-TEST-005 (Kho Q1-C101, UT 4: UT-AC-S)
 (9005, 'RES-TEST-005', 10, 5, 4, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-C101'),
  CURRENT_DATE - INTERVAL '92 day', 3, CURRENT_DATE - INTERVAL '2 day', 1500000,
  1, 1500000, 4500000, 6000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
--- RES 9006: Cho HĐ CTR-TEST-006 (Kho Q1-XS101, UT-SMALL)
-(9006, 'RES-TEST-006', 10, 5, 1, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-XS101'),
+-- RES 9006: Cho HĐ CTR-TEST-006 (Kho Q1-XS101, UT 7: UT-STD-XS)
+(9006, 'RES-TEST-006', 10, 5, 7, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-XS101'),
  CURRENT_DATE - INTERVAL '95 day', 3, CURRENT_DATE - INTERVAL '5 day', 1000000,
  1, 1000000, 3000000, 4000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
--- RES 9007: Cho HĐ CTR-TEST-007 (Kho Q1-XL101, UT-LARGE)
-(9007, 'RES-TEST-007', 10, 5, 3, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-XL101'),
+-- RES 9007: Cho HĐ CTR-TEST-007 (Kho Q1-XL101, UT 8: UT-STD-XL)
+(9007, 'RES-TEST-007', 10, 5, 8, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-XL101'),
  CURRENT_DATE - INTERVAL '98 day', 3, CURRENT_DATE - INTERVAL '8 day', 2500000,
  1, 2500000, 7500000, 10000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
--- RES 9008: Cho HĐ CTR-TEST-008 (Kho Q1-XS201, UT-SMALL)
-(9008, 'RES-TEST-008', 10, 5, 1, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-XS201'),
+-- RES 9008: Cho HĐ CTR-TEST-008 (Kho Q1-XS201, UT 7: UT-STD-XS)
+(9008, 'RES-TEST-008', 10, 5, 7, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-XS201'),
  CURRENT_DATE - INTERVAL '135 day', 3, CURRENT_DATE - INTERVAL '45 day', 1000000,
- 1, 1000000, 3000000, 4000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ 1, 1000000, 3000000, 4000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- RES 9009: Cho HĐ CTR-TEST-009 (Kho Q1-B101, UT 3: UT-STD-L) -> Quyết toán Âm
+(9009, 'RES-TEST-009', 10, 5, 3, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-B101'),
+ CURRENT_DATE - INTERVAL '90 day', 3, CURRENT_DATE - INTERVAL '2 day', 1000000,
+ 1, 1000000, 3000000, 4000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- RES 9010: Cho HĐ CTR-TEST-010 (Kho Q1-A104, UT 1: UT-STD-S) -> Chờ Check-in Flow 2
+(9010, 'RES-TEST-010', 10, 5, 1, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-A104'),
+ CURRENT_DATE, 1, CURRENT_DATE + INTERVAL '30 day', 1000000,
+ 1, 1000000, 1000000, 2000000, 'CONFIRMED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, NULL),
+
+-- RES 9011: Cho HĐ CTR-TEST-011 (Kho Q1-A105, UT 2: UT-STD-M) -> Hủy trả kho khi CÒN HẠN (TC-F3-02A)
+(9011, 'RES-TEST-011', 10, 5, 2, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-A105'),
+ CURRENT_DATE - INTERVAL '60 day', 3, CURRENT_DATE + INTERVAL '30 day', 1600000,
+ 1, 1600000, 4800000, 6400000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- RES 9012: Cho HĐ CTR-TEST-012 (Kho Q1-C102, UT 4: UT-AC-S) -> Quá hạn D+3 ĐÃ NỘP PHẠT nhận PIN tạm (TC-F6-01B)
+(9012, 'RES-TEST-012', 10, 5, 4, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-C102'),
+ CURRENT_DATE - INTERVAL '93 day', 3, CURRENT_DATE - INTERVAL '3 day', 1500000,
+ 1, 1500000, 4500000, 6000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
--- BƯỚC 3: TẠO 8 HỢP ĐỒNG THỬ NGHIỆM TRỌNG YẾU (RENTAL_CONTRACT 9001..9008)
+-- BƯỚC 3: TẠO 12 HỢP ĐỒNG THỬ NGHIỆM TRỌNG YẾU (RENTAL_CONTRACT 9001..9012)
 -- -----------------------------------------------------------------------------
 INSERT INTO rental_contract (
     id, code, reservation_id, customer_id, facility_id, storage_unit_id, unit_type_id,
@@ -142,41 +166,65 @@ VALUES
  1000000, 1000000, '123456', 'ACTIVE', CURRENT_DATE - INTERVAL '80 day', 1,
  0, CURRENT_TIMESTAMP - INTERVAL '80 day', NULL, NULL),
 
--- Case 3: CTR-TEST-003 (PENDING_RETURN Chờ nghiệm thu) -> Test Hủy yêu cầu (BR-RET-12) & Staff nghiệm thu (UC-F3-06)
+-- Case 3: CTR-TEST-003 (PENDING_RETURN Chờ nghiệm thu) -> Test Hủy yêu cầu quá hạn (TC-F3-02B) & Staff nghiệm thu (UC-F3-06)
 (9003, 'CTR-TEST-003', 9003, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-A103'), 2,
  CURRENT_DATE - INTERVAL '90 day', CURRENT_DATE - INTERVAL '1 day', 3, 1600000, 4800000,
  1600000, 1600000, NULL, 'PENDING_RETURN', CURRENT_DATE - INTERVAL '90 day', 1,
  0, CURRENT_TIMESTAMP - INTERVAL '90 day', NULL, NULL),
 
--- Case 4: CTR-TEST-004 (PENDING_RETURN Đã nghiệm thu có hư hại) -> Test FM duyệt quyết toán cọc (UC-F3-07)
+-- Case 4: CTR-TEST-004 (PENDING_RETURN Đã nghiệm thu hư hại nhẹ 500k) -> Test FM duyệt quyết toán cọc dương (UC-F3-07)
 (9004, 'CTR-TEST-004', 9004, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-B201'), 3,
  CURRENT_DATE - INTERVAL '180 day', CURRENT_DATE - INTERVAL '2 day', 6, 2000000, 12000000,
  2000000, 2000000, NULL, 'PENDING_RETURN', CURRENT_DATE - INTERVAL '180 day', 1,
  0, CURRENT_TIMESTAMP - INTERVAL '180 day', NULL, NULL),
 
--- Case 5: CTR-TEST-005 (OVERDUE D+2 - Giai đoạn 1) -> Khóa PIN D+1 (BR-OVD-01), thu 5%/ngày (BR-OVD-02), Quét QR nhận PIN tạm (BR-OVD-08)
+-- Case 5: CTR-TEST-005 (OVERDUE D+2 - Giai đoạn 1) -> Khóa PIN D+1 (BR-OVD-01), thu 5%/ngày (BR-OVD-02)
 (9005, 'CTR-TEST-005', 9005, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-C101'), 4,
  CURRENT_DATE - INTERVAL '92 day', CURRENT_DATE - INTERVAL '2 day', 3, 1500000, 4500000,
  1500000, 1500000, NULL, 'OVERDUE', CURRENT_DATE - INTERVAL '92 day', 1,
  150000, CURRENT_TIMESTAMP - INTERVAL '92 day', NULL, NULL),
 
--- Case 6: CTR-TEST-006 (OVERDUE D+5 - Giai đoạn 2) -> Phạt 10%/ngày (BR-OVD-03), Chốt chặn No Pay, No PIN, Chặn báo trả kho (TC-F3-01D)
-(9006, 'CTR-TEST-006', 9006, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-XS101'), 1,
+-- Case 6: CTR-TEST-006 (OVERDUE D+5 - Giai đoạn 2) -> Phạt 10%/ngày (BR-OVD-03), Chặn gia hạn, Chặn báo trả kho (TC-F3-01D)
+(9006, 'CTR-TEST-006', 9006, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-XS101'), 7,
  CURRENT_DATE - INTERVAL '95 day', CURRENT_DATE - INTERVAL '5 day', 3, 1000000, 3000000,
  1000000, 1000000, NULL, 'OVERDUE', CURRENT_DATE - INTERVAL '95 day', 1,
  350000, CURRENT_TIMESTAMP - INTERVAL '95 day', NULL, NULL),
 
 -- Case 7: CTR-TEST-007 (TERMINATED D+8 - Giai đoạn 3) -> Tịch thu 100% cọc niêm phong về Kho Tổng (BR-OVD-07), Test FM quyết toán Kho Tổng (BR-OVD-11)
-(9007, 'CTR-TEST-007', 9007, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-XL101'), 3,
+(9007, 'CTR-TEST-007', 9007, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-XL101'), 8,
  CURRENT_DATE - INTERVAL '98 day', CURRENT_DATE - INTERVAL '8 day', 3, 2500000, 7500000,
  2500000, 0, NULL, 'TERMINATED', CURRENT_DATE - INTERVAL '98 day', 1,
  1375000, CURRENT_TIMESTAMP - INTERVAL '98 day', CURRENT_TIMESTAMP - INTERVAL '1 day', NULL),
 
 -- Case 8: CTR-TEST-008 (CLOSED Đã đóng tất toán) -> Test đối chứng lịch sử, không có nút trả kho (TC-F3-01E)
-(9008, 'CTR-TEST-008', 9008, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-XS201'), 1,
+(9008, 'CTR-TEST-008', 9008, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-XS201'), 7,
  CURRENT_DATE - INTERVAL '135 day', CURRENT_DATE - INTERVAL '45 day', 3, 1000000, 3000000,
  1000000, 0, NULL, 'CLOSED', CURRENT_DATE - INTERVAL '135 day', 1,
- 0, CURRENT_TIMESTAMP - INTERVAL '135 day', NULL, CURRENT_TIMESTAMP - INTERVAL '40 day')
+ 0, CURRENT_TIMESTAMP - INTERVAL '135 day', NULL, CURRENT_TIMESTAMP - INTERVAL '40 day'),
+
+-- Case 9: CTR-TEST-009 (PENDING_RETURN - Quyết toán Âm: Thiệt hại 1.8M > Cọc 1.0M -> Nợ bù 800k SETTLEMENT - TC-F3-04C)
+(9009, 'CTR-TEST-009', 9009, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-B101'), 3,
+ CURRENT_DATE - INTERVAL '90 day', CURRENT_DATE - INTERVAL '2 day', 3, 1000000, 3000000,
+ 1000000, 1000000, NULL, 'PENDING_RETURN', CURRENT_DATE - INTERVAL '90 day', 1,
+ 0, CURRENT_TIMESTAMP - INTERVAL '90 day', NULL, NULL),
+
+-- Case 10: CTR-TEST-010 (PENDING_CHECK_IN - Đã cọc & trả tiền, chờ Staff bàn giao kho Flow 2 - UC-F2-01..05)
+(9010, 'CTR-TEST-010', 9010, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-A104'), 1,
+ CURRENT_DATE, CURRENT_DATE + INTERVAL '30 day', 1, 1000000, 1000000,
+ 1000000, 1000000, NULL, 'PENDING_CHECK_IN', NULL, 1,
+ 0, NULL, NULL, NULL),
+
+-- Case 11: CTR-TEST-011 (PENDING_RETURN - Hạn còn 30 ngày, test Hủy báo trả khôi phục ACTIVE - TC-F3-02A)
+(9011, 'CTR-TEST-011', 9011, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-A105'), 2,
+ CURRENT_DATE - INTERVAL '60 day', CURRENT_DATE + INTERVAL '30 day', 3, 1600000, 4800000,
+ 1600000, 1600000, '654321', 'PENDING_RETURN', CURRENT_DATE - INTERVAL '60 day', 1,
+ 0, CURRENT_TIMESTAMP - INTERVAL '60 day', NULL, NULL),
+
+-- Case 12: CTR-TEST-012 (OVERDUE D+3 - Đã nộp phạt quá hạn, cấp PIN tạm 23:59 & mở nút Báo trả kho - TC-F6-01B)
+(9012, 'CTR-TEST-012', 9012, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-C102'), 4,
+ CURRENT_DATE - INTERVAL '93 day', CURRENT_DATE - INTERVAL '3 day', 3, 1500000, 4500000,
+ 1500000, 1500000, '888999', 'OVERDUE', CURRENT_DATE - INTERVAL '93 day', 1,
+ 0, CURRENT_TIMESTAMP - INTERVAL '93 day', NULL, NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
@@ -192,26 +240,55 @@ VALUES (
     'PENDING', NULL, NULL, NULL, 0
 );
 
--- 4.2 Case 4 (CTR-TEST-004): Tạo biên bản đã nghiệm thu có hư hỏng BOM
+-- 4.2 Case 4 (CTR-TEST-004): Tạo biên bản đã nghiệm thu có hư hỏng nhẹ BOM (500k)
+-- Theo ContractServiceImpl.java#L1258, damage_cost trên return_request lưu 0L khi có phụ phí BOM để tránh cộng trùng
 INSERT INTO return_request (
     contract_id, requested_at, requested_return_date, appointment_slot,
     status, inspected_by, inspected_at, is_intact, damage_cost, condition_note, customer_confirmed
 )
 VALUES (
     9004, CURRENT_TIMESTAMP - INTERVAL '2 day', CURRENT_DATE - INTERVAL '1 day', '14:00 - 16:00',
-    'PENDING', 9, CURRENT_TIMESTAMP - INTERVAL '3 hour', FALSE, 500000,
+    'PENDING', 9, CURRENT_TIMESTAMP - INTERVAL '3 hour', FALSE, 0,
     'Hư hại nhẹ ổ khóa và xước thanh ray cửa cuốn', TRUE
 );
 
--- 4.3 Case 4 (CTR-TEST-004): Gắn phụ phí hư hại BOM (500.000đ)
+-- Phụ phí BOM hư hại nhẹ 500k (Mã tiền tố 'DAMAGE:' để khớp logic isCatalogInspectionCharge)
 INSERT INTO contract_extra_charge (
     contract_id, extra_fee_type_id, amount, reason, recorded_by, status
 )
 VALUES (
-    9004, 3, 500000, 'Phí sửa chữa ổ khóa cửa cuốn (Mã BOM: DAMAGE_MINOR)', 9, 'UNPAID'
+    9004, 3, 500000, 'DAMAGE: Phí sửa chữa ổ khóa cửa cuốn (Mã BOM: DAMAGE_MINOR)', 9, 'UNPAID'
 );
 
--- 4.4 Thêm biên bản bàn giao nhận kho chuẩn (Handover Record) cho các hợp đồng đã check-in
+-- 4.3 Case 9 (CTR-TEST-009): Biên bản nghiệm thu & phụ phí thiệt hại nặng 1.8M (Quyết toán Âm)
+INSERT INTO return_request (
+    contract_id, requested_at, requested_return_date, appointment_slot,
+    status, inspected_by, inspected_at, is_intact, damage_cost, condition_note, customer_confirmed
+)
+VALUES (
+    9009, CURRENT_TIMESTAMP - INTERVAL '2 day', CURRENT_DATE - INTERVAL '1 day', '10:00 - 11:30',
+    'PENDING', 9, CURRENT_TIMESTAMP - INTERVAL '2 hour', FALSE, 0,
+    'Hư hại nặng: Gãy bung ray cuốn cửa kho và sàn kho bị dính dầu mỡ nặng', TRUE
+);
+
+-- Phụ phí BOM vượt cọc (1.5M + 300k = 1.8M > Cọc 1.0M -> Nợ bù 800k)
+INSERT INTO contract_extra_charge (contract_id, extra_fee_type_id, amount, reason, recorded_by, status)
+VALUES 
+(9009, 3, 1500000, 'DAMAGE: Phí thay mới cụm ray cuốn cửa kho (Mã BOM: DAMAGE_MAJOR)', 9, 'UNPAID'),
+(9009, 2, 300000,  'CLEANING: Phí vệ sinh chuyên sâu tẩy rửa sàn kho (Mã BOM: CLEANING_FEE)', 9, 'UNPAID');
+
+-- 4.4 Case 11 (CTR-TEST-011): Yêu cầu trả kho còn hạn dài để test khách bấm HỦY (TC-F3-02A)
+INSERT INTO return_request (
+    contract_id, requested_at, requested_return_date, appointment_slot,
+    status, inspected_by, inspected_at, is_intact, damage_cost
+)
+VALUES (
+    9011, CURRENT_TIMESTAMP - INTERVAL '4 hour', CURRENT_DATE + INTERVAL '5 day', '08:00 - 10:00',
+    'PENDING', NULL, NULL, NULL, 0
+);
+
+-- 4.5 Biên bản bàn giao nhận kho chuẩn (Handover Record) cho các hợp đồng đã check-in thành công
+-- Lưu ý: CTR-TEST-010 KHÔNG tạo handover_record vì đang ở trạng thái PENDING_CHECK_IN chờ Staff thực hiện
 INSERT INTO handover_record (
     contract_id, staff_id, condition_note, customer_signed_at, staff_signed_at,
     status, customer_confirmed, customer_confirmed_at, rejected
@@ -224,7 +301,10 @@ VALUES
 (9005, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '92 day', CURRENT_TIMESTAMP - INTERVAL '92 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '92 day', FALSE),
 (9006, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '95 day', CURRENT_TIMESTAMP - INTERVAL '95 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '95 day', FALSE),
 (9007, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao lúc nhận kho ban đầu. Hợp đồng sau đó phát sinh quá hạn D+7.', CURRENT_TIMESTAMP - INTERVAL '98 day', CURRENT_TIMESTAMP - INTERVAL '98 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '98 day', FALSE),
-(9008, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Hợp đồng đã hoàn tất chu kỳ thuê.', CURRENT_TIMESTAMP - INTERVAL '135 day', CURRENT_TIMESTAMP - INTERVAL '135 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '135 day', FALSE)
+(9008, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Hợp đồng đã hoàn tất chu kỳ thuê.', CURRENT_TIMESTAMP - INTERVAL '135 day', CURRENT_TIMESTAMP - INTERVAL '135 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '135 day', FALSE),
+(9009, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao lúc nhận kho ban đầu.', CURRENT_TIMESTAMP - INTERVAL '90 day', CURRENT_TIMESTAMP - INTERVAL '90 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '90 day', FALSE),
+(9011, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '60 day', CURRENT_TIMESTAMP - INTERVAL '60 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '60 day', FALSE),
+(9012, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '93 day', CURRENT_TIMESTAMP - INTERVAL '93 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '93 day', FALSE)
 ON CONFLICT (contract_id) DO UPDATE SET
     rejected = EXCLUDED.rejected,
     condition_note = EXCLUDED.condition_note,
@@ -234,15 +314,44 @@ ON CONFLICT (contract_id) DO UPDATE SET
 -- -----------------------------------------------------------------------------
 -- BƯỚC 5: ĐỒNG BỘ TRẠNG THÁI Ô KHO VẬT LÝ (STORAGE_UNIT)
 -- -----------------------------------------------------------------------------
-UPDATE storage_unit SET status = 'OCCUPIED'   WHERE facility_id = 5 AND code IN ('Q1-A101', 'Q1-A102', 'Q1-A103', 'Q1-C101', 'Q1-XS101', 'Q1-B201');
-UPDATE storage_unit SET status = 'MAINTENANCE'WHERE facility_id = 5 AND code = 'Q1-XL101';
-UPDATE storage_unit SET status = 'AVAILABLE'  WHERE facility_id = 5 AND code = 'Q1-XS201';
+-- 5.1 Các ô kho đang cho thuê hoặc khách vẫn đang giữ đồ
+UPDATE storage_unit 
+SET status = 'OCCUPIED'   
+WHERE facility_id = 5 
+  AND code IN ('Q1-A101', 'Q1-A102', 'Q1-A103', 'Q1-C101', 'Q1-XS101', 'Q1-A105', 'Q1-C102');
 
--- Tất cả các ô kho còn lại của Cơ sở 5 (phục vụ khách thuê mới Flow 1, Flow 2) đều ở trạng thái AVAILABLE
+-- 5.2 Các ô kho đã hoàn tất nghiệm thu trả kho, đang ở đệm vệ sinh dọn dẹp (CLEANING)
+UPDATE storage_unit 
+SET status = 'CLEANING'
+WHERE facility_id = 5 
+  AND code IN ('Q1-B201', 'Q1-B101');
+
+-- 5.3 Ô kho đã được khách giữ chỗ & thanh toán cọc thành công, khóa chờ Check-in (RESERVED)
+UPDATE storage_unit 
+SET status = 'RESERVED'
+WHERE facility_id = 5 
+  AND code = 'Q1-A104';
+
+-- 5.4 Ô kho thuộc hợp đồng quá hạn D+7 cưỡng chế niêm phong về Kho Tổng (MAINTENANCE)
+UPDATE storage_unit 
+SET status = 'MAINTENANCE'
+WHERE facility_id = 5 
+  AND code = 'Q1-XL101';
+
+-- 5.5 Ô kho của hợp đồng CLOSED đã thanh lý xong
+UPDATE storage_unit 
+SET status = 'AVAILABLE'  
+WHERE facility_id = 5 
+  AND code = 'Q1-XS201';
+
+-- 5.6 Tất cả các ô kho vật lý còn lại của Cơ sở 5 (phục vụ trải nghiệm thuê mới Flow 1 trên portal)
 UPDATE storage_unit 
 SET status = 'AVAILABLE' 
 WHERE facility_id = 5 
-  AND code NOT IN ('Q1-A101', 'Q1-A102', 'Q1-A103', 'Q1-C101', 'Q1-XS101', 'Q1-B201', 'Q1-XL101');
+  AND code NOT IN (
+    'Q1-A101', 'Q1-A102', 'Q1-A103', 'Q1-C101', 'Q1-XS101', 'Q1-A105', 'Q1-C102',
+    'Q1-B201', 'Q1-B101', 'Q1-A104', 'Q1-XL101', 'Q1-XS201'
+  );
 
 -- -----------------------------------------------------------------------------
 -- BƯỚC 6: BẢNG KIỂM TRA ĐỐI SOÁT KẾT QUẢ SAU SEED (VERIFICATION TABLE)

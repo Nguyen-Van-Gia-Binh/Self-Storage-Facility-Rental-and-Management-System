@@ -11,6 +11,7 @@ import { ContractListPage } from './pages/ContractListPage';
 import { ContractDetailPage } from './pages/ContractDetailPage';
 import { StaffSchedulePage } from './pages/StaffSchedulePage';
 import { ShiftCalendarPage } from './pages/ShiftCalendarPage';
+import { StaffAssignmentPage } from './pages/StaffAssignmentPage';
 import { WorkListPage } from './pages/WorkListPage';
 import { WorkDetailPage } from './pages/WorkDetailPage';
 import { IncidentDashboardPage } from './pages/IncidentDashboardPage';
@@ -56,8 +57,8 @@ export const ManagerRoutes: React.FC = () => {
         <Route path="staff-schedule/facilities/:facilityId/shifts" element={<WorkListPage />} />
         <Route path="staff-schedule/assignments/:assignmentId" element={<WorkDetailPage />} />
 
-        {/* Alias chuyển hướng /manager/staff-assignment sang Cấp 1 */}
-        <Route path="staff-assignment" element={<Navigate to="/manager/staff-schedule" replace />} />
+        {/* Bàn điều phối phân công nhiệm vụ hàng ngày (FM-05, US-FM-05.1, Flow 3 Bước 2) */}
+        <Route path="staff-assignment" element={<StaffAssignmentPage />} />
 
         {/* 3 Cấp độ Drill-down Xử lý sự cố kỹ thuật (FM-05, Flow 7) */}
         <Route path="incidents" element={<IncidentDashboardPage />} />

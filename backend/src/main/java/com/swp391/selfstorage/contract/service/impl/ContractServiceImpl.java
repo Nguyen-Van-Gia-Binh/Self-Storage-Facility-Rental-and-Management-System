@@ -1404,6 +1404,14 @@ public class ContractServiceImpl implements ContractService {
                                 long netDeduction = damage + totalUnpaid;
                                 long refundAmount = Math.max(0, availableBalance - netDeduction);
                                 long payableAmount = Math.max(0, netDeduction - availableBalance);
+                                Long pendingOrderCode = null;
+                                if (paymentTransactionRepository != null) {
+                                        pendingOrderCode = paymentTransactionRepository
+                                                        .findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(contract.getId(), "SETTLEMENT")
+                                                        .filter(t -> "PENDING".equalsIgnoreCase(t.getStatus()))
+                                                        .map(PaymentTransaction::getOrderCode)
+                                                        .orElse(null);
+                                }
                                 return SettlementPreviewResponse.builder()
                                                 .contractId(contract.getId())
                                                 .depositAmount(deposit)
@@ -1414,6 +1422,7 @@ public class ContractServiceImpl implements ContractService {
                                                 .payableAmount(payableAmount)
                                                 .earlyRentRefund(0L)
                                                 .earlyReturn(false)
+                                                .pendingSettlementOrderCode(pendingOrderCode)
                                                 .build();
                         }
                 }
@@ -1438,6 +1447,15 @@ public class ContractServiceImpl implements ContractService {
                 long refundAmount = Math.max(0, -net);
                 long payableAmount = Math.max(0, net);
 
+                Long pendingOrderCode = null;
+                if (paymentTransactionRepository != null) {
+                        pendingOrderCode = paymentTransactionRepository
+                                        .findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(contract.getId(), "SETTLEMENT")
+                                        .filter(t -> "PENDING".equalsIgnoreCase(t.getStatus()))
+                                        .map(PaymentTransaction::getOrderCode)
+                                        .orElse(null);
+                }
+
                 return SettlementPreviewResponse.builder()
                                 .contractId(contract.getId())
                                 .depositAmount(deposit)
@@ -1448,6 +1466,7 @@ public class ContractServiceImpl implements ContractService {
                                 .payableAmount(payableAmount)
                                 .earlyRentRefund(earlyRentRefund)
                                 .earlyReturn(isEarlyReturn)
+                                .pendingSettlementOrderCode(pendingOrderCode)
                                 .build();
         }
 

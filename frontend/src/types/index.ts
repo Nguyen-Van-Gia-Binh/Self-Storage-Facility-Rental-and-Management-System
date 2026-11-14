@@ -210,6 +210,7 @@ export interface SettlementPreviewData {
   payableAmount: number;
   earlyRentRefund?: number;
   earlyReturn?: boolean;
+  pendingSettlementOrderCode?: number;
 }
 
 export interface ReturnContractDetail {
