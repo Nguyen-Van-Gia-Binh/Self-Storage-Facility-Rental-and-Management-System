@@ -183,6 +183,10 @@ public class ContractServiceImpl implements ContractService {
                                 .code(code)
                                 .reservationId(rsv.getId())
                                 .customerId(rsv.getCustomerId())
+                                .customerName(rsv.getCustomerName())
+                                .customerPhone(rsv.getCustomerPhone())
+                                .customerEmail(rsv.getCustomerEmail())
+                                .customerIdentityNumber(rsv.getCustomerIdentityNumber())
                                 .facilityId(rsv.getFacilityId())
                                 .storageUnitId(rsv.getStorageUnitId())
                                 .unitTypeId(rsv.getUnitTypeId())
@@ -2526,6 +2530,7 @@ public class ContractServiceImpl implements ContractService {
                 r.setTotalRentalFee(c.getTotalRentalFee());
                 r.setDepositAmount(c.getDepositAmount());
                 r.setDepositBalance(c.getDepositBalance());
+                r.setTotalAmount(c.getTotalRentalFee() + c.getDepositAmount());
                 r.setAccessCode(c.getAccessCode());
                 r.setStatus(c.getStatus());
                 r.setCheckinDate(c.getCheckinDate());
@@ -2567,6 +2572,37 @@ public class ContractServiceImpl implements ContractService {
                                 }
                         } catch (Exception ignored) {
                         }
+                }
+                if (reservationRepository != null && c.getReservationId() != null) {
+                        try {
+                                reservationRepository.findById(c.getReservationId()).ifPresent(rsv -> {
+                                        if (rsv.getCustomerName() != null && !rsv.getCustomerName().isBlank()) {
+                                                r.setCustomerName(rsv.getCustomerName());
+                                        }
+                                        if (rsv.getCustomerPhone() != null && !rsv.getCustomerPhone().isBlank()) {
+                                                r.setCustomerPhone(rsv.getCustomerPhone());
+                                        }
+                                        if (rsv.getCustomerEmail() != null && !rsv.getCustomerEmail().isBlank()) {
+                                                r.setCustomerEmail(rsv.getCustomerEmail());
+                                        }
+                                        if (rsv.getCustomerIdentityNumber() != null && !rsv.getCustomerIdentityNumber().isBlank()) {
+                                                r.setCustomerIdentityNumber(rsv.getCustomerIdentityNumber());
+                                        }
+                                });
+                        } catch (Exception ignored) {
+                        }
+                }
+                if (c.getCustomerName() != null && !c.getCustomerName().isBlank()) {
+                        r.setCustomerName(c.getCustomerName());
+                }
+                if (c.getCustomerPhone() != null && !c.getCustomerPhone().isBlank()) {
+                        r.setCustomerPhone(c.getCustomerPhone());
+                }
+                if (c.getCustomerEmail() != null && !c.getCustomerEmail().isBlank()) {
+                        r.setCustomerEmail(c.getCustomerEmail());
+                }
+                if (c.getCustomerIdentityNumber() != null && !c.getCustomerIdentityNumber().isBlank()) {
+                        r.setCustomerIdentityNumber(c.getCustomerIdentityNumber());
                 }
 
                 if (returnRequestRepository != null && c.getStatus() != ContractStatus.CLOSED) {

@@ -200,7 +200,8 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         detail.setTotalRentalFee(contract.getTotalRentalFee());
         detail.setPolicySnapshot(contract.getPolicySnapshot());
 
-        // Điền thông tin khách hàng phục vụ xem hợp đồng điện tử
+        // Điền thông tin khách hàng phục vụ xem hợp đồng điện tử:
+        // Ưu tiên thông tin người thuê ô kho đã điền ở form Đặt chỗ của chính hợp đồng/đơn này, chỉ fallback sang app_user nếu hợp đồng chưa có
         if (contract.getCustomerId() != null && userRepository != null) {
             userRepository.findById(contract.getCustomerId()).ifPresent(u -> {
                 detail.setCustomerName(u.getFullName());
@@ -208,6 +209,34 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
                 detail.setCustomerEmail(u.getEmail());
                 detail.setCustomerIdentityNumber(u.getIdentityNumber());
             });
+        }
+        if (contract.getReservationId() != null && reservationRepository != null) {
+            reservationRepository.findById(contract.getReservationId()).ifPresent(rsv -> {
+                if (rsv.getCustomerName() != null && !rsv.getCustomerName().isBlank()) {
+                    detail.setCustomerName(rsv.getCustomerName());
+                }
+                if (rsv.getCustomerPhone() != null && !rsv.getCustomerPhone().isBlank()) {
+                    detail.setCustomerPhone(rsv.getCustomerPhone());
+                }
+                if (rsv.getCustomerEmail() != null && !rsv.getCustomerEmail().isBlank()) {
+                    detail.setCustomerEmail(rsv.getCustomerEmail());
+                }
+                if (rsv.getCustomerIdentityNumber() != null && !rsv.getCustomerIdentityNumber().isBlank()) {
+                    detail.setCustomerIdentityNumber(rsv.getCustomerIdentityNumber());
+                }
+            });
+        }
+        if (contract.getCustomerName() != null && !contract.getCustomerName().isBlank()) {
+            detail.setCustomerName(contract.getCustomerName());
+        }
+        if (contract.getCustomerPhone() != null && !contract.getCustomerPhone().isBlank()) {
+            detail.setCustomerPhone(contract.getCustomerPhone());
+        }
+        if (contract.getCustomerEmail() != null && !contract.getCustomerEmail().isBlank()) {
+            detail.setCustomerEmail(contract.getCustomerEmail());
+        }
+        if (contract.getCustomerIdentityNumber() != null && !contract.getCustomerIdentityNumber().isBlank()) {
+            detail.setCustomerIdentityNumber(contract.getCustomerIdentityNumber());
         }
 
         // Điền thông tin bàn giao thực tế (Handover Record)
@@ -316,9 +345,45 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         res.setReservationId(contract.getReservationId());
         res.setCreatedAt(contract.getCreatedAt());
 
+        if (contract.getCustomerId() != null && userRepository != null) {
+            userRepository.findById(contract.getCustomerId()).ifPresent(u -> {
+                res.setCustomerName(u.getFullName());
+                res.setCustomerPhone(u.getPhone());
+                res.setCustomerEmail(u.getEmail());
+                res.setCustomerIdentityNumber(u.getIdentityNumber());
+            });
+        }
+
         if (contract.getReservationId() != null && reservationRepository != null) {
             reservationRepository.findById(contract.getReservationId())
-                    .ifPresent(r -> res.setReservationCode(r.getCode()));
+                    .ifPresent(r -> {
+                        res.setReservationCode(r.getCode());
+                        if (r.getCustomerName() != null && !r.getCustomerName().isBlank()) {
+                            res.setCustomerName(r.getCustomerName());
+                        }
+                        if (r.getCustomerPhone() != null && !r.getCustomerPhone().isBlank()) {
+                            res.setCustomerPhone(r.getCustomerPhone());
+                        }
+                        if (r.getCustomerEmail() != null && !r.getCustomerEmail().isBlank()) {
+                            res.setCustomerEmail(r.getCustomerEmail());
+                        }
+                        if (r.getCustomerIdentityNumber() != null && !r.getCustomerIdentityNumber().isBlank()) {
+                            res.setCustomerIdentityNumber(r.getCustomerIdentityNumber());
+                        }
+                    });
+        }
+
+        if (contract.getCustomerName() != null && !contract.getCustomerName().isBlank()) {
+            res.setCustomerName(contract.getCustomerName());
+        }
+        if (contract.getCustomerPhone() != null && !contract.getCustomerPhone().isBlank()) {
+            res.setCustomerPhone(contract.getCustomerPhone());
+        }
+        if (contract.getCustomerEmail() != null && !contract.getCustomerEmail().isBlank()) {
+            res.setCustomerEmail(contract.getCustomerEmail());
+        }
+        if (contract.getCustomerIdentityNumber() != null && !contract.getCustomerIdentityNumber().isBlank()) {
+            res.setCustomerIdentityNumber(contract.getCustomerIdentityNumber());
         }
 
         // Cơ sở
@@ -382,8 +447,10 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         res.setEndDateExclusive(contract.getEndDateExclusive());
         res.setRentalMonths(contract.getRentalMonths());
         res.setMonthlyPrice(contract.getMonthlyPrice());
+        res.setTotalRentalFee(contract.getTotalRentalFee());
         res.setDepositAmount(contract.getDepositAmount());
         res.setDepositBalance(contract.getDepositBalance());
+        res.setTotalContractAmount(contract.getTotalRentalFee() + contract.getDepositAmount());
         res.setStatus(contract.getStatus().name());
         res.setRescheduleCount(contract.getRescheduleCount());
         res.setRescheduledAt(contract.getRescheduledAt());

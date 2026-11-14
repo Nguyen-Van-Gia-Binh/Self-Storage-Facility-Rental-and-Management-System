@@ -671,5 +671,56 @@ class CustomerRentalServiceTest {
         assertFalse(Boolean.TRUE.equals(detail.getHandoverRejected()), "PENDING_CHECK_IN chờ đổi ô không được gán handoverRejected=true");
         assertEquals("Ô kho bị ẩm ướt / dột nước từ trần kho", detail.getRejectionReason());
     }
+
+    @Test
+    @DisplayName("Hợp đồng lấy thông tin người thuê ô kho đã điền ở form Đặt chỗ (độc lập với tên tài khoản đăng nhập)")
+    void testGetMyRentalDetail_PrioritizesBookingRenterInfoOverAccountLoginName() {
+        com.swp391.selfstorage.user.entity.AppUser accountUser = new com.swp391.selfstorage.user.entity.AppUser(
+                "ngphamxuannhy@gmail.com", "hash", "Bánh Flan", null, null,
+                UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE
+        );
+        accountUser.setId(15L);
+
+        Reservation bookingRsv = new Reservation();
+        bookingRsv.setId(9074L);
+        bookingRsv.setCode("RSV-20261114-6124");
+        bookingRsv.setCustomerId(15L);
+        bookingRsv.setCustomerName("Bánh Bèo");
+        bookingRsv.setCustomerPhone("0973499377");
+        bookingRsv.setCustomerEmail("ngphamxuannhy@gmail.com");
+        bookingRsv.setCustomerIdentityNumber("051306007726");
+
+        RentalContract contract = new RentalContract();
+        contract.setId(9074L);
+        contract.setCode("CTR-20261114-4953");
+        contract.setReservationId(9074L);
+        contract.setCustomerId(15L);
+        contract.setCustomerName("Bánh Bèo");
+        contract.setCustomerPhone("0973499377");
+        contract.setCustomerEmail("ngphamxuannhy@gmail.com");
+        contract.setCustomerIdentityNumber("051306007726");
+        contract.setFacilityId(1L);
+        contract.setUnitTypeId(7L);
+        contract.setStatus(ContractStatus.PENDING_CHECK_IN);
+        contract.setStartDate(LocalDate.now());
+        contract.setEndDateExclusive(LocalDate.now().plusMonths(3));
+        contract.setRentalMonths(3);
+        contract.setMonthlyPrice(1_500_000L);
+        contract.setTotalRentalFee(4_500_000L);
+        contract.setDepositAmount(1_500_000L);
+
+        when(rentalContractRepository.findById(9074L)).thenReturn(Optional.of(contract));
+        when(reservationRepository.findById(9074L)).thenReturn(Optional.of(bookingRsv));
+        when(userRepository.findById(15L)).thenReturn(Optional.of(accountUser));
+
+        CustomerRentalDetailResponse detail = customerRentalService.getMyRentalDetail(9074L, customerUser);
+
+        assertEquals("Bánh Bèo", detail.getCustomerName());
+        assertEquals("0973499377", detail.getCustomerPhone());
+        assertEquals("ngphamxuannhy@gmail.com", detail.getCustomerEmail());
+        assertEquals("051306007726", detail.getCustomerIdentityNumber());
+        assertEquals(6_000_000L, detail.getTotalContractAmount());
+        assertEquals("Bánh Flan", accountUser.getFullName(), "Tên tài khoản đăng nhập không bị thay đổi");
+    }
 }
 

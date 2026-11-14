@@ -161,6 +161,10 @@ describe('ContractPrintDocument & Print Contract Flow', () => {
     // Tiền cọc & Quy định hoàn trả cọc
     expect(screen.getByText(/hoàn trả 100% cho Bên B sau khi nghiệm thu trả kho/i)).toBeInTheDocument();
 
+    // Tổng tiền thuê và Tổng giá trị hợp đồng
+    expect(screen.getByText(/TỔNG GIÁ TRỊ HỢP ĐỒNG \(TỔNG TIỀN\):/i)).toBeInTheDocument();
+    expect(screen.getByText(/Tổng tiền thuê trọn kỳ/i)).toBeInTheDocument();
+
     // 4 tiêu chí nghiệm thu vật lý hiện trường BR-CHK-02
     expect(screen.getByText(/Mặt bằng kho sạch sẽ, thông thoáng, không vật cản/i)).toBeInTheDocument();
     expect(screen.getByText(/Cửa cuốn & cơ cấu khóa vận hành an toàn, trơn tru/i)).toBeInTheDocument();

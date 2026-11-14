@@ -33,6 +33,7 @@ public class ContractResponse {
     private long totalRentalFee;
     private long depositAmount;
     private long depositBalance;
+    private long totalAmount;
     private String accessCode;
     private ContractStatus status;
     private LocalDate checkinDate;

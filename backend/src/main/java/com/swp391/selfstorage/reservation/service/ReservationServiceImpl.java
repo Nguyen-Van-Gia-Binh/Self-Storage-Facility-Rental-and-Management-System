@@ -333,6 +333,18 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setCode("RSV-" + datePart + "-" + randomSuffix);
 
         reservation.setCustomerId(customerId);
+        if (request.getCustomerName() != null && !request.getCustomerName().trim().isBlank()) {
+            reservation.setCustomerName(request.getCustomerName().trim());
+        }
+        if (request.getCustomerPhone() != null && !request.getCustomerPhone().trim().isBlank()) {
+            reservation.setCustomerPhone(request.getCustomerPhone().trim());
+        }
+        if (request.getCustomerEmail() != null && !request.getCustomerEmail().trim().isBlank()) {
+            reservation.setCustomerEmail(request.getCustomerEmail().trim());
+        }
+        if (request.getIdentityNumber() != null && !request.getIdentityNumber().trim().isBlank()) {
+            reservation.setCustomerIdentityNumber(request.getIdentityNumber().trim());
+        }
         reservation.setFacilityId(request.getFacilityId());
         reservation.setUnitTypeId(request.getUnitTypeId());
         reservation.setStorageUnitId(null);
@@ -926,6 +938,15 @@ public class ReservationServiceImpl implements ReservationService {
                 res.setCustomerPhone(user.getPhone());
                 res.setCustomerEmail(user.getEmail());
             });
+        }
+        if (r.getCustomerName() != null && !r.getCustomerName().isBlank()) {
+            res.setCustomerName(r.getCustomerName());
+        }
+        if (r.getCustomerPhone() != null && !r.getCustomerPhone().isBlank()) {
+            res.setCustomerPhone(r.getCustomerPhone());
+        }
+        if (r.getCustomerEmail() != null && !r.getCustomerEmail().isBlank()) {
+            res.setCustomerEmail(r.getCustomerEmail());
         }
         res.setFacilityId(r.getFacilityId());
         res.setFacilityName(facilityName);

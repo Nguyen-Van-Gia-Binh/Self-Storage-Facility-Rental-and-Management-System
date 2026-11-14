@@ -262,6 +262,10 @@ Chương trình khuyến mãi giảm giá thuê (`US-BM-03.3`).
 | `id` | `BIGINT` | Có | `PK`, `IDENTITY(1,1)` | Khóa chính |
 | `code` | `NVARCHAR(30)` | Có | `UNIQUE` | Mã đơn giữ chỗ (vd: `RES-202609-0001`) |
 | `customer_id` | `BIGINT` | Có | `FK` $\rightarrow$ `app_user(id)` | Khách hàng đặt chỗ |
+| `customer_name` | `NVARCHAR(150)` | Không | | Họ và tên người thuê ô kho điền trên form đặt chỗ (độc lập với tên tài khoản đăng nhập) |
+| `customer_phone` | `VARCHAR(20)` | Không | | Số điện thoại liên hệ của người thuê ô kho điền lúc đặt chỗ |
+| `customer_email` | `VARCHAR(255)` | Không | | Email nhận mã PIN và hợp đồng điền lúc đặt chỗ |
+| `customer_identity_number` | `VARCHAR(20)` | Không | | Số CCCD / Hộ chiếu của người thuê ô kho điền lúc đặt chỗ |
 | `facility_id` | `BIGINT` | Có | `FK` $\rightarrow$ `facility(id)` | Cơ sở được chọn |
 | `unit_type_id` | `BIGINT` | Có | `FK` $\rightarrow$ `unit_type(id)` | Loại kho được chọn |
 | `start_date` | `DATE` | Có | | Ngày bắt đầu thuê dự kiến |
@@ -294,6 +298,10 @@ Hợp đồng thuê ô kho chính thức (`Flow 2, 3, 6`, `state-machine-contrac
 | `code` | `NVARCHAR(30)` | Có | `UNIQUE` | Mã hợp đồng (vd: `CTR-202609-0001`) |
 | `reservation_id` | `BIGINT` | Có | `FK` $\rightarrow$ `reservation(id)`, `UNIQUE` | Sinh từ đơn Reservation duy nhất (Quan hệ 1:0..1) |
 | `customer_id` | `BIGINT` | Có | `FK` $\rightarrow$ `app_user(id)` | Khách hàng ký hợp đồng |
+| `customer_name` | `NVARCHAR(150)` | Không | | Họ và tên người thuê ô kho (Bên B) trên hợp đồng |
+| `customer_phone` | `VARCHAR(20)` | Không | | Số điện thoại liên hệ của người thuê ô kho trên hợp đồng |
+| `customer_email` | `VARCHAR(255)` | Không | | Email nhận thông báo và hợp đồng của người thuê |
+| `customer_identity_number` | `VARCHAR(20)` | Không | | Số CCCD / Hộ chiếu của người thuê ô kho trên hợp đồng |
 | `facility_id` | `BIGINT` | Có | `FK` $\rightarrow$ `facility(id)` | Cơ sở kho |
 | `storage_unit_id`| `BIGINT` | Không | `FK` $\rightarrow$ `storage_unit(id)` | Trống khi `PENDING_CHECK_IN` chưa được FM gán. Bắt buộc có giá trị từ `ACTIVE` (`BR-CHK-04`) |
 | `start_date` | `DATE` | Có | | Ngày bắt đầu tính tiền thuê |

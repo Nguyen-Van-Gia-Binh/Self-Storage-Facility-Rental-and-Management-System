@@ -35,8 +35,10 @@ public class CustomerRentalSummaryResponse {
     private LocalDate endDateExclusive;
     private int rentalMonths;
     private long monthlyPrice;
+    private long totalRentalFee;
     private long depositAmount;
     private long depositBalance;
+    private long totalContractAmount;
     private String status;
 
     // Cảnh báo & Đếm ngược
@@ -79,6 +81,12 @@ public class CustomerRentalSummaryResponse {
     private Long pendingInitialPaymentOrderCode;
     private Long pendingInitialPaymentAmount;
     private String pendingInitialPaymentMethod;
+
+    // Thông tin người thuê ô kho (theo đơn đặt chỗ / hợp đồng)
+    private String customerName;
+    private String customerPhone;
+    private String customerEmail;
+    private String customerIdentityNumber;
 
     public CustomerRentalSummaryResponse() {}
 
@@ -139,6 +147,15 @@ public class CustomerRentalSummaryResponse {
 
     public long getMonthlyPrice() { return monthlyPrice; }
     public void setMonthlyPrice(long monthlyPrice) { this.monthlyPrice = monthlyPrice; }
+
+    public long getTotalRentalFee() { return totalRentalFee; }
+    public void setTotalRentalFee(long totalRentalFee) { this.totalRentalFee = totalRentalFee; }
+
+    public long getTotalContractAmount() {
+        if (totalContractAmount > 0) return totalContractAmount;
+        return totalRentalFee + depositAmount;
+    }
+    public void setTotalContractAmount(long totalContractAmount) { this.totalContractAmount = totalContractAmount; }
 
     public long getDepositAmount() { return depositAmount; }
     public void setDepositAmount(long depositAmount) { this.depositAmount = depositAmount; }
@@ -221,4 +238,16 @@ public class CustomerRentalSummaryResponse {
 
     public String getPendingInitialPaymentMethod() { return pendingInitialPaymentMethod; }
     public void setPendingInitialPaymentMethod(String pendingInitialPaymentMethod) { this.pendingInitialPaymentMethod = pendingInitialPaymentMethod; }
+
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+
+    public String getCustomerPhone() { return customerPhone; }
+    public void setCustomerPhone(String customerPhone) { this.customerPhone = customerPhone; }
+
+    public String getCustomerEmail() { return customerEmail; }
+    public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
+
+    public String getCustomerIdentityNumber() { return customerIdentityNumber; }
+    public void setCustomerIdentityNumber(String customerIdentityNumber) { this.customerIdentityNumber = customerIdentityNumber; }
 }

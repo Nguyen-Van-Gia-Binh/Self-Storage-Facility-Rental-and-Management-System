@@ -13,7 +13,6 @@ public class CustomerRentalDetailResponse extends CustomerRentalSummaryResponse 
     private LocalDate checkinDate;
     private LocalDate returnDate;
     private OffsetDateTime closedAt;
-    private long totalRentalFee;
     private String policySnapshot;
     private String instructionNotes;
     private List<String> allowedActions;
@@ -34,9 +33,6 @@ public class CustomerRentalDetailResponse extends CustomerRentalSummaryResponse 
     public OffsetDateTime getClosedAt() { return closedAt; }
     public void setClosedAt(OffsetDateTime closedAt) { this.closedAt = closedAt; }
 
-    public long getTotalRentalFee() { return totalRentalFee; }
-    public void setTotalRentalFee(long totalRentalFee) { this.totalRentalFee = totalRentalFee; }
-
     public String getPolicySnapshot() { return policySnapshot; }
     public void setPolicySnapshot(String policySnapshot) { this.policySnapshot = policySnapshot; }
 
@@ -45,12 +41,6 @@ public class CustomerRentalDetailResponse extends CustomerRentalSummaryResponse 
 
     public List<String> getAllowedActions() { return allowedActions; }
     public void setAllowedActions(List<String> allowedActions) { this.allowedActions = allowedActions; }
-
-    // Thông tin khách hàng phục vụ hiển thị hợp đồng điện tử
-    private String customerName;
-    private String customerPhone;
-    private String customerEmail;
-    private String customerIdentityNumber;
 
     // Thông tin biên bản bàn giao (Handover Record)
     private String handoverStaffName;
@@ -61,18 +51,6 @@ public class CustomerRentalDetailResponse extends CustomerRentalSummaryResponse 
     private Long relocationSupportRequestId;
     private String relocationSupportRequestCode;
     private String relocationReason;
-
-    public String getCustomerName() { return customerName; }
-    public void setCustomerName(String customerName) { this.customerName = customerName; }
-
-    public String getCustomerPhone() { return customerPhone; }
-    public void setCustomerPhone(String customerPhone) { this.customerPhone = customerPhone; }
-
-    public String getCustomerEmail() { return customerEmail; }
-    public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
-
-    public String getCustomerIdentityNumber() { return customerIdentityNumber; }
-    public void setCustomerIdentityNumber(String customerIdentityNumber) { this.customerIdentityNumber = customerIdentityNumber; }
 
     public String getHandoverStaffName() { return handoverStaffName; }
     public void setHandoverStaffName(String handoverStaffName) { this.handoverStaffName = handoverStaffName; }

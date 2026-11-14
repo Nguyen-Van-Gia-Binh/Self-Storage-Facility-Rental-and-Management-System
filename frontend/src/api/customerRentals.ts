@@ -35,8 +35,14 @@ export interface BackendRentalSummary {
   endDateExclusive?: string;
   rentalMonths?: number;
   monthlyPrice?: number;
+  totalRentalFee?: number;
+  totalContractAmount?: number;
   depositAmount?: number;
   depositBalance?: number;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  customerIdentityNumber?: string;
   status: string;
   nearExpiration?: boolean;
   daysRemaining?: number;
@@ -75,6 +81,10 @@ export interface CustomerRentalSummary {
   status: string; // ACTIVE, PENDING_CHECKIN, OVERDUE, etc.
   accessCode?: string;
   monthlyPrice: number;
+  totalRentalFee?: number;
+  totalContractAmount?: number;
+  rentalMonths?: number;
+  depositAmount?: number;
   rescheduleCount?: number;
   rescheduledAt?: string;
 }
@@ -161,6 +171,12 @@ export function mapBackendRentalToContract(item: BackendRentalSummary): RentedCo
     endDate: item.endDateExclusive || '',
     monthlyRent: item.monthlyPrice || 0,
     depositHeld: item.depositBalance ?? item.depositAmount ?? 0,
+    totalRentalFee: item.totalRentalFee,
+    totalContractAmount: item.totalContractAmount,
+    customerName: item.customerName,
+    customerPhone: item.customerPhone,
+    customerEmail: item.customerEmail,
+    customerIdentityNumber: item.customerIdentityNumber,
     accessPin: item.accessCode || undefined,
     accessPinLength: item.accessPinLength,
     status: mappedStatus,
