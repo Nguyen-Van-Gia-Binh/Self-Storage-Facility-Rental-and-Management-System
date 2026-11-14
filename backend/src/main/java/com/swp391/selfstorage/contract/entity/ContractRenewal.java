@@ -57,6 +57,20 @@ public class ContractRenewal {
     @Column(name = "rental_fee_amount", nullable = false)
     private Long rentalFeeAmount;
 
+    @Column(name = "late_admin_fee", nullable = false)
+    @Builder.Default
+    private Long lateAdminFee = 0L;
+
+    @Column(name = "is_force_renewal", nullable = false)
+    @Builder.Default
+    private Boolean isForceRenewal = false;
+
+    @Column(name = "payment_method")
+    private String paymentMethod;
+
+    @Column(name = "notes")
+    private String notes;
+
     @Column(name = "total_paid", nullable = false)
     private Long totalPaid;
 

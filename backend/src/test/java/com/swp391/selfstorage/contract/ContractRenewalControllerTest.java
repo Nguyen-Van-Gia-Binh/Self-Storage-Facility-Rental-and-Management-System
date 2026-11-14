@@ -2,6 +2,7 @@ package com.swp391.selfstorage.contract;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.swp391.selfstorage.contract.controller.ContractRenewalController;
+import com.swp391.selfstorage.contract.dto.ForceRenewalRequest;
 import com.swp391.selfstorage.contract.dto.RenewalQuoteResponse;
 import com.swp391.selfstorage.contract.dto.RenewalRequest;
 import com.swp391.selfstorage.contract.dto.RenewalResponse;
@@ -139,5 +140,83 @@ class ContractRenewalControllerTest {
                                 .andExpect(jsonPath("$.status").value(200))
                                 .andExpect(jsonPath("$.data[0].id").value(10L))
                                 .andExpect(jsonPath("$.data[0].renewalMonths").value(3));
+        }
+
+        @Test
+        @DisplayName("POST /contracts/{id}/renewals/force-preview - FM xem trước báo giá Force Renewal (200 OK)")
+        void testForceRenewalQuote_Success() throws Exception {
+                RenewalRequest request = RenewalRequest.builder()
+                                .renewalMonths(3)
+                                .build();
+
+                RenewalQuoteResponse quoteResponse = RenewalQuoteResponse.builder()
+                                .contractId(1L)
+                                .contractCode("CTR-202610-001")
+                                .renewalMonths(3)
+                                .previousEndDate(LocalDate.of(2026, 12, 31))
+                                .newEndDate(LocalDate.of(2027, 3, 31))
+                                .monthlyPriceSnapshot(2_000_000L)
+                                .rentalFeeAmount(6_000_000L)
+                                .lateAdminFee(200_000L)
+                                .isForceRenewal(true)
+                                .overdueFeeSettled(0L)
+                                .totalAmount(6_200_000L)
+                                .policyVersionId(1L)
+                                .build();
+
+                when(renewalService.getForceRenewalQuote(eq(1L), any(ForceRenewalRequest.class)))
+                                .thenReturn(quoteResponse);
+
+                mockMvc.perform(post("/contracts/1/renewals/force-preview")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.status").value(200))
+                                .andExpect(jsonPath("$.data.contractCode").value("CTR-202610-001"))
+                                .andExpect(jsonPath("$.data.isForceRenewal").value(true))
+                                .andExpect(jsonPath("$.data.lateAdminFee").value(200_000L))
+                                .andExpect(jsonPath("$.data.totalAmount").value(6_200_000L));
+        }
+
+        @Test
+        @DisplayName("POST /contracts/{id}/renewals/force - FM duyệt Force Renewal thành công (201 CREATED)")
+        void testProcessForceRenewal_Success() throws Exception {
+                ForceRenewalRequest request = ForceRenewalRequest.builder()
+                                .renewalMonths(3)
+                                .paymentMethod("CASH")
+                                .notes("Khách nộp tiền mặt tại quầy")
+                                .build();
+
+                RenewalResponse response = RenewalResponse.builder()
+                                .id(15L)
+                                .contractId(1L)
+                                .previousEndDate(LocalDate.of(2026, 12, 31))
+                                .newEndDate(LocalDate.of(2027, 3, 31))
+                                .renewalMonths(3)
+                                .monthlyPriceSnapshot(2_000_000L)
+                                .policyVersionId(1L)
+                                .overdueFeeSettled(0L)
+                                .rentalFeeAmount(6_000_000L)
+                                .lateAdminFee(200_000L)
+                                .isForceRenewal(true)
+                                .paymentMethod("CASH")
+                                .notes("Khách nộp tiền mặt tại quầy")
+                                .totalPaid(6_200_000L)
+                                .createdAt(OffsetDateTime.now())
+                                .build();
+
+                when(renewalService.processForceRenewal(eq(1L), any(ForceRenewalRequest.class)))
+                                .thenReturn(response);
+
+                mockMvc.perform(post("/contracts/1/renewals/force")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.status").value(200))
+                                .andExpect(jsonPath("$.data.id").value(15L))
+                                .andExpect(jsonPath("$.data.isForceRenewal").value(true))
+                                .andExpect(jsonPath("$.data.lateAdminFee").value(200_000L))
+                                .andExpect(jsonPath("$.data.paymentMethod").value("CASH"))
+                                .andExpect(jsonPath("$.data.totalPaid").value(6_200_000L));
         }
 }

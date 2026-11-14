@@ -377,22 +377,23 @@ Quy trình hỗ trợ linh hoạt 2 nhánh nhận kho theo chuẩn Contactless S
 - **Diễn viên (Actors):** `Storage Customer`, `Facility Manager`, `Tác vụ ngầm OverdueCronJob`
 - **Quy tắc nghiệp vụ cốt lõi:** `BR-REN-01..10`, `BR-OVD-01..11`
 
-### 7.1. Sub-flow 6.1: Gia hạn hợp đồng (Happy & Xung đột lịch)
+### 7.1. Sub-flow 6.1: Gia hạn hợp đồng (Tự phục vụ >= 20d, Force Renewal FM < 20d & Chống xung đột)
 
+#### A. Khách hàng tự gia hạn trực tuyến (Khi còn >= 20 ngày đến hết hạn — BR-REN-01..09)
 ```
-[Customer — RenewalPage.tsx]
+[Customer — MyUnitsTable.tsx / RentedUnitCard.tsx]
        │
-       ├─► 1. Khách hàng bấm "Gia hạn" trên thẻ hợp đồng ACTIVE
+       ├─► 1. Khách hàng bấm "Gia hạn" trên thẻ hợp đồng ACTIVE (daysRemaining >= 20)
        │      API: POST /api/v1/contracts/{id}/renewals/quote
        │      Backend: RenewalServiceImpl.getRenewalQuote()
        │               - Chặn hợp đồng OVERDUE (400 RENEWAL_NOT_ALLOWED) và unitType INACTIVE (400 UNIT_TYPE_INACTIVE)
        │               - Chặn nếu còn < 20 ngày đến endDate (400 RENEWAL_DEADLINE_PASSED — BR-REN-09)
        │               - Kiểm tra trùng lịch với Waitlist / Reservation trong khoảng rentalBufferDays (409 CAPACITY_NOT_AVAILABLE)
-       │               - Bảo lưu tiền cọc cũ (BR-DEP-01); tính phí thuê N tháng (1..12) theo biểu giá hiện hành (BR-REN-05)
+       │               - Bảo lưu tiền cọc cũ (BR-DEP-01); tính phí thuê N tháng (1..12) theo biểu giá BOM hiện hành (BR-REN-05)
        │
-       ├─► 2. Khởi tạo thanh toán gia hạn (không giữ khóa PENDING_RENEWAL)
+       ├─► 2. Khởi tạo thanh toán gia hạn trực tuyến (VNPay Sandbox / VietQR)
        │      API: POST /api/v1/payments/checkout (purpose = CONTRACT_RENEWAL)
-       │      Backend: PaymentServiceImpl chạy lại getRenewalQuote() để xác thực & tạo phiên VNPay Sandbox
+       │      Backend: PaymentServiceImpl chạy lại getRenewalQuote() để xác thực & tạo phiên thanh toán
        │
        └─► 3. Thanh toán thành công (AFTER_COMMIT Event)
               Backend: ContractEventListener -> RenewalServiceImpl.processRenewal() (REQUIRES_NEW, idempotent theo paymentTransactionId)
@@ -400,10 +401,33 @@ Quy trình hỗ trợ linh hoạt 2 nhánh nhận kho theo chuẩn Contactless S
                        Hợp đồng giữ nguyên trạng thái ACTIVE và lưu bản ghi ContractRenewal
 ```
 
+#### B. Quản lý cơ sở duyệt Gia hạn Ngoại lệ tại Quầy (Từ T-20 đến T-0 — BR-REN-10)
+```
+[Facility Manager — ContractDetailPage.tsx]
+       │
+       ├─► 1. Khách cũ đến quầy xin gia hạn sau khi cổng online đã bị khóa (0 <= daysRemaining < 20)
+       │      FM bấm nút "Gia hạn Ngoại lệ (Force Renewal)" trên màn hình chi tiết hợp đồng
+       │
+       ├─► 2. FM chọn số tháng gia hạn (1..12 tháng), xem bảng tính toán chi phí:
+       │      API: POST /api/v1/contracts/{id}/renewals/force-preview
+       │      Backend: RenewalServiceImpl.getForceRenewalQuote()
+       │               - Kiểm tra ô kho hiện tại: nếu khách mới trong Waitlist/Đặt trước ĐÃ ĐÓNG CỌC
+       │                 => Trả 409 Conflict (CAPACITY_ALREADY_COMMITTED), khóa cứng nút Duyệt!
+       │               - Nếu ô kho CHƯA BỊ CỌC: Cho phép duyệt, tính tiền:
+       │                 Tổng thanh toán = (Đơn giá BOM hiện hành × N tháng) + Phí xử lý muộn 200.000 VNĐ
+       │
+       └─► 3. FM xác nhận thu tiền mặt/chuyển khoản tại quầy và kích hoạt gia hạn:
+              API: POST /api/v1/contracts/{id}/renewals/force
+              Backend: RenewalServiceImpl.processForceRenewal()
+                       - Cập nhật Contract: endDateExclusive += N tháng, rentalMonths += N tháng
+                       - Lưu ContractRenewal: isForceRenewal = true, lateAdminFee = 200.000 VNĐ, paymentMethod = CASH/BANK_TRANSFER
+                       - Hủy lời mời giữ chỗ (nếu có) của khách Waitlist chưa cọc, đưa khách đó về đầu hàng đợi
+```
+
 - **Ngoại lệ Xung đột & Quá hạn gia hạn (UNH-REN-01):**
-  - Nếu hợp đồng đã sang `OVERDUE`, hệ thống trả `400 Bad Request` (`RENEWAL_NOT_ALLOWED`).
-  - Nếu thời gian còn lại trước `endDate` nhỏ hơn 20 ngày, hệ thống trả `400 Bad Request` (`RENEWAL_DEADLINE_PASSED`, `BR-REN-09`).
-  - Nếu ô kho bị vướng lịch đặt giữ chỗ / Waitlist cho kỳ kế tiếp, hệ thống trả `409 Conflict` (`CAPACITY_NOT_AVAILABLE`). Giao diện thông báo không thể gia hạn do đã hết sức chứa cho giai đoạn tiếp theo.
+  - Nếu hợp đồng đã sang `OVERDUE` (từ D+1), hệ thống trả `400 Bad Request` (`RENEWAL_NOT_ALLOWED`). Tuyệt đối khóa mọi loại gia hạn online/offline.
+  - Nếu khách tự thao tác khi thời gian còn lại nhỏ hơn 20 ngày, hệ thống trả `400 Bad Request` (`RENEWAL_DEADLINE_PASSED`, `BR-REN-09`).
+  - Nếu ô kho đã có khách mới đặt cọc thành công cho chu kỳ kế tiếp, hệ thống trả `409 Conflict` (`CAPACITY_NOT_AVAILABLE`). Khách cũ bắt buộc phải trả kho đúng hạn T-0 hoặc ký hợp đồng đổi sang ô kho khác nếu cơ sở còn chỗ.
 
 ### 7.2. Sub-flow 6.2: Xử lý Quá hạn (Vòng đời 8 Ngày Khép kín D+1 đến D+8)
 

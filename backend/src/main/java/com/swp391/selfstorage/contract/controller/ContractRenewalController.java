@@ -12,7 +12,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import com.swp391.selfstorage.common.dto.ApiResponse;
+import com.swp391.selfstorage.contract.dto.ForceRenewalRequest;
 import com.swp391.selfstorage.contract.dto.RenewalQuoteResponse;
 import com.swp391.selfstorage.contract.dto.RenewalRequest;
 import com.swp391.selfstorage.contract.dto.RenewalResponse;
@@ -66,5 +69,32 @@ public class ContractRenewalController {
     public ResponseEntity<ApiResponse<List<RenewalResponse>>> getRenewalHistory(@PathVariable Long id) {
         List<RenewalResponse> history = renewalService.getRenewalHistory(id);
         return ResponseEntity.ok(ApiResponse.success(history, "Lấy lịch sử gia hạn thành công"));
+    }
+
+    /**
+     * 4. Quản lý cơ sở (FM) xem trước bảng tính Force Renewal (BR-REN-10).
+     */
+    @PostMapping("/{id}/renewals/force-preview")
+    @PreAuthorize("hasAnyRole('FACILITY_MANAGER', 'BUSINESS_OPERATIONS_MANAGER', 'SYSTEM_ADMIN')")
+    @Operation(summary = "FM xem trước bảng tính gia hạn ngoại lệ kèm phụ phí 200.000 VNĐ")
+    public ResponseEntity<ApiResponse<RenewalQuoteResponse>> getForceRenewalQuote(
+            @PathVariable Long id,
+            @Valid @RequestBody ForceRenewalRequest request) {
+        RenewalQuoteResponse quote = renewalService.getForceRenewalQuote(id, request);
+        return ResponseEntity.ok(ApiResponse.success(quote, "Tính toán phí gia hạn ngoại lệ thành công"));
+    }
+
+    /**
+     * 5. Quản lý cơ sở (FM) duyệt gia hạn ngoại lệ tại quầy sau khi thu tiền (BR-REN-10).
+     */
+    @PostMapping("/{id}/renewals/force")
+    @PreAuthorize("hasAnyRole('FACILITY_MANAGER', 'BUSINESS_OPERATIONS_MANAGER', 'SYSTEM_ADMIN')")
+    @Operation(summary = "FM duyệt gia hạn ngoại lệ tại quầy và kích hoạt hợp đồng")
+    public ResponseEntity<ApiResponse<RenewalResponse>> processForceRenewal(
+            @PathVariable Long id,
+            @Valid @RequestBody ForceRenewalRequest request) {
+        RenewalResponse response = renewalService.processForceRenewal(id, request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(response, "Duyệt gia hạn ngoại lệ thành công"));
     }
 }
