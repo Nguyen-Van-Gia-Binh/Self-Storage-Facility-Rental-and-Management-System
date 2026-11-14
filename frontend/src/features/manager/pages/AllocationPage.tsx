@@ -114,7 +114,6 @@ export const AllocationPage: React.FC = () => {
   });
   const facilitiesRef = React.useRef<FacilityListItem[]>(facilities);
   facilitiesRef.current = facilities;
-  const [facilityCounts, setFacilityCounts] = useState<Record<string | number, number>>({});
   const [filterTab, setFilterTab] = useState<'ALL' | 'UNASSIGNED' | 'ASSIGNED'>('ALL');
   const [queue, setQueue] = useState<AllocationQueueItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -342,22 +341,6 @@ export const AllocationPage: React.FC = () => {
           return a.startDate.localeCompare(b.startDate);
         });
 
-      // Cập nhật số lượng đơn chờ cho từng cơ sở và tổng
-      if (id == null) {
-        const counts: Record<string | number, number> = { ALL: merged.length };
-        for (const item of merged) {
-          if (item.facilityId) {
-            counts[item.facilityId] = (counts[item.facilityId] || 0) + 1;
-          }
-        }
-        setFacilityCounts(counts);
-      } else {
-        setFacilityCounts((prev) => ({
-          ...prev,
-          [id]: merged.length,
-        }));
-      }
-
       setQueue(merged);
       setSelectedId((current) => {
         if (current != null && merged.some((row) => row.id === current)) return current;
@@ -512,8 +495,6 @@ export const AllocationPage: React.FC = () => {
           storageUnitId: modalUnit.id,
           staffId: targetStaffId,
           scheduledDate: selected.startDate,
-          scheduledStartTime: '08:00',
-          scheduledEndTime: '17:00',
         });
 
         if (selectedStaffId && selected.assignedStaffId && selectedStaffId !== selected.assignedStaffId) {
@@ -618,12 +599,10 @@ export const AllocationPage: React.FC = () => {
                 localStorage.setItem('manager_selected_facility_id', val != null ? String(val) : 'ALL');
               }}
             >
-              <option value="ALL">
-                🏢 Tất cả cơ sở quản lý {facilityCounts.ALL != null ? `(${facilityCounts.ALL} đơn chờ)` : ''}
-              </option>
+              <option value="ALL">🏢 Tất cả cơ sở quản lý</option>
               {facilities.map((fac) => (
                 <option key={fac.id} value={fac.id}>
-                  {fac.name} {facilityCounts[fac.id] != null ? `(${facilityCounts[fac.id]} đơn)` : ''}
+                  {fac.name}
                 </option>
               ))}
             </select>

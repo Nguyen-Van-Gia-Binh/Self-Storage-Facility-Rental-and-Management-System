@@ -258,8 +258,6 @@ describe('AllocationPage Component (Gán ô kho)', () => {
         storageUnitId: 42,
         staffId: 2,
         scheduledDate: '2026-11-15',
-        scheduledStartTime: '08:00',
-        scheduledEndTime: '17:00',
       });
     });
   });
@@ -437,8 +435,8 @@ describe('AllocationPage Component (Gán ô kho)', () => {
       // Hiển thị cả 2 hợp đồng của Quận 7 và Quận 1
       expect(screen.getByText('CTR-20261109-5101')).toBeDefined();
       expect(screen.getByText('CTR-20261128-6202')).toBeDefined();
-      expect(screen.getByText('Cơ sở Quận 7 - TP.HCM')).toBeDefined();
-      expect(screen.getByText('Cơ sở Quận 1 - TP.HCM')).toBeDefined();
+      expect(screen.getAllByText('Cơ sở Quận 7 - TP.HCM').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Cơ sở Quận 1 - TP.HCM').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('2 đơn chờ xử lý')).toBeDefined();
     });
   });
@@ -607,10 +605,10 @@ describe('AllocationPage Component (Gán ô kho)', () => {
 
     render(<AllocationPage />);
 
-    // Kiểm tra dropdown hiển thị đúng cơ sở được phân công kèm số lượng
+    // Kiểm tra dropdown hiển thị đúng cơ sở được phân công
     await waitFor(() => {
       expect(screen.getByRole('combobox')).toBeDefined();
-      expect(screen.getByText(/Cơ sở Quận 7 - TP.HCM \(1 đơn\)/)).toBeDefined();
+      expect(screen.getByText('Cơ sở Quận 7 - TP.HCM')).toBeDefined();
     });
 
     // Đảm bảo listReservations được gọi với đúng facilityId = 2, không bị gọi không có facilityId

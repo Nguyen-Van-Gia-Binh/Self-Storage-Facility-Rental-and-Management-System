@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Layers, FileText, Users, ArrowRight, Wrench, BarChart3, Building2, ClipboardCheck } from 'lucide-react';
+import { Layers, FileText, Users, ArrowRight, Wrench, Building2, ClipboardCheck } from 'lucide-react';
 
 const NAV_CARDS = [
   {
@@ -67,19 +67,6 @@ const NAV_CARDS = [
     subtitle: 'Bàn điều phối kỹ thuật',
     desc: 'Tiếp nhận khiếu nại, phân công nhân viên kiểm tra thực địa và xử lý kẹt khóa, thấm dột.',
     cta: 'Mở Bàn điều phối',
-  },
-  {
-    to: '/manager/reports',
-    icon: BarChart3,
-    color: 'indigo',
-    iconBg: 'from-indigo-500 to-indigo-600',
-    hoverBorder: 'hover:border-indigo-400',
-    hoverShadow: 'hover:shadow-indigo-100',
-    textColor: 'text-indigo-600',
-    label: 'Báo cáo Cơ sở & Hiệu suất',
-    subtitle: 'Phân tích vận hành & tài chính',
-    desc: 'Giám sát tỷ lệ lấp đầy kho, phân tích doanh thu tháng và rủi ro nợ quá hạn theo 3 độ tuổi.',
-    cta: 'Mở Báo cáo cơ sở',
   },
 ];
 
