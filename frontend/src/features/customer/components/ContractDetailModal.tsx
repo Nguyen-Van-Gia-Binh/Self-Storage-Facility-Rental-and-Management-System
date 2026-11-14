@@ -471,14 +471,9 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                   </div>
 
                   <div className="flex justify-between items-center py-1 border-t border-slate-100">
-                    <div>
-                      <span className="text-slate-700 font-semibold block">
-                        Tổng tiền thuê ({effectiveRentalMonths} tháng):
-                      </span>
-                      <span className="text-[10px] text-slate-400 italic">
-                        Đơn giá x Thời hạn thuê trọn kỳ
-                      </span>
-                    </div>
+                    <span className="text-slate-700 font-semibold">
+                      Tổng tiền thuê ({effectiveRentalMonths} tháng):
+                    </span>
                     <span className="font-bold text-slate-800 text-sm">
                       {formatVND(effectiveTotalRentalFee)}
                     </span>
@@ -498,14 +493,9 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
                   {/* Tổng giá trị hợp đồng / Tổng tiền */}
                   <div className="flex justify-between items-center p-3 rounded-xl bg-brand-50 border border-brand-200 mt-2">
-                    <div>
-                      <span className="text-brand-900 font-extrabold block text-xs uppercase tracking-wider">
-                        Tổng giá trị hợp đồng (Tổng tiền):
-                      </span>
-                      <span className="text-[10.5px] text-brand-700">
-                        Bao gồm tiền thuê {effectiveRentalMonths} tháng + tiền cọc bảo đảm hoàn lại
-                      </span>
-                    </div>
+                    <span className="text-brand-900 font-extrabold text-xs uppercase tracking-wider">
+                      Tổng giá trị hợp đồng (Tổng tiền):
+                    </span>
                     <span className="font-black text-brand-800 text-base sm:text-lg">
                       {formatVND(effectiveTotalContractAmount)}
                     </span>
