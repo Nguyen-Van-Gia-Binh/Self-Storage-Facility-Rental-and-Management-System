@@ -99,14 +99,22 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                 ? facilityRepository.findById(primaryFacilityId).map(Facility::getName).orElse(null)
                 : null;
 
+        RequestCache cache = new RequestCache();
+
+        long t0 = System.currentTimeMillis();
         // 4. Nhóm 1: Lịch hẹn nhận kho (Check-in / Handover - FS-06, FS-01, FS-02)
-        List<DailyCheckInTaskDto> checkInTasks = loadCheckInTasks(staffId, targetDate, onlyPending);
+        List<DailyCheckInTaskDto> checkInTasks = loadCheckInTasks(staffId, targetDate, onlyPending, cache);
+        long t1 = System.currentTimeMillis();
 
         // 5. Nhóm 2: Lịch hẹn trả kho & kiểm tra (Return / Inspection - FS-06, FS-04)
-        List<DailyReturnTaskDto> returnTasks = loadReturnTasks(staffId, targetDate, onlyPending);
+        List<DailyReturnTaskDto> returnTasks = loadReturnTasks(staffId, targetDate, onlyPending, cache);
+        long t2 = System.currentTimeMillis();
 
         // 6. Nhóm 3: Sự cố & Vận hành (Support / Overlock - FS-06, FS-05)
-        List<DailySupportTaskDto> supportTasks = loadSupportTasks(staffId, targetDate, onlyPending);
+        List<DailySupportTaskDto> supportTasks = loadSupportTasks(staffId, targetDate, onlyPending, cache);
+        long t3 = System.currentTimeMillis();
+
+        System.out.printf("[PERF] StaffDailyTasks: checkIn=%dms, return=%dms, support=%dms%n", (t1 - t0), (t2 - t1), (t3 - t2));
 
         // 7. Thống kê tổng hợp ca trực
         DailyTasksSummaryDto summary = calculateSummary(checkInTasks, returnTasks, supportTasks);
@@ -142,27 +150,78 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         }
     }
 
+    private static class RequestCache {
+        final Map<Long, AppUser> users = new HashMap<>();
+        final Map<Long, StorageUnit> units = new HashMap<>();
+        final Map<Long, Facility> facilities = new HashMap<>();
+        final Map<Long, Optional<RentalContract>> contracts = new HashMap<>();
+        final Map<Long, Optional<com.swp391.selfstorage.contract.entity.ReturnRequest>> returnRequests = new HashMap<>();
+        Integer activeGraceDays = null;
+    }
+
+    private Optional<RentalContract> getContractCached(Long id, RequestCache cache) {
+        if (id == null) return Optional.empty();
+        if (cache == null) return rentalContractRepository.findById(id);
+        return cache.contracts.computeIfAbsent(id, k -> rentalContractRepository.findById(k));
+    }
+
+    private Optional<com.swp391.selfstorage.contract.entity.ReturnRequest> getReturnRequestCached(Long contractId, RequestCache cache) {
+        if (contractId == null || returnRequestRepository == null) return Optional.empty();
+        if (cache == null) return returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contractId);
+        return cache.returnRequests.computeIfAbsent(contractId, k -> returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(k));
+    }
+
+    private AppUser getUserCached(Long id, RequestCache cache) {
+        if (id == null) return null;
+        if (cache == null) return userRepository.findById(id).orElse(null);
+        return cache.users.computeIfAbsent(id, k -> userRepository.findById(k).orElse(null));
+    }
+
+    private StorageUnit getUnitCached(Long id, RequestCache cache) {
+        if (id == null) return null;
+        if (cache == null) return storageUnitRepository.findById(id).orElse(null);
+        return cache.units.computeIfAbsent(id, k -> storageUnitRepository.findById(k).orElse(null));
+    }
+
+    private Facility getFacilityCached(Long id, RequestCache cache) {
+        if (id == null) return null;
+        if (cache == null) return facilityRepository.findById(id).orElse(null);
+        return cache.facilities.computeIfAbsent(id, k -> facilityRepository.findById(k).orElse(null));
+    }
+
     private int resolveCheckinGraceDays(RentalContract c) {
+        return resolveCheckinGraceDays(c, null);
+    }
+
+    private int resolveCheckinGraceDays(RentalContract c, RequestCache cache) {
+        if (cache != null && cache.activeGraceDays != null) {
+            return cache.activeGraceDays;
+        }
         if (policyVersionRepository != null) {
             Optional<PolicyVersion> active = policyVersionRepository
                     .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime.now());
             if (active.isPresent() && active.get().getCheckinGraceDays() != null) {
-                return active.get().getCheckinGraceDays();
+                int g = active.get().getCheckinGraceDays();
+                if (cache != null) cache.activeGraceDays = g;
+                return g;
             }
         }
-        return com.swp391.selfstorage.policy.service.PolicyNumbers.snapshotInt(
+        int g = com.swp391.selfstorage.policy.service.PolicyNumbers.snapshotInt(
                 c != null ? c.getPolicySnapshot() : null, "checkinGraceDays", 10);
+        if (cache != null) cache.activeGraceDays = g;
+        return g;
     }
 
     private List<DailyCheckInTaskDto> loadCheckInTasks(Long staffId, LocalDate date, boolean onlyPending) {
+        return loadCheckInTasks(staffId, date, onlyPending, new RequestCache());
+    }
+
+    private List<DailyCheckInTaskDto> loadCheckInTasks(Long staffId, LocalDate date, boolean onlyPending, RequestCache cache) {
         List<DailyCheckInTaskDto> result = new ArrayList<>();
         Set<Long> processedContractIds = new HashSet<>();
         LocalDate today = LocalDate.now(VN_ZONE);
         boolean isToday = date.isEqual(today);
 
-        // Actionable Inbox (Ponytail):
-        // Nếu là hôm nay: lấy các việc được tạo hôm nay hoặc tạo trong quá khứ nhưng chưa thực hiện, cùng các việc trong cửa sổ ân hạn 10 ngày
-        // Nếu là ngày khác: lọc chính xác theo ngày đó
         List<StaffDailyAssignment> assignments = new ArrayList<>();
         if (isToday) {
             List<StaffDailyAssignment> windowList = staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(
@@ -170,37 +229,41 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
             if (windowList != null) {
                 assignments.addAll(windowList);
             }
-            List<StaffDailyAssignment> allForStaff = staffDailyAssignmentRepository.findByStaffId(staffId);
-            if (allForStaff != null) {
-                assignments.addAll(allForStaff);
-            }
         } else {
             List<StaffDailyAssignment> dateList = staffDailyAssignmentRepository.findByStaffIdAndWorkDate(staffId, date);
             if (dateList != null) {
                 assignments.addAll(dateList);
             }
+            if (date.isAfter(today)) {
+                List<StaffDailyAssignment> windowList = staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(
+                        staffId, today.minusDays(10), today);
+                if (windowList != null) {
+                    assignments.addAll(windowList);
+                }
+            }
         }
 
         for (StaffDailyAssignment a : assignments) {
             if (a.getTaskType() == AssignmentTaskType.HANDOVER && a.getReferenceId() != null) {
-                rentalContractRepository.findById(a.getReferenceId()).ifPresent(c -> {
+                if (processedContractIds.contains(a.getReferenceId())) {
+                    continue;
+                }
+                getContractCached(a.getReferenceId(), cache).ifPresent(c -> {
                     LocalDate workDate = a.getWorkDate() != null ? a.getWorkDate() : c.getStartDate();
                     LocalDate createdDate = c.getCreatedAt() != null
                             ? c.getCreatedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
                             : null;
 
-                    DailyCheckInTaskDto dto = toCheckInDto(c);
+                    boolean isCompleted = c.getStatus() == ContractStatus.ACTIVE || c.getCheckinDate() != null;
                     boolean isTodayTask;
                     boolean isLatePending = false;
 
-                    if (!dto.isCompleted() && c.getStatus() == ContractStatus.PENDING_CHECK_IN) {
+                    if (!isCompleted && c.getStatus() == ContractStatus.PENDING_CHECK_IN) {
                         isTodayTask = (workDate != null && workDate.isEqual(date))
-                                || (createdDate != null && createdDate.isEqual(date))
-                                || (isToday && createdDate != null && !createdDate.isAfter(date));
-                        isLatePending = isToday
-                                && workDate != null
+                                || (createdDate != null && createdDate.isEqual(date));
+                        isLatePending = workDate != null
                                 && workDate.isBefore(date)
-                                && isWithinGracePeriod(c, date);
+                                && isWithinGracePeriod(c, date, cache);
                     } else {
                         LocalDate checkinDate = c.getCheckinDate();
                         isTodayTask = (checkinDate != null && checkinDate.isEqual(date))
@@ -208,12 +271,13 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                     }
 
                     if ((isTodayTask || isLatePending) && processedContractIds.add(c.getId())) {
-                        if (isLatePending) {
-                            dto.setLate(true);
-                            long diff = java.time.temporal.ChronoUnit.DAYS.between(workDate, date);
-                            dto.setDaysLate((int) diff);
-                        }
-                        if (!onlyPending || !dto.isCompleted()) {
+                        if (!onlyPending || !isCompleted) {
+                            DailyCheckInTaskDto dto = toCheckInDto(c, cache);
+                            if (isLatePending) {
+                                dto.setLate(true);
+                                long diff = java.time.temporal.ChronoUnit.DAYS.between(workDate, date);
+                                dto.setDaysLate((int) diff);
+                            }
                             result.add(dto);
                         }
                     }
@@ -225,13 +289,21 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
     }
 
     private boolean isWithinGracePeriod(RentalContract c, LocalDate date) {
+        return isWithinGracePeriod(c, date, null);
+    }
+
+    private boolean isWithinGracePeriod(RentalContract c, LocalDate date, RequestCache cache) {
         if (c == null || c.getStartDate() == null) return false;
-        int graceDays = resolveCheckinGraceDays(c);
+        int graceDays = resolveCheckinGraceDays(c, cache);
         LocalDate graceDeadline = c.getStartDate().plusDays(Math.max(0, graceDays));
         return !date.isAfter(graceDeadline);
     }
 
     private List<DailyReturnTaskDto> loadReturnTasks(Long staffId, LocalDate date, boolean onlyPending) {
+        return loadReturnTasks(staffId, date, onlyPending, new RequestCache());
+    }
+
+    private List<DailyReturnTaskDto> loadReturnTasks(Long staffId, LocalDate date, boolean onlyPending, RequestCache cache) {
         List<DailyReturnTaskDto> result = new ArrayList<>();
         Set<Long> processedContractIds = new HashSet<>();
         LocalDate today = LocalDate.now(VN_ZONE);
@@ -240,35 +312,36 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         List<StaffDailyAssignment> assignments = new ArrayList<>();
         if (isToday) {
             List<StaffDailyAssignment> windowList = staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(
-                    staffId, today.minusDays(30), today);
+                    staffId, today.minusDays(14), today);
             if (windowList != null) {
                 assignments.addAll(windowList);
-            }
-            List<StaffDailyAssignment> allForStaff = staffDailyAssignmentRepository.findByStaffId(staffId);
-            if (allForStaff != null) {
-                assignments.addAll(allForStaff);
             }
         } else {
             List<StaffDailyAssignment> dateList = staffDailyAssignmentRepository.findByStaffIdAndWorkDate(staffId, date);
             if (dateList != null) {
                 assignments.addAll(dateList);
             }
+            if (date.isAfter(today)) {
+                List<StaffDailyAssignment> windowList = staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(
+                        staffId, today.minusDays(14), today);
+                if (windowList != null) {
+                    assignments.addAll(windowList);
+                }
+            }
         }
 
         for (StaffDailyAssignment a : assignments) {
-            if (a.getReferenceId() == null) continue;
+            if (a.getReferenceId() == null || processedContractIds.contains(a.getReferenceId())) continue;
             boolean isReturnType = a.getTaskType() == AssignmentTaskType.RETURN
                     || a.getTaskType() == AssignmentTaskType.INSPECTION;
             boolean isHandoverFallback = a.getTaskType() == AssignmentTaskType.HANDOVER;
             if (!isReturnType && !isHandoverFallback) continue;
 
-            rentalContractRepository.findById(a.getReferenceId()).ifPresent(c -> {
+            getContractCached(a.getReferenceId(), cache).ifPresent(c -> {
                 if (isHandoverFallback && c.getStatus() != ContractStatus.PENDING_RETURN) {
                     return;
                 }
-                var reqOpt = returnRequestRepository != null
-                        ? returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId())
-                        : Optional.<com.swp391.selfstorage.contract.entity.ReturnRequest>empty();
+                var reqOpt = getReturnRequestCached(c.getId(), cache);
                 if (isHandoverFallback && reqOpt.isPresent()
                         && reqOpt.get().getInspectedBy() != null
                         && !reqOpt.get().getInspectedBy().equals(staffId)) {
@@ -280,20 +353,24 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                         ? reqOpt.get().getRequestedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
                         : c.getReturnDate();
 
-                DailyReturnTaskDto dto = toReturnDto(c);
+                boolean isInspected = reqOpt.isPresent() && reqOpt.get().getInspectedAt() != null;
+                boolean isCompleted = c.getStatus() == ContractStatus.RETURNED
+                        || c.getStatus() == ContractStatus.CLOSED
+                        || isInspected;
                 boolean isTodayTask;
                 boolean isLatePending = false;
 
-                if (!dto.isCompleted()) {
+                if (!isCompleted) {
                     isTodayTask = (workDate != null && workDate.isEqual(date))
-                            || (returnCreatedDate != null && returnCreatedDate.isEqual(date))
-                            || (isToday && returnCreatedDate != null && !returnCreatedDate.isAfter(date));
-                    isLatePending = isToday
-                            && workDate != null
+                            || (returnCreatedDate != null && returnCreatedDate.isEqual(date));
+                    isLatePending = workDate != null
                             && workDate.isBefore(date)
                             && (c.getStatus() == ContractStatus.PENDING_RETURN || c.getStatus() == ContractStatus.OVERDUE);
+                    if (!isTodayTask && !isLatePending && returnCreatedDate != null && returnCreatedDate.isBefore(date)) {
+                        isLatePending = (c.getStatus() == ContractStatus.PENDING_RETURN || c.getStatus() == ContractStatus.OVERDUE);
+                    }
                 } else {
-                    LocalDate inspectedDate = reqOpt.isPresent() && reqOpt.get().getInspectedAt() != null
+                    LocalDate inspectedDate = isInspected
                             ? reqOpt.get().getInspectedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
                             : null;
                     isTodayTask = (inspectedDate != null && inspectedDate.isEqual(date))
@@ -301,12 +378,16 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                 }
 
                 if ((isTodayTask || isLatePending) && processedContractIds.add(c.getId())) {
-                    if (isLatePending && workDate != null) {
-                        dto.setLate(true);
-                        long diff = java.time.temporal.ChronoUnit.DAYS.between(workDate, date);
-                        dto.setDaysLate((int) diff);
-                    }
-                    if (!onlyPending || !dto.isCompleted()) {
+                    if (!onlyPending || !isCompleted) {
+                        DailyReturnTaskDto dto = toReturnDto(c, cache);
+                        if (isLatePending) {
+                            dto.setLate(true);
+                            LocalDate baseDate = workDate != null ? workDate : returnCreatedDate;
+                            if (baseDate != null) {
+                                long diff = java.time.temporal.ChronoUnit.DAYS.between(baseDate, date);
+                                dto.setDaysLate((int) Math.max(1, diff));
+                            }
+                        }
                         result.add(dto);
                     }
                 }
@@ -321,28 +402,39 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                     if (req.getContractId() == null || processedContractIds.contains(req.getContractId())) {
                         continue;
                     }
-                    rentalContractRepository.findById(req.getContractId()).ifPresent(c -> {
+                    LocalDate returnCreatedDate = req.getRequestedAt() != null
+                            ? req.getRequestedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
+                            : req.getRequestedReturnDate();
+                    LocalDate inspectedDate = req.getInspectedAt() != null
+                            ? req.getInspectedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
+                            : null;
+                    boolean isCompleted = req.getInspectedAt() != null;
+                    if (isCompleted) {
+                        boolean include = (inspectedDate != null && inspectedDate.isEqual(date))
+                                || (inspectedDate == null && returnCreatedDate != null && returnCreatedDate.isEqual(date));
+                        if (!include) {
+                            continue;
+                        }
+                    }
+                    getContractCached(req.getContractId(), cache).ifPresent(c -> {
                         if (c.getStatus() == ContractStatus.TERMINATED && c.getCheckinDate() == null) {
                             return;
                         }
-                        LocalDate returnCreatedDate = req.getRequestedAt() != null
-                                ? req.getRequestedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
-                                : req.getRequestedReturnDate();
-                        LocalDate inspectedDate = req.getInspectedAt() != null
-                                ? req.getInspectedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
-                                : null;
-                        DailyReturnTaskDto dto = toReturnDto(c);
+                        boolean isContractCompleted = c.getStatus() == ContractStatus.RETURNED
+                                || c.getStatus() == ContractStatus.CLOSED
+                                || req.getInspectedAt() != null;
                         boolean include;
-                        if (!dto.isCompleted()) {
+                        if (!isContractCompleted) {
                             include = returnCreatedDate == null
                                     || returnCreatedDate.isEqual(date)
-                                    || (isToday && !returnCreatedDate.isAfter(date));
+                                    || !returnCreatedDate.isAfter(date);
                         } else {
                             include = (inspectedDate != null && inspectedDate.isEqual(date))
                                     || (inspectedDate == null && returnCreatedDate != null && returnCreatedDate.isEqual(date));
                         }
                         if (include && processedContractIds.add(c.getId())) {
-                            if (!onlyPending || !dto.isCompleted()) {
+                            if (!onlyPending || !isContractCompleted) {
+                                DailyReturnTaskDto dto = toReturnDto(c, cache);
                                 result.add(dto);
                             }
                         }
@@ -355,6 +447,10 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
     }
 
     private List<DailySupportTaskDto> loadSupportTasks(Long staffId, LocalDate date, boolean onlyPending) {
+        return loadSupportTasks(staffId, date, onlyPending, new RequestCache());
+    }
+
+    private List<DailySupportTaskDto> loadSupportTasks(Long staffId, LocalDate date, boolean onlyPending, RequestCache cache) {
         List<DailySupportTaskDto> result = new ArrayList<>();
         Set<Long> processedRequestIds = new HashSet<>();
         LocalDate today = LocalDate.now(VN_ZONE);
@@ -370,22 +466,24 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
             if (sr.getDescription() != null && sr.getDescription().startsWith("Sự cố bàn giao tiếp đón")) {
                 continue;
             }
-            DailySupportTaskDto dto = toSupportDto(sr);
+            boolean isCompleted = sr.getStatus() == SupportStatus.RESOLVED
+                    || sr.getStatus() == SupportStatus.CLOSED
+                    || sr.getStatus() == SupportStatus.AUTO_CLOSED;
             boolean include = true;
             if (sr.getCreatedAt() != null) {
                 LocalDate createdDate = sr.getCreatedAt().atZoneSameInstant(VN_ZONE).toLocalDate();
                 LocalDate resolvedDate = sr.getResolvedAt() != null
                         ? sr.getResolvedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
                         : null;
-                if (!dto.isCompleted()) {
+                if (!isCompleted) {
                     include = createdDate.isEqual(date) || (isToday && !createdDate.isAfter(date));
                 } else {
                     include = createdDate.isEqual(date) || (resolvedDate != null && resolvedDate.isEqual(date));
                 }
             }
             if (include && processedRequestIds.add(sr.getId())) {
-                if (!onlyPending || !dto.isCompleted()) {
-                    result.add(dto);
+                if (!onlyPending || !isCompleted) {
+                    result.add(toSupportDto(sr, cache));
                 }
             }
         }
@@ -402,9 +500,11 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                         if (sr.getDescription() != null && sr.getDescription().startsWith("Sự cố bàn giao tiếp đón")) {
                             return;
                         }
-                        DailySupportTaskDto dto = toSupportDto(sr);
-                        if (!onlyPending || !dto.isCompleted()) {
-                            result.add(dto);
+                        boolean isCompleted = sr.getStatus() == SupportStatus.RESOLVED
+                                || sr.getStatus() == SupportStatus.CLOSED
+                                || sr.getStatus() == SupportStatus.AUTO_CLOSED;
+                        if (!onlyPending || !isCompleted) {
+                            result.add(toSupportDto(sr, cache));
                         }
                     });
                 }
@@ -415,6 +515,10 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
     }
 
     private DailyCheckInTaskDto toCheckInDto(RentalContract c) {
+        return toCheckInDto(c, null);
+    }
+
+    private DailyCheckInTaskDto toCheckInDto(RentalContract c, RequestCache cache) {
         boolean completed = c.getStatus() == ContractStatus.ACTIVE || c.getCheckinDate() != null;
         String status;
         if (completed) {
@@ -429,25 +533,27 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         String customerName = null;
         String customerPhone = null;
         if (c.getCustomerId() != null) {
-            Optional<AppUser> userOpt = userRepository.findById(c.getCustomerId());
-            if (userOpt.isPresent()) {
-                customerName = userOpt.get().getFullName();
-                customerPhone = userOpt.get().getPhone();
+            AppUser user = getUserCached(c.getCustomerId(), cache);
+            if (user != null) {
+                customerName = user.getFullName();
+                customerPhone = user.getPhone();
             }
         }
 
         String unitCode = null;
         if (c.getStorageUnitId() != null) {
-            unitCode = storageUnitRepository.findById(c.getStorageUnitId())
-                    .map(StorageUnit::getCode)
-                    .orElse(null);
+            StorageUnit unit = getUnitCached(c.getStorageUnitId(), cache);
+            if (unit != null) {
+                unitCode = unit.getCode();
+            }
         }
 
         String facilityName = null;
         if (c.getFacilityId() != null) {
-            facilityName = facilityRepository.findById(c.getFacilityId())
-                    .map(Facility::getName)
-                    .orElse(null);
+            Facility facility = getFacilityCached(c.getFacilityId(), cache);
+            if (facility != null) {
+                facilityName = facility.getName();
+            }
         }
 
         DailyCheckInTaskDto dto = DailyCheckInTaskDto.builder()
@@ -464,7 +570,7 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                 .scheduledDate(c.getStartDate())
                 .status(status)
                 .completed(completed)
-                .checkinGraceDays(resolveCheckinGraceDays(c))
+                .checkinGraceDays(resolveCheckinGraceDays(c, cache))
                 .build();
         dto.setScheduledStartTime(c.getScheduledStartTime());
         dto.setScheduledEndTime(c.getScheduledEndTime());
@@ -472,9 +578,13 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
     }
 
     private DailyReturnTaskDto toReturnDto(RentalContract c) {
+        return toReturnDto(c, null);
+    }
+
+    private DailyReturnTaskDto toReturnDto(RentalContract c, RequestCache cache) {
         boolean isInspected = false;
         if (returnRequestRepository != null) {
-            var reqOpt = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId());
+            var reqOpt = getReturnRequestCached(c.getId(), cache);
             if (reqOpt.isPresent() && reqOpt.get().getInspectedAt() != null) {
                 isInspected = true;
             }
@@ -494,25 +604,27 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         String customerName = null;
         String customerPhone = null;
         if (c.getCustomerId() != null) {
-            Optional<AppUser> userOpt = userRepository.findById(c.getCustomerId());
-            if (userOpt.isPresent()) {
-                customerName = userOpt.get().getFullName();
-                customerPhone = userOpt.get().getPhone();
+            AppUser user = getUserCached(c.getCustomerId(), cache);
+            if (user != null) {
+                customerName = user.getFullName();
+                customerPhone = user.getPhone();
             }
         }
 
         String unitCode = null;
         if (c.getStorageUnitId() != null) {
-            unitCode = storageUnitRepository.findById(c.getStorageUnitId())
-                    .map(StorageUnit::getCode)
-                    .orElse(null);
+            StorageUnit unit = getUnitCached(c.getStorageUnitId(), cache);
+            if (unit != null) {
+                unitCode = unit.getCode();
+            }
         }
 
         String facilityName = null;
         if (c.getFacilityId() != null) {
-            facilityName = facilityRepository.findById(c.getFacilityId())
-                    .map(Facility::getName)
-                    .orElse(null);
+            Facility facility = getFacilityCached(c.getFacilityId(), cache);
+            if (facility != null) {
+                facilityName = facility.getName();
+            }
         }
 
         return DailyReturnTaskDto.builder()
@@ -532,6 +644,10 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
     }
 
     private DailySupportTaskDto toSupportDto(SupportRequest sr) {
+        return toSupportDto(sr, null);
+    }
+
+    private DailySupportTaskDto toSupportDto(SupportRequest sr, RequestCache cache) {
         boolean completed = sr.getStatus() == SupportStatus.RESOLVED
                 || sr.getStatus() == SupportStatus.CLOSED
                 || sr.getStatus() == SupportStatus.AUTO_CLOSED;
@@ -539,10 +655,10 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         String unitCode = null;
         Long facilityId = null;
         if (sr.getStorageUnitId() != null) {
-            Optional<StorageUnit> unitOpt = storageUnitRepository.findById(sr.getStorageUnitId());
-            if (unitOpt.isPresent()) {
-                unitCode = unitOpt.get().getCode();
-                facilityId = unitOpt.get().getFacilityId();
+            StorageUnit unit = getUnitCached(sr.getStorageUnitId(), cache);
+            if (unit != null) {
+                unitCode = unit.getCode();
+                facilityId = unit.getFacilityId();
             }
         }
 
@@ -554,17 +670,18 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
 
         String facilityName = null;
         if (facilityId != null) {
-            facilityName = facilityRepository.findById(facilityId)
-                    .map(Facility::getName)
-                    .orElse(null);
+            Facility facility = getFacilityCached(facilityId, cache);
+            if (facility != null) {
+                facilityName = facility.getName();
+            }
         }
         String customerName = null;
         String customerPhone = null;
         if (sr.getCustomerId() != null) {
-            Optional<AppUser> userOpt = userRepository.findById(sr.getCustomerId());
-            if (userOpt.isPresent()) {
-                customerName = userOpt.get().getFullName();
-                customerPhone = userOpt.get().getPhone();
+            AppUser user = getUserCached(sr.getCustomerId(), cache);
+            if (user != null) {
+                customerName = user.getFullName();
+                customerPhone = user.getPhone();
             }
         }
 

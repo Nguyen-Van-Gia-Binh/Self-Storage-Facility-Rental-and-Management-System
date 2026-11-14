@@ -161,6 +161,24 @@ async function setupCommonRoutes(page: Page) {
     });
   });
 
+  await page.route('**/api/v1/*support-requests*', async (route) => {
+    const url = route.request().url();
+    if (url.includes('staff-workload')) {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: { content: [], totalElements: 0 },
+        content: [],
+        totalElements: 0,
+      }),
+    });
+  });
+
   await page.route('**/api/v1/contracts/*/financial-summary', async (route) => {
     await route.fulfill({
       status: 200,
@@ -184,6 +202,9 @@ async function setupCommonRoutes(page: Page) {
       contentType: 'application/json',
       body: JSON.stringify({
         success: true,
+        orderCode: 998899,
+        checkoutUrl: 'https://sandbox.vnpayment.vn/test',
+        qrCode: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="gray"/></svg>',
         data: {
           checkoutUrl: 'https://sandbox.vnpayment.vn/test',
           qrCode: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="gray"/></svg>',
@@ -227,6 +248,401 @@ async function dismissEarlyRenewalModalIfOpen(page: Page) {
     await page.waitForTimeout(300);
   }
 }
+
+// =============================================================================
+// FLOW 3 MASTER E2E: TOÀN TRÌNH 4 BƯỚC TRẢ SỚM WIN-WIN KHÉP KÍN (BR-RET-01..11)
+// =============================================================================
+
+test.describe('Flow 3 Master E2E: Vòng đời 4 bước Trả sớm Win-Win khép kín (Customer -> FM -> Staff -> FM)', () => {
+  test('TC-F3-MASTER-E2E: Toàn trình 4 bước Trả sớm Win-Win khép kín (1. Khách báo trả sớm -> 2. FM phân bổ FS -> 3. FS nghiệm thu hiện trường -> 4. FM duyệt hoàn cọc & giải phóng kho)', async ({ page }) => {
+    // -------------------------------------------------------------------------
+    // BƯỚC 1: KHÁCH HÀNG BÁO TRẢ KHO SỚM TRƯỚC HẠN (BR-RET-06 Fair Settlement Win-Win)
+    // -------------------------------------------------------------------------
+    await test.step('1. Khách hàng báo trả kho sớm trước hạn dài (Hoàn 100% tiền thuê dư, phạt cọc)', async () => {
+      await authenticateAs(page, 'CUSTOMER', { id: 101, fullName: 'Nguyễn Văn An' });
+      await setupCommonRoutes(page);
+
+      const today = new Date();
+      const endDateIn60Days = new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      await page.route('**/api/v1/customers/me/rentals*', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              content: [
+                {
+                  contractId: 999,
+                  contractCode: 'CTR-2026-WINWIN',
+                  facilityId: 1,
+                  facilityName: 'Cơ sở Quận 1 (Trụ sở chính)',
+                  storageUnitId: 99,
+                  storageUnitCode: 'Q1-A999',
+                  unitTypeName: 'Kho Tiêu Chuẩn M',
+                  startDate: '2026-05-12',
+                  endDateExclusive: endDateIn60Days,
+                  monthlyPrice: 1200000,
+                  depositAmount: 1200000,
+                  depositBalance: 1200000,
+                  status: 'ACTIVE',
+                  accessCode: '998899',
+                },
+              ],
+              totalElements: 1,
+            },
+          }),
+        });
+      });
+
+      let returnNoticeSubmitted = false;
+      await page.route('**/api/v1/contracts/999/return-notices', async (route) => {
+        returnNoticeSubmitted = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              id: 99,
+              contractId: 999,
+              intendedReturnDate: endDateIn60Days,
+              status: 'PENDING',
+            },
+          }),
+        });
+      });
+
+      await page.goto('/customer/my-units');
+      await dismissEarlyRenewalModalIfOpen(page);
+
+      const moreMenuBtn = page.locator('button[title="Thao tác khác"]').first();
+      await moreMenuBtn.click();
+      const scheduleReturnBtn = page.getByRole('button', { name: 'Báo trả kho' }).first();
+      await scheduleReturnBtn.click();
+
+      await expect(page.getByRole('heading', { name: 'Xác Nhận Đã Dọn Đồ & Báo Trả Kho' })).toBeVisible();
+
+      // Tick các checkbox cam kết Win-Win
+      const checkboxes = page.locator('form input[type="checkbox"]');
+      for (let i = 0; i < (await checkboxes.count()); i++) {
+        await checkboxes.nth(i).check();
+      }
+
+      const submitBtn = page.getByRole('button', { name: 'Tôi đã dọn xong — Báo trả kho' }).first();
+      await expect(submitBtn).toBeEnabled();
+      await submitBtn.click();
+
+      await expect(page.locator('text=Đã gửi yêu cầu trả kho thành công').first()).toBeVisible();
+      expect(returnNoticeSubmitted).toBe(true);
+    });
+
+    // -------------------------------------------------------------------------
+    // BƯỚC 2: QUẢN LÝ CƠ SỞ (FM) PHÂN BỔ NHÂN VIÊN TIẾP ĐÓN HIỆN TRƯỜNG (BR-RET-11, UC-F3-03)
+    // -------------------------------------------------------------------------
+    await test.step('2. Quản lý cơ sở (FM) phân bổ Nhân viên tiếp đón (FS) trên Bảng điều phối nhân sự', async () => {
+      await authenticateAs(page, 'MANAGER', { id: 301, fullName: 'Nguyễn Văn Gia Bình', facilityId: 1 });
+      await setupCommonRoutes(page);
+
+      await page.route('**/api/v1/facilities/my-assigned-facilities', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: [{ id: 1, name: 'Cơ sở Quận 1 (Trụ sở chính)', code: 'FAC-Q1' }],
+          }),
+        });
+      });
+
+      await page.route('**/api/v1/support-requests/staff-workload?facilityId=1', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: [
+              {
+                staffId: 201,
+                staffName: 'Trần Văn Hùng',
+                staffEmail: 'staff.q1@smartstorage.vn',
+                staffPhone: '0901112233',
+                facilityId: 1,
+                activeTaskCount: 1,
+                completedTaskCount: 3,
+                shift: 'Ca sáng (07:00 - 15:30)',
+                status: 'AVAILABLE',
+              },
+            ],
+          }),
+        });
+      });
+
+      await page.route('**/api/v1/support-requests?facilityId=1', async (route) => {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) });
+      });
+
+      await page.route('**/api/v1/contracts*status=PENDING_CHECK_IN*', async (route) => {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { content: [], totalElements: 0 } }) });
+      });
+
+      await page.route('**/api/v1/contracts*status=PENDING_RETURN*', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              content: [
+                {
+                  id: 999,
+                  code: 'CTR-2026-WINWIN',
+                  customerId: 101,
+                  customerName: 'Nguyễn Văn An',
+                  customerPhone: '0901234567',
+                  facilityId: 1,
+                  facilityName: 'Cơ sở Quận 1 (Trụ sở chính)',
+                  storageUnitId: 99,
+                  storageUnitCode: 'Q1-A999',
+                  unitTypeName: 'Kho Tiêu Chuẩn M',
+                  depositAmount: 1200000,
+                  status: 'PENDING_RETURN',
+                  assignedStaffId: null,
+                  assignedStaffName: null,
+                  isInspected: false,
+                  returnRequestCreatedAt: new Date().toISOString(),
+                },
+              ],
+              totalElements: 1,
+            },
+          }),
+        });
+      });
+
+      let staffAssigned = false;
+      await page.route('**/api/v1/contracts/999/assign-return', async (route) => {
+        staffAssigned = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            message: 'Phân công nhân viên nghiệm thu thành công',
+            data: {
+              id: 999,
+              code: 'CTR-2026-WINWIN',
+              assignedStaffId: 201,
+              assignedStaffName: 'Trần Văn Hùng',
+            },
+          }),
+        });
+      });
+
+      await page.route('**/api/v1/staff-assignments', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, message: 'Phân công thành công', data: { staffName: 'Trần Văn Hùng' } }),
+        });
+      });
+
+      await page.goto('/manager/staff-assignment');
+      await expect(page.locator('text=CTR-2026-WINWIN').first()).toBeVisible();
+
+      // Mở modal phân công từ bảng nhiệm vụ
+      const assignBtn = page.locator('table button:has-text("Phân công")').first();
+      await assignBtn.click();
+      await expect(page.getByRole('heading', { name: /Phân công Nhân sự Cơ sở/i })).toBeVisible();
+
+      // Chọn nhân viên Trần Văn Hùng
+      const staffRadio = page.locator('input[name="assignedStaff"][value="201"]');
+      if (await staffRadio.isVisible()) {
+        await staffRadio.check();
+      } else {
+        await page.locator('text=Trần Văn Hùng').first().click();
+      }
+
+      await page.locator('textarea').fill('Tiến hành nghiệm thu ô kho trước 16h');
+
+      const confirmAssignBtn = page.getByRole('button', { name: 'Gán nhiệm vụ ngay' });
+      await confirmAssignBtn.click();
+
+      await expect(page.getByRole('heading', { name: /Phân công Nhân sự Cơ sở/i })).not.toBeVisible();
+      expect(staffAssigned).toBe(true);
+    });
+
+    // -------------------------------------------------------------------------
+    // BƯỚC 3: NHÂN VIÊN TIẾP ĐÓN (FS) NGHIỆM THU Ô KHO & KHÁCH KÝ SỐ (BR-RET-03, 08)
+    // -------------------------------------------------------------------------
+    await test.step('3. Nhân viên tiếp đón (FS) nghiệm thu ô kho & Khách hàng ký số xác nhận hiện trường', async () => {
+      await authenticateAs(page, 'STAFF', { id: 201, fullName: 'Trần Văn Hùng', facilityId: 1 });
+      await setupCommonRoutes(page);
+
+      await page.route('**/api/v1/contracts*status=PENDING_RETURN*', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              content: [
+                {
+                  id: 999,
+                  code: 'CTR-2026-WINWIN',
+                  customerId: 101,
+                  customerName: 'Nguyễn Văn An',
+                  customerPhone: '0901234567',
+                  facilityId: 1,
+                  facilityName: 'Cơ sở Quận 1 (Trụ sở chính)',
+                  storageUnitId: 99,
+                  storageUnitCode: 'Q1-A999',
+                  unitTypeName: 'Kho Tiêu Chuẩn M',
+                  depositAmount: 1200000,
+                  status: 'PENDING_RETURN',
+                  assignedStaffId: 201,
+                  isInspected: false,
+                },
+              ],
+              totalElements: 1,
+            },
+          }),
+        });
+      });
+
+      await page.route('**/api/v1/contracts/999/settlement-preview', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              contractId: 999,
+              depositAmount: 1200000,
+              damageCost: 0,
+              overdueFee: 0,
+              unpaidExtraCharges: 0,
+              depositRefundAmount: 1200000,
+              payableAmount: 0,
+            },
+          }),
+        });
+      });
+
+      let inspectionSubmitted = false;
+      await page.route('**/api/v1/contracts/999/return-inspections', async (route) => {
+        inspectionSubmitted = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              contractId: 999,
+              inspectedAt: new Date().toISOString(),
+              condition: 'GOOD',
+              damageCost: 0,
+              estimatedDepositRefund: 1200000,
+            },
+          }),
+        });
+      });
+
+      await page.goto('/staff/return?id=999');
+      await expect(page.locator('text=Q1-A999').first()).toBeVisible();
+
+      // Ký số xác nhận nhanh
+      const sampleSignBtn = page.getByRole('button', { name: 'Ký mẫu nhanh' }).first();
+      if (await sampleSignBtn.isVisible()) {
+        await sampleSignBtn.click();
+      }
+
+      const submitInspectionBtn = page.getByRole('button', { name: /Nộp biên bản/i }).first();
+      await submitInspectionBtn.click();
+
+      await expect(page.locator('text=Nghiệm thu trả kho hoàn tất!')).toBeVisible();
+      expect(inspectionSubmitted).toBe(true);
+    });
+
+    // -------------------------------------------------------------------------
+    // BƯỚC 4: QUẢN LÝ CƠ SỞ (FM) PHÊ DUYỆT QUYẾT TOÁN & GIẢI PHÓNG Ô KHO (BR-RET-05, 09)
+    // -------------------------------------------------------------------------
+    await test.step('4. Quản lý cơ sở (FM) duyệt quyết toán hoàn cọc, thu hồi PIN & giải phóng ô kho sang CLEANING', async () => {
+      await authenticateAs(page, 'MANAGER', { id: 301, fullName: 'Nguyễn Văn Gia Bình', facilityId: 1 });
+      await setupCommonRoutes(page);
+
+      await page.route('**/api/v1/contracts/999', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              id: 999,
+              code: 'CTR-2026-WINWIN',
+              customerName: 'Nguyễn Văn An',
+              facilityId: 1,
+              facilityName: 'Cơ sở Quận 1 (Trụ sở chính)',
+              storageUnitCode: 'Q1-A999',
+              unitTypeName: 'Kho Tiêu Chuẩn M',
+              depositAmount: 1200000,
+              depositBalance: 1200000,
+              status: 'PENDING_RETURN',
+              isInspected: true,
+              inspectionDone: true,
+            },
+          }),
+        });
+      });
+
+      await page.route('**/api/v1/contracts/999/settlement-preview', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              contractId: 999,
+              depositAmount: 1200000,
+              damageCost: 0,
+              overdueFee: 0,
+              unpaidExtraCharges: 0,
+              depositRefundAmount: 1200000,
+              payableAmount: 0,
+            },
+          }),
+        });
+      });
+
+      let settlementApproved = false;
+      await page.route('**/api/v1/contracts/999/settlement-approval', async (route) => {
+        settlementApproved = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            message: 'Đã phê duyệt quyết toán hoàn cọc 1.200.000 đ thành công.',
+          }),
+        });
+      });
+
+      await page.goto('/manager/contracts/999');
+
+      const approveBtn = page.getByRole('button', { name: /Duyệt quyết toán & Hoàn cọc/i }).first();
+      await expect(approveBtn).toBeVisible();
+      await approveBtn.click();
+
+      await expect(page.locator('text=Bảng tính quyết toán hoàn cọc')).toBeVisible();
+      await expect(page.locator('text=1.200.000').first()).toBeVisible();
+
+      const confirmApproveBtn = page.getByRole('button', { name: 'Duyệt quyết toán & Hoàn cọc' }).last();
+      await confirmApproveBtn.click();
+
+      expect(settlementApproved).toBe(true);
+    });
+  });
+});
 
 // =============================================================================
 // FLOW 3.0: TRA CỨU Ô KHO & THÔNG TIN HỢP ĐỒNG (UC-F3-01..04)
@@ -807,7 +1223,7 @@ test.describe('Flow 3.2: Hủy yêu cầu trả kho', () => {
   test('TC-F3-02D: [Security] Khách hàng B dùng token cố tình hủy yêu cầu của Khách hàng A — Chặn 403', async ({ page }) => {
     await page.route('**/api/v1/contracts/501/cancel-return', async (route) => {
       await route.fulfill({
-        status: 403,
+        status: 403, 
         contentType: 'application/json',
         body: JSON.stringify({
           success: false,

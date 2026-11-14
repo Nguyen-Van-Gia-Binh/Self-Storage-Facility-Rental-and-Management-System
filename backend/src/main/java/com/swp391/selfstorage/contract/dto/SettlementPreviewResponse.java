@@ -13,4 +13,5 @@ public class SettlementPreviewResponse {
     private long payableAmount;       // max(0, (damage + overdue + unpaid) - deposit)
     private long earlyRentRefund;     // BR-RET-06: Phần tiền thuê hoàn lại của thời gian chưa dùng (100%)
     private boolean earlyReturn;      // BR-RET-06: Đánh dấu trả kho sớm (phạt 100% cọc)
+    private Long pendingSettlementOrderCode; // Mã đơn thu nợ quyết toán đang chờ thanh toán (nếu có)
 }

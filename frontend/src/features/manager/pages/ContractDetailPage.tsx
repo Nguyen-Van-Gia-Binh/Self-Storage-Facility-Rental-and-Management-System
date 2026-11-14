@@ -20,9 +20,10 @@ import {
   UserCheck,
   MapPin,
 } from 'lucide-react';
-import { getManagerContracts, getManagerContractById, reassignStorageUnit } from '@/api/contract';
+import { getManagerContracts, getManagerContractById, reassignStorageUnit, getSettlementPreview, completeSettlementPayment } from '@/api/contract';
 import type { ManagerContractItem } from '@/types/contractManager';
 import type { StorageUnitResponse } from '@/types/unit';
+import type { SettlementPreviewData } from '@/types';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { StatusBadge } from '../components/StatusBadge';
 import { OverdueAlertBanner } from '../components/OverdueAlertBanner';
@@ -58,6 +59,16 @@ export const ContractDetailPage: React.FC = () => {
   const [eContractModalOpen, setEContractModalOpen] = useState(false);
   const [floorPlanOpen, setFloorPlanOpen] = useState(false);
 
+  // Feedback & Settlement Debt state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [settlementPreview, setSettlementPreview] = useState<SettlementPreviewData | null>(null);
+  const [confirmingCash, setConfirmingCash] = useState<boolean>(false);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 6000);
+  };
+
   const loadData = useCallback(
     async (isManual = false) => {
       if (!contractIdNum) return;
@@ -66,22 +77,40 @@ export const ContractDetailPage: React.FC = () => {
       setError(null);
 
       try {
+        let loadedContract: ManagerContractItem | null = null;
         try {
           const direct = await getManagerContractById(contractIdNum);
           if (direct && direct.id) {
-            setContract(direct);
-            return;
+            loadedContract = direct;
           }
         } catch (singleErr) {
           console.warn('Lỗi getManagerContractById, fallback qua danh mục:', singleErr);
         }
 
-        const all = await getManagerContracts({ status: 'ALL' });
-        const found = (all || []).find((c) => c.id === contractIdNum) || null;
-        if (!found) {
+        if (!loadedContract) {
+          const all = await getManagerContracts({ status: 'ALL' });
+          loadedContract = (all || []).find((c) => c.id === contractIdNum) || null;
+        }
+
+        if (!loadedContract) {
           setError(`Không tìm thấy hợp đồng #${contractIdNum} trong các cơ sở được phân công.`);
         } else {
-          setContract(found);
+          setContract(loadedContract);
+          // Nạp bảng tính quyết toán nếu hợp đồng đang ở chu trình trả kho / quá hạn / chấm dứt
+          if (
+            loadedContract.status !== 'CLOSED' &&
+            (loadedContract.isInspected ||
+              loadedContract.status === 'PENDING_RETURN' ||
+              (loadedContract.status as string) === 'INSPECTED' ||
+              loadedContract.status === 'OVERDUE' ||
+              loadedContract.status === 'TERMINATED')
+          ) {
+            getSettlementPreview(loadedContract.id)
+              .then(setSettlementPreview)
+              .catch(() => setSettlementPreview(null));
+          } else {
+            setSettlementPreview(null);
+          }
         }
       } catch (err) {
         console.error('Lỗi khi tải chi tiết hợp đồng:', err);
@@ -93,6 +122,22 @@ export const ContractDetailPage: React.FC = () => {
     },
     [contractIdNum]
   );
+
+  const handleCashConfirm = async () => {
+    if (!settlementPreview?.pendingSettlementOrderCode || !contract) return;
+    try {
+      setConfirmingCash(true);
+      await completeSettlementPayment(settlementPreview.pendingSettlementOrderCode);
+      showToast(
+        `Đã xác nhận thu tiền mặt ${settlementPreview.payableAmount.toLocaleString('vi-VN')} đ tại quầy! Hợp đồng đã hoàn tất thanh lý (CLOSED).`
+      );
+      loadData(true);
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Không thể xác nhận thanh toán tiền mặt.');
+    } finally {
+      setConfirmingCash(false);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -172,6 +217,14 @@ export const ContractDetailPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3 border border-emerald-500/30 animate-in slide-in-from-top duration-200">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          <span className="text-xs font-semibold">{toastMessage}</span>
+        </div>
+      )}
+
       {/* Breadcrumb Cấp 3 */}
       <Breadcrumb
         items={[
@@ -443,6 +496,67 @@ export const ContractDetailPage: React.FC = () => {
         </div>
       )}
 
+      {/* Banner Quyết toán phát sinh công nợ thiếu (BR-RET-04) */}
+      {isSettlementReady && settlementPreview && settlementPreview.payableAmount > 0 && contract.status !== 'CLOSED' && (
+        <div className="bg-purple-50/90 border border-purple-300 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-purple-950 shadow-2xs animate-in fade-in duration-200">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-purple-100 text-purple-700 shrink-0 mt-0.5">
+              <AlertCircle className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="text-sm font-bold text-purple-950">
+                  Phát sinh công nợ bồi thường vượt cọc (+{settlementPreview.payableAmount.toLocaleString('vi-VN')} đ)
+                </h4>
+                {settlementPreview.pendingSettlementOrderCode ? (
+                  <span className="font-mono text-[11px] font-bold bg-purple-200/80 text-purple-900 px-2 py-0.5 rounded">
+                    Mã thu nợ PayOS/VietQR: #{settlementPreview.pendingSettlementOrderCode}
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
+                    Chưa duyệt chốt nợ
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-purple-800 mt-1 leading-relaxed">
+                Chi phí khắc phục ({settlementPreview.unpaidExtraCharges.toLocaleString('vi-VN')} đ) vượt tiền cọc ({settlementPreview.depositAmount.toLocaleString('vi-VN')} đ).
+                Theo quy tắc <strong>BR-RET-04</strong>, hợp đồng được giữ mở để chờ khách thanh toán qua VietQR/VNPay trên ứng dụng hoặc xác nhận thu tiền mặt tại quầy.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {settlementPreview.pendingSettlementOrderCode && (
+              <button
+                type="button"
+                onClick={handleCashConfirm}
+                disabled={confirmingCash}
+                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+                title="Khách thanh toán tiền mặt hoặc quẹt thẻ trực tiếp tại quầy"
+              >
+                {confirmingCash ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang chốt...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Thu tiền mặt tại quầy & Đóng HĐ</span>
+                  </>
+                )}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setSettlementModalOpen(true)}
+              className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Xem chi tiết quyết toán</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Grid: 2 Cột Đối xứng Desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Cột Trái: Thông tin Hợp đồng + Khách hàng */}
@@ -644,12 +758,18 @@ export const ContractDetailPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setSettlementModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className={`inline-flex items-center gap-1.5 px-4 py-2 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer ${
+                settlementPreview && settlementPreview.payableAmount > 0
+                  ? 'bg-purple-600 hover:bg-purple-700'
+                  : 'bg-emerald-600 hover:bg-emerald-700'
+              }`}
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>
                 {isOverdueTerminated
                   ? 'Quyết toán Kho Tổng & Đóng HĐ'
+                  : settlementPreview && settlementPreview.payableAmount > 0
+                  ? `Chờ khách nộp bù (+${settlementPreview.payableAmount.toLocaleString('vi-VN')} đ)`
                   : 'Duyệt quyết toán & Hoàn cọc'}
               </span>
             </button>
@@ -769,8 +889,9 @@ export const ContractDetailPage: React.FC = () => {
           isOpen={settlementModalOpen}
           contract={contract}
           onClose={() => setSettlementModalOpen(false)}
-          onSuccess={() => {
+          onSuccess={(_contractId, message) => {
             setSettlementModalOpen(false);
+            showToast(message || 'Đã ghi nhận quyết toán thành công!');
             loadData(true);
           }}
         />

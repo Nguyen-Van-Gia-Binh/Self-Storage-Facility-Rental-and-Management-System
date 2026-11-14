@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, CheckCircle, AlertCircle, RotateCcw, PlusCircle, Trash2 } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, RotateCcw, PlusCircle, Trash2, RefreshCw } from 'lucide-react';
 import type { ManagerContractItem } from '@/types/contractManager';
 import type { SettlementPreviewData } from '@/types';
-import { approveSettlementRefund, getSettlementPreview } from '@/api/contract';
+import { approveSettlementRefund, getSettlementPreview, completeSettlementPayment } from '@/api/contract';
 
 interface SettlementApprovalModalProps {
   isOpen: boolean;
@@ -23,6 +23,7 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
   const [additionalCost, setAdditionalCost] = useState<number>(0);
   const [additionalCostReason, setAdditionalCostReason] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [confirmingCash, setConfirmingCash] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<SettlementPreviewData | null>(null);
 
@@ -85,13 +86,37 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
         penaltyAmount: overdueFee,
         note: combinedNote || undefined,
       });
-      onSuccess(contract.id, res.message);
+
+      const successMsg = payableAmount > 0
+        ? `Đã ghi nhận công nợ bồi thường (+${payableAmount.toLocaleString('vi-VN')} đ). Hệ thống đang chờ khách hàng thanh toán để tự động thanh lý hợp đồng.`
+        : (res.message || 'Phê duyệt quyết toán và hoàn cọc thành công');
+
+      onSuccess(contract.id, successMsg);
       onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Đã có lỗi xảy ra khi phê duyệt quyết toán.';
       setError(msg);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCashPaymentConfirm = async () => {
+    if (!preview?.pendingSettlementOrderCode) return;
+    setConfirmingCash(true);
+    setError(null);
+    try {
+      await completeSettlementPayment(preview.pendingSettlementOrderCode);
+      onSuccess(
+        contract.id,
+        `Đã xác nhận thu tiền mặt ${payableAmount.toLocaleString('vi-VN')} đ tại quầy! Hợp đồng đã đóng tất toán (CLOSED).`
+      );
+      onClose();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Không thể xác nhận thanh toán tiền mặt.';
+      setError(msg);
+    } finally {
+      setConfirmingCash(false);
     }
   };
 
@@ -285,6 +310,28 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
                 {payableAmount > 0 ? `+${payableAmount.toLocaleString('vi-VN')} đ` : `${netRefund.toLocaleString('vi-VN')} đ`}
               </span>
             </div>
+
+            {payableAmount > 0 && (
+              <div className="p-3 bg-amber-50/90 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-1.5 mt-2">
+                <div className="flex items-center gap-1.5 font-bold text-amber-800">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>Quy tắc cấn trừ nợ bồi thường (BR-RET-04)</span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-amber-800/90">
+                  Phụ phí hư hại vượt quá tiền cọc, khách hàng phải nộp bổ sung{' '}
+                  <strong className="text-rose-700">+{payableAmount.toLocaleString('vi-VN')} đ</strong>.
+                  Hệ thống giữ hợp đồng ở trạng thái chờ khách thanh toán qua VietQR/VNPay trên app hoặc quản lý xác nhận thu tiền mặt tại quầy để tự động đóng hợp đồng.
+                </p>
+                {preview?.pendingSettlementOrderCode && (
+                  <div className="mt-1 pt-1.5 border-t border-amber-200/80 flex items-center justify-between text-[11px]">
+                    <span className="font-medium text-amber-700">Mã đơn thu nợ PayOS/VietQR:</span>
+                    <span className="font-mono font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded">
+                      #{preview.pendingSettlementOrderCode}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Ghi chú phê duyệt */}
@@ -307,34 +354,61 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
         </div>
 
         {/* Footer actions */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0">
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
           <button
             type="button"
             onClick={onClose}
-            disabled={loading}
-            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-xl border border-slate-300 hover:bg-white transition-colors"
+            disabled={loading || confirmingCash}
+            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-xl border border-slate-300 hover:bg-white transition-colors cursor-pointer"
           >
             Đóng
           </button>
-          <button
-            type="button"
-            onClick={handleApprove}
-            disabled={loading || preview == null}
-            className="px-5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-1.5"
-          >
-            {loading ? (
-              'Đang xử lý...'
-            ) : (
-              <>
-                <CheckCircle className="w-3.5 h-3.5" />
-                {payableAmount > 0
-                  ? 'Ghi nhận phí phát sinh & Chờ khách thanh toán'
-                  : isOverdueTerminated
-                  ? 'Chốt tất toán & Đóng hợp đồng (CLOSED)'
-                  : 'Duyệt quyết toán & Hoàn cọc'}
-              </>
+          <div className="flex items-center gap-2">
+            {payableAmount > 0 && preview?.pendingSettlementOrderCode && (
+              <button
+                type="button"
+                onClick={handleCashPaymentConfirm}
+                disabled={loading || confirmingCash}
+                className="px-4 py-2 text-xs font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+                title="Khách nộp tiền mặt hoặc chuyển khoản tại quầy cho Quản lý"
+              >
+                {confirmingCash ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    Đang chốt HĐ...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                    Khách nộp tiền mặt tại quầy & Đóng HĐ
+                  </>
+                )}
+              </button>
             )}
-          </button>
+
+            <button
+              type="button"
+              onClick={handleApprove}
+              disabled={loading || confirmingCash || preview == null}
+              className="px-5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+            >
+              {loading ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  Đang ghi nhận...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  {payableAmount > 0
+                    ? 'Ghi nhận nợ & Chờ khách quét QR'
+                    : isOverdueTerminated
+                    ? 'Chốt tất toán & Đóng hợp đồng (CLOSED)'
+                    : 'Duyệt quyết toán & Hoàn cọc'}
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>,

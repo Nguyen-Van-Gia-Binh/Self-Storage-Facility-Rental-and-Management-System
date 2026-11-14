@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Building2, RotateCcw } from 'lucide-react';
 import type { StaffDailyTaskReport } from '@/types';
-import { getStaffDailyTasks } from '@/api/staff';
+import { getStaffDailyTasks, invalidateStaffTasksCache } from '@/api/staff';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import { DailyTasksOverview } from '../components/DailyTasksOverview';
 import { useCurrentUser } from '@/utils/useCurrentUser';
@@ -19,13 +19,31 @@ export const StaffDashboardPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(initialDate);
   const [loading, setLoading] = useState(true);
 
+  // In-memory cache cho ca trực giúp bấm đổi ngày đạt 0ms không phải chờ đợi
+  const taskCacheRef = React.useRef<Map<string, StaffDailyTaskReport>>(new Map());
+
   // Danh sách cơ sở nhân viên phụ trách và cơ sở đang chọn lọc
   const [facilities, setFacilities] = useState<Array<{ id: number; name: string }>>([]);
   const [selectedFacilityId, setSelectedFacilityId] = useState<number>(initialFacilityId);
 
+  // Đồng bộ hai chiều giữa URL searchParams và selectedDate khi người dùng bấm Back/Forward hoặc đổi URL
+  useEffect(() => {
+    const urlDate = searchParams.get('date');
+    if (urlDate && urlDate !== selectedDate) {
+      setSelectedDate(urlDate);
+    }
+  }, [searchParams, selectedDate]);
+
   // Đồng bộ searchParams khi chọn ngày hoặc cơ sở để giữ tiến độ ca trực
   const handleDateChange = (newDate: string) => {
     setSelectedDate(newDate);
+    const cacheKey = `${staffId}_${newDate}`;
+    if (taskCacheRef.current.has(cacheKey)) {
+      setTasks(taskCacheRef.current.get(cacheKey)!);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('date', newDate);
@@ -64,10 +82,19 @@ export const StaffDashboardPage: React.FC = () => {
 
   useEffect(() => {
     if (!staffId) return;
+    const cacheKey = `${staffId}_${selectedDate}`;
+    if (taskCacheRef.current.has(cacheKey)) {
+      setTasks(taskCacheRef.current.get(cacheKey)!);
+      setLoading(false);
+      return;
+    }
+
     let ignore = false;
+    setLoading(true);
     getStaffDailyTasks(staffId, selectedDate)
       .then((data) => {
         if (!ignore) {
+          taskCacheRef.current.set(cacheKey, data);
           setTasks(data);
           setLoading(false);
         }
@@ -86,9 +113,12 @@ export const StaffDashboardPage: React.FC = () => {
 
   const handleRefresh = async () => {
     if (!staffId) return;
+    taskCacheRef.current.clear();
+    invalidateStaffTasksCache(staffId);
     setLoading(true);
     try {
       const data = await getStaffDailyTasks(staffId, selectedDate);
+      taskCacheRef.current.set(`${staffId}_${selectedDate}`, data);
       setTasks(data);
     } catch (err) {
       console.error('Lỗi khi làm mới danh sách công việc:', err);

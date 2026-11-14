@@ -583,6 +583,16 @@ export async function approveSettlementRefund(
   };
 }
 
+/**
+ * Xác nhận khách đã thanh toán nợ quyết toán (nộp tiền mặt tại quầy hoặc PayOS/VietQR)
+ * POST /api/v1/payments/vnpay/mock-complete/{orderCode}
+ */
+export async function completeSettlementPayment(orderCode: number): Promise<void> {
+  await apiClient<any>(`/payments/vnpay/mock-complete/${orderCode}`, {
+    method: 'POST',
+  });
+}
+
 export interface CreateDirectContractRequest {
   customerId?: number;
   customerFullName?: string;

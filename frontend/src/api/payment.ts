@@ -160,10 +160,11 @@ export async function createCheckout(payload: CheckoutPayload): Promise<Checkout
     returnUrl: payload.returnUrl,
   };
 
-  return await apiClient<CheckoutResult>('/payments/checkout', {
+  const res = await apiClient<any>('/payments/checkout', {
     method: 'POST',
     body: JSON.stringify(requestBody),
   });
+  return (res && typeof res === 'object' && 'data' in res && res.data) ? res.data : res;
 }
 
 /**
@@ -171,7 +172,8 @@ export async function createCheckout(payload: CheckoutPayload): Promise<Checkout
  * Truy vấn trạng thái thực tế từ Backend và VNPay Return Callback
  */
 export async function pollPaymentStatus(orderCode: number): Promise<PaymentStatusResult> {
-  return await apiClient<PaymentStatusResult>(`/payments/order/${orderCode}/status`);
+  const res = await apiClient<any>(`/payments/order/${orderCode}/status`);
+  return (res && typeof res === 'object' && 'data' in res && res.data) ? res.data : res;
 }
 
 

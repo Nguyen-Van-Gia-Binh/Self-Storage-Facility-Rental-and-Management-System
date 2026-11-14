@@ -235,7 +235,7 @@ export const StaffReturnDetailView: React.FC<StaffReturnDetailViewProps> = ({
             <div className="pt-3 border-t border-slate-100 space-y-2 text-xs">
               <div className="flex items-center justify-between text-slate-600">
                 <span className="flex items-center gap-1.5 text-slate-500">
-                  <Clock className="w-3.5 h-3.5 text-blue-600" /> Giờ hẹn trả:
+                  <Clock className="w-3.5 h-3.5 text-blue-600" /> Thời gian xử lý:
                 </span>
                 <strong className="text-slate-900 font-medium">
                   {task.appointmentTime || 'Trong ca trực'}
