@@ -415,8 +415,6 @@ class StaffDailyTaskServiceTest {
 
         // 1. Khi xem ca trực hôm nay: task dời sang tương lai KHÔNG được xuất hiện
         when(staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(org.mockito.ArgumentMatchers.eq(8L), any(), org.mockito.ArgumentMatchers.eq(today)))
-                .thenReturn(Collections.emptyList());
-        when(staffDailyAssignmentRepository.findByStaffId(8L))
                 .thenReturn(List.of(assignment));
         when(rentalContractRepository.findById(701L)).thenReturn(Optional.of(rescheduledContract));
         when(supportRequestRepository.findAllByAssignedStaffId(8L)).thenReturn(Collections.emptyList());
