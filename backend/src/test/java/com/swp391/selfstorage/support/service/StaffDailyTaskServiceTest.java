@@ -395,4 +395,42 @@ class StaffDailyTaskServiceTest {
         StaffDailyTasksResponse pastRes = staffDailyTaskService.getDailyTasks(8L, pastDate, false, staffPrincipal);
         assertThat(pastRes.getCheckInTasks()).isEmpty();
     }
+
+    @Test
+    @DisplayName("BR-RES-06: Khách dời ngày nhận kho sang tương lai -> Task không xuất hiện ở ca trực hôm nay, chỉ xuất hiện ở ngày mới")
+    void shouldExcludeCheckInTaskToday_whenCustomerRescheduledToFutureDate() {
+        LocalDate today = LocalDate.now(StaffDailyTaskServiceImpl.VN_ZONE);
+        LocalDate futureDate = today.plusDays(5);
+
+        when(userRepository.findById(8L)).thenReturn(Optional.of(sampleStaff));
+        when(userFacilityAssignmentRepository.findFacilityIdsByUserId(8L)).thenReturn(List.of(1L));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(sampleFacility));
+
+        RentalContract rescheduledContract = createContract(701L, "CTR-RESCHEDULED", 3001L, 15L, 1L, 101L,
+                futureDate, futureDate.plusMonths(1), ContractStatus.PENDING_CHECK_IN, null, null);
+
+        StaffDailyAssignment assignment = StaffDailyAssignment.builder()
+                .id(99L).staffId(8L).facilityId(1L).workDate(futureDate).taskType(AssignmentTaskType.HANDOVER)
+                .referenceType("CONTRACT").referenceId(701L).build();
+
+        // 1. Khi xem ca trực hôm nay: task dời sang tương lai KHÔNG được xuất hiện
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(org.mockito.ArgumentMatchers.eq(8L), any(), org.mockito.ArgumentMatchers.eq(today)))
+                .thenReturn(List.of(assignment));
+        when(rentalContractRepository.findById(701L)).thenReturn(Optional.of(rescheduledContract));
+        when(supportRequestRepository.findAllByAssignedStaffId(8L)).thenReturn(Collections.emptyList());
+
+        StaffDailyTasksResponse todayRes = staffDailyTaskService.getDailyTasks(8L, today, false, staffPrincipal);
+        assertThat(todayRes.getCheckInTasks()).isEmpty();
+
+        // 2. Khi xem ca trực ngày hẹn mới (futureDate): task XUẤT HIỆN chính xác
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDate(8L, futureDate))
+                .thenReturn(List.of(assignment));
+        when(userRepository.findById(15L)).thenReturn(Optional.of(sampleCustomer));
+        when(storageUnitRepository.findById(101L)).thenReturn(Optional.of(sampleUnit));
+
+        StaffDailyTasksResponse futureRes = staffDailyTaskService.getDailyTasks(8L, futureDate, false, staffPrincipal);
+        assertThat(futureRes.getCheckInTasks()).hasSize(1);
+        assertThat(futureRes.getCheckInTasks().get(0).getContractCode()).isEqualTo("CTR-RESCHEDULED");
+        assertThat(futureRes.getCheckInTasks().get(0).getScheduledDate()).isEqualTo(futureDate);
+    }
 }

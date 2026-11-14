@@ -259,11 +259,18 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                     boolean isLatePending = false;
 
                     if (!isCompleted && c.getStatus() == ContractStatus.PENDING_CHECK_IN) {
-                        isTodayTask = (workDate != null && workDate.isEqual(date))
-                                || (createdDate != null && createdDate.isEqual(date));
-                        isLatePending = workDate != null
-                                && workDate.isBefore(date)
-                                && isWithinGracePeriod(c, date, cache);
+                        if (workDate != null && workDate.isAfter(date)) {
+                            // Hẹn nhận kho ở tương lai (hoặc khách đã dời lịch sang tương lai): không thuộc ca trực ngày 'date'
+                            isTodayTask = false;
+                            isLatePending = false;
+                        } else {
+                            isTodayTask = (workDate != null && workDate.isEqual(date))
+                                    || (workDate == null && createdDate != null && createdDate.isEqual(date));
+                            isLatePending = isToday
+                                    && workDate != null
+                                    && workDate.isBefore(date)
+                                    && isWithinGracePeriod(c, date, cache);
+                        }
                     } else {
                         LocalDate checkinDate = c.getCheckinDate();
                         isTodayTask = (checkinDate != null && checkinDate.isEqual(date))

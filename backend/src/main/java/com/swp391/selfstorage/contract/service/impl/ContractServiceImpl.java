@@ -2178,6 +2178,9 @@ public class ContractServiceImpl implements ContractService {
                         }
                 }
 
+                // BR-RES-06: Đồng bộ ngày làm việc của nhân viên tiếp đón sang ngày nhận kho mới
+                syncStaffAssignmentWorkDate(contract.getId(), newStartDate);
+
                 PolicyVersion reschedulePolicy = null;
                 if (contract.getPolicyVersionId() != null && policyVersionRepository != null) {
                         reschedulePolicy = policyVersionRepository.findById(contract.getPolicyVersionId()).orElse(null);
@@ -2357,10 +2360,23 @@ public class ContractServiceImpl implements ContractService {
                         }
                 }
 
+                // BR-RES-06: Đồng bộ ngày làm việc của nhân viên tiếp đón sang ngày nhận kho mới
+                syncStaffAssignmentWorkDate(contract.getId(), newStartDate);
+
                 log.info("Áp dụng dời ngày thành công sau thanh toán cho hợp đồng [{}]: {} -> {}, ô kho: {}, lần dời: {}",
                                 contract.getCode(), newStartDate, newEndDate, targetUnitId, contract.getRescheduleCount());
 
                 return toResponse(contract);
+        }
+
+        private void syncStaffAssignmentWorkDate(Long contractId, LocalDate newWorkDate) {
+                if (staffDailyAssignmentRepository != null && contractId != null && newWorkDate != null) {
+                        staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", contractId)
+                                        .ifPresent(assignment -> {
+                                                assignment.setWorkDate(newWorkDate);
+                                                staffDailyAssignmentRepository.save(assignment);
+                                        });
+                }
         }
 
         @Override

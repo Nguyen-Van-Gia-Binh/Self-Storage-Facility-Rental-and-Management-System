@@ -17,6 +17,9 @@ import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
+import com.swp391.selfstorage.support.entity.AssignmentTaskType;
+import com.swp391.selfstorage.support.entity.StaffDailyAssignment;
+import com.swp391.selfstorage.support.repository.StaffDailyAssignmentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -56,6 +59,8 @@ class ContractRescheduleServiceTest {
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
     @Mock
     private PolicyVersionRepository policyVersionRepository;
+    @Mock
+    private StaffDailyAssignmentRepository staffDailyAssignmentRepository;
 
     @InjectMocks
     private ContractServiceImpl contractService;
@@ -68,6 +73,7 @@ class ContractRescheduleServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(contractService, "policyVersionRepository", policyVersionRepository);
+        ReflectionTestUtils.setField(contractService, "staffDailyAssignmentRepository", staffDailyAssignmentRepository);
 
         contract = RentalContract.builder()
                 .id(100L)
@@ -310,5 +316,70 @@ class ContractRescheduleServiceTest {
         assertNull(contract.getStorageUnitId(), "Entity hợp đồng không được tự gán ô kho!");
         assertNull(reservation.getStorageUnitId(), "Reservation không được tự gán ô kho!");
         assertEquals(1, contract.getRescheduleCount());
+    }
+
+    @Test
+    @DisplayName("BR-RES-06: Khi dời ngày nhận kho thành công, nhiệm vụ StaffDailyAssignment được tự động cập nhật sang ngày mới")
+    void reschedule_updatesStaffDailyAssignmentWorkDate() {
+        LocalDate newStartDate = LocalDate.now().plusDays(10);
+        RescheduleRentalPeriodRequest req = new RescheduleRentalPeriodRequest(newStartDate);
+
+        StaffDailyAssignment assignment = StaffDailyAssignment.builder()
+                .id(1L)
+                .staffId(8L)
+                .facilityId(1L)
+                .workDate(contract.getStartDate())
+                .taskType(AssignmentTaskType.HANDOVER)
+                .referenceType("CONTRACT")
+                .referenceId(100L)
+                .build();
+
+        when(contractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(storageUnitRepository.findById(201L)).thenReturn(Optional.of(unit1));
+        when(contractRepository.findOverlappingContractsForUnit(eq(201L), eq(newStartDate), any(), anyInt(), eq(100L)))
+                .thenReturn(List.of());
+        when(reservationRepository.findOverlappingReservationsForUnit(eq(201L), eq(newStartDate), any(), any(), anyInt(), anyLong()))
+                .thenReturn(List.of());
+        when(reservationRepository.findById(500L)).thenReturn(Optional.of(reservation));
+        when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", 100L))
+                .thenReturn(Optional.of(assignment));
+
+        contractService.rescheduleRentalPeriod(100L, req, 10L);
+
+        assertEquals(newStartDate, assignment.getWorkDate());
+        verify(staffDailyAssignmentRepository).save(assignment);
+    }
+
+    @Test
+    @DisplayName("BR-RES-06: Khi thanh toán dời ngày thành công qua applyRescheduledStartDate, StaffDailyAssignment cũng được dời sang ngày mới")
+    void applyRescheduledStartDate_updatesStaffDailyAssignmentWorkDate() {
+        LocalDate newStartDate = LocalDate.now().plusDays(5);
+
+        StaffDailyAssignment assignment = StaffDailyAssignment.builder()
+                .id(2L)
+                .staffId(8L)
+                .facilityId(1L)
+                .workDate(contract.getStartDate())
+                .taskType(AssignmentTaskType.HANDOVER)
+                .referenceType("CONTRACT")
+                .referenceId(100L)
+                .build();
+
+        when(contractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(storageUnitRepository.findById(201L)).thenReturn(Optional.of(unit1));
+        when(contractRepository.findOverlappingContractsForUnit(eq(201L), eq(newStartDate), any(), anyInt(), eq(100L)))
+                .thenReturn(List.of());
+        when(reservationRepository.findOverlappingReservationsForUnit(eq(201L), eq(newStartDate), any(), any(), anyInt(), anyLong()))
+                .thenReturn(List.of());
+        when(reservationRepository.findById(500L)).thenReturn(Optional.of(reservation));
+        when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", 100L))
+                .thenReturn(Optional.of(assignment));
+
+        contractService.applyRescheduledStartDate(100L, newStartDate);
+
+        assertEquals(newStartDate, assignment.getWorkDate());
+        verify(staffDailyAssignmentRepository).save(assignment);
     }
 }
