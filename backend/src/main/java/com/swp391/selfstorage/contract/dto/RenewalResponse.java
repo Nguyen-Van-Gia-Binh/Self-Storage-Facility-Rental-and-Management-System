@@ -23,6 +23,10 @@ public class RenewalResponse {
     private Long policyVersionId;
     private Long overdueFeeSettled;
     private Long rentalFeeAmount;
+    private Long lateAdminFee;
+    private Boolean isForceRenewal;
+    private String paymentMethod;
+    private String notes;
     private Long totalPaid;
     private OffsetDateTime createdAt;
 }

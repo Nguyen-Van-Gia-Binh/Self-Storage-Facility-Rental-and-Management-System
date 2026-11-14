@@ -26,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.contract.dto.ForceRenewalRequest;
 import com.swp391.selfstorage.contract.dto.RenewalQuoteResponse;
 import com.swp391.selfstorage.contract.dto.RenewalRequest;
 import com.swp391.selfstorage.contract.dto.RenewalResponse;
@@ -370,5 +371,112 @@ class RenewalServiceTest {
                 () -> renewalService.getRenewalQuote(100L, new RenewalRequest(3)));
 
         assertEquals(ErrorCode.UNIT_TYPE_INACTIVE, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("FM Force Renewal: Lấy báo giá thành công khi còn dưới 20 ngày, cộng phụ phí 200.000đ (BR-REN-10)")
+    void testGetForceRenewalQuote_success() {
+        RentalContract contract = buildContract(ContractStatus.ACTIVE);
+        contract.setEndDateExclusive(LocalDate.now().plusDays(10)); // Còn 10 ngày (< 20 ngày)
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), anyInt())).thenReturn(false);
+
+        FacilityUnitTypePrice price = FacilityUnitTypePrice.builder().monthlyPrice(850000L).build();
+        when(facilityPriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(price));
+
+        ForceRenewalRequest req = ForceRenewalRequest.builder().renewalMonths(3).build();
+        RenewalQuoteResponse quote = renewalService.getForceRenewalQuote(100L, req);
+
+        assertNotNull(quote);
+        assertEquals(100L, quote.getContractId());
+        assertEquals(3, quote.getRenewalMonths());
+        assertEquals(Boolean.TRUE, quote.getIsForceRenewal());
+        assertEquals(200_000L, quote.getLateAdminFee());
+        assertEquals(2_550_000L, quote.getRentalFeeAmount()); // 850k * 3
+        assertEquals(2_750_000L, quote.getTotalAmount()); // 2.550.000 + 200.000
+    }
+
+    @Test
+    @DisplayName("FM Force Renewal: Chặn lấy báo giá khi ô kho đã có khách khác đặt trước (BR-REN-10, BR-AVL-02)")
+    void testGetForceRenewalQuote_capacityConflict_throwsCapacityNotAvailable() {
+        RentalContract contract = buildContract(ContractStatus.ACTIVE);
+        contract.setEndDateExclusive(LocalDate.now().plusDays(10));
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), anyInt())).thenReturn(true);
+
+        ForceRenewalRequest req = ForceRenewalRequest.builder().renewalMonths(3).build();
+        CustomException ex = assertThrows(CustomException.class,
+                () -> renewalService.getForceRenewalQuote(100L, req));
+
+        assertEquals(ErrorCode.CAPACITY_NOT_AVAILABLE, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("FM Force Renewal: Kích hoạt gia hạn thành công tại quầy kèm phụ phí 200k và lưu hình thức thanh toán (BR-REN-10)")
+    void testProcessForceRenewal_success() {
+        RentalContract contract = buildContract(ContractStatus.ACTIVE);
+        LocalDate oldEndDate = LocalDate.now().plusDays(10); // Còn 10 ngày (< 20 ngày)
+        contract.setEndDateExclusive(oldEndDate);
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), anyInt())).thenReturn(false);
+
+        FacilityUnitTypePrice price = FacilityUnitTypePrice.builder().monthlyPrice(800000L).build();
+        when(facilityPriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(price));
+
+        when(contractRenewalRepository.save(any(ContractRenewal.class))).thenAnswer(inv -> {
+            ContractRenewal cr = inv.getArgument(0);
+            cr.setId(101L);
+            return cr;
+        });
+
+        ForceRenewalRequest req = ForceRenewalRequest.builder()
+                .renewalMonths(3)
+                .paymentMethod("CASH")
+                .notes("Khách nộp tiền mặt tại cơ sở")
+                .build();
+
+        RenewalResponse res = renewalService.processForceRenewal(100L, req);
+
+        LocalDate expectedNewEndDate = oldEndDate.plusMonths(3);
+        assertNotNull(res);
+        assertEquals(expectedNewEndDate, res.getNewEndDate());
+        assertEquals(Boolean.TRUE, res.getIsForceRenewal());
+        assertEquals(200_000L, res.getLateAdminFee());
+        assertEquals("CASH", res.getPaymentMethod());
+        assertEquals(2_600_000L, res.getTotalPaid()); // 800k * 3 + 200k
+
+        ArgumentCaptor<ContractRenewal> captor = ArgumentCaptor.forClass(ContractRenewal.class);
+        verify(contractRenewalRepository).save(captor.capture());
+        ContractRenewal saved = captor.getValue();
+        assertEquals(Boolean.TRUE, saved.getIsForceRenewal());
+        assertEquals(200_000L, saved.getLateAdminFee());
+        assertEquals("CASH", saved.getPaymentMethod());
+        assertEquals("Khách nộp tiền mặt tại cơ sở", saved.getNotes());
+        assertEquals(2_600_000L, saved.getTotalPaid());
+
+        verify(rentalContractRepository).save(contract);
+        assertEquals(expectedNewEndDate, contract.getEndDateExclusive());
+    }
+
+    @Test
+    @DisplayName("FM Force Renewal: Chặn gia hạn khi hợp đồng đã chuyển sang OVERDUE (BR-REN-06, BR-OVD-01)")
+    void testProcessForceRenewal_overdue_throwsRenewalNotAllowed() {
+        RentalContract contract = buildContract(ContractStatus.OVERDUE);
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+
+        ForceRenewalRequest req = ForceRenewalRequest.builder()
+                .renewalMonths(3)
+                .paymentMethod("BANK_TRANSFER")
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> renewalService.processForceRenewal(100L, req));
+
+        assertEquals(ErrorCode.RENEWAL_NOT_ALLOWED, ex.getErrorCode());
+        verify(contractRenewalRepository, never()).save(any());
+        verify(rentalContractRepository, never()).save(any());
     }
 }

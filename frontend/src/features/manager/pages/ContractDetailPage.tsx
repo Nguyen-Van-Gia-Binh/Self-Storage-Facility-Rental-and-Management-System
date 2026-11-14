@@ -34,6 +34,7 @@ import { ReassignUnitModal } from '../components/ReassignUnitModal';
 import { FacilityFloorPlanMapModal } from '../components/FacilityFloorPlanMapModal';
 import { ContractFinancialModal } from '../components/ContractFinancialModal';
 import { SettlementApprovalModal } from '../components/SettlementApprovalModal';
+import { ForceRenewalModal } from '../components/ForceRenewalModal';
 import { ContractDetailModal } from '@/features/customer/components/ContractDetailModal';
 
 const fmt = (p: number) => new Intl.NumberFormat('vi-VN').format(p) + ' đ';
@@ -58,6 +59,7 @@ export const ContractDetailPage: React.FC = () => {
   const [settlementModalOpen, setSettlementModalOpen] = useState(false);
   const [eContractModalOpen, setEContractModalOpen] = useState(false);
   const [floorPlanOpen, setFloorPlanOpen] = useState(false);
+  const [forceRenewalModalOpen, setForceRenewalModalOpen] = useState(false);
 
   // Feedback & Settlement Debt state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -192,6 +194,15 @@ export const ContractDetailPage: React.FC = () => {
   // Cho phép duyệt quyết toán khi nhân viên ĐÃ nghiệm thu hoặc hợp đồng ở trạng thái TERMINATED
   const isSettlementReady = (isInspected || isTerminated) && contract.status !== 'CLOSED';
 
+  // Điều kiện Force Renewal (FM-01, BR-REN-01, BR-REN-10): Hợp đồng ACTIVE và còn < 20 ngày
+  const daysRemaining = contract.endDateExclusive
+    ? Math.ceil(
+        (new Date(contract.endDateExclusive).getTime() - new Date().setHours(0, 0, 0, 0)) /
+          (1000 * 60 * 60 * 24)
+      )
+    : 999;
+  const canForceRenew = isActive && daysRemaining >= 0 && daysRemaining < 20;
+
   const handleFloorPlanReassign = async (unit: StorageUnitResponse) => {
     if (!contract) return;
     try {
@@ -275,8 +286,18 @@ export const ContractDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Nút Làm mới */}
+        {/* Actions Bar */}
         <div className="flex items-center gap-2">
+          {canForceRenew && (
+            <button
+              type="button"
+              onClick={() => setForceRenewalModalOpen(true)}
+              className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Gia hạn Ngoại lệ (T-20)</span>
+            </button>
+          )}
           <button
             onClick={() => loadData(true)}
             disabled={refreshing}
@@ -296,6 +317,38 @@ export const ContractDetailPage: React.FC = () => {
           </div>
           <button onClick={() => loadData(true)} className="font-bold underline cursor-pointer">
             Thử lại
+          </button>
+        </div>
+      )}
+
+      {/* Banner Cảnh báo Chốt chặn T-20 & Quyền Gia hạn Ngoại lệ (BR-REN-01, BR-REN-10) */}
+      {canForceRenew && (
+        <div className="bg-amber-50/90 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-950 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-amber-100 text-amber-700 shrink-0 mt-0.5">
+              <RefreshCw className="w-5 h-5 text-amber-700" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="text-sm font-bold text-amber-950">
+                  Hợp đồng bước vào mốc Chốt chặn T-20 ngày (Còn {daysRemaining} ngày)
+                </h4>
+                <span className="text-[10px] font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-full">
+                  Cổng online đã khóa • Thu phụ phí 200k
+                </span>
+              </div>
+              <p className="text-xs text-amber-800 mt-0.5">
+                Khách hàng không thể tự gia hạn trực tuyến. Quản lý cơ sở có thẩm quyền thực hiện <strong>Gia hạn Ngoại lệ (Force Renewal)</strong> tại quầy nếu ô kho chưa có khách mới đặt cọc trước (tự động cộng phụ phí trễ hạn 200.000 VNĐ theo BR-REN-10).
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setForceRenewalModalOpen(true)}
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Thực hiện Force Renewal</span>
           </button>
         </div>
       )}
@@ -940,6 +993,18 @@ export const ContractDetailPage: React.FC = () => {
           allowedUnitTypeId={canRelocate ? contract.unitTypeId : undefined}
           targetUnitTypeName={canRelocate ? contract.unitTypeName : undefined}
           onSelectUnit={canRelocate ? handleFloorPlanReassign : undefined}
+        />
+      )}
+
+      {forceRenewalModalOpen && (
+        <ForceRenewalModal
+          isOpen={forceRenewalModalOpen}
+          contract={contract}
+          onClose={() => setForceRenewalModalOpen(false)}
+          onSuccess={(_cid, msg) => {
+            showToast(msg);
+            loadData(true);
+          }}
         />
       )}
     </div>

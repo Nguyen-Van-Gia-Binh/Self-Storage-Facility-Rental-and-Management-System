@@ -526,14 +526,12 @@ _Theo dõi và quản lý một hoặc nhiều ô kho đang thuê._
 
 **Acceptance Criteria**
 
-- **AC-1** — _Given_ hợp đồng của tôi còn 60 ngày (2 tháng) hoặc 7, 3, 1 ngày trước mốc khóa gia hạn (trước 1 tháng), _when_ tác vụ nhắc gia hạn chạy,
-  _then_ tôi nhận thông báo nhắc gia hạn theo `BR-REN-01`; nếu trước 1 tháng tôi không gia hạn, hệ thống tự động khóa tính năng gia hạn và kích hoạt tiến trình chuẩn bị trả kho khi đến hạn.
+- **AC-1 (Quyền tự gia hạn xuyên suốt & Thông báo 2 giai đoạn):** _Given_ hợp đồng của tôi đang _ACTIVE_ và cách ngày hết hạn từ 20 ngày trở lên (`daysRemaining >= 20`), _when_ tôi mở cổng khách hàng, _then_ tôi có quyền tự do bấm "Gia hạn" bất kỳ lúc nào (`BR-REN-01`). Hệ thống tự động gửi thông báo nhắc sớm tại mốc **T-60 ngày** và kích hoạt chuỗi đếm ngược khẩn cấp tại **T-30 ngày** (nhắc vào các ngày T-30, T-25, T-21); đúng mốc **T-20 ngày** (`daysRemaining < 20`), quyền tự gia hạn trực tuyến chính thức bị **KHÓA** (`BR-REN-09`), chuyển sang giai đoạn chuẩn bị trả kho hoặc liên hệ FM để duyệt Force Renewal.
 - **AC-2** — _Given_ tôi bấm gia hạn, _when_ màn hình mở ra, _then_ tôi chọn được số tháng gia hạn
   từ 1 tới 12 tháng theo `BR-REN-03` và `BR-REN-07`, và thấy ngay số tiền tương ứng.
 - **AC-3** — _Given_ tôi gia hạn thành công, _when_ hệ thống xử lý xong, _then_ ô kho của tôi
   **giữ nguyên**, không bị đổi sang ô khác, theo `BR-REN-08`.
-- **AC-4** — _Given_ tôi đang nợ phí quá hạn chưa thanh toán, _when_ tôi mở màn hình gia hạn, _then_
-  khoản nợ được gộp vào tổng phải trả theo `BR-REN-06`, hiển thị thành dòng riêng.
+- **AC-4 (Khóa gia hạn khi Quá hạn):** _Given_ hợp đồng của tôi đã bước sang trạng thái _Overdue_ (từ D+1 trở đi), _when_ tôi truy cập hợp đồng, _then_ tính năng gia hạn trực tuyến bị khóa vĩnh viễn theo `BR-REN-06` và `BR-OVD-01`; hệ thống chỉ hiển thị nút thanh toán nợ quá hạn để nhận mã PIN tạm thời dọn đồ trả kho theo Flow 6.2.
 - **AC-5** — _Given_ hợp đồng của tôi đã _Terminated_, _when_ tôi cố gia hạn, _then_ hệ thống từ chối
   theo `BR-REN-02` và hướng dẫn tôi đặt hợp đồng mới.
 - **AC-6** — _Given_ ô kho trong khoảng gia hạn đã có người khác đặt trước trong tương lai (xung đột capacity commitment), _when_ tôi
@@ -1021,13 +1019,13 @@ _Quản lý quy trình bàn giao ô kho, trả kho, gia hạn hợp đồng và 
 
 - **AC-1** — _Given_ khách thanh toán Renewal thành công (`UC-F6-03`), _when_ hệ thống nhận giao dịch, _then_ Contract tự động dời ngày kết thúc theo `BR-REN-03`, `BR-REN-04`, không chờ Facility Manager duyệt.
 - **AC-2** — _Given_ capacity commitment tạo trước giao với khoảng Renewal, _when_ khách xác nhận gia hạn, _then_ hệ thống từ chối trước khi thu tiền và màn hình của tôi hiển thị lý do theo `BR-REN-09`.
-- **AC-3** — _Given_ Contract đang _Overdue_, _when_ khách chọn Renewal, _then_ hệ thống chỉ kích hoạt lại Contract và Access sau khi giao dịch gồm toàn bộ nợ cùng phí kỳ mới thành công theo `BR-REN-06`.
+- **AC-3 (Khóa gia hạn khi Quá hạn D+1):** _Given_ Contract đang _Overdue_ (từ D+1 trở đi), _when_ khách truy cập, _then_ hệ thống khóa hoàn toàn tính năng gia hạn trực tuyến và ngoại tuyến theo `BR-REN-06` và `BR-OVD-01`; khách bắt buộc phải thanh toán hết nợ quá hạn hiện tại để nhận PIN tạm thời và làm thủ tục trả kho theo Sub-flow 6.2.
 
 ---
 
 ### `US-FM-04.3` — Xử lý hợp đồng quá hạn, khóa quyền truy cập và xử lý tài sản tồn đọng
 
-> **Là** Facility Manager, **tôi muốn** giám sát quy trình tự động xử lý hợp đồng quá hạn từ D+4 đến D+10 và phân công dọn dẹp kho sau D+10, **để** thu hồi công nợ và giải phóng ô kho nhanh chóng.
+> **Là** Facility Manager, **tôi muốn** giám sát quy trình tự động xử lý hợp đồng quá hạn theo chu kỳ 8 ngày khép kín (D+1..D+8) và cưỡng chế niêm phong tài sản về kho tổng tại D+7 (`BR-OVD-01..11`), **để** thu hồi công nợ và giải phóng ô kho nhanh chóng.
 
 | Use case                                                               | Ưu tiên | Story point | Giai đoạn |
 | ---------------------------------------------------------------------- | ------- | :---------: | :-------: |
@@ -1887,21 +1885,21 @@ Activity Diagram: [activity-diagram-flow-5-facility-staff-management.drawio](dia
 
 _Luồng gia hạn thuê và xử lý quá hạn._ Tác nhân chính: **Storage Customer**, **Facility Manager**
 
-Activity Diagram: [activity-diagram-flow-6-1-storage-renewal.drawio](diagrams/activity-diagram-flow-6-1-storage-renewal.drawio) và [activity-diagram-flow-6-2-overdue-handling.drawio](diagrams/activity-diagram-flow-6-2-overdue-handling.drawio) (lưu trữ cũ: [diagrams/\_archive/activity-flow-6.puml](diagrams/_archive/activity-flow-6.puml)) — Sub-flow 6.1 nhắc hạn và Renewal (`UC-F6-01`–`04`); Sub-flow 6.2 Overdue D+4 đến D+10 (`UC-F6-05`–`11`).
+Activity Diagram: [activity-diagram-flow-6-1-storage-renewal.drawio](diagrams/activity-diagram-flow-6-1-storage-renewal.drawio) và [activity-diagram-flow-6-2-overdue-handling.drawio](diagrams/activity-diagram-flow-6-2-overdue-handling.drawio) (lưu trữ cũ: [diagrams/\_archive/activity-flow-6.puml](diagrams/_archive/activity-flow-6.puml)) — Sub-flow 6.1 nhắc hạn, Tự gia hạn (>= 20d) & Force Renewal FM (< 20d) (`UC-F6-01`–`04`); Sub-flow 6.2 Overdue 8 ngày khép kín D+1..D+8 (`UC-F6-05`–`11`).
 
 | Mã UC      | Use case                                                                               | Actor chính      | Actor liên quan  | Mã yêu cầu       |
 | ---------- | -------------------------------------------------------------------------------------- | ---------------- | ---------------- | ---------------- |
-| `UC-F6-01` | Nhận thông báo nhắc gia hạn (từ trước 2 tháng, và 7, 3, 1 ngày trước mốc khóa gia hạn) | Storage Customer | System           | `SC-05`, `BM-02` |
-| `UC-F6-02` | Yêu cầu gia hạn hợp đồng thuê trước mốc 1 tháng (kiểm tra không bị đặt trước)          | Storage Customer | Facility Manager | `SC-05`          |
-| `UC-F6-03` | Thanh toán phí gia hạn N tháng qua cổng thanh toán trực tuyến                          | Storage Customer | —                | `SC-03`          |
+| `UC-F6-01` | Nhận thông báo nhắc gia hạn 2 giai đoạn (T-60, đếm ngược T-30, và nhắc trả kho T-7,3,1) | Storage Customer | System           | `SC-05`, `BM-02` |
+| `UC-F6-02` | Yêu cầu gia hạn hợp đồng thuê trước mốc T-20 ngày (hoặc Force Renewal qua FM từ T-20..T-0) | Storage Customer | Facility Manager | `SC-05`          |
+| `UC-F6-03` | Thanh toán phí gia hạn N tháng qua cổng thanh toán trực tuyến hoặc tại quầy FM         | Storage Customer | Facility Manager | `SC-03`          |
 | `UC-F6-04` | Tự động dời ngày kết thúc Contract sau Payment thành công (giữ nguyên ô kho)           | System           | Facility Manager | `FM-04`          |
-| `UC-F6-05` | Phát hiện hợp đồng quá hạn theo lịch chạy tự động                                      | System           | Facility Manager | `FM-04`          |
-| `UC-F6-06` | Tính và áp phí quá hạn theo ngày từ D+4 đến D+10                                       | System           | Facility Manager | `FM-04`, `BM-03` |
-| `UC-F6-07` | Tự động khóa Access Credential tại D+10                                                | System           | Facility Manager | `FM-04`          |
-| `UC-F6-08` | Gửi thông báo nhắc dọn đồ hàng ngày trong 10 ngày quá hạn                              | System           | Storage Customer | `FM-04`          |
-| `UC-F6-09` | Staff dọn kho, niêm phong đồ tồn về kho tổng offline sau D+10                          | Facility Staff   | Facility Manager | `FM-04`, `BM-02` |
+| `UC-F6-05` | Phát hiện hợp đồng quá hạn theo lịch chạy tự động tại D+1                              | System           | Facility Manager | `FM-04`          |
+| `UC-F6-06` | Tính và áp phí quá hạn theo ngày từ D+1 đến D+7 (5% cọc/ngày D+1..D+3; 10% cọc D+4..D+7) | System           | Facility Manager | `FM-04`, `BM-03` |
+| `UC-F6-07` | Tự động khóa mã PIN tại D+1 theo nguyên tắc "No Pay, No PIN"                           | System           | Facility Manager | `FM-04`          |
+| `UC-F6-08` | Gửi thông báo nhắc dọn đồ & cảnh báo niêm phong hàng ngày trong 7 ngày quá hạn          | System           | Storage Customer | `FM-04`          |
+| `UC-F6-09` | Staff dọn kho, niêm phong đồ tồn về kho tổng tại D+7 và giải phóng ô kho tại D+8       | Facility Staff   | Facility Manager | `FM-04`, `BM-02` |
 | `UC-F6-10` | Theo dõi danh sách hợp đồng quá hạn tại cơ sở                                          | Facility Manager | —                | `FM-06`          |
-| `UC-F6-11` | Tự động chấm dứt Contract và chuyển kho Cleaning tại D+10                              | System           | Facility Manager | `FM-04`          |
+| `UC-F6-11` | Cưỡng chế chấm dứt hợp đồng TERMINATED tại D+7 và chuyển ô kho MAINTENANCE             | System           | Facility Manager | `FM-04`          |
 
 ---
 

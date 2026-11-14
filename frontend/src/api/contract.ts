@@ -619,3 +619,78 @@ export async function createDirectContract(data: CreateDirectContractRequest): P
   });
   return res.data;
 }
+
+export interface ForceRenewalQuoteResponse {
+  contractId: number;
+  contractCode: string;
+  renewalMonths: number;
+  previousEndDate: string;
+  newEndDate: string;
+  monthlyPriceSnapshot: number;
+  rentalFeeAmount: number;
+  lateAdminFee?: number;
+  isForceRenewal?: boolean;
+  overdueFeeSettled?: number;
+  totalAmount: number;
+  policyVersionId?: number;
+}
+
+export interface ForceRenewalSubmitRequest {
+  renewalMonths: number;
+  paymentMethod: 'CASH' | 'BANK_TRANSFER' | string;
+  notes?: string;
+}
+
+export interface ForceRenewalResponse {
+  id: number;
+  contractId: number;
+  previousEndDate: string;
+  newEndDate: string;
+  renewalMonths: number;
+  monthlyPriceSnapshot: number;
+  rentalFeeAmount: number;
+  lateAdminFee?: number;
+  isForceRenewal?: boolean;
+  paymentMethod?: string;
+  notes?: string;
+  overdueFeeSettled: number;
+  totalPaid: number;
+  policyVersionId?: number;
+  createdAt?: string;
+}
+
+/**
+ * FM xem trước báo giá gia hạn ngoại lệ kèm phụ phí 200.000đ và kiểm tra capacity (FM-01, BR-REN-10)
+ * POST /api/v1/contracts/{id}/renewals/force-preview
+ */
+export async function getForceRenewalQuote(
+  contractId: number,
+  renewalMonths: number
+): Promise<ForceRenewalQuoteResponse> {
+  const res = await apiClient<ApiResponse<ForceRenewalQuoteResponse>>(
+    `/contracts/${contractId}/renewals/force-preview`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ renewalMonths }),
+    }
+  );
+  return res.data;
+}
+
+/**
+ * FM duyệt kích hoạt gia hạn ngoại lệ tại quầy sau khi thu tiền (FM-01, BR-REN-10)
+ * POST /api/v1/contracts/{id}/renewals/force
+ */
+export async function submitForceRenewal(
+  contractId: number,
+  data: ForceRenewalSubmitRequest
+): Promise<ForceRenewalResponse> {
+  const res = await apiClient<ApiResponse<ForceRenewalResponse>>(
+    `/contracts/${contractId}/renewals/force`,
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }
+  );
+  return res.data;
+}

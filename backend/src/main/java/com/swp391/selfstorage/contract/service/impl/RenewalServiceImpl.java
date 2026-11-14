@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.contract.dto.ForceRenewalRequest;
 import com.swp391.selfstorage.contract.dto.RenewalQuoteResponse;
 import com.swp391.selfstorage.contract.dto.RenewalRequest;
 import com.swp391.selfstorage.contract.dto.RenewalResponse;
@@ -146,10 +147,6 @@ public class RenewalServiceImpl implements RenewalService {
         contract.setEndDateExclusive(newEnd);
         contract.setRentalMonths(contract.getRentalMonths() + months);
 
-        if (contract.getStatus() == ContractStatus.OVERDUE) {
-            contract.setStatus(ContractStatus.ACTIVE);
-            contract.setOverdueFeeAccrued(0L);
-        }
         rentalContractRepository.save(contract);
 
         long policyVersionId = contract.getPolicyVersionId() == null ? 1L : contract.getPolicyVersionId();
@@ -181,6 +178,116 @@ public class RenewalServiceImpl implements RenewalService {
                 .stream()
                 .map(renewalMapper::toResponse)
                 .toList();
+    }
+
+    /**
+     * 4. Tính toán báo giá xem trước cho FM khi duyệt Force Renewal tại quầy (BR-REN-10).
+     */
+    @Override
+    public RenewalQuoteResponse getForceRenewalQuote(Long contractId, ForceRenewalRequest request) {
+        RentalContract contract = rentalContractRepository.findById(contractId)
+                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+
+        if (contract.getStatus() == ContractStatus.OVERDUE) {
+            throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED,
+                    "Hợp đồng đã quá hạn không thể gia hạn. Vui lòng xử lý theo quy trình nợ quá hạn và tất toán kho.");
+        } else if (contract.getStatus() != ContractStatus.ACTIVE) {
+            throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED,
+                    "Chỉ hợp đồng đang hoạt động (ACTIVE) mới được phép gia hạn ngoại lệ.");
+        }
+
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        if (contract.getEndDateExclusive() != null) {
+            long daysUntilEnd = ChronoUnit.DAYS.between(today, contract.getEndDateExclusive());
+            if (daysUntilEnd < 0) {
+                throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED,
+                        "Hợp đồng đã quá hạn không thể gia hạn.");
+            } else if (daysUntilEnd >= 20) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                        "Hợp đồng còn trên 20 ngày, khách hàng có thể tự gia hạn trực tuyến trên cổng khách hàng.");
+            }
+        }
+
+        int months = request.getRenewalMonths();
+        PolicyResponse activePolicy = policyService.getActivePolicy();
+        if (months < activePolicy.getRenewalMinMonths() || months > activePolicy.getRenewalMaxMonths()) {
+            throw new CustomException(ErrorCode.RENEWAL_MONTHS_INVALID);
+        }
+
+        LocalDate newEndDate = contract.getEndDateExclusive().plusMonths(months);
+        int bufferDays = activePolicy.getRentalBufferDays() == null ? -1 : activePolicy.getRentalBufferDays();
+        if (bufferDays < 0) {
+            throw new CustomException(ErrorCode.POLICY_NOT_FOUND, "Chinh sach hieu luc thieu rental_buffer_days");
+        }
+
+        if (contract.getStorageUnitId() != null) {
+            boolean hasUpcomingReservation = reservationRepository.existsOverlappingReservationForUnit(
+                    contract.getStorageUnitId(),
+                    contract.getEndDateExclusive(),
+                    newEndDate,
+                    OffsetDateTime.now(),
+                    bufferDays);
+            boolean hasOtherContract = rentalContractRepository.existsOverlappingContractForUnit(
+                    contract.getStorageUnitId(),
+                    contract.getEndDateExclusive(),
+                    newEndDate,
+                    bufferDays,
+                    contract.getId());
+            if (hasUpcomingReservation || hasOtherContract) {
+                throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE,
+                        "Ô kho này đã có khách hàng khác đặt cọc trước cho chu kỳ tiếp theo. Không thể thực hiện gia hạn ngoại lệ!");
+            }
+        }
+
+        long monthlyPrice = getLatestMonthlyPrice(contract);
+        long rentalFeeAmount = monthlyPrice * months;
+        long lateAdminFee = 200000L; // renewal.late_admin_fee theo BR-REN-10
+        long totalAmount = rentalFeeAmount + lateAdminFee;
+
+        return renewalMapper.toQuoteResponse(
+                contract, months, newEndDate, monthlyPrice,
+                rentalFeeAmount, lateAdminFee, true, 0L, totalAmount, activePolicy.getId());
+    }
+
+    /**
+     * 5. Quản lý cơ sở (FM) duyệt Gia hạn Ngoại lệ tại quầy sau khi thu tiền (BR-REN-10).
+     */
+    @Override
+    @Transactional
+    public RenewalResponse processForceRenewal(Long contractId, ForceRenewalRequest request) {
+        RenewalQuoteResponse quote = getForceRenewalQuote(contractId, request);
+        RentalContract contract = rentalContractRepository.findById(contractId)
+                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+
+        int months = request.getRenewalMonths();
+        LocalDate previousEnd = contract.getEndDateExclusive();
+        LocalDate newEnd = quote.getNewEndDate();
+
+        contract.setEndDateExclusive(newEnd);
+        contract.setRentalMonths(contract.getRentalMonths() + months);
+        rentalContractRepository.save(contract);
+
+        long policyVersionId = contract.getPolicyVersionId() == null ? 1L : contract.getPolicyVersionId();
+        String paymentMethod = request.getPaymentMethod() != null ? request.getPaymentMethod() : "CASH";
+
+        ContractRenewal renewal = renewalMapper.toEntity(
+                contractId,
+                previousEnd,
+                newEnd,
+                months,
+                quote.getMonthlyPriceSnapshot(),
+                policyVersionId,
+                0L,
+                quote.getRentalFeeAmount(),
+                quote.getLateAdminFee(),
+                true,
+                paymentMethod,
+                request.getNotes(),
+                quote.getTotalAmount(),
+                null);
+
+        ContractRenewal savedRenewal = contractRenewalRepository.save(renewal);
+        return renewalMapper.toResponse(savedRenewal);
     }
 
     private RentalContract getValidContractForRenewal(Long contractId) {

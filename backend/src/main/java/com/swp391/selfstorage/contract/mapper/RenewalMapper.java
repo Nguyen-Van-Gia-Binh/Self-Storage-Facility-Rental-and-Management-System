@@ -17,6 +17,14 @@ public class RenewalMapper {
             LocalDate newEndDate, long monthlyPrice,
             long rentalFeeAmount, long overdueFee,
             long totalAmount, Long policyVersionId) {
+        return toQuoteResponse(contract, renewalMonths, newEndDate, monthlyPrice,
+                rentalFeeAmount, 0L, false, overdueFee, totalAmount, policyVersionId);
+    }
+
+    public RenewalQuoteResponse toQuoteResponse(RentalContract contract, int renewalMonths,
+            LocalDate newEndDate, long monthlyPrice,
+            long rentalFeeAmount, long lateAdminFee, boolean isForceRenewal,
+            long overdueFee, long totalAmount, Long policyVersionId) {
         return RenewalQuoteResponse.builder()
                 .contractId(contract.getId())
                 .contractCode(contract.getCode())
@@ -25,6 +33,8 @@ public class RenewalMapper {
                 .newEndDate(newEndDate)
                 .monthlyPriceSnapshot(monthlyPrice)
                 .rentalFeeAmount(rentalFeeAmount)
+                .lateAdminFee(lateAdminFee)
+                .isForceRenewal(isForceRenewal)
                 .overdueFeeSettled(overdueFee)
                 .totalAmount(totalAmount)
                 .policyVersionId(policyVersionId)
@@ -34,6 +44,15 @@ public class RenewalMapper {
     public ContractRenewal toEntity(Long contractId, LocalDate previousEndDate, LocalDate newEndDate,
             int renewalMonths, long monthlyPriceSnapshot, Long policyVersionId,
             long overdueFeeSettled, long rentalFeeAmount, long totalPaid, Long paymentTransactionId) {
+        return toEntity(contractId, previousEndDate, newEndDate, renewalMonths, monthlyPriceSnapshot,
+                policyVersionId, overdueFeeSettled, rentalFeeAmount, 0L, false, "ONLINE_PAYMENT", null, totalPaid, paymentTransactionId);
+    }
+
+    public ContractRenewal toEntity(Long contractId, LocalDate previousEndDate, LocalDate newEndDate,
+            int renewalMonths, long monthlyPriceSnapshot, Long policyVersionId,
+            long overdueFeeSettled, long rentalFeeAmount, long lateAdminFee,
+            boolean isForceRenewal, String paymentMethod, String notes,
+            long totalPaid, Long paymentTransactionId) {
         return ContractRenewal.builder()
                 .contractId(contractId)
                 .paymentTransactionId(paymentTransactionId)
@@ -44,6 +63,10 @@ public class RenewalMapper {
                 .policyVersionId(policyVersionId)
                 .overdueFeeSettled(overdueFeeSettled)
                 .rentalFeeAmount(rentalFeeAmount)
+                .lateAdminFee(lateAdminFee)
+                .isForceRenewal(isForceRenewal)
+                .paymentMethod(paymentMethod)
+                .notes(notes)
                 .totalPaid(totalPaid)
                 .createdAt(OffsetDateTime.now())
                 .build();
@@ -64,6 +87,10 @@ public class RenewalMapper {
                 .policyVersionId(entity.getPolicyVersionId())
                 .overdueFeeSettled(entity.getOverdueFeeSettled())
                 .rentalFeeAmount(entity.getRentalFeeAmount())
+                .lateAdminFee(entity.getLateAdminFee() != null ? entity.getLateAdminFee() : 0L)
+                .isForceRenewal(entity.getIsForceRenewal() != null ? entity.getIsForceRenewal() : false)
+                .paymentMethod(entity.getPaymentMethod())
+                .notes(entity.getNotes())
                 .totalPaid(entity.getTotalPaid())
                 .createdAt(entity.getCreatedAt())
                 .build();
