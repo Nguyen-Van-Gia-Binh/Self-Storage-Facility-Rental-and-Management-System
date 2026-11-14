@@ -82,6 +82,18 @@ public class Reservation extends BaseEntity {
     @Column(name = "cancel_reason", length = 500)
     private String cancelReason;
 
+    @Column(name = "customer_name", length = 150)
+    private String customerName;
+
+    @Column(name = "customer_phone", length = 20)
+    private String customerPhone;
+
+    @Column(name = "customer_email", length = 255)
+    private String customerEmail;
+
+    @Column(name = "customer_identity_number", length = 20)
+    private String customerIdentityNumber;
+
     public Reservation() {}
 
     // Getters and Setters
@@ -147,4 +159,16 @@ public class Reservation extends BaseEntity {
 
     public String getCancelReason() { return cancelReason; }
     public void setCancelReason(String cancelReason) { this.cancelReason = cancelReason; }
+
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+
+    public String getCustomerPhone() { return customerPhone; }
+    public void setCustomerPhone(String customerPhone) { this.customerPhone = customerPhone; }
+
+    public String getCustomerEmail() { return customerEmail; }
+    public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
+
+    public String getCustomerIdentityNumber() { return customerIdentityNumber; }
+    public void setCustomerIdentityNumber(String customerIdentityNumber) { this.customerIdentityNumber = customerIdentityNumber; }
 }

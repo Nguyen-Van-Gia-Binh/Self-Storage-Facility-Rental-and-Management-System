@@ -82,6 +82,12 @@ public class CustomerRentalSummaryResponse {
     private Long pendingInitialPaymentAmount;
     private String pendingInitialPaymentMethod;
 
+    // Thông tin người thuê ô kho (theo đơn đặt chỗ / hợp đồng)
+    private String customerName;
+    private String customerPhone;
+    private String customerEmail;
+    private String customerIdentityNumber;
+
     public CustomerRentalSummaryResponse() {}
 
     // Getters and Setters
@@ -232,4 +238,16 @@ public class CustomerRentalSummaryResponse {
 
     public String getPendingInitialPaymentMethod() { return pendingInitialPaymentMethod; }
     public void setPendingInitialPaymentMethod(String pendingInitialPaymentMethod) { this.pendingInitialPaymentMethod = pendingInitialPaymentMethod; }
+
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+
+    public String getCustomerPhone() { return customerPhone; }
+    public void setCustomerPhone(String customerPhone) { this.customerPhone = customerPhone; }
+
+    public String getCustomerEmail() { return customerEmail; }
+    public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
+
+    public String getCustomerIdentityNumber() { return customerIdentityNumber; }
+    public void setCustomerIdentityNumber(String customerIdentityNumber) { this.customerIdentityNumber = customerIdentityNumber; }
 }

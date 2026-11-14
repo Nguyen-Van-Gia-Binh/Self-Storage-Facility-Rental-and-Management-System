@@ -579,15 +579,6 @@ export const BookingPage: React.FC = () => {
         identityNumber: customerIdCard.replace(/\s+/g, ''),
       });
 
-      if (currentUser) {
-        tokenStorage.setUser({
-          ...currentUser,
-          fullName: customerName.trim(),
-          phone: customerPhone.replace(/\s+/g, ''),
-          identityNumber: customerIdCard.replace(/\s+/g, ''),
-        } as any);
-      }
-
       const rsvId = rsv.id || 1;
       setCreatedReservationId(rsvId);
       setCreatedReservationCode(rsv.code || (rsv.id ? `RSV-${rsv.id}` : `RSV-${finalUnitNumber}`));

@@ -251,29 +251,11 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         // 2.2 Kiem tra BR-SPAM-01: Chặn khách hàng hủy hoặc bỏ thanh toán >= 5 lần trong ngày
-        // Đồng thời tự động cập nhật họ tên, SĐT, CCCD khách hàng đã nhập từ form đặt chỗ vào tài khoản
         if (customerId != null && userRepository != null) {
             userRepository.findById(customerId).ifPresent(user -> {
                 LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
                 if (user.getLastCancelDate() != null && user.getLastCancelDate().equals(today) && user.getDailyCancelCount() >= 5) {
                     throw new CustomException(ErrorCode.BOOKING_SPAM_BLOCKED);
-                }
-
-                boolean userUpdated = false;
-                if (request.getCustomerName() != null && !request.getCustomerName().trim().isBlank()) {
-                    user.setFullName(request.getCustomerName().trim());
-                    userUpdated = true;
-                }
-                if (request.getCustomerPhone() != null && !request.getCustomerPhone().trim().isBlank()) {
-                    user.setPhone(request.getCustomerPhone().trim());
-                    userUpdated = true;
-                }
-                if (request.getIdentityNumber() != null && !request.getIdentityNumber().trim().isBlank()) {
-                    user.setIdentityNumber(request.getIdentityNumber().trim());
-                    userUpdated = true;
-                }
-                if (userUpdated) {
-                    userRepository.save(user);
                 }
             });
         }
@@ -351,6 +333,18 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setCode("RSV-" + datePart + "-" + randomSuffix);
 
         reservation.setCustomerId(customerId);
+        if (request.getCustomerName() != null && !request.getCustomerName().trim().isBlank()) {
+            reservation.setCustomerName(request.getCustomerName().trim());
+        }
+        if (request.getCustomerPhone() != null && !request.getCustomerPhone().trim().isBlank()) {
+            reservation.setCustomerPhone(request.getCustomerPhone().trim());
+        }
+        if (request.getCustomerEmail() != null && !request.getCustomerEmail().trim().isBlank()) {
+            reservation.setCustomerEmail(request.getCustomerEmail().trim());
+        }
+        if (request.getIdentityNumber() != null && !request.getIdentityNumber().trim().isBlank()) {
+            reservation.setCustomerIdentityNumber(request.getIdentityNumber().trim());
+        }
         reservation.setFacilityId(request.getFacilityId());
         reservation.setUnitTypeId(request.getUnitTypeId());
         reservation.setStorageUnitId(null);
@@ -944,6 +938,15 @@ public class ReservationServiceImpl implements ReservationService {
                 res.setCustomerPhone(user.getPhone());
                 res.setCustomerEmail(user.getEmail());
             });
+        }
+        if (r.getCustomerName() != null && !r.getCustomerName().isBlank()) {
+            res.setCustomerName(r.getCustomerName());
+        }
+        if (r.getCustomerPhone() != null && !r.getCustomerPhone().isBlank()) {
+            res.setCustomerPhone(r.getCustomerPhone());
+        }
+        if (r.getCustomerEmail() != null && !r.getCustomerEmail().isBlank()) {
+            res.setCustomerEmail(r.getCustomerEmail());
         }
         res.setFacilityId(r.getFacilityId());
         res.setFacilityName(facilityName);

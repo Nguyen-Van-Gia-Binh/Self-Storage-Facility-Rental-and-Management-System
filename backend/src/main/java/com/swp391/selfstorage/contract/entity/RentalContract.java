@@ -104,6 +104,18 @@ public class RentalContract {
     @Column(name = "rescheduled_at")
     private OffsetDateTime rescheduledAt;
 
+    @Column(name = "customer_name", length = 150)
+    private String customerName;
+
+    @Column(name = "customer_phone", length = 20)
+    private String customerPhone;
+
+    @Column(name = "customer_email", length = 255)
+    private String customerEmail;
+
+    @Column(name = "customer_identity_number", length = 20)
+    private String customerIdentityNumber;
+
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) createdAt = OffsetDateTime.now();
@@ -196,4 +208,16 @@ public class RentalContract {
 
     public OffsetDateTime getRescheduledAt() { return rescheduledAt; }
     public void setRescheduledAt(OffsetDateTime rescheduledAt) { this.rescheduledAt = rescheduledAt; }
+
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+
+    public String getCustomerPhone() { return customerPhone; }
+    public void setCustomerPhone(String customerPhone) { this.customerPhone = customerPhone; }
+
+    public String getCustomerEmail() { return customerEmail; }
+    public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
+
+    public String getCustomerIdentityNumber() { return customerIdentityNumber; }
+    public void setCustomerIdentityNumber(String customerIdentityNumber) { this.customerIdentityNumber = customerIdentityNumber; }
 }
