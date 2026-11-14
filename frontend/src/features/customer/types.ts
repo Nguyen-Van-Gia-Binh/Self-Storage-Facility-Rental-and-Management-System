@@ -106,6 +106,8 @@ export interface RentedContract {
   endDate: string;
   monthlyRent: number;
   depositHeld: number;
+  totalRentalFee?: number;
+  totalContractAmount?: number;
   accessPin?: string; // Mã PIN mở cửa (chỉ cấp khi ACTIVE theo BR-ACC-01)
   accessPinLength?: number;
   status: 'ACTIVE' | 'PENDING_CHECKIN' | 'EXPIRING_SOON' | 'OVERDUE' | 'PENDING_RETURN' | 'CLOSED' | 'TERMINATED';

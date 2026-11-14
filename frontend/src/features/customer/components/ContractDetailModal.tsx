@@ -119,14 +119,20 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   const effectiveFacilityName = effectiveDetail?.facilityName || contract.facilityName;
   const effectiveFacilityAddress = effectiveDetail?.facilityAddress || 'Cơ sở trực thuộc Hệ thống Self-Storage';
   const effectiveFacilityPhone = effectiveDetail?.facilityPhone || '1900 8888';
-  const effectiveCustomerName = effectiveDetail?.customerName || contract.customerName || 'Nguyễn Văn Khách';
-  const effectiveCustomerPhone = effectiveDetail?.customerPhone || contract.customerPhone || '0987654321';
-  const effectiveCustomerIdentity = effectiveDetail?.customerIdentityNumber || contract.customerIdentityNumber || '079201001234';
-  const effectiveCustomerEmail = effectiveDetail?.customerEmail || contract.customerEmail || 'khachhang@smartstorage.vn';
+  const effectiveCustomerName = effectiveDetail?.customerName || contract.customerName || 'Chưa cập nhật';
+  const effectiveCustomerPhone = effectiveDetail?.customerPhone || contract.customerPhone || 'Chưa cập nhật';
+  const effectiveCustomerIdentity = effectiveDetail?.customerIdentityNumber || contract.customerIdentityNumber || 'Chưa cập nhật';
+  const effectiveCustomerEmail = effectiveDetail?.customerEmail || contract.customerEmail || 'Chưa cập nhật';
   const effectiveUnitTypeName = effectiveDetail?.unitTypeName || contract.unitTypeName;
   const effectiveDimensions = effectiveDetail?.unitDimensions || contract.unitDimensions || '1.5m x 2.0m x 2.5m';
   const effectiveFloor = effectiveDetail?.floor ?? contract.floor ?? 1;
   const effectivePosition = effectiveDetail?.position || contract.position || 'Khu A';
+
+  const effectiveRentalMonths = effectiveDetail?.rentalMonths || contract.rentalMonths || 1;
+  const effectiveMonthlyRent = effectiveDetail?.monthlyPrice || contract.monthlyRent || 0;
+  const effectiveDeposit = effectiveDetail?.depositAmount ?? contract.depositHeld ?? 0;
+  const effectiveTotalRentalFee = effectiveDetail?.totalRentalFee || contract.totalRentalFee || (effectiveMonthlyRent * effectiveRentalMonths);
+  const effectiveTotalContractAmount = effectiveDetail?.totalContractAmount || contract.totalContractAmount || (effectiveTotalRentalFee + effectiveDeposit);
 
   const isPendingCheckin =
     effectiveStatus === 'PENDING_CHECKIN' ||
@@ -460,7 +466,21 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                   <div className="flex justify-between items-center py-1">
                     <span className="text-slate-600">Đơn giá thuê hàng tháng:</span>
                     <span className="font-bold text-brand-700 text-sm">
-                      {formatVND(detail?.monthlyPrice || contract.monthlyRent)}/tháng
+                      {formatVND(effectiveMonthlyRent)}/tháng
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center py-1 border-t border-slate-100">
+                    <div>
+                      <span className="text-slate-700 font-semibold block">
+                        Tổng tiền thuê ({effectiveRentalMonths} tháng):
+                      </span>
+                      <span className="text-[10px] text-slate-400 italic">
+                        Đơn giá x Thời hạn thuê trọn kỳ
+                      </span>
+                    </div>
+                    <span className="font-bold text-slate-800 text-sm">
+                      {formatVND(effectiveTotalRentalFee)}
                     </span>
                   </div>
 
@@ -472,7 +492,22 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                       </span>
                     </div>
                     <span className="font-bold text-emerald-700 text-sm">
-                      {formatVND(detail?.depositAmount || contract.depositHeld)}
+                      {formatVND(effectiveDeposit)}
+                    </span>
+                  </div>
+
+                  {/* Tổng giá trị hợp đồng / Tổng tiền */}
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-brand-50 border border-brand-200 mt-2">
+                    <div>
+                      <span className="text-brand-900 font-extrabold block text-xs uppercase tracking-wider">
+                        Tổng giá trị hợp đồng (Tổng tiền):
+                      </span>
+                      <span className="text-[10.5px] text-brand-700">
+                        Bao gồm tiền thuê {effectiveRentalMonths} tháng + tiền cọc bảo đảm hoàn lại
+                      </span>
+                    </div>
+                    <span className="font-black text-brand-800 text-base sm:text-lg">
+                      {formatVND(effectiveTotalContractAmount)}
                     </span>
                   </div>
 

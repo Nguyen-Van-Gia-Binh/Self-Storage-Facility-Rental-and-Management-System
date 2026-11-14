@@ -310,7 +310,7 @@ export const BookingPage: React.FC = () => {
   const [customerName, setCustomerName] = useState(() => currentUser?.fullName || '');
   const [customerPhone, setCustomerPhone] = useState(() => (currentUser as any)?.phone || '');
   const [customerEmail, setCustomerEmail] = useState(() => currentUser?.email || '');
-  const [customerIdCard, setCustomerIdCard] = useState('');
+  const [customerIdCard, setCustomerIdCard] = useState(() => (currentUser as any)?.identityNumber || '');
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [formErrors, setFormErrors] = useState<BookingFormErrors>({});
 
@@ -578,6 +578,15 @@ export const BookingPage: React.FC = () => {
         customerEmail: customerEmail.trim(),
         identityNumber: customerIdCard.replace(/\s+/g, ''),
       });
+
+      if (currentUser) {
+        tokenStorage.setUser({
+          ...currentUser,
+          fullName: customerName.trim(),
+          phone: customerPhone.replace(/\s+/g, ''),
+          identityNumber: customerIdCard.replace(/\s+/g, ''),
+        } as any);
+      }
 
       const rsvId = rsv.id || 1;
       setCreatedReservationId(rsvId);

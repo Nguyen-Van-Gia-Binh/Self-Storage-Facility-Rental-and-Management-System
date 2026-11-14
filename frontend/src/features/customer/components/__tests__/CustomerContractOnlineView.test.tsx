@@ -186,6 +186,11 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
     expect(relocationElements.length).toBeGreaterThanOrEqual(1);
     expect(await screen.findByText(/Ô KHO MỚI: U-102/i)).toBeInTheDocument();
 
+    // Điều 3: Hiển thị Đơn giá, Tiền cọc và Tổng giá trị hợp đồng (Tổng tiền)
+    const totalContractLabels = await screen.findAllByText(/Tổng giá trị hợp đồng \(Tổng tiền\)/i);
+    expect(totalContractLabels.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/3\.000\.000/i).length).toBeGreaterThanOrEqual(1);
+
     // Nút in hợp đồng
     expect(screen.getByRole('button', { name: /In hợp đồng/i })).toBeInTheDocument();
   });

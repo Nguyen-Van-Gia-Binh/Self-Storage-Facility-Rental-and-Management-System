@@ -22,19 +22,22 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
   const effectiveFacilityAddress =
     detail?.facilityAddress || 'Cơ sở trực thuộc Hệ thống Cho thuê kho tự quản SmartStorage';
   const effectiveFacilityPhone = detail?.facilityPhone || '1900 8888';
-  const effectiveCustomerName = detail?.customerName || contract.customerName || 'Nguyễn Văn Khách';
-  const effectiveCustomerPhone = detail?.customerPhone || contract.customerPhone || '0987654321';
+  const effectiveCustomerName = detail?.customerName || contract.customerName || 'Chưa cập nhật';
+  const effectiveCustomerPhone = detail?.customerPhone || contract.customerPhone || 'Chưa cập nhật';
   const effectiveCustomerIdentity =
-    detail?.customerIdentityNumber || contract.customerIdentityNumber || '079201001234';
-  const effectiveCustomerEmail = detail?.customerEmail || contract.customerEmail || 'khachhang@smartstorage.vn';
+    detail?.customerIdentityNumber || contract.customerIdentityNumber || 'Chưa cập nhật';
+  const effectiveCustomerEmail = detail?.customerEmail || contract.customerEmail || 'Chưa cập nhật';
   const effectiveUnitTypeName = detail?.unitTypeName || contract.unitTypeName || 'Kho Tiêu Chuẩn';
   const effectiveDimensions = detail?.unitDimensions || contract.unitDimensions || '2.0m x 2.5m x 2.5m';
   const effectiveFloor = detail?.floor ?? contract.floor ?? 1;
   const effectivePosition = detail?.position || contract.position || 'Khu A';
   const effectiveStartDate = contract.startDate || '2026-09-15';
   const effectiveEndDate = contract.endDate || '2027-04-15';
+  const effectiveRentalMonths = detail?.rentalMonths || contract.rentalMonths || 1;
   const effectiveMonthlyRent = detail?.monthlyPrice || contract.monthlyRent || 0;
-  const effectiveDeposit = detail?.depositAmount || contract.depositHeld || effectiveMonthlyRent;
+  const effectiveDeposit = detail?.depositAmount ?? contract.depositHeld ?? effectiveMonthlyRent;
+  const effectiveTotalRentalFee = detail?.totalRentalFee || contract.totalRentalFee || (effectiveMonthlyRent * effectiveRentalMonths);
+  const effectiveTotalContractAmount = detail?.totalContractAmount || contract.totalContractAmount || (effectiveTotalRentalFee + effectiveDeposit);
   const isPendingCheckin =
     contract.status === 'PENDING_CHECKIN' ||
     (contract.status as string) === 'PENDING_CHECK_IN';
@@ -252,17 +255,25 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
           ĐIỀU 3: GIÁ THUÊ, TIỀN CỌC BẢO ĐẢM VÀ QUY CHẾ THANH TOÁN
         </h2>
 
-        <div className="space-y-1 text-[11.5px]">
+        <div className="space-y-1.5 text-[11.5px]">
           <p>
             <strong>1. Đơn giá thuê:</strong>{' '}
             <span className="font-bold">{formatCurrencyVND(effectiveMonthlyRent)} / tháng</span> (Đã bao gồm chi phí bảo quản tiêu chuẩn, giám sát an ninh 24/7 và điện chiếu sáng công cộng).
           </p>
           <p>
-            <strong>2. Tiền cọc bảo đảm:</strong>{' '}
-            <span className="font-bold">{formatCurrencyVND(effectiveDeposit)}</span>. Khoản tiền cọc được bảo lưu tại tài khoản ngân hàng của Bên A để bảo đảm thực hiện nghĩa vụ hợp đồng và sẽ được hoàn trả 100% cho Bên B sau khi nghiệm thu trả kho đúng quy định.
+            <strong>2. Tổng tiền thuê trọn kỳ ({effectiveRentalMonths} tháng):</strong>{' '}
+            <span className="font-bold">{formatCurrencyVND(effectiveTotalRentalFee)}</span> (Đơn giá x Thời hạn thuê trọn kỳ).
           </p>
           <p>
-            <strong>3. Xử lý chậm nộp & quá hạn:</strong>
+            <strong>3. Tiền cọc bảo đảm:</strong>{' '}
+            <span className="font-bold">{formatCurrencyVND(effectiveDeposit)}</span>. Khoản tiền cọc được bảo lưu tại tài khoản ngân hàng của Bên A để bảo đảm thực hiện nghĩa vụ hợp đồng và sẽ được hoàn trả 100% cho Bên B sau khi nghiệm thu trả kho đúng quy định.
+          </p>
+          <div className="p-2 bg-slate-100 border border-slate-300 rounded font-bold text-slate-900 flex justify-between items-center text-[12px] my-1">
+            <span>TỔNG GIÁ TRỊ HỢP ĐỒNG (TỔNG TIỀN):</span>
+            <span className="text-[13px] text-brand-900 font-extrabold">{formatCurrencyVND(effectiveTotalContractAmount)}</span>
+          </div>
+          <p>
+            <strong>4. Xử lý chậm nộp & quá hạn:</strong>
           </p>
           <ul className="list-disc pl-5 text-[11px] text-slate-700 space-y-0.5">
             <li><strong>Ân hạn D+1 đến D+3:</strong> Miễn phí phạt quá hạn; Bên B vẫn duy trì đầy đủ quyền ra vào ô kho.</li>

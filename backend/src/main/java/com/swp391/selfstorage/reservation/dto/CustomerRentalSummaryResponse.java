@@ -35,8 +35,10 @@ public class CustomerRentalSummaryResponse {
     private LocalDate endDateExclusive;
     private int rentalMonths;
     private long monthlyPrice;
+    private long totalRentalFee;
     private long depositAmount;
     private long depositBalance;
+    private long totalContractAmount;
     private String status;
 
     // Cảnh báo & Đếm ngược
@@ -139,6 +141,15 @@ public class CustomerRentalSummaryResponse {
 
     public long getMonthlyPrice() { return monthlyPrice; }
     public void setMonthlyPrice(long monthlyPrice) { this.monthlyPrice = monthlyPrice; }
+
+    public long getTotalRentalFee() { return totalRentalFee; }
+    public void setTotalRentalFee(long totalRentalFee) { this.totalRentalFee = totalRentalFee; }
+
+    public long getTotalContractAmount() {
+        if (totalContractAmount > 0) return totalContractAmount;
+        return totalRentalFee + depositAmount;
+    }
+    public void setTotalContractAmount(long totalContractAmount) { this.totalContractAmount = totalContractAmount; }
 
     public long getDepositAmount() { return depositAmount; }
     public void setDepositAmount(long depositAmount) { this.depositAmount = depositAmount; }

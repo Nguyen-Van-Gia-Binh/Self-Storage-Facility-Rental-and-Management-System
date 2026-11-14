@@ -382,8 +382,10 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         res.setEndDateExclusive(contract.getEndDateExclusive());
         res.setRentalMonths(contract.getRentalMonths());
         res.setMonthlyPrice(contract.getMonthlyPrice());
+        res.setTotalRentalFee(contract.getTotalRentalFee());
         res.setDepositAmount(contract.getDepositAmount());
         res.setDepositBalance(contract.getDepositBalance());
+        res.setTotalContractAmount(contract.getTotalRentalFee() + contract.getDepositAmount());
         res.setStatus(contract.getStatus().name());
         res.setRescheduleCount(contract.getRescheduleCount());
         res.setRescheduledAt(contract.getRescheduledAt());

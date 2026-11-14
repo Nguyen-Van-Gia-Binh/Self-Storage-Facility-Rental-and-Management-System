@@ -13,7 +13,6 @@ public class CustomerRentalDetailResponse extends CustomerRentalSummaryResponse 
     private LocalDate checkinDate;
     private LocalDate returnDate;
     private OffsetDateTime closedAt;
-    private long totalRentalFee;
     private String policySnapshot;
     private String instructionNotes;
     private List<String> allowedActions;
@@ -33,9 +32,6 @@ public class CustomerRentalDetailResponse extends CustomerRentalSummaryResponse 
 
     public OffsetDateTime getClosedAt() { return closedAt; }
     public void setClosedAt(OffsetDateTime closedAt) { this.closedAt = closedAt; }
-
-    public long getTotalRentalFee() { return totalRentalFee; }
-    public void setTotalRentalFee(long totalRentalFee) { this.totalRentalFee = totalRentalFee; }
 
     public String getPolicySnapshot() { return policySnapshot; }
     public void setPolicySnapshot(String policySnapshot) { this.policySnapshot = policySnapshot; }

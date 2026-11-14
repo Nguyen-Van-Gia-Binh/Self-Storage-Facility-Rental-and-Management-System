@@ -251,11 +251,29 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         // 2.2 Kiem tra BR-SPAM-01: Chặn khách hàng hủy hoặc bỏ thanh toán >= 5 lần trong ngày
+        // Đồng thời tự động cập nhật họ tên, SĐT, CCCD khách hàng đã nhập từ form đặt chỗ vào tài khoản
         if (customerId != null && userRepository != null) {
             userRepository.findById(customerId).ifPresent(user -> {
                 LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
                 if (user.getLastCancelDate() != null && user.getLastCancelDate().equals(today) && user.getDailyCancelCount() >= 5) {
                     throw new CustomException(ErrorCode.BOOKING_SPAM_BLOCKED);
+                }
+
+                boolean userUpdated = false;
+                if (request.getCustomerName() != null && !request.getCustomerName().trim().isBlank()) {
+                    user.setFullName(request.getCustomerName().trim());
+                    userUpdated = true;
+                }
+                if (request.getCustomerPhone() != null && !request.getCustomerPhone().trim().isBlank()) {
+                    user.setPhone(request.getCustomerPhone().trim());
+                    userUpdated = true;
+                }
+                if (request.getIdentityNumber() != null && !request.getIdentityNumber().trim().isBlank()) {
+                    user.setIdentityNumber(request.getIdentityNumber().trim());
+                    userUpdated = true;
+                }
+                if (userUpdated) {
+                    userRepository.save(user);
                 }
             });
         }

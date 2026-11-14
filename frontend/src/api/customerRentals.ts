@@ -75,6 +75,10 @@ export interface CustomerRentalSummary {
   status: string; // ACTIVE, PENDING_CHECKIN, OVERDUE, etc.
   accessCode?: string;
   monthlyPrice: number;
+  totalRentalFee?: number;
+  totalContractAmount?: number;
+  rentalMonths?: number;
+  depositAmount?: number;
   rescheduleCount?: number;
   rescheduledAt?: string;
 }

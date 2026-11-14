@@ -2526,6 +2526,7 @@ public class ContractServiceImpl implements ContractService {
                 r.setTotalRentalFee(c.getTotalRentalFee());
                 r.setDepositAmount(c.getDepositAmount());
                 r.setDepositBalance(c.getDepositBalance());
+                r.setTotalAmount(c.getTotalRentalFee() + c.getDepositAmount());
                 r.setAccessCode(c.getAccessCode());
                 r.setStatus(c.getStatus());
                 r.setCheckinDate(c.getCheckinDate());
