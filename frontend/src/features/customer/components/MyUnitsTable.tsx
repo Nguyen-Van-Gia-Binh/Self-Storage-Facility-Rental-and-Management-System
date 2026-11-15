@@ -347,7 +347,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                 (contract.status === 'PENDING_RETURN' && !contract.inspectionDone) ||
                 contract.status === 'OVERDUE';
 
-              const isClosed = contract.status === 'CLOSED' || (contract.status as string) === 'TERMINATED';
+              const isClosed =
+                contract.status === 'CLOSED' ||
+                (contract.status as string) === 'TERMINATED' ||
+                (contract.status as string) === 'CANCELLED';
               const isRelocating =
                 Boolean(contract.relocationEligible) &&
                 (contract.status === 'PENDING_CHECKIN' ||
@@ -608,6 +611,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                     ) : contract.status === 'PENDING_RETURN' ? (
                       <Badge variant={contract.inspectionDone ? 'info' : 'warning'} className="w-[136px] justify-center">
                         {contract.inspectionDone ? 'Đã nghiệm thu' : 'Chờ nghiệm thu'}
+                      </Badge>
+                    ) : (contract.status as string) === 'CANCELLED' ? (
+                      <Badge variant="warning" className="w-[136px] justify-center bg-amber-50 text-amber-800 border-amber-300 font-bold" title="Đã hủy nhận kho - Đang chờ Quản lý cơ sở duyệt quyết toán hoàn tiền">
+                        Đã hủy · Chờ hoàn
                       </Badge>
                     ) : (contract.status as string) === 'TERMINATED' ? (
                       (contract.depositHeld === 0 || (contract.overdueDays ?? 0) >= 7) ? (

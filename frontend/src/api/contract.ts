@@ -465,7 +465,8 @@ export async function getManagerKpiData(facilityId?: number): Promise<ContractKp
     (c) =>
       c.status === 'INSPECTED' ||
       c.status === 'NOTICE_SUBMITTED' ||
-      (c.status as string) === 'PENDING_RETURN'
+      (c.status as string) === 'PENDING_RETURN' ||
+      (c.status as string) === 'CANCELLED'
   );
 
   const totalDebt = overdueContracts.reduce(

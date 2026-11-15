@@ -44,9 +44,16 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
   if (!isOpen || !contract) return null;
 
   // Xác định chính xác loại hình quyết toán
-  const settlementType: 'EARLY_RETURN' | 'NORMAL' | 'OVERDUE_TERMINATED' | 'REJECTED_CHECKIN' =
+  const settlementType:
+    | 'EARLY_RETURN'
+    | 'NORMAL'
+    | 'OVERDUE_TERMINATED'
+    | 'REJECTED_CHECKIN'
+    | 'CANCELLED_CHECKIN' =
     preview?.settlementType ??
-    (contract.status === 'TERMINATED'
+    (contract.status === 'CANCELLED'
+      ? 'CANCELLED_CHECKIN'
+      : contract.status === 'TERMINATED'
       ? contract.checkinDate == null
         ? 'REJECTED_CHECKIN'
         : 'OVERDUE_TERMINATED'
@@ -60,7 +67,9 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
   const recordedDamage = preview?.damageCost ?? 0;
   const unpaidExtras = preview?.unpaidExtraCharges ?? 0;
   const overdueFee = preview?.overdueFee ?? contract.overdueFeeAccrued ?? 0;
-  const totalRentalFee = preview?.totalRentalFee ?? 0;
+  const totalRentalFee =
+    preview?.totalRentalFee ?? (contract.monthlyPrice || 0) * Math.max(1, contract.rentalMonths || 1);
+  const depositForfeited = preview?.depositForfeited ?? 0;
 
   const extraCostValue = showExtraCostInput ? Math.max(0, Number(additionalCost) || 0) : 0;
   const totalDeductionBase = recordedDamage + unpaidExtras + extraCostValue;
@@ -97,6 +106,12 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
   } else if (settlementType === 'REJECTED_CHECKIN') {
     // BR-CHK-06: Hoàn 100% tiền thuê + cọc
     netRefund = (earlyRentRefund > 0 ? earlyRentRefund : totalRentalFee) + originalDeposit;
+    payableAmount = 0;
+  } else if (settlementType === 'CANCELLED_CHECKIN') {
+    // Hủy nhận kho theo chính sách 3 mức (≥ 7 ngày: hoàn 100% cọc; 2-6 ngày: phạt 50% cọc; < 48h: phạt 100% cọc)
+    const rentRefund = earlyRentRefund > 0 ? earlyRentRefund : totalRentalFee;
+    const depositRefund = Math.max(0, originalDeposit - depositForfeited);
+    netRefund = preview?.depositRefundAmount ?? rentRefund + depositRefund;
     payableAmount = 0;
   }
 
@@ -192,8 +207,11 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
                 {settlementType === 'NORMAL' && 'Bảng quyết toán hoàn cọc đúng hạn (BR-RET-04)'}
                 {settlementType === 'OVERDUE_TERMINATED' && 'Bảng quyết toán cưỡng chế & Kho Tổng (D+7)'}
                 {settlementType === 'REJECTED_CHECKIN' && 'Bảng hoàn tiền từ chối bàn giao (BR-CHK-06)'}
+                {settlementType === 'CANCELLED_CHECKIN' && 'Bảng quyết toán hủy nhận kho trước bàn giao'}
               </h4>
-              {!showExtraCostInput && settlementType !== 'REJECTED_CHECKIN' && (
+              {!showExtraCostInput &&
+                settlementType !== 'REJECTED_CHECKIN' &&
+                settlementType !== 'CANCELLED_CHECKIN' && (
                 <button
                   type="button"
                   onClick={() => setShowExtraCostInput(true)}
@@ -318,6 +336,44 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
                 <p className="text-[11px] text-slate-500 italic px-1">
                   (Miễn trừ toàn bộ chi phí do từ chối bàn giao ở khâu Check-in theo BR-CHK-06)
                 </p>
+              </div>
+            )}
+
+            {/* TRƯỜNG HỢP 5: KHÁCH HỦY NHẬN KHO TRƯỚC BÀN GIAO (CANCELLED_CHECKIN) */}
+            {settlementType === 'CANCELLED_CHECKIN' && (
+              <div className="space-y-1.5 pt-1">
+                <div className="flex justify-between text-emerald-800 bg-emerald-50/80 p-2 rounded-lg border border-emerald-200 font-medium">
+                  <span>
+                    1. Hoàn 100% Tiền thuê đã thanh toán trước ({contract.rentalMonths || 1} tháng):
+                  </span>
+                  <span className="font-mono font-bold text-emerald-700">
+                    +{(earlyRentRefund > 0 ? earlyRentRefund : totalRentalFee).toLocaleString('vi-VN')} đ
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-700 px-1">
+                  <span>2. Tiền cọc ban đầu:</span>
+                  <span className="font-mono font-semibold text-slate-900">
+                    +{originalDeposit.toLocaleString('vi-VN')} đ
+                  </span>
+                </div>
+                <div className="flex justify-between px-1">
+                  <span className={depositForfeited > 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                    3. Khấu trừ phí hủy nhận kho (
+                    {depositForfeited === 0
+                      ? 'Hủy sớm ≥ 7 ngày — Không phạt'
+                      : depositForfeited >= originalDeposit
+                      ? 'Hủy sát giờ < 48h — Phạt 100% cọc'
+                      : 'Hủy trước 2 – 6 ngày — Phạt 50% cọc'}
+                    ):
+                  </span>
+                  <span
+                    className={`font-mono font-semibold ${
+                      depositForfeited > 0 ? 'text-rose-600' : 'text-emerald-700'
+                    }`}
+                  >
+                    {depositForfeited > 0 ? `-${depositForfeited.toLocaleString('vi-VN')} đ` : '0 đ'}
+                  </span>
+                </div>
               </div>
             )}
 

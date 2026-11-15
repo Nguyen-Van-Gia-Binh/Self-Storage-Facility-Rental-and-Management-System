@@ -108,7 +108,12 @@ export const MyUnitsPage: React.FC = () => {
           (contract.status as string) !== 'PENDING_CHECK_IN'
         )
           return false;
-        if (activeTab === 'CLOSED' && contract.status !== 'CLOSED' && contract.status !== 'TERMINATED') {
+        if (
+          activeTab === 'CLOSED' &&
+          contract.status !== 'CLOSED' &&
+          contract.status !== 'TERMINATED' &&
+          (contract.status as string) !== 'CANCELLED'
+        ) {
           return false;
         }
 

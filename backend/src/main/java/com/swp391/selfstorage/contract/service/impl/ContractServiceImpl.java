@@ -619,7 +619,8 @@ public class ContractServiceImpl implements ContractService {
                         String appointmentSlot = null;
                         ReturnRequest returnReq = latestReturnRequestByContract.get(c.getId());
                         if (returnReq != null && c.getStatus() != ContractStatus.CLOSED) {
-                                if (c.getStatus() != ContractStatus.TERMINATED) {
+                                if (c.getStatus() != ContractStatus.TERMINATED
+                                                && c.getStatus() != ContractStatus.CANCELLED) {
                                         requestedReturnDate = returnReq.getRequestedReturnDate();
                                         returnRequestCreatedAt = returnReq.getRequestedAt();
                                         appointmentSlot = returnReq.getAppointmentSlot();
@@ -627,8 +628,11 @@ public class ContractServiceImpl implements ContractService {
                                                 displayStatus = ContractStatus.PENDING_RETURN;
                                         }
                                 }
-                                if (returnReq.getInspectedAt() != null || c.getStatus() == ContractStatus.TERMINATED) {
-                                        isInspected = returnReq.getInspectedAt() != null;
+                                if (returnReq.getInspectedAt() != null
+                                                || c.getStatus() == ContractStatus.TERMINATED
+                                                || c.getStatus() == ContractStatus.CANCELLED) {
+                                        isInspected = returnReq.getInspectedAt() != null
+                                                        || c.getStatus() == ContractStatus.CANCELLED;
                                         damageCost = returnReq.getDamageCost();
                                         damageNotes = returnReq.getConditionNote();
                                 }
@@ -1379,6 +1383,10 @@ public class ContractServiceImpl implements ContractService {
                 RentalContract contract = contractOpt
                                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
 
+                if (isCustomerCancelledCheckIn(contract)) {
+                        return computeCancelledCheckInPreview(contract);
+                }
+
                 if (contract.getStatus() == ContractStatus.TERMINATED) {
                         if (contract.getCheckinDate() == null) {
                                 // BR-CHK-06: Từ chối bàn giao ở khâu Check-in -> hoàn 100% tiền thuê + 100% cọc
@@ -1521,11 +1529,14 @@ public class ContractServiceImpl implements ContractService {
 
                 if (contract.getStatus() != ContractStatus.PENDING_RETURN
                                 && contract.getStatus() != ContractStatus.OVERDUE
-                                && contract.getStatus() != ContractStatus.TERMINATED) {
+                                && contract.getStatus() != ContractStatus.TERMINATED
+                                && contract.getStatus() != ContractStatus.CANCELLED) {
                         throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_RETURN);
                 }
 
-                ReturnRequest returnReq = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contractId)
+                ReturnRequest returnReq = (returnRequestRepository != null
+                                ? returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contractId)
+                                : Optional.<ReturnRequest>empty())
                                 .orElseGet(() -> ReturnRequest.builder()
                                                 .contractId(contractId)
                                                 .requestedReturnDate(LocalDate.now())
@@ -1535,6 +1546,23 @@ public class ContractServiceImpl implements ContractService {
                                                 .damageCost(0L)
                                                 .depositRefundAmount(contract.getDepositAmount())
                                                 .build());
+
+                if (isCustomerCancelledCheckIn(contract)) {
+                        SettlementPreviewResponse cancelPreview = computeCancelledCheckInPreview(contract);
+                        long totalRefund = cancelPreview.getDepositRefundAmount();
+                        if (request != null && request.getApprovedNotes() != null && !request.getApprovedNotes().isBlank()) {
+                                returnReq.setConditionNote(request.getApprovedNotes().trim());
+                        }
+                        if (paymentTransactionRepository != null && contract.getId() != null) {
+                                paymentTransactionRepository.findByContractId(contract.getId()).stream()
+                                                .filter(t -> "PENDING_REFUND".equalsIgnoreCase(t.getStatus()))
+                                                .forEach(t -> {
+                                                        t.setStatus(PaymentStatus.SUCCESS.name());
+                                                        paymentTransactionRepository.save(t);
+                                                });
+                        }
+                        return closeSettledContract(contract, returnReq, managerId, totalRefund, 0L);
+                }
 
                 if (contract.getStatus() == ContractStatus.TERMINATED) {
                         if (contract.getCheckinDate() == null) {
@@ -1702,19 +1730,136 @@ public class ContractServiceImpl implements ContractService {
                 return toResponse(contract);
         }
 
+        private boolean isCustomerCancelledCheckIn(RentalContract contract) {
+                if (contract.getStatus() == ContractStatus.CANCELLED) {
+                        return true;
+                }
+                if (contract.getStatus() == ContractStatus.TERMINATED && contract.getCheckinDate() == null) {
+                        if (handoverRecordRepository != null && contract.getId() != null) {
+                                boolean rejected = handoverRecordRepository.findByContractId(contract.getId())
+                                                .map(HandoverRecord::isRejected)
+                                                .orElse(false);
+                                if (rejected) {
+                                        return false;
+                                }
+                        }
+                        if (paymentTransactionRepository != null && contract.getId() != null) {
+                                List<PaymentTransaction> txns = paymentTransactionRepository.findByContractId(contract.getId());
+                                if (txns != null && txns.stream().anyMatch(t -> "RENT_REFUND".equalsIgnoreCase(t.getTransactionType())
+                                                || "DEPOSIT_REFUND".equalsIgnoreCase(t.getTransactionType()))) {
+                                        return true;
+                                }
+                        }
+                        if (reservationRepository != null && contract.getReservationId() != null) {
+                                boolean rsvCancelled = reservationRepository.findById(contract.getReservationId())
+                                                .map(r -> r.getStatus() == ReservationStatus.CANCELLED)
+                                                .orElse(false);
+                                if (rsvCancelled) {
+                                        return true;
+                                }
+                        }
+                }
+                return false;
+        }
+
+        private SettlementPreviewResponse computeCancelledCheckInPreview(RentalContract contract) {
+                long rentAmount = contract.getTotalRentalFee() > 0
+                                ? contract.getTotalRentalFee()
+                                : contract.getMonthlyPrice() * Math.max(1, contract.getRentalMonths());
+                long deposit = contract.getDepositAmount();
+
+                List<PaymentTransaction> refundTxns = (paymentTransactionRepository != null && contract.getId() != null)
+                                ? Optional.ofNullable(paymentTransactionRepository.findByContractId(contract.getId()))
+                                                .orElse(List.of())
+                                                .stream()
+                                                .filter(t -> "RENT_REFUND".equalsIgnoreCase(t.getTransactionType())
+                                                                || "DEPOSIT_REFUND".equalsIgnoreCase(t.getTransactionType()))
+                                                .toList()
+                                : List.of();
+
+                long rentRefund;
+                long depositRefund;
+                if (!refundTxns.isEmpty()) {
+                        rentRefund = refundTxns.stream()
+                                        .filter(t -> "RENT_REFUND".equalsIgnoreCase(t.getTransactionType()))
+                                        .mapToLong(PaymentTransaction::getAmount)
+                                        .sum();
+                        depositRefund = refundTxns.stream()
+                                        .filter(t -> "DEPOSIT_REFUND".equalsIgnoreCase(t.getTransactionType()))
+                                        .mapToLong(PaymentTransaction::getAmount)
+                                        .sum();
+                } else {
+                        PolicyVersion cancelPolicy = (contract.getPolicyVersionId() != null && policyVersionRepository != null)
+                                        ? policyVersionRepository.findById(contract.getPolicyVersionId()).orElse(null)
+                                        : null;
+                        LocalDate refDate = LocalDate.now();
+                        if (reservationRepository != null && contract.getReservationId() != null) {
+                                refDate = reservationRepository.findById(contract.getReservationId())
+                                                .map(Reservation::getCancelledAt)
+                                                .filter(Objects::nonNull)
+                                                .map(OffsetDateTime::toLocalDate)
+                                                .orElse(refDate);
+                        }
+                        long daysUntilStart = contract.getStartDate() != null
+                                        ? ChronoUnit.DAYS.between(refDate, contract.getStartDate())
+                                        : 0;
+                        long hoursUntilStart = daysUntilStart * 24;
+                        int graceDays = cancelPolicy != null && cancelPolicy.getCheckinGraceDays() != null
+                                        ? cancelPolicy.getCheckinGraceDays()
+                                        : 10;
+                        long heldDays = contract.getStartDate() != null
+                                        ? Math.max(0, ChronoUnit.DAYS.between(contract.getStartDate(), refDate))
+                                        : 0;
+                        PolicyNumbers.RefundParts parts = PolicyNumbers.cancelRefund(
+                                        cancelPolicy,
+                                        rentAmount,
+                                        deposit,
+                                        contract.getMonthlyPrice(),
+                                        hoursUntilStart,
+                                        false,
+                                        daysUntilStart >= 0,
+                                        heldDays,
+                                        graceDays);
+                        rentRefund = parts.rent;
+                        depositRefund = parts.deposit;
+                }
+
+                long totalRefund = rentRefund + depositRefund;
+                long depositForfeited = Math.max(0L, deposit - depositRefund);
+
+                return SettlementPreviewResponse.builder()
+                                .contractId(contract.getId())
+                                .settlementType("CANCELLED_CHECKIN")
+                                .depositAmount(deposit)
+                                .totalRentalFee(rentAmount)
+                                .depositForfeited(depositForfeited)
+                                .damageCost(0L)
+                                .overdueFee(0L)
+                                .unpaidExtraCharges(0L)
+                                .depositRefundAmount(totalRefund)
+                                .payableAmount(0L)
+                                .earlyRentRefund(rentRefund)
+                                .earlyReturn(false)
+                                .build();
+        }
+
         private SettlementApprovalResponse closeSettledContract(RentalContract contract, ReturnRequest returnReq,
                         Long managerId, long refundAmount, long payableAmount) {
                 returnReq.setStatus(ReturnRequestStatus.COMPLETED);
                 returnReq.setDepositRefundAmount(refundAmount);
                 returnReq.setSettledBy(managerId);
                 returnReq.setSettledAt(OffsetDateTime.now());
-                returnRequestRepository.save(returnReq);
+                if (returnRequestRepository != null) {
+                        returnRequestRepository.save(returnReq);
+                }
 
-                extraChargeRepository.findByContractIdAndStatus(contract.getId(), ExtraChargeStatus.UNPAID)
-                                .forEach(charge -> {
-                                        charge.setStatus(ExtraChargeStatus.PAID);
-                                        extraChargeRepository.save(charge);
-                                });
+                if (extraChargeRepository != null) {
+                        extraChargeRepository.findByContractIdAndStatus(contract.getId(), ExtraChargeStatus.UNPAID)
+                                        .forEach(charge -> {
+                                                charge.setStatus(ExtraChargeStatus.PAID);
+                                                extraChargeRepository.save(charge);
+                                        });
+                }
 
                 contract.setDepositBalance(0);
                 contract.setOverdueFeeAccrued(0);
@@ -1723,7 +1868,7 @@ public class ContractServiceImpl implements ContractService {
                 contract.setAccessCode(null);
                 contractRepository.save(contract);
 
-                if (contract.getStorageUnitId() != null) {
+                if (contract.getStorageUnitId() != null && storageUnitRepository != null) {
                         storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(unit -> {
                                 if (unit.getStatus() == StorageUnitStatus.OCCUPIED) {
                                         unit.setStatus(StorageUnitStatus.CLEANING);
@@ -1732,7 +1877,7 @@ public class ContractServiceImpl implements ContractService {
                         });
                 }
 
-                if (refundAmount > 0 || payableAmount > 0) {
+                if ((refundAmount > 0 || payableAmount > 0) && eventPublisher != null) {
                         eventPublisher.publishEvent(ContractSettledEvent.builder()
                                         .contractId(contract.getId())
                                         .customerId(contract.getCustomerId())
@@ -2495,6 +2640,19 @@ public class ContractServiceImpl implements ContractService {
                 contract.setStatus(ContractStatus.CANCELLED);
                 RentalContract saved = contractRepository.save(contract);
 
+                if (returnRequestRepository != null) {
+                        returnRequestRepository.save(ReturnRequest.builder()
+                                        .contractId(contract.getId())
+                                        .requestedReturnDate(LocalDate.now())
+                                        .status(ReturnRequestStatus.PENDING)
+                                        .isIntact(true)
+                                        .conditionNote("Khách hủy nhận kho trước bàn giao: " + reason)
+                                        .inspectedAt(now)
+                                        .damageCost(0L)
+                                        .depositRefundAmount(refundAmount)
+                                        .build());
+                }
+
                 // Giải phóng ô kho -> AVAILABLE
                 if (contract.getStorageUnitId() != null && storageUnitRepository != null) {
                         storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(unit -> {
@@ -2676,12 +2834,16 @@ public class ContractServiceImpl implements ContractService {
                 if (returnRequestRepository != null && c.getStatus() != ContractStatus.CLOSED) {
                         returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId()).ifPresent(req -> {
                                 if (c.getStatus() != ContractStatus.TERMINATED
+                                                && c.getStatus() != ContractStatus.CANCELLED
                                                 && req.getStatus() == ReturnRequestStatus.PENDING
                                                 && c.getStatus() != ContractStatus.OVERDUE) {
                                         r.setStatus(ContractStatus.PENDING_RETURN);
                                 }
-                                if (req.getInspectedAt() != null || c.getStatus() == ContractStatus.TERMINATED) {
-                                        r.setIsInspected(req.getInspectedAt() != null);
+                                if (req.getInspectedAt() != null
+                                                || c.getStatus() == ContractStatus.TERMINATED
+                                                || c.getStatus() == ContractStatus.CANCELLED) {
+                                        r.setIsInspected(req.getInspectedAt() != null
+                                                        || c.getStatus() == ContractStatus.CANCELLED);
                                         r.setDamageCost(req.getDamageCost());
                                         r.setDamageNotes(req.getConditionNote());
                                 }

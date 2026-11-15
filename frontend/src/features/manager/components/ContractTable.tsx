@@ -5,6 +5,8 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  AlertTriangle,
+  CheckCircle2,
 } from 'lucide-react';
 import type { ManagerContractItem } from '@/types/contractManager';
 import { StatusBadge } from './StatusBadge';
@@ -15,6 +17,7 @@ export type SortDirection = 'asc' | 'desc';
 interface ContractTableProps {
   contracts: ManagerContractItem[];
   onSelectContract: (contract: ManagerContractItem) => void;
+  onApproveSettlement?: (contract: ManagerContractItem) => void;
   sortField?: ContractSortField;
   sortDirection?: SortDirection;
   onSort?: (field: ContractSortField) => void;
@@ -23,6 +26,7 @@ interface ContractTableProps {
 export const ContractTable: React.FC<ContractTableProps> = ({
   contracts,
   onSelectContract,
+  onApproveSettlement,
   sortField,
   sortDirection = 'asc',
   onSort,
@@ -180,7 +184,13 @@ export const ContractTable: React.FC<ContractTableProps> = ({
 
                   {/* Trạng thái */}
                   <td className="py-3.5 px-4">
-                    <StatusBadge status={c.status} size="sm" />
+                    <StatusBadge
+                      status={c.status}
+                      size="sm"
+                      customLabel={
+                        c.status === 'CANCELLED' ? '⏳ Hủy · Chờ hoàn tiền' : undefined
+                      }
+                    />
                     {isOverdue && c.overdueDays !== undefined && (
                       <span className="block text-[10px] font-bold text-rose-600 mt-0.5">
                         Quá hạn {c.overdueDays} ngày
@@ -230,16 +240,35 @@ export const ContractTable: React.FC<ContractTableProps> = ({
 
                   {/* Thao tác (Bỏ icon Eye bên trong nút) */}
                   <td className="py-3.5 px-4 text-right">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectContract(c);
-                      }}
-                      className="px-3 py-1 text-xs font-semibold text-slate-700 hover:text-brand-600 hover:bg-brand-50/70 rounded-lg border border-slate-200 hover:border-brand-200 transition-all cursor-pointer"
-                    >
-                      Chi tiết
-                    </button>
+                    <div className="inline-flex items-center justify-end gap-1.5">
+                      {onApproveSettlement &&
+                        (c.status === 'INSPECTED' ||
+                          c.status === 'TERMINATED' ||
+                          c.status === 'CANCELLED') && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onApproveSettlement(c);
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition-colors cursor-pointer"
+                            title="Mở bảng phê duyệt quyết toán và hoàn tiền"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Duyệt quyết toán</span>
+                          </button>
+                        )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectContract(c);
+                        }}
+                        className="px-3 py-1 text-xs font-semibold text-slate-700 hover:text-brand-600 hover:bg-brand-50/70 rounded-lg border border-slate-200 hover:border-brand-200 transition-all cursor-pointer"
+                      >
+                        Chi tiết
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
