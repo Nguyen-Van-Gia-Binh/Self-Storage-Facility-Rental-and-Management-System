@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   AlertCircle,
   Building2,
@@ -843,8 +844,16 @@ export const AllocationPage: React.FC = () => {
       )}
 
       {/* Form Modal xác nhận gán ô kho & Chỉ định nhân viên tiếp đón */}
-      {modalUnit && selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-3 sm:p-4 overflow-hidden">
+      {modalUnit && selected && typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 overflow-hidden animate-in fade-in duration-200"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && assigningUnitId == null) {
+                setModalUnit(null);
+              }
+            }}
+          >
           <div className="bg-white rounded-2xl shadow-2xl max-w-xl sm:max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-200 my-auto">
             {/* Modal Header (luôn cố định phía trên, không bị tràn màn hình) */}
             <div className="shrink-0 px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
@@ -1066,7 +1075,8 @@ export const AllocationPage: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

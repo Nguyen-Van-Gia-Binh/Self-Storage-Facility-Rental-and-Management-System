@@ -1,5 +1,6 @@
 // frontend/src/features/manager/components/QuickAssignModal.tsx
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, UserCheck, AlertCircle, User, Phone } from 'lucide-react';
 import type { ManagementSupportTicket, StaffWorkloadItem } from '../types/staffAssignment';
 import { getStaffWorkload, assignSupportStaffDirect } from '../api/staffAssignmentApi';
@@ -79,8 +80,13 @@ export const QuickAssignModal: React.FC<QuickAssignModalProps> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+  const modalContent = (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !submitting) onClose();
+      }}
+    >
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
@@ -250,4 +256,6 @@ export const QuickAssignModal: React.FC<QuickAssignModalProps> = ({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   Phone,
@@ -447,9 +448,15 @@ export const WaitlistInboxPage: React.FC = () => {
       )}
 
       {/* MODAL 2: Gỡ khỏi danh sách chờ & Chuyển sang Lưu Trữ (Bảo toàn dữ liệu khách hàng) */}
-      {archiveModalItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+      {archiveModalItem && typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !actionLoading) setArchiveModalItem(null);
+            }}
+          >
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-slate-100">
             <div className="flex items-start gap-3">
               <div className="p-2.5 rounded-xl bg-slate-100 text-slate-700 shrink-0">
                 <Archive className="w-5 h-5 text-slate-700" />
@@ -504,7 +511,8 @@ export const WaitlistInboxPage: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
