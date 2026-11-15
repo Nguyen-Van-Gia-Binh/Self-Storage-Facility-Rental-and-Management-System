@@ -101,12 +101,7 @@ export const MyUnitsPage: React.FC = () => {
         // 1. Lọc theo Tab (Phương án A: Rành rọt từng trạng thái nghiệp vụ)
         if (activeTab === 'ACTIVE' && contract.status !== 'ACTIVE') return false;
         if (activeTab === 'OVERDUE' && contract.status !== 'OVERDUE') return false;
-        if (
-          activeTab === 'PENDING_RETURN' &&
-          contract.status !== 'PENDING_RETURN' &&
-          (contract.status as string) !== 'CANCELLED'
-        )
-          return false;
+        if (activeTab === 'PENDING_RETURN' && contract.status !== 'PENDING_RETURN' && (contract.status as string) !== 'CANCELLED') return false;
         if (
           activeTab === 'PENDING_CHECKIN' &&
           contract.status !== 'PENDING_CHECKIN' &&

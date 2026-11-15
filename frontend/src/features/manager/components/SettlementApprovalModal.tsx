@@ -358,12 +358,12 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
                 </div>
                 <div className="flex justify-between px-1">
                   <span className={depositForfeited > 0 ? 'text-rose-600' : 'text-emerald-700'}>
-                    3. Phí hủy nhận kho (
+                    3. Khấu trừ phí hủy nhận kho (
                     {depositForfeited === 0
-                      ? 'Không phạt'
+                      ? 'Hủy trước ≥ 7 ngày — Không phạt'
                       : depositForfeited >= originalDeposit
-                      ? 'Phạt 100% cọc'
-                      : 'Phạt 50% cọc'}
+                      ? 'Hủy sát giờ < 48h — Phạt 100% cọc'
+                      : 'Hủy trước 2 – 6 ngày — Phạt 50% cọc'}
                     ):
                   </span>
                   <span
