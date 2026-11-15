@@ -74,6 +74,7 @@ export const StorageUnitListPage: React.FC = () => {
 
   const [facility, setFacility] = useState<FacilityListItem | null>(null);
   const [unitType, setUnitType] = useState<UnitTypeResponse | null>(null);
+  const [facilityUnitTypes, setFacilityUnitTypes] = useState<UnitTypeResponse[]>([]);
   const [storageUnits, setStorageUnits] = useState<StorageUnitResponse[]>([]);
   const [contractsMap, setContractsMap] = useState<Record<number, ManagerContractItem>>({});
   const [statusFilter, setStatusFilter] = useState<UnitStatus | 'ALL'>('ALL');
@@ -164,6 +165,7 @@ export const StorageUnitListPage: React.FC = () => {
         setFacility(currentFac);
 
         const types = utRes?.content || [];
+        setFacilityUnitTypes(types);
         const currentType = types.find((t) => t.id === typeIdNum) || null;
         setUnitType(currentType);
 
@@ -222,7 +224,7 @@ export const StorageUnitListPage: React.FC = () => {
     try {
       await createStorageUnit(facilityIdNum, {
         ...data,
-        unitTypeId: typeIdNum,
+        unitTypeId: data.unitTypeId || typeIdNum,
       });
       setSuModalOpen(false);
       await loadData(true);
@@ -772,7 +774,7 @@ export const StorageUnitListPage: React.FC = () => {
       {/* Modal Thêm ô kho vật lý */}
       <StorageUnitFormModal
         isOpen={suModalOpen}
-        unitTypes={unitType ? [unitType] : []}
+        unitTypes={facilityUnitTypes.length > 0 ? facilityUnitTypes : (unitType ? [unitType] : [])}
         defaultUnitTypeId={typeIdNum}
         onClose={() => setSuModalOpen(false)}
         onSubmit={handleSubmitUnit}
