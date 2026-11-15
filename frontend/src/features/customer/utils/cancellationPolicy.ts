@@ -14,7 +14,7 @@ export interface CancellationParams {
 }
 
 export type CancellationTierType =
-  | 'EARLY_FULL'        // Hủy trong 48h sau thanh toán hoặc trước >= 7 ngày (hoàn 100% cọc + 100% tiền thuê)
+  | 'EARLY_FULL'        // Hủy sớm trước >= 7 ngày (hoàn 100% cọc + 100% tiền thuê)
   | 'MID_PARTIAL'       // Hủy trước 2 - 6 ngày (phạt 50% cọc, hoàn 100% tiền thuê)
   | 'LATE_NO_DEPOSIT';  // Hủy sát giờ < 48h (phạt 100% cọc, hoàn 100% tiền thuê)
 
@@ -38,7 +38,6 @@ export interface CancellationCalculation {
 export function calculateCancellationRefund(params: CancellationParams): CancellationCalculation {
   const {
     startDateStr,
-    createdAtStr,
     depositAmount = 0,
     monthlyRent = 0,
     rentalMonths = 1,
@@ -57,12 +56,7 @@ export function calculateCancellationRefund(params: CancellationParams): Cancell
   // Số ngày còn lại đến ngày bắt đầu nhận kho (nếu > 0 là trước ngày nhận kho)
   const daysUntilStart = Math.ceil((startZero.getTime() - todayZero.getTime()) / (1000 * 60 * 60 * 24));
 
-  // Kiểm tra thời điểm thanh toán (Cooling-off 48h sau thanh toán)
-  const createdTime = createdAtStr ? new Date(createdAtStr).getTime() : NaN;
-  const hoursSincePayment = Number.isFinite(createdTime)
-    ? Math.max(0, (now.getTime() - createdTime) / (1000 * 60 * 60))
-    : 0;
-  const isWithin48hAfterPayment = hoursSincePayment <= 48;
+  const isWithin48hAfterPayment = false;
 
   const totalRentalFee = monthlyRent * rentalMonths;
 
@@ -75,18 +69,16 @@ export function calculateCancellationRefund(params: CancellationParams): Cancell
   const refundableRentalFee = totalRentalFee;
   let explanation = '';
 
-  // 1. Hủy trong 48h sau thanh toán (Cooling-off) hoặc trước >= 7 ngày
-  if (isWithin48hAfterPayment || daysUntilStart >= 7) {
+  // 1. Hủy sớm (trước >= 7 ngày) — BR-CAN-01
+  if (daysUntilStart >= 7) {
     tier = 'EARLY_FULL';
     depositRefund = depositAmount;
     depositPenalty = 0;
-    tierName = isWithin48hAfterPayment
-      ? 'Hủy trong 48 giờ đầu sau thanh toán'
-      : 'Hủy sớm (trước ≥ 7 ngày)';
+    tierName = 'Hủy sớm (trước ≥ 7 ngày)';
     tierBadge = 'Hoàn 100% Cọc & Tiền thuê';
     explanation = '';
   }
-  // 2. Hủy trước 2 – 6 ngày
+  // 2. Hủy trước 2 – 6 ngày — BR-CAN-02
   else if (daysUntilStart >= 2) {
     tier = 'MID_PARTIAL';
     depositRefund = Math.round(depositAmount * 0.5);
@@ -95,7 +87,7 @@ export function calculateCancellationRefund(params: CancellationParams): Cancell
     tierBadge = 'Phạt 50% cọc';
     explanation = '';
   }
-  // 3. Hủy sát giờ (< 48 giờ)
+  // 3. Hủy sát giờ (< 48 giờ) — BR-CAN-03
   else {
     tier = 'LATE_NO_DEPOSIT';
     depositRefund = 0;

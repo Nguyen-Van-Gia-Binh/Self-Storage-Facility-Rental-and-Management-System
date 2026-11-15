@@ -134,19 +134,19 @@ class ContractCancelPendingServiceTest {
     }
 
     @Test
-    @DisplayName("BR-CAN-01: Hủy trong 48h đầu sau thanh toán (Cooling-off) -> Luôn hoàn 100% dù ngày bắt đầu sát")
-    void cancel_Tier1_FullRefund_WhenWithinCoolingOff() {
-        // Hợp đồng tạo cách đây 12 giờ (< 48h cooling-off), ngày bắt đầu vào ngày mai (< 48h)
+    @DisplayName("BR-CAN-03: Hủy sát ngày nhận kho (< 48h) dù mới thanh toán 12h trước vẫn phạt 100% cọc, chỉ hoàn 100% tiền thuê")
+    void cancel_Tier3_LateRefund_EvenWhenCreatedWithin48Hours() {
+        // Hợp đồng tạo cách đây 12 giờ, nhưng ngày bắt đầu vào ngày mai (< 48h) -> áp dụng chuẩn 3 tầng BR-CAN-03
         contract.setCreatedAt(OffsetDateTime.now().minusHours(12));
         contract.setStartDate(LocalDate.now().plusDays(1));
-        CancelReservationRequest req = new CancelReservationRequest("Đổi ý trong 48h đầu");
+        CancelReservationRequest req = new CancelReservationRequest("Hủy sát ngày nhận kho");
 
         contractService.cancelPendingContract(100L, req, customerUser);
 
         ArgumentCaptor<PaymentTransaction> captor = ArgumentCaptor.forClass(PaymentTransaction.class);
         verify(paymentTransactionRepository, atLeastOnce()).save(captor.capture());
         long total = captor.getAllValues().stream().mapToLong(PaymentTransaction::getAmount).sum();
-        assertEquals(3_000_000L, total);
+        assertEquals(1_500_000L, total);
     }
 
     @Test
