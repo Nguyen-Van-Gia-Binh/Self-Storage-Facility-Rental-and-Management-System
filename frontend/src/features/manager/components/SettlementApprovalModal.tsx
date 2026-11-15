@@ -203,10 +203,10 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
           <div className="bg-purple-50/50 p-4 rounded-xl border border-purple-200 text-xs space-y-2.5">
             <div className="flex items-center justify-between gap-2">
               <h4 className="font-bold text-purple-900 uppercase tracking-wider text-[11px]">
-                {settlementType === 'EARLY_RETURN' && 'Bảng quyết toán trả kho sớm (Win-Win BR-RET-06)'}
-                {settlementType === 'NORMAL' && 'Bảng quyết toán hoàn cọc đúng hạn (BR-RET-04)'}
+                {settlementType === 'EARLY_RETURN' && 'Bảng quyết toán trả kho sớm'}
+                {settlementType === 'NORMAL' && 'Bảng quyết toán hoàn cọc đúng hạn'}
                 {settlementType === 'OVERDUE_TERMINATED' && 'Bảng quyết toán cưỡng chế & Kho Tổng (D+7)'}
-                {settlementType === 'REJECTED_CHECKIN' && 'Bảng hoàn tiền từ chối bàn giao (BR-CHK-06)'}
+                {settlementType === 'REJECTED_CHECKIN' && 'Bảng hoàn tiền từ chối bàn giao'}
                 {settlementType === 'CANCELLED_CHECKIN' && 'Bảng quyết toán hủy nhận kho trước bàn giao'}
               </h4>
               {!showExtraCostInput &&
@@ -334,7 +334,7 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 italic px-1">
-                  (Miễn trừ toàn bộ chi phí do từ chối bàn giao ở khâu Check-in theo BR-CHK-06)
+                  (Miễn trừ toàn bộ chi phí do từ chối bàn giao ở khâu Check-in)
                 </p>
               </div>
             )}
@@ -358,12 +358,12 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
                 </div>
                 <div className="flex justify-between px-1">
                   <span className={depositForfeited > 0 ? 'text-rose-600' : 'text-emerald-700'}>
-                    3. Khấu trừ phí hủy nhận kho (
+                    3. Phí hủy nhận kho (
                     {depositForfeited === 0
-                      ? 'Hủy sớm ≥ 7 ngày — Không phạt'
+                      ? 'Không phạt'
                       : depositForfeited >= originalDeposit
-                      ? 'Hủy sát giờ < 48h — Phạt 100% cọc'
-                      : 'Hủy trước 2 – 6 ngày — Phạt 50% cọc'}
+                      ? 'Phạt 100% cọc'
+                      : 'Phạt 50% cọc'}
                     ):
                   </span>
                   <span
@@ -456,6 +456,22 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
                   ? `+${payableAmount.toLocaleString('vi-VN')} đ`
                   : `${netRefund.toLocaleString('vi-VN')} đ`}
               </span>
+            </div>
+            {/* Chú thích hướng dẫn thao tác trực tiếp */}
+            <div className="p-2 bg-slate-50 border border-slate-200/80 rounded-lg text-[11px] text-slate-500 leading-snug">
+              {payableAmount > 0 ? (
+                <span>
+                  💡 <strong>Lưu ý:</strong> Đã thu đủ tiền trước khi xác nhận đóng hợp đồng.
+                </span>
+              ) : netRefund > 0 ? (
+                <span>
+                  💡 <strong>Lưu ý:</strong> Đã chuyển khoản hoặc hoàn tiền mặt cho khách trước khi đóng hợp đồng.
+                </span>
+              ) : (
+                <span>
+                  💡 <strong>Lưu ý:</strong> Nhấn xác nhận để tất toán và đóng hợp đồng.
+                </span>
+              )}
             </div>
           </div>
 
