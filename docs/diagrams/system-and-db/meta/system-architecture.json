@@ -25,9 +25,9 @@
     },
     {
       "id": "fe_app",
-      "type": "backend",
+      "type": "frontend",
       "label": "React 18 SPA",
-      "sublabel": "Vite + TypeScript + Tailwind",
+      "sublabel": "TypeScript + Vite + Tailwind",
       "tag": "Port :5173",
       "pos": [260, 260],
       "size": [160, 80]
@@ -36,8 +36,8 @@
       "id": "spring_sec",
       "type": "security",
       "label": "Spring Security 6",
-      "sublabel": "JWT Filter & AuthProvider",
-      "tag": "Stateless RBAC",
+      "sublabel": "JWT Stateless + Anti-IDOR",
+      "tag": "Multi-Facility RBAC",
       "pos": [490, 180],
       "size": [160, 64]
     },
@@ -63,14 +63,14 @@
       "label": "Service Layer",
       "sublabel": "Contract, Unit, Payment, Policy",
       "pos": [700, 300],
-      "size": [160, 74]
+      "size": [160, 64]
     },
     {
-      "id": "vnpay",
+      "id": "payos",
       "type": "cloud",
-      "label": "VNPay / MoMo Gateway",
-      "sublabel": "Online Deposit & Rent",
-      "tag": "Webhook & Redirect",
+      "label": "PayOS (VietQR)",
+      "sublabel": "Payment Links & Webhook IPN",
+      "tag": "Realtime QR Settlement",
       "pos": [700, 40],
       "size": [160, 64]
     },
@@ -78,16 +78,16 @@
       "id": "flyway",
       "type": "database",
       "label": "Flyway Migration",
-      "sublabel": "Schema Versioning (V1..V4)",
+      "sublabel": "Schema Versioning (V1..V20)",
       "pos": [960, 170],
       "size": [160, 64]
     },
     {
-      "id": "sqlserver",
+      "id": "postgresql",
       "type": "database",
-      "label": "SQL Server 2022",
-      "sublabel": "RentalDB :1433",
-      "tag": "ACID Transactions",
+      "label": "PostgreSQL 16+",
+      "sublabel": "Neon Cloud / Docker :5432",
+      "tag": "ACID / 30 Tables (Flyway V1..V20)",
       "pos": [960, 330],
       "size": [160, 80]
     }
@@ -101,7 +101,7 @@
     {
       "kind": "region",
       "label": "Persistence & Database Tier",
-      "wraps": ["flyway", "sqlserver"]
+      "wraps": ["flyway", "postgresql"]
     }
   ],
   "connections": [
@@ -145,24 +145,22 @@
       "label": "Auto Scan"
     },
     {
-      "id": "service-to-vnpay",
-      "from": "service_core",
-      "to": "vnpay",
-      "label": "Pay URL & IPN",
-      "fromSide": "top",
-      "toSide": "bottom"
+      "id": "api-to-payos",
+      "from": "api_ctrl",
+      "to": "payos",
+      "label": "Create Link & Webhook Listener"
     },
     {
       "id": "service-to-db",
       "from": "service_core",
-      "to": "sqlserver",
-      "label": "Spring Data JPA"
+      "to": "postgresql",
+      "label": "Spring Data JPA / PostgreSQLDialect"
     },
     {
       "id": "flyway-to-db",
       "from": "flyway",
-      "to": "sqlserver",
-      "label": "Run Migrations",
+      "to": "postgresql",
+      "label": "Run Migrations (V1..V20)",
       "fromSide": "bottom",
       "toSide": "top"
     }
@@ -190,9 +188,9 @@
       "dot": "rose",
       "title": "Database & Integration",
       "items": [
-        "SQL Server 2022 quản lý schema tự động bằng Flyway migrations",
-        "Tích hợp cổng thanh toán VNPay / MoMo xử lý đặt cọc & tiền thuê",
-        "Soft delete & đảm bảo toàn vẹn dữ liệu hợp đồng"
+        "PostgreSQL 16+ quản lý schema tự động bằng Flyway migrations (30 bảng vật lý từ V1 đến V20, hỗ trợ cả Neon Cloud và Local Docker 5432)",
+        "Tích hợp cổng thanh toán PayOS sinh mã VietQR động, xác thực Webhook bảo mật xử lý cọc và tiền thuê thời gian thực",
+        "Bảo mật Spring Security 6 với JWT stateless, phân quyền RBAC đa vai trò và cơ chế chống IDOR bảo vệ dữ liệu độc lập giữa các cơ sở"
       ]
     }
   ]

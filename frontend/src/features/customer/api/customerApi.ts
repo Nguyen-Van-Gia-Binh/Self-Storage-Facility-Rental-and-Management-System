@@ -143,6 +143,19 @@ export const customerApi = {
     }
   },
 
+  /**
+   * Hủy đơn thanh toán PENDING theo orderCode
+   */
+  async cancelPaymentOrder(orderCode: number): Promise<void> {
+    try {
+      await apiClient<void>(`/payments/order/${orderCode}/cancel`, {
+        method: 'POST',
+      });
+    } catch (err: any) {
+      console.warn('Lỗi khi hủy đơn thanh toán:', err);
+    }
+  },
+
 
   /**
    * Lấy danh sách hợp đồng kho đang thuê của khách hàng (SC-05)

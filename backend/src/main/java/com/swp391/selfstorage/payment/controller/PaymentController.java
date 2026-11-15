@@ -175,6 +175,15 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.getPaymentByOrderCode(orderCode));
     }
 
+    @PostMapping("/order/{orderCode}/cancel")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Hủy đơn thanh toán PENDING")
+    public ResponseEntity<com.swp391.selfstorage.common.dto.ApiResponse<Void>> cancelPendingPayment(
+            @PathVariable Long orderCode) {
+        paymentService.cancelPendingPayment(orderCode);
+        return ResponseEntity.ok(com.swp391.selfstorage.common.dto.ApiResponse.success(null, "Đã hủy đơn thanh toán thành công"));
+    }
+
     @PostMapping("/{id}/confirm-refund")
     @PreAuthorize("hasAnyRole('MANAGER', 'BOM', 'ADMIN', 'BUSINESS_OPERATIONS_MANAGER')")
     @Operation(summary = "Xác nhận đã chuyển khoản hoàn tiền (PENDING_REFUND → SUCCESS)")

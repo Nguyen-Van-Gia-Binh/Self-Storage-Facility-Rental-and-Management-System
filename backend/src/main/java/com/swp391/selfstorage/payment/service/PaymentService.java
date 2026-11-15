@@ -20,6 +20,11 @@ public interface PaymentService {
     PaymentResponse getPaymentByOrderCode(Long orderCode);
 
     /**
+     * Hủy đơn thanh toán PENDING theo orderCode (chuyển CANCELLED).
+     */
+    void cancelPendingPayment(Long orderCode);
+
+    /**
      * Đơn PENDING dùng để ký URL VNPay. transferContent là vnp_OrderInfo.
      */
     PaymentResponse requirePendingPayment(Long orderCode);

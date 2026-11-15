@@ -3,9 +3,10 @@
 -- Đường dẫn: database/scripts/seed_test_scenarios.sql
 -- Tác giả: Nguyễn Văn Gia Bình (WS2 Lead - SWP391)
 --
--- Mục tiêu: Cung cấp 12 Kịch bản Thử nghiệm Vàng (Golden Test Scenarios)
+-- Mục tiêu: Cung cấp 18 Kịch bản Thử nghiệm Vàng (Golden Test Scenarios)
 --           bao phủ 100% các Flow nghiệp vụ trọng yếu:
 --           - Flow 3: Trả sớm Win-Win, Quyết toán hoàn cọc & Quyết toán âm
+--           - Flow 6.1: Vòng đời Gia hạn hợp đồng (T-60, T-30, T-25, T-21, T-20, T-7, T-3, Force Renewal & Hard Lock Xung đột)
 --           - Flow 6.2: Vòng đời Quá hạn 8 ngày (No Pay No PIN, Đóng phạt nhận PIN tạm)
 --           - Flow 2: Khách chờ nhận kho (Check-in & Handover tại quầy)
 --           - Sơ đồ kho: Đầy đủ các trạng thái OCCUPIED, CLEANING, RESERVED, MAINTENANCE, AVAILABLE.
@@ -141,7 +142,42 @@ VALUES
 -- RES 9012: Cho HĐ CTR-TEST-012 (Kho Q1-C102, UT 4: UT-AC-S) -> Quá hạn D+3 ĐÃ NỘP PHẠT nhận PIN tạm (TC-F6-01B)
 (9012, 'RES-TEST-012', 10, 5, 4, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-C102'),
  CURRENT_DATE - INTERVAL '93 day', 3, CURRENT_DATE - INTERVAL '3 day', 1500000,
- 1, 1500000, 4500000, 6000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ 1, 1500000, 4500000, 6000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- RES 9013: Cho HĐ CTR-TEST-013 (Kho Q1-A201, UT 1: UT-STD-S) -> Mốc T-30 ngày (Bắt đầu 10 ngày đếm ngược khẩn cấp ngày 1 - BR-REN-01, BR-REN-09)
+(9013, 'RES-TEST-013', 10, 5, 1, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-A201'),
+ CURRENT_DATE - INTERVAL '60 day', 3, CURRENT_DATE + INTERVAL '30 day', 1000000,
+ 1, 1000000, 3000000, 4000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- RES 9014: Cho HĐ CTR-TEST-014 (Kho Q1-A202, UT 2: UT-STD-M) -> Mốc T-25 ngày (Đếm ngược khẩn cấp ngày 2 & Test N=1..12 tháng - BR-REN-01, BR-REN-03, BR-REN-07)
+(9014, 'RES-TEST-014', 10, 5, 2, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-A202'),
+ CURRENT_DATE - INTERVAL '65 day', 3, CURRENT_DATE + INTERVAL '25 day', 1600000,
+ 1, 1600000, 4800000, 6400000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- RES 9015: Cho HĐ CTR-TEST-015 (Kho Q1-B202, UT 3: UT-STD-L) -> Mốc T-21 ngày (Đếm ngược khẩn cấp ngày 3, áp chót trước mốc 20 ngày - BR-REN-01)
+(9015, 'RES-TEST-015', 10, 5, 3, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-B202'),
+ CURRENT_DATE - INTERVAL '69 day', 3, CURRENT_DATE + INTERVAL '21 day', 2000000,
+ 1, 2000000, 6000000, 8000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- RES 9016: Cho HĐ CTR-TEST-016 (Kho Q1-C201, UT 4: UT-AC-S) -> Mốc T-20 ngày (Biên tới hạn ngày cuối cùng được tự gia hạn Online trên Portal - BR-REN-01, BR-REN-09)
+(9016, 'RES-TEST-016', 10, 5, 4, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-C201'),
+ CURRENT_DATE - INTERVAL '70 day', 3, CURRENT_DATE + INTERVAL '20 day', 1500000,
+ 1, 1500000, 4500000, 6000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- RES 9017: Cho HĐ CTR-TEST-017 (Kho Q1-AC-M201, UT 5: UT-AC-M) -> Mốc T-7 ngày (Nhắc Move-out T-7 & FM Force Renewal thành công + 200k phí - BR-REN-10)
+(9017, 'RES-TEST-017', 10, 5, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-AC-M201'),
+ CURRENT_DATE - INTERVAL '83 day', 3, CURRENT_DATE + INTERVAL '7 day', 2400000,
+ 1, 2400000, 7200000, 9600000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- RES 9018: Cho HĐ CTR-TEST-018 (Kho Q1-AC-L201, UT 6: UT-AC-L) -> Mốc T-3 ngày (Test Xung đột: Ô này ĐÃ CÓ khách mới đặt cọc - BR-REN-10)
+(9018, 'RES-TEST-018', 10, 5, 6, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-AC-L201'),
+ CURRENT_DATE - INTERVAL '87 day', 3, CURRENT_DATE + INTERVAL '3 day', 3200000,
+ 1, 3200000, 9600000, 12800000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- RES 9019: Đơn đặt cọc của Khách mới (Tùng ID 11) tạo xung đột với HĐ CTR-TEST-018 (Kho Q1-AC-L201)
+(9019, 'RES-TEST-018-CONFLICT', 11, 5, 6, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-AC-L201'),
+ CURRENT_DATE + INTERVAL '3 day', 1, CURRENT_DATE + INTERVAL '33 day', 3200000,
+ 1, 3200000, 3200000, 6400000, 'CONFIRMED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
@@ -224,7 +260,43 @@ VALUES
 (9012, 'CTR-TEST-012', 9012, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-C102'), 4,
  CURRENT_DATE - INTERVAL '93 day', CURRENT_DATE - INTERVAL '3 day', 3, 1500000, 4500000,
  1500000, 1500000, '888999', 'OVERDUE', CURRENT_DATE - INTERVAL '93 day', 1,
- 0, CURRENT_TIMESTAMP - INTERVAL '93 day', NULL, NULL)
+ 0, CURRENT_TIMESTAMP - INTERVAL '93 day', NULL, NULL),
+
+-- Case 13: CTR-TEST-013 (ACTIVE Mốc T-30 ngày) -> Test Chuỗi đếm ngược khẩn cấp ngày 1 & Nút gia hạn online sáng (BR-REN-01, BR-REN-09)
+(9013, 'CTR-TEST-013', 9013, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-A201'), 1,
+ CURRENT_DATE - INTERVAL '60 day', CURRENT_DATE + INTERVAL '30 day', 3, 1000000, 3000000,
+ 1000000, 1000000, '111222', 'ACTIVE', CURRENT_DATE - INTERVAL '60 day', 1,
+ 0, CURRENT_TIMESTAMP - INTERVAL '60 day', NULL, NULL),
+
+-- Case 14: CTR-TEST-014 (ACTIVE Mốc T-25 ngày) -> Test Chuỗi đếm ngược khẩn cấp ngày 2 & Test chọn số tháng 1..12 (BR-REN-01, BR-REN-03, BR-REN-07)
+(9014, 'CTR-TEST-014', 9014, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-A202'), 2,
+ CURRENT_DATE - INTERVAL '65 day', CURRENT_DATE + INTERVAL '25 day', 3, 1600000, 4800000,
+ 1600000, 1600000, '222333', 'ACTIVE', CURRENT_DATE - INTERVAL '65 day', 1,
+ 0, CURRENT_TIMESTAMP - INTERVAL '65 day', NULL, NULL),
+
+-- Case 15: CTR-TEST-015 (ACTIVE Mốc T-21 ngày) -> Test Chuỗi đếm ngược khẩn cấp ngày 3 (Áp chót trước khi khóa cổng - BR-REN-01)
+(9015, 'CTR-TEST-015', 9015, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-B202'), 3,
+ CURRENT_DATE - INTERVAL '69 day', CURRENT_DATE + INTERVAL '21 day', 3, 2000000, 6000000,
+ 2000000, 2000000, '333444', 'ACTIVE', CURRENT_DATE - INTERVAL '69 day', 1,
+ 0, CURRENT_TIMESTAMP - INTERVAL '69 day', NULL, NULL),
+
+-- Case 16: CTR-TEST-016 (ACTIVE Mốc T-20 ngày) -> Test Biên tới hạn ngày cuối cùng được tự gia hạn Online trên Portal (BR-REN-01, BR-REN-09)
+(9016, 'CTR-TEST-016', 9016, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-C201'), 4,
+ CURRENT_DATE - INTERVAL '70 day', CURRENT_DATE + INTERVAL '20 day', 3, 1500000, 4500000,
+ 1500000, 1500000, '444555', 'ACTIVE', CURRENT_DATE - INTERVAL '70 day', 1,
+ 0, CURRENT_TIMESTAMP - INTERVAL '70 day', NULL, NULL),
+
+-- Case 17: CTR-TEST-017 (ACTIVE Mốc T-7 ngày) -> Test Nhắc Move-out T-7 & FM duyệt Force Renewal thành công + 200k phí (BR-REN-01, BR-REN-10)
+(9017, 'CTR-TEST-017', 9017, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-AC-M201'), 5,
+ CURRENT_DATE - INTERVAL '83 day', CURRENT_DATE + INTERVAL '7 day', 3, 2400000, 7200000,
+ 2400000, 2400000, '555666', 'ACTIVE', CURRENT_DATE - INTERVAL '83 day', 1,
+ 0, CURRENT_TIMESTAMP - INTERVAL '83 day', NULL, NULL),
+
+-- Case 18: CTR-TEST-018 (ACTIVE Mốc T-3 ngày) -> Test Xung đột: Ô đã có khách cọc -> FM duyệt Force Renewal bị chặn 409 (BR-REN-10)
+(9018, 'CTR-TEST-018', 9018, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-AC-L201'), 6,
+ CURRENT_DATE - INTERVAL '87 day', CURRENT_DATE + INTERVAL '3 day', 3, 3200000, 9600000,
+ 3200000, 3200000, '666777', 'ACTIVE', CURRENT_DATE - INTERVAL '87 day', 1,
+ 0, CURRENT_TIMESTAMP - INTERVAL '87 day', NULL, NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
@@ -304,7 +376,13 @@ VALUES
 (9008, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Hợp đồng đã hoàn tất chu kỳ thuê.', CURRENT_TIMESTAMP - INTERVAL '135 day', CURRENT_TIMESTAMP - INTERVAL '135 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '135 day', FALSE),
 (9009, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao lúc nhận kho ban đầu.', CURRENT_TIMESTAMP - INTERVAL '90 day', CURRENT_TIMESTAMP - INTERVAL '90 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '90 day', FALSE),
 (9011, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '60 day', CURRENT_TIMESTAMP - INTERVAL '60 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '60 day', FALSE),
-(9012, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '93 day', CURRENT_TIMESTAMP - INTERVAL '93 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '93 day', FALSE)
+(9012, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '93 day', CURRENT_TIMESTAMP - INTERVAL '93 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '93 day', FALSE),
+(9013, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '60 day', CURRENT_TIMESTAMP - INTERVAL '60 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '60 day', FALSE),
+(9014, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '65 day', CURRENT_TIMESTAMP - INTERVAL '65 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '65 day', FALSE),
+(9015, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '69 day', CURRENT_TIMESTAMP - INTERVAL '69 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '69 day', FALSE),
+(9016, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '70 day', CURRENT_TIMESTAMP - INTERVAL '70 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '70 day', FALSE),
+(9017, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '83 day', CURRENT_TIMESTAMP - INTERVAL '83 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '83 day', FALSE),
+(9018, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '87 day', CURRENT_TIMESTAMP - INTERVAL '87 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '87 day', FALSE)
 ON CONFLICT (contract_id) DO UPDATE SET
     rejected = EXCLUDED.rejected,
     condition_note = EXCLUDED.condition_note,
@@ -318,7 +396,10 @@ ON CONFLICT (contract_id) DO UPDATE SET
 UPDATE storage_unit 
 SET status = 'OCCUPIED'   
 WHERE facility_id = 5 
-  AND code IN ('Q1-A101', 'Q1-A102', 'Q1-A103', 'Q1-C101', 'Q1-XS101', 'Q1-A105', 'Q1-C102');
+  AND code IN (
+    'Q1-A101', 'Q1-A102', 'Q1-A103', 'Q1-C101', 'Q1-XS101', 'Q1-A105', 'Q1-C102',
+    'Q1-A201', 'Q1-A202', 'Q1-B202', 'Q1-C201', 'Q1-AC-M201', 'Q1-AC-L201'
+  );
 
 -- 5.2 Các ô kho đã hoàn tất nghiệm thu trả kho, đang ở đệm vệ sinh dọn dẹp (CLEANING)
 UPDATE storage_unit 
@@ -350,6 +431,7 @@ SET status = 'AVAILABLE'
 WHERE facility_id = 5 
   AND code NOT IN (
     'Q1-A101', 'Q1-A102', 'Q1-A103', 'Q1-C101', 'Q1-XS101', 'Q1-A105', 'Q1-C102',
+    'Q1-A201', 'Q1-A202', 'Q1-B202', 'Q1-C201', 'Q1-AC-M201', 'Q1-AC-L201',
     'Q1-B201', 'Q1-B101', 'Q1-A104', 'Q1-XL101', 'Q1-XS201'
   );
 
