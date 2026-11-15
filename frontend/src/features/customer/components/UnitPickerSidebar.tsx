@@ -162,7 +162,7 @@ export const UnitPickerSidebar: React.FC<UnitPickerSidebarProps> = ({
         variant="primary"
         size="md"
         onClick={onProceedToBooking}
-        disabled={isConfirming || !unitTypeName}
+        disabled={isConfirming || !unitTypeName || typeFull}
         className="w-full py-3 text-xs sm:text-sm font-extrabold bg-[#008B74] hover:bg-[#007461] active:bg-[#005e4f] text-white rounded-md shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isConfirming ? (
@@ -170,7 +170,9 @@ export const UnitPickerSidebar: React.FC<UnitPickerSidebarProps> = ({
             <Loader2 className="w-4 h-4 animate-spin" />
             <span>Đang khởi tạo đơn...</span>
           </>
-        ) : !hasSelected || typeFull ? (
+        ) : typeFull ? (
+          <span>Hết chỗ — Vui lòng chọn loại kho khác</span>
+        ) : !hasSelected ? (
           <span>Vui lòng chọn loại kho</span>
         ) : (
           <span>Điền thông tin và thanh toán</span>

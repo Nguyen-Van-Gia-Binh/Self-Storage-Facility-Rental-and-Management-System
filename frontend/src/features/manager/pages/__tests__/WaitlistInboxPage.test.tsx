@@ -137,4 +137,39 @@ describe('WaitlistInboxPage (FM Telesales CRM)', () => {
       expect(screen.getByRole('button', { name: /Gán ô kho \(2\)/i })).toBeDefined();
     });
   });
+
+  it('disables direct contract button and displays out of stock badge when availableCapacity is 0', async () => {
+    const zeroCapacityWaitlists: WaitlistResponse[] = [
+      {
+        id: 104,
+        facilityId: 1,
+        unitTypeId: 7,
+        unitTypeName: 'Kho Máy Lạnh (10m2)',
+        customerName: 'Khách Chờ Hết Ô',
+        customerPhone: '0977889900',
+        targetStartDate: '2026-12-10',
+        rentalMonths: 1,
+        status: 'WAITING',
+        availableCapacity: 0,
+        unassignedReservationCount: 0,
+        createdAt: '2026-11-06T10:00:00Z',
+      },
+    ];
+
+    vi.mocked(facilityApi.fetchMyAssignedFacilities).mockResolvedValue(mockFacilities);
+    vi.mocked(waitlistApi.fetchFacilityWaitlists).mockResolvedValue(zeroCapacityWaitlists);
+
+    render(
+      <MemoryRouter>
+        <WaitlistInboxPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Hết ô trống (0)')).toBeDefined();
+      const outOfStockBtn = screen.getByRole('button', { name: /Hết ô trống/i });
+      expect(outOfStockBtn).toBeDefined();
+      expect(outOfStockBtn.hasAttribute('disabled')).toBe(true);
+    });
+  });
 });
