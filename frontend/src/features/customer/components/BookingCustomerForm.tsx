@@ -1,6 +1,10 @@
-import React from 'react';
-import { User, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { User, Loader2, ArrowRight, ShieldCheck, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import {
+  TermsAndPolicyModal,
+  type TermsPolicyTabKey,
+} from '@/components/common/TermsAndPolicyModal';
 
 export interface BookingCustomerFormProps {
   customerName: string;
@@ -51,7 +55,20 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
   hasExtendedInsurance = false,
   setHasExtendedInsurance,
 }) => {
+  const [termsModal, setTermsModal] = useState<{
+    isOpen: boolean;
+    initialTab: TermsPolicyTabKey;
+  }>({
+    isOpen: false,
+    initialTab: 'booking',
+  });
+
+  const openTermsModal = (tab: TermsPolicyTabKey = 'booking') => {
+    setTermsModal({ isOpen: true, initialTab: tab });
+  };
+
   return (
+    <>
     <form onSubmit={onSubmit} className="space-y-5">
       {/* 1. THÔNG TIN KHÁCH HÀNG */}
       <div className="bg-white border border-brand-200 rounded-2xl p-6 shadow-xs space-y-4">
@@ -212,9 +229,19 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
 
       {/* 3. ĐIỀU KHOẢN DỊCH VỤ & CHÍNH SÁCH */}
       <div className="bg-white border border-brand-200 rounded-2xl p-6 shadow-xs space-y-4">
-        <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#0a1614] pb-2 border-b border-brand-100">
-          3. Điều khoản dịch vụ & Quyền lợi lưu trữ
-        </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-brand-100">
+          <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#0a1614]">
+            3. Điều khoản dịch vụ &amp; Quyền lợi lưu trữ
+          </h2>
+          <button
+            type="button"
+            onClick={() => openTermsModal('booking')}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-brand-800 hover:underline cursor-pointer self-start sm:self-auto"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>Xem chi tiết điều khoản &amp; chính sách</span>
+          </button>
+        </div>
 
         {/* 3 Thẻ quyền lợi an tâm trực quan */}
         <div className="grid grid-cols-1 gap-2.5 text-xs">
@@ -244,7 +271,7 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
           <div className="flex items-start gap-3 p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/60">
             <span className="text-lg leading-none mt-0.5">🔑</span>
             <div className="space-y-0.5">
-              <strong className="text-amber-950 font-bold block text-xs">Bàn giao minh bạch & an toàn</strong>
+              <strong className="text-amber-950 font-bold block text-xs">Bàn giao minh bạch &amp; an toàn</strong>
               <span className="text-slate-600 leading-relaxed block">
                 Xuất trình CCCD trùng khớp khi đến cơ sở để nhận mã PIN điện tử (hoặc mã QR) mở kho riêng.
               </span>
@@ -252,17 +279,42 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
           </div>
         </div>
 
-        <label className="flex items-start gap-2.5 pt-2 cursor-pointer">
+        <div className="flex items-start gap-2.5 pt-2">
           <input
+            id="booking-agree-terms"
             type="checkbox"
             checked={agreeTerms}
             onChange={(e) => setAgreeTerms(e.target.checked)}
-            className="mt-0.5 w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500"
+            className="mt-0.5 w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500 cursor-pointer"
           />
-          <span className="text-xs font-semibold text-[#0a1614]">
-            Tôi đã đọc, hiểu rõ và đồng ý với Điều khoản sử dụng và Chính sách cọc của SmartStorage.
-          </span>
-        </label>
+          <label htmlFor="booking-agree-terms" className="text-xs font-semibold text-[#0a1614] leading-relaxed cursor-pointer">
+            Tôi đã đọc, hiểu rõ và đồng ý với{' '}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openTermsModal('booking');
+              }}
+              className="text-brand-700 hover:text-brand-800 underline font-bold cursor-pointer"
+            >
+              Điều khoản sử dụng
+            </button>{' '}
+            và{' '}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openTermsModal('booking');
+              }}
+              className="text-brand-700 hover:text-brand-800 underline font-bold cursor-pointer"
+            >
+              Chính sách cọc
+            </button>{' '}
+            của SmartStorage.
+          </label>
+        </div>
         {formErrors.agreeTerms && (
           <p className="text-[11px] text-rose-600 font-semibold">{formErrors.agreeTerms}</p>
         )}
@@ -290,12 +342,22 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
             </>
           ) : (
             <>
-              <span>Tiếp tục: Thanh toán VNPay & Giữ chỗ 48h</span>
+              <span>Tiếp tục: Thanh toán VNPay &amp; Giữ chỗ 48h</span>
               <ArrowRight className="w-4 h-4" />
             </>
           )}
         </Button>
       </div>
     </form>
+
+    <TermsAndPolicyModal
+      isOpen={termsModal.isOpen}
+      onClose={() => setTermsModal((prev) => ({ ...prev, isOpen: false }))}
+      onAccept={() => setAgreeTerms(true)}
+      initialTab={termsModal.initialTab}
+      holdHours={holdHours}
+      depositMultiplierLabel={depositMultiplierLabel}
+    />
+    </>
   );
 };

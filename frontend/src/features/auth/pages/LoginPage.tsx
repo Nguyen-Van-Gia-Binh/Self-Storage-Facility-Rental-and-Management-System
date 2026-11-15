@@ -15,6 +15,10 @@ import { loginUser, loginWithGoogle, getPortalUrlByRole } from '@/api/auth';
 import type { UserRoleType } from '@/api/user';
 import { SmartStorageHeroCard } from '../components/SmartStorageHeroCard';
 import { DemoQuickLoginBar } from '../components/DemoQuickLoginBar';
+import {
+  TermsAndPolicyModal,
+  type TermsPolicyTabKey,
+} from '@/components/common/TermsAndPolicyModal';
 
 declare global {
   interface Window {
@@ -45,6 +49,17 @@ export const LoginPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [successRole, setSuccessRole] = useState<UserRoleType | null>(null);
+  const [termsModal, setTermsModal] = useState<{
+    isOpen: boolean;
+    initialTab: TermsPolicyTabKey;
+  }>({
+    isOpen: false,
+    initialTab: 'booking',
+  });
+
+  const openTermsModal = (tab: TermsPolicyTabKey = 'booking') => {
+    setTermsModal({ isOpen: true, initialTab: tab });
+  };
 
   // Điền sẵn email và hiển thị thông báo nếu vừa đăng ký thành công
   useEffect(() => {
@@ -201,9 +216,21 @@ export const LoginPage: React.FC = () => {
         {/* Bottom Note: Liên kết người dùng thân thiện, xóa chi tiết kỹ thuật */}
         <div className="relative z-10 text-xs text-teal-200/80 flex items-center justify-between border-t border-white/15 pt-4">
           <div className="flex items-center gap-3 text-[11px]">
-            <a href="#" className="hover:text-white transition-colors">Chính sách bảo mật</a>
+            <button
+              type="button"
+              onClick={() => openTermsModal('privacy')}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              Chính sách bảo mật
+            </button>
             <span>•</span>
-            <a href="#" className="hover:text-white transition-colors">Điều khoản dịch vụ</a>
+            <button
+              type="button"
+              onClick={() => openTermsModal('booking')}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              Điều khoản dịch vụ
+            </button>
           </div>
           <span className="text-brand-200 font-semibold text-[11px] flex items-center gap-1.5">
             Hotline: <strong className="text-white font-bold">1900 8888</strong>
@@ -389,6 +416,12 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <TermsAndPolicyModal
+        isOpen={termsModal.isOpen}
+        onClose={() => setTermsModal((prev) => ({ ...prev, isOpen: false }))}
+        initialTab={termsModal.initialTab}
+      />
     </div>
   );
 };

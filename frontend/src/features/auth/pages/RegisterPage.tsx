@@ -20,6 +20,10 @@ import {
 import { Logo } from '@/components/ui/Logo';
 import { registerUser, sendRegisterOtp } from '@/api/auth';
 import { SmartStorageHeroCard } from '../components/SmartStorageHeroCard';
+import {
+  TermsAndPolicyModal,
+  type TermsPolicyTabKey,
+} from '@/components/common/TermsAndPolicyModal';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -47,6 +51,17 @@ export const RegisterPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [infoMsg, setInfoMsg] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [termsModal, setTermsModal] = useState<{
+    isOpen: boolean;
+    initialTab: TermsPolicyTabKey;
+  }>({
+    isOpen: false,
+    initialTab: 'booking',
+  });
+
+  const openTermsModal = (tab: TermsPolicyTabKey = 'booking') => {
+    setTermsModal({ isOpen: true, initialTab: tab });
+  };
 
   // Bộ đếm lùi thời gian gửi lại OTP (cooldown 60s)
   useEffect(() => {
@@ -253,9 +268,21 @@ export const RegisterPage: React.FC = () => {
         {/* Bottom Note: Liên kết người dùng thân thiện, xóa chi tiết kỹ thuật */}
         <div className="relative z-10 text-xs text-teal-200/80 flex items-center justify-between border-t border-white/15 pt-4">
           <div className="flex items-center gap-3 text-[11px]">
-            <a href="#" className="hover:text-white transition-colors">Chính sách bảo mật</a>
+            <button
+              type="button"
+              onClick={() => openTermsModal('privacy')}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              Chính sách bảo mật
+            </button>
             <span>•</span>
-            <a href="#" className="hover:text-white transition-colors">Điều khoản dịch vụ</a>
+            <button
+              type="button"
+              onClick={() => openTermsModal('booking')}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              Điều khoản dịch vụ
+            </button>
           </div>
           <span className="text-brand-200 font-semibold text-[11px] flex items-center gap-1.5">
             Hotline: <strong className="text-white font-bold">1900 8888</strong>
@@ -457,21 +484,40 @@ export const RegisterPage: React.FC = () => {
               </div>
 
               {/* Agree Terms Checkbox */}
-              <div className="pt-1">
-                <label className="flex items-start gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={agreeTerms}
-                    onChange={(e) => setAgreeTerms(e.target.checked)}
-                    className="w-4 h-4 mt-0.5 rounded bg-white border-slate-300 text-brand-500 focus:ring-brand-400"
-                  />
-                  <span className="text-xs text-slate-600 leading-relaxed">
-                    Tôi đồng ý với{' '}
-                    <span className="text-brand-600 hover:underline font-semibold">Điều khoản dịch vụ</span>{' '}
-                    và{' '}
-                    <span className="text-brand-600 hover:underline font-semibold">Chính sách bảo vệ quyền riêng tư</span>{' '}
-                    của hệ thống SmartStorage.
-                  </span>
+              <div className="pt-1 flex items-start gap-2.5">
+                <input
+                  id="register-agree-terms"
+                  type="checkbox"
+                  checked={agreeTerms}
+                  onChange={(e) => setAgreeTerms(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 rounded bg-white border-slate-300 text-brand-500 focus:ring-brand-400 cursor-pointer"
+                />
+                <label htmlFor="register-agree-terms" className="text-xs text-slate-600 leading-relaxed cursor-pointer">
+                  Tôi đồng ý với{' '}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      openTermsModal('booking');
+                    }}
+                    className="text-brand-600 hover:underline font-semibold cursor-pointer"
+                  >
+                    Điều khoản dịch vụ
+                  </button>{' '}
+                  và{' '}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      openTermsModal('privacy');
+                    }}
+                    className="text-brand-600 hover:underline font-semibold cursor-pointer"
+                  >
+                    Chính sách bảo vệ quyền riêng tư
+                  </button>{' '}
+                  của hệ thống SmartStorage.
                 </label>
               </div>
 
@@ -624,6 +670,13 @@ export const RegisterPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <TermsAndPolicyModal
+        isOpen={termsModal.isOpen}
+        onClose={() => setTermsModal((prev) => ({ ...prev, isOpen: false }))}
+        onAccept={() => setAgreeTerms(true)}
+        initialTab={termsModal.initialTab}
+      />
     </div>
   );
 };
