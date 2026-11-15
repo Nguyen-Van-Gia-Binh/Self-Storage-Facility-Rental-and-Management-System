@@ -3,6 +3,7 @@ package com.swp391.selfstorage.support.service.impl;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.auth.service.UserPrincipal;
+import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.support.dto.AssignStaffRequest;
@@ -70,22 +71,32 @@ public class StaffAssignmentServiceImpl implements StaffAssignmentService {
         if ("CHECK_IN".equals(taskTypeStr)) {
             assignmentType = AssignmentTaskType.HANDOVER;
             if (contractId != null) {
-                RentalContract contract = rentalContractRepository.findById(contractId).orElse(null);
-                if (contract != null) {
-                    targetFacilityId = contract.getFacilityId();
+                RentalContract contract = rentalContractRepository.findById(contractId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+                if (contract.getStatus() != ContractStatus.PENDING_CHECK_IN) {
+                    throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_CHECKIN,
+                            "Nhiệm vụ bàn giao nhận kho đã hoàn thành hoặc hợp đồng không ở trạng thái chờ nhận kho, đã khóa chức năng đổi người.");
                 }
+                targetFacilityId = contract.getFacilityId();
             }
         } else if ("RETURN".equals(taskTypeStr)) {
             assignmentType = AssignmentTaskType.RETURN;
             if (contractId != null) {
-                RentalContract contract = rentalContractRepository.findById(contractId).orElse(null);
-                if (contract != null) {
-                    targetFacilityId = contract.getFacilityId();
+                RentalContract contract = rentalContractRepository.findById(contractId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+                if (contract.getStatus() != ContractStatus.PENDING_RETURN) {
+                    throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_RETURN,
+                            "Nhiệm vụ nghiệm thu trả kho đã hoàn thành hoặc hợp đồng không ở trạng thái chờ trả kho, đã khóa chức năng đổi người.");
                 }
+                targetFacilityId = contract.getFacilityId();
                 if (returnRequestRepository != null) {
                     var reqOpt = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contractId);
                     if (reqOpt.isPresent()) {
                         var retReq = reqOpt.get();
+                        if (retReq.getInspectedAt() != null) {
+                            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                    "Nhiệm vụ nghiệm thu trả kho đã được nhân viên kiểm tra hoàn tất, đã khóa chức năng đổi người.");
+                        }
                         retReq.setInspectedBy(staffId);
                         if (request.getNotes() != null && !request.getNotes().isBlank()) {
                             String curNote = retReq.getConditionNote() != null ? retReq.getConditionNote() : "";

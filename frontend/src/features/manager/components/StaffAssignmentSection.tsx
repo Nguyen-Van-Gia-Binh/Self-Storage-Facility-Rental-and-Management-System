@@ -1,6 +1,6 @@
 // frontend/src/features/manager/components/StaffAssignmentSection.tsx
 import React, { useState } from 'react';
-import { UserCheck, UserX, RefreshCw, Send, Phone, FileText } from 'lucide-react';
+import { UserCheck, UserX, RefreshCw, Send, Phone, FileText, Lock } from 'lucide-react';
 import type { StaffWorkloadItem } from '../types/staffAssignment';
 
 interface StaffAssignmentSectionProps {
@@ -12,6 +12,7 @@ interface StaffAssignmentSectionProps {
   staffList: StaffWorkloadItem[];
   onAssign: (staffId: number, notes?: string) => Promise<void>;
   isSubmitting?: boolean;
+  isReadOnly?: boolean;
 }
 
 export const StaffAssignmentSection: React.FC<StaffAssignmentSectionProps> = ({
@@ -22,6 +23,7 @@ export const StaffAssignmentSection: React.FC<StaffAssignmentSectionProps> = ({
   staffList,
   onAssign,
   isSubmitting = false,
+  isReadOnly = false,
 }) => {
   const [isEditing, setIsEditing] = useState<boolean>(!assignedStaffId);
   const [selectedStaffId, setSelectedStaffId] = useState<number | ''>(assignedStaffId || '');
@@ -52,13 +54,20 @@ export const StaffAssignmentSection: React.FC<StaffAssignmentSectionProps> = ({
         </div>
 
         {assignedStaffId && !isEditing && (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-lg transition-colors"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Đổi nhân viên</span>
-          </button>
+          isReadOnly ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-400 bg-slate-100 rounded-lg select-none">
+              <Lock className="w-3.5 h-3.5 text-slate-400" />
+              <span>Đã hoàn thành</span>
+            </span>
+          ) : (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-lg transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Đổi nhân viên</span>
+            </button>
+          )
         )}
       </div>
 

@@ -48,6 +48,7 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
   if (!isOpen || !task) return null;
 
   const isReassign = Boolean(task.assignedStaffId);
+  const isCompleted = task.status === 'COMPLETED' || task.status === 'RESOLVED';
 
   const getTaskIcon = () => {
     switch (task.taskType) {
@@ -64,6 +65,10 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isCompleted) {
+      setErrorMessage('Nhiệm vụ này đã hoàn thành, hệ thống đã khóa chức năng phân công / đổi người.');
+      return;
+    }
     if (!selectedStaffId) {
       setErrorMessage('Vui lòng chọn nhân viên phụ trách.');
       return;
@@ -124,6 +129,18 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
             <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
               <span>{errorMessage}</span>
+            </div>
+          )}
+
+          {isCompleted && (
+            <div className="p-3.5 bg-slate-100 border border-slate-300 rounded-xl flex items-start gap-2.5 text-xs text-slate-700">
+              <Lock className="w-4 h-4 shrink-0 text-slate-500 mt-0.5" />
+              <div>
+                <p className="font-bold">Nhiệm vụ này đã hoàn thành!</p>
+                <p className="text-slate-500 text-[11px] mt-0.5">
+                  Hệ thống đã khóa chức năng phân công / đổi người để bảo toàn lịch sử thực hiện công việc.
+                </p>
+              </div>
             </div>
           )}
 
@@ -266,13 +283,18 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
           <button
             form="assign-staff-form"
             type="submit"
-            disabled={isSubmitting || staffList.length === 0 || !selectedStaffId}
+            disabled={isSubmitting || isCompleted || staffList.length === 0 || !selectedStaffId}
             className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 <span>Đang xử lý...</span>
+              </>
+            ) : isCompleted ? (
+              <>
+                <Lock className="w-3.5 h-3.5" />
+                <span>Đã khóa (Đã hoàn thành)</span>
               </>
             ) : (
               <>

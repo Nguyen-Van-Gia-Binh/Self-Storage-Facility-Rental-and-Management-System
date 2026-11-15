@@ -13,6 +13,7 @@ import {
   XCircle,
   UserPlus,
   RotateCcw,
+  Lock,
 } from 'lucide-react';
 import type { DailyDispatchTaskItem, DispatchTaskType, DispatchTaskStatus } from '../types/staffAssignment';
 
@@ -173,7 +174,15 @@ export const WorkItemCard: React.FC<WorkItemCardProps> = ({ task, onViewDetails,
       {/* Cụm button hành động */}
       <div className="shrink-0 flex items-center gap-2 self-end md:self-center pt-2 md:pt-0">
         {onAssign && (
-          !isAssigned ? (
+          task.status === 'COMPLETED' || task.status === 'RESOLVED' ? (
+            <span
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-400 bg-slate-50 rounded-xl border border-slate-200 select-none"
+              title="Nhiệm vụ đã hoàn thành, chức năng đổi người đã khóa"
+            >
+              <Lock className="w-3 h-3 text-slate-400" />
+              <span>Đã khóa đổi</span>
+            </span>
+          ) : !isAssigned ? (
             <button
               type="button"
               onClick={() => onAssign(task)}

@@ -460,6 +460,7 @@ export const IncidentDetailPage: React.FC = () => {
             staffList={staffList}
             onAssign={handleAssignStaff}
             isSubmitting={actionLoading}
+            isReadOnly={isResolved || isClosed}
           />
 
           {/* Phân định trách nhiệm lỗi (Chỉ đọc từ biên bản của Nhân viên kỹ thuật hiện trường) */}
