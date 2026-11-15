@@ -23,6 +23,9 @@ import {
   Copy,
   Check,
   KeyRound,
+  Phone,
+  AlertTriangle,
+  HelpCircle,
 } from 'lucide-react';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
 import { formatDateVN, calculateEndDate, isCheckInAllowedToday } from '../utils/unitPickerHelpers';
@@ -74,6 +77,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
   const [activePassContract, setActivePassContract] = useState<RentedContract | null>(null);
   const [activePassMode, setActivePassMode] = useState<'pass' | 'checkin'>('pass');
   const [payingContract, setPayingContract] = useState<RentedContract | null>(null);
+  const [lateRenewalContract, setLateRenewalContract] = useState<RentedContract | null>(null);
   const [revealedPins, setRevealedPins] = useState<Record<string, boolean>>({});
   const [copiedPinId, setCopiedPinId] = useState<string | null>(null);
 
@@ -415,9 +419,24 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                     <div className="flex flex-col">
                       <span>{formatDateVN(contract.startDate)} → {formatDateVN(contract.endDate)}</span>
                       {contract.status === 'ACTIVE' && isExpiringSoon && (
-                        <span className={`text-[11px] font-semibold ${isUrgentExpiring ? 'text-rose-600' : 'text-amber-600'}`}>
-                          Còn {daysRemaining} ngày
-                        </span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className={`text-[11px] font-bold ${isUrgentExpiring ? 'text-rose-600' : 'text-amber-600'}`}>
+                            Còn {daysRemaining} ngày
+                          </span>
+                          {!canRenewOnline && !contract.hasPendingRenewal && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setLateRenewalContract(contract);
+                              }}
+                              className="inline-flex items-center text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded border border-amber-300 font-bold cursor-pointer transition-colors shadow-2xs"
+                              title="Cổng tự gia hạn online đã đóng theo BR-REN-01. Bấm để xem hướng dẫn liên hệ Quản lý cơ sở (FM)"
+                            >
+                              Khóa online (T-20)
+                            </button>
+                          )}
+                        </div>
                       )}
                       {contract.status === 'OVERDUE' && (
                         <span className="text-[11px] font-semibold text-rose-600">
@@ -709,6 +728,21 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                             {contract.hasPendingRenewal ? 'Tiếp tục thanh toán' : 'Gia hạn'}
                           </Button>
                         </Link>
+                      ) : isExpiringSoon && !canRenewOnline ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onScheduleReturn(contract);
+                          }}
+                          className="h-7 w-[112px] justify-center text-xs px-2.5 font-bold text-rose-600 border-rose-200 hover:bg-rose-50 cursor-pointer whitespace-nowrap shrink-0 shadow-2xs"
+                          title="Báo trả kho và lên lịch nghiệm thu dọn đồ theo quy định chuẩn bị trả kho T-20..T-0 (BR-REN-01)"
+                        >
+                          <LogOut className="w-3.5 h-3.5 mr-1" />
+                          Báo trả kho
+                        </Button>
                       ) : (
                         <Button
                           type="button"
@@ -884,6 +918,20 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                         <span>Gia hạn hợp đồng</span>
                                       </Link>
                                     )}
+                                    {!canRenewOnline && !contract.hasPendingRenewal && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenMenuId(null);
+                                          setLateRenewalContract(contract);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-amber-50 text-amber-800 transition-colors cursor-pointer font-medium"
+                                      >
+                                        <HelpCircle className="w-3.5 h-3.5 text-amber-600" />
+                                        <span>Xin gia hạn muộn (T-20)</span>
+                                      </button>
+                                    )}
                                     <button
                                       type="button"
                                       onClick={(e) => {
@@ -1035,6 +1083,105 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
           }}
           contract={payingContract}
         />
+      )}
+
+      {/* Modal Hướng dẫn Gia hạn Ngoại lệ T-20 ngày (BR-REN-01 & BR-REN-10) */}
+      {lateRenewalContract && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden flex flex-col animate-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold">Chính Sách Gia Hạn Khung T-20 Ngày</h3>
+                  <p className="text-xs text-slate-400">
+                    Ô kho: <span className="text-amber-400 font-bold font-mono">{lateRenewalContract.unitNumber}</span> ({lateRenewalContract.facilityName})
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setLateRenewalContract(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-4 text-xs text-slate-700">
+              <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-xl space-y-1.5 text-amber-950">
+                <p className="font-bold text-sm flex items-center gap-1.5 text-amber-900">
+                  <span>Cổng tự phục vụ Online đã đóng (BR-REN-01)</span>
+                </p>
+                <p className="leading-relaxed">
+                  Hợp đồng thuê của Quý khách hiện còn dưới 20 ngày trước khi hết hạn. Theo quy chế cơ sở, hệ thống đã khóa tính năng tự gia hạn trên portal để bắt đầu chuẩn bị giải phóng mặt bằng và ưu tiên danh sách chờ.
+                </p>
+              </div>
+
+              <div className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <p className="font-bold text-slate-900 text-xs uppercase tracking-wider">Lựa chọn của Quý khách:</p>
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center shrink-0 text-[11px]">1</span>
+                    <p className="leading-relaxed">
+                      <strong>Nếu muốn tiếp tục thuê ô kho này:</strong> Vui lòng liên hệ Quản lý cơ sở (FM) qua Hotline bên dưới. FM sẽ kiểm tra nếu ô kho chưa có khách mới đặt cọc, FM sẽ duyệt <strong>Gia hạn Ngoại lệ (Force Renewal)</strong> và cấp cổng thanh toán trực tuyến cho Quý khách (áp dụng phụ phí hành chính 200.000 VNĐ theo BR-REN-10).
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-rose-100 text-rose-800 font-bold flex items-center justify-center shrink-0 text-[11px]">2</span>
+                    <p className="leading-relaxed">
+                      <strong>Nếu muốn trả kho đúng hạn:</strong> Quý khách vui lòng nhấn nút <strong>"Báo trả kho"</strong> để lên lịch dọn đồ và nghiệm thu trước ngày hết hạn nhằm tránh phát sinh phí phạt quá hạn.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3 bg-brand-50 border border-brand-200 rounded-xl flex items-center justify-between text-brand-950">
+                <div>
+                  <span className="text-[11px] text-brand-700 block font-medium">Hotline Ban Quản lý Cơ sở:</span>
+                  <a href="tel:19008888" className="text-base font-black text-brand-800 hover:underline">1900 8888</a>
+                </div>
+                <a
+                  href="tel:19008888"
+                  className="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>Gọi ngay</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const c = lateRenewalContract;
+                  setLateRenewalContract(null);
+                  onScheduleReturn(c);
+                }}
+                className="text-xs font-bold text-rose-600 border-rose-200 hover:bg-rose-50"
+              >
+                <LogOut className="w-3.5 h-3.5 mr-1" />
+                Lên lịch Báo trả kho
+              </Button>
+
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setLateRenewalContract(null)}
+                className="text-xs font-bold"
+              >
+                Đã hiểu
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

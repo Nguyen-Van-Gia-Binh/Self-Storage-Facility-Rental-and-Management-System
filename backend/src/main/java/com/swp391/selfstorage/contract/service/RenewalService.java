@@ -40,4 +40,9 @@ public interface RenewalService {
      * Thu tiền mặt hoặc chuyển khoản tại quầy, cập nhật hợp đồng và lưu vết ContractRenewal.
      */
     RenewalResponse processForceRenewal(Long contractId, ForceRenewalRequest request);
+
+    /**
+     * 6. FM điều chuyển đơn đặt cọc mới sang ô kho trống khác cùng loại để giải phóng ô cho khách cũ Force Renewal (FM-02, BR-REN-10).
+     */
+    void reassignConflictingReservation(Long contractId, Long reservationId, Long targetStorageUnitId);
 }

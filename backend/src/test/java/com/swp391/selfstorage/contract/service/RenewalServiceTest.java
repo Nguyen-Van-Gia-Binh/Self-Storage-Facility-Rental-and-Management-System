@@ -8,6 +8,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -478,5 +479,87 @@ class RenewalServiceTest {
         assertEquals(ErrorCode.RENEWAL_NOT_ALLOWED, ex.getErrorCode());
         verify(contractRenewalRepository, never()).save(any());
         verify(rentalContractRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("FM Force Renewal: Chọn thanh toán Online (VNPAY) tạo PaymentTransaction PENDING kèm 200k phụ phí")
+    void testProcessForceRenewal_onlinePayment_createsPendingPaymentTransaction() {
+        LocalDate oldEndDate = LocalDate.now().plusDays(10);
+        RentalContract contract = buildContract(ContractStatus.ACTIVE);
+        contract.setEndDateExclusive(oldEndDate);
+
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), anyInt())).thenReturn(false);
+        when(rentalContractRepository.existsOverlappingContractForUnit(eq(42L), any(), any(), anyInt(), eq(100L))).thenReturn(false);
+
+        ForceRenewalRequest req = ForceRenewalRequest.builder()
+                .renewalMonths(3)
+                .paymentMethod("VNPAY")
+                .notes("FM duyệt mở cổng online")
+                .build();
+
+        RenewalResponse res = renewalService.processForceRenewal(100L, req);
+
+        assertNotNull(res);
+        assertEquals(Boolean.TRUE, res.getIsForceRenewal());
+        assertEquals("VNPAY", res.getPaymentMethod());
+        assertEquals(200_000L, res.getLateAdminFee());
+        assertEquals(2_600_000L, res.getTotalPaid());
+
+        // Xác nhận chưa cập nhật ngày hợp đồng khi khách chưa thanh toán
+        verify(rentalContractRepository, never()).save(contract);
+        assertEquals(oldEndDate, contract.getEndDateExclusive());
+
+        // Xác nhận đã tạo PaymentTransaction PENDING
+        ArgumentCaptor<PaymentTransaction> paymentCaptor = ArgumentCaptor.forClass(PaymentTransaction.class);
+        verify(paymentTransactionRepository).save(paymentCaptor.capture());
+        PaymentTransaction savedTxn = paymentCaptor.getValue();
+        assertEquals(100L, savedTxn.getContractId());
+        assertEquals("CONTRACT_RENEWAL", savedTxn.getTransactionType());
+        assertEquals("PENDING", savedTxn.getStatus());
+        assertEquals("VNPAY", savedTxn.getPaymentMethod());
+        assertEquals(2_600_000L, savedTxn.getAmount());
+        assertEquals(3, savedTxn.getRenewalMonths());
+        assertNotNull(savedTxn.getOrderCode());
+        assertTrue(savedTxn.getProviderReference().startsWith("FORCE_GH100T3"));
+    }
+
+    @Test
+    @DisplayName("FM Điều chuyển đơn cọc sang ô khác cùng loại thành công (FM-02, BR-REN-10)")
+    void testReassignConflictingReservation_success() {
+        com.swp391.selfstorage.reservation.entity.Reservation res = new com.swp391.selfstorage.reservation.entity.Reservation();
+        res.setId(9019L);
+        res.setCode("RES-TEST-018-CONFLICT");
+        res.setUnitTypeId(6L);
+        res.setStorageUnitId(42L);
+        com.swp391.selfstorage.unit.entity.StorageUnit targetUnit = com.swp391.selfstorage.unit.entity.StorageUnit.builder()
+                .id(99L)
+                .code("Q1-AC-L101")
+                .unitTypeId(6L)
+                .status(com.swp391.selfstorage.unit.entity.StorageUnitStatus.AVAILABLE)
+                .build();
+        com.swp391.selfstorage.unit.entity.StorageUnit prevUnit = com.swp391.selfstorage.unit.entity.StorageUnit.builder()
+                .id(42L)
+                .code("Q1-AC-L201")
+                .unitTypeId(6L)
+                .status(com.swp391.selfstorage.unit.entity.StorageUnitStatus.RESERVED)
+                .build();
+
+        com.swp391.selfstorage.unit.repository.StorageUnitRepository mockUnitRepo = org.mockito.Mockito.mock(com.swp391.selfstorage.unit.repository.StorageUnitRepository.class);
+        org.springframework.test.util.ReflectionTestUtils.setField(renewalService, "storageUnitRepository", mockUnitRepo);
+
+        when(reservationRepository.findById(9019L)).thenReturn(Optional.of(res));
+        when(mockUnitRepo.findById(99L)).thenReturn(Optional.of(targetUnit));
+        when(mockUnitRepo.findById(42L)).thenReturn(Optional.of(prevUnit));
+
+        renewalService.reassignConflictingReservation(9018L, 9019L, 99L);
+
+        assertEquals(99L, res.getStorageUnitId());
+        verify(reservationRepository).save(res);
+        assertEquals(com.swp391.selfstorage.unit.entity.StorageUnitStatus.RESERVED, targetUnit.getStatus());
+        verify(mockUnitRepo).save(targetUnit);
+        assertEquals(com.swp391.selfstorage.unit.entity.StorageUnitStatus.AVAILABLE, prevUnit.getStatus());
+        verify(mockUnitRepo).save(prevUnit);
     }
 }

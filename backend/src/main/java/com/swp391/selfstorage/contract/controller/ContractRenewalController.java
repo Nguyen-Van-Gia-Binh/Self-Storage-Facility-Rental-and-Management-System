@@ -97,4 +97,18 @@ public class ContractRenewalController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(response, "Duyệt gia hạn ngoại lệ thành công"));
     }
+
+    /**
+     * 6. FM điều chuyển đơn cọc sang ô kho trống khác cùng loại để giải phóng ô cho khách cũ (FM-02 & BR-REN-10).
+     */
+    @PostMapping("/{id}/renewals/resolve-conflict")
+    @PreAuthorize("hasAnyRole('FACILITY_MANAGER', 'BUSINESS_OPERATIONS_MANAGER', 'SYSTEM_ADMIN')")
+    @Operation(summary = "FM điều chuyển đơn cọc sang ô kho khác cùng loại để giải phóng ô cho khách cũ Force Renewal")
+    public ResponseEntity<ApiResponse<Void>> resolveRenewalConflict(
+            @PathVariable Long id,
+            @RequestParam Long reservationId,
+            @RequestParam Long targetStorageUnitId) {
+        renewalService.reassignConflictingReservation(id, reservationId, targetStorageUnitId);
+        return ResponseEntity.ok(ApiResponse.success(null, "Điều chuyển đơn đặt cọc sang ô kho thay thế thành công"));
+    }
 }
