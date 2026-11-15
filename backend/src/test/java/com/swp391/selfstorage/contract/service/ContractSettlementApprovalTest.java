@@ -363,4 +363,81 @@ class ContractSettlementApprovalTest {
                 assertNotNull(contract.getClosedAt());
                 assertEquals(StorageUnitStatus.CLEANING, unit.getStatus());
         }
+
+        @Test
+        @DisplayName("BR-RET-06: Trả sớm trước hạn dài (> 30 ngày) -> Hoàn tiền thuê chưa dùng, phạt 100% cọc")
+        void testSettlement_EarlyReturnLongTerm_MoreThan30Days_ForfeitsDepositAndRefundsUnusedRent() {
+                LocalDate returnDate = LocalDate.now();
+                LocalDate endDate = returnDate.plusDays(60); // thừa 60 ngày (> 30 ngày)
+                RentalContract contract = RentalContract.builder()
+                                .id(605L)
+                                .monthlyPrice(2_000_000L) // 1 tháng = 2tr -> dailyRent ~ 66.667đ (2tr / 30)
+                                .depositAmount(2_000_000L)
+                                .depositBalance(2_000_000L)
+                                .overdueFeeAccrued(0L)
+                                .startDate(returnDate.minusDays(30))
+                                .endDateExclusive(endDate)
+                                .returnDate(returnDate)
+                                .status(ContractStatus.PENDING_RETURN)
+                                .build();
+
+                ReturnRequest returnReq = ReturnRequest.builder()
+                                .contractId(605L)
+                                .damageCost(0L)
+                                .inspectedAt(OffsetDateTime.now())
+                                .requestedReturnDate(returnDate)
+                                .build();
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(605L), anyList())).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(605L)).thenReturn(Optional.of(returnReq));
+                when(extraChargeRepository.findByContractIdAndStatus(605L, ExtraChargeStatus.UNPAID)).thenReturn(List.of());
+
+                SettlementPreviewResponse preview = contractService.getSettlementPreview(605L, List.of(1L));
+
+                assertNotNull(preview);
+                assertEquals("EARLY_RETURN", preview.getSettlementType());
+                assertTrue(preview.isEarlyReturn());
+                assertEquals(60L, preview.getUnusedDays());
+                assertEquals(2_000_000L, preview.getDepositForfeited());
+                assertTrue(preview.getEarlyRentRefund() > 0);
+                assertEquals(preview.getEarlyRentRefund(), preview.getDepositRefundAmount());
+        }
+
+        @Test
+        @DisplayName("BR-RET-04, BR-RET-06: Trả kho trong tháng cuối (<= 30 ngày, vd. còn 3 ngày) -> Hoàn 100% cọc, không phạt cọc")
+        void testSettlement_MoveOutLastMonth_LessThanOrEqualTo30Days_PreservesDepositNoRentRefund() {
+                LocalDate returnDate = LocalDate.now();
+                LocalDate endDate = returnDate.plusDays(3); // chỉ còn 3 ngày (<= 30 ngày)
+                RentalContract contract = RentalContract.builder()
+                                .id(606L)
+                                .monthlyPrice(3_200_000L)
+                                .depositAmount(3_200_000L)
+                                .depositBalance(3_200_000L)
+                                .overdueFeeAccrued(0L)
+                                .startDate(returnDate.minusDays(87))
+                                .endDateExclusive(endDate)
+                                .returnDate(returnDate)
+                                .status(ContractStatus.PENDING_RETURN)
+                                .build();
+
+                ReturnRequest returnReq = ReturnRequest.builder()
+                                .contractId(606L)
+                                .damageCost(0L)
+                                .inspectedAt(OffsetDateTime.now())
+                                .requestedReturnDate(returnDate)
+                                .build();
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(606L), anyList())).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(606L)).thenReturn(Optional.of(returnReq));
+                when(extraChargeRepository.findByContractIdAndStatus(606L, ExtraChargeStatus.UNPAID)).thenReturn(List.of());
+
+                SettlementPreviewResponse preview = contractService.getSettlementPreview(606L, List.of(1L));
+
+                assertNotNull(preview);
+                assertEquals("NORMAL", preview.getSettlementType());
+                assertFalse(preview.isEarlyReturn());
+                assertEquals(0L, preview.getDepositForfeited());
+                assertEquals(0L, preview.getEarlyRentRefund());
+                assertEquals(3_200_000L, preview.getDepositRefundAmount()); // Bảo toàn 100% cọc
+        }
 }

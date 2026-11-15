@@ -1446,12 +1446,20 @@ public class ContractServiceImpl implements ContractService {
                 long overdue = contract.getOverdueFeeAccrued();
 
                 long totalDeduction = damage + overdue + totalUnpaid;
-                long earlyRentRefund = earlyRentRefund(contract, contract.getReturnDate());
+                LocalDate actualReturnDate = contract.getReturnDate();
+                if (actualReturnDate == null && returnReq.getRequestedReturnDate() != null) {
+                        actualReturnDate = returnReq.getRequestedReturnDate();
+                }
+                if (actualReturnDate == null) {
+                        actualReturnDate = LocalDate.now();
+                }
+
+                long earlyRentRefund = earlyRentRefund(contract, actualReturnDate);
                 boolean isEarlyReturn = earlyRentRefund > 0;
                 long unusedDays = 0L;
                 long dailyRent = 0L;
-                if (contract.getEndDateExclusive() != null && contract.getReturnDate() != null) {
-                        unusedDays = Math.max(0L, java.time.temporal.ChronoUnit.DAYS.between(contract.getReturnDate(), contract.getEndDateExclusive()));
+                if (contract.getEndDateExclusive() != null && actualReturnDate != null) {
+                        unusedDays = Math.max(0L, java.time.temporal.ChronoUnit.DAYS.between(actualReturnDate, contract.getEndDateExclusive()));
                         PolicyVersion policy = (contract.getPolicyVersionId() != null && policyVersionRepository != null)
                                         ? policyVersionRepository.findById(contract.getPolicyVersionId()).orElse(null)
                                         : null;
@@ -1597,7 +1605,17 @@ public class ContractServiceImpl implements ContractService {
                 long damage = returnReq.getDamageCost();
                 long overdue = contract.getOverdueFeeAccrued();
                 long totalDeduction = damage + overdue + totalUnpaid;
-                long earlyRentRefund = earlyRentRefund(contract, contract.getReturnDate());
+                LocalDate actualReturnDate = contract.getReturnDate();
+                if (actualReturnDate == null && returnReq.getRequestedReturnDate() != null) {
+                        actualReturnDate = returnReq.getRequestedReturnDate();
+                }
+                if (actualReturnDate == null) {
+                        actualReturnDate = LocalDate.now();
+                }
+                if (contract.getReturnDate() == null) {
+                        contract.setReturnDate(actualReturnDate);
+                }
+                long earlyRentRefund = earlyRentRefund(contract, actualReturnDate);
                 boolean isEarlyReturn = earlyRentRefund > 0;
                 // BR-RET-06: Trả kho sớm phạt 100% cọc. Nguồn hoàn tiền tính từ phần tiền thuê chưa dùng.
                 long availableBalance = isEarlyReturn ? earlyRentRefund : deposit;
