@@ -319,4 +319,48 @@ class ContractSettlementApprovalTest {
                 assertEquals(ContractStatus.CLOSED, contract.getStatus());
                 assertNotNull(contract.getClosedAt());
         }
+
+        @Test
+        @DisplayName("BR-RET-04: approveSettlement với confirmPaid=true đóng hợp đồng CLOSED ngay khi khách nộp bù tiền mặt tại quầy")
+        void testApproveSettlement_WithConfirmPaid_ClosesImmediatelyWhenDeficitExists() {
+                RentalContract contract = RentalContract.builder()
+                                .id(604L)
+                                .customerId(15L)
+                                .facilityId(1L)
+                                .storageUnitId(42L)
+                                .depositAmount(1_000_000L)
+                                .depositBalance(1_000_000L)
+                                .status(ContractStatus.PENDING_RETURN)
+                                .build();
+
+                ReturnRequest returnReq = ReturnRequest.builder()
+                                .id(24L)
+                                .contractId(604L)
+                                .damageCost(1_500_000L) // Hư hại 1.5tr > cọc 1tr -> nợ bù 500k
+                                .inspectedAt(OffsetDateTime.now())
+                                .build();
+
+                StorageUnit unit = StorageUnit.builder().id(42L).status(StorageUnitStatus.OCCUPIED).build();
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(604L), anyList())).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(604L))
+                                .thenReturn(Optional.of(returnReq));
+                when(extraChargeRepository.findByContractIdAndStatus(604L, ExtraChargeStatus.UNPAID))
+                                .thenReturn(List.of());
+                when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(unit));
+
+                SettlementApprovalRequest request = SettlementApprovalRequest.builder()
+                                .approvedNotes("Đã thu đủ 500.000đ tiền mặt đền bù cửa kho tại quầy")
+                                .confirmPaid(true)
+                                .build();
+
+                SettlementApprovalResponse approval = contractService.approveSettlement(604L, request, 99L, List.of(1L));
+
+                assertNotNull(approval);
+                assertEquals(500_000L, approval.getPayableAmount());
+                assertEquals(0L, approval.getDepositRefundAmount());
+                assertEquals(ContractStatus.CLOSED, contract.getStatus());
+                assertNotNull(contract.getClosedAt());
+                assertEquals(StorageUnitStatus.CLEANING, unit.getStatus());
+        }
 }

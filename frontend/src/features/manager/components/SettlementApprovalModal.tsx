@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, CheckCircle, AlertCircle, RotateCcw, PlusCircle, Trash2, RefreshCw } from 'lucide-react';
 import type { ManagerContractItem } from '@/types/contractManager';
 import type { SettlementPreviewData } from '@/types';
-import { approveSettlementRefund, getSettlementPreview, completeSettlementPayment } from '@/api/contract';
+import { approveSettlementRefund, getSettlementPreview } from '@/api/contract';
 
 interface SettlementApprovalModalProps {
   isOpen: boolean;
@@ -23,7 +23,6 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
   const [additionalCost, setAdditionalCost] = useState<number>(0);
   const [additionalCostReason, setAdditionalCostReason] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [confirmingCash, setConfirmingCash] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<SettlementPreviewData | null>(null);
 
@@ -44,28 +43,62 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
 
   if (!isOpen || !contract) return null;
 
+  // Xác định chính xác loại hình quyết toán
+  const settlementType: 'EARLY_RETURN' | 'NORMAL' | 'OVERDUE_TERMINATED' | 'REJECTED_CHECKIN' =
+    preview?.settlementType ??
+    (contract.status === 'TERMINATED'
+      ? contract.checkinDate == null
+        ? 'REJECTED_CHECKIN'
+        : 'OVERDUE_TERMINATED'
+      : preview?.earlyReturn || (preview?.earlyRentRefund ?? 0) > 0
+      ? 'EARLY_RETURN'
+      : 'NORMAL');
+
   const originalDeposit = preview?.depositAmount ?? contract.depositAmount ?? 0;
-  const overdueFee = preview?.overdueFee ?? contract.overdueFeeAccrued ?? 0;
+  const earlyRentRefund = preview?.earlyRentRefund ?? 0;
+  const unusedDays = preview?.unusedDays ?? 0;
   const recordedDamage = preview?.damageCost ?? 0;
   const unpaidExtras = preview?.unpaidExtraCharges ?? 0;
-  const baseNetRefund = preview?.depositRefundAmount ?? 0;
-  const basePayableAmount = preview?.payableAmount ?? 0;
-
-  const isOverdueTerminated =
-    contract.status === 'TERMINATED' &&
-    (Boolean(contract.checkinDate) ||
-      (contract.overdueDays ?? 0) > 0 ||
-      overdueFee > 0 ||
-      (preview != null && preview.earlyRentRefund === 0 && baseNetRefund === 0));
-
-  const sealingAndImpoundFee = isOverdueTerminated
-    ? Math.max(0, originalDeposit - overdueFee)
-    : 0;
+  const overdueFee = preview?.overdueFee ?? contract.overdueFeeAccrued ?? 0;
+  const totalRentalFee = preview?.totalRentalFee ?? 0;
 
   const extraCostValue = showExtraCostInput ? Math.max(0, Number(additionalCost) || 0) : 0;
-  const totalDamageCost = recordedDamage + extraCostValue;
-  const netRefund = Math.max(0, baseNetRefund - extraCostValue);
-  const payableAmount = basePayableAmount + Math.max(0, extraCostValue - baseNetRefund);
+  const totalDeductionBase = recordedDamage + unpaidExtras + extraCostValue;
+
+  let netRefund = 0;
+  let payableAmount = 0;
+  let sealingAndImpoundFee = 0;
+
+  if (settlementType === 'EARLY_RETURN') {
+    // BR-RET-06: Hoàn tiền thuê chưa dùng, phạt 100% cọc phòng trống
+    const available = earlyRentRefund;
+    if (available >= totalDeductionBase) {
+      netRefund = available - totalDeductionBase;
+      payableAmount = 0;
+    } else {
+      netRefund = 0;
+      payableAmount = totalDeductionBase - available;
+    }
+  } else if (settlementType === 'NORMAL') {
+    // BR-RET-04: Bảo toàn 100% cọc ban đầu
+    const totalDeduction = totalDeductionBase + overdueFee;
+    if (originalDeposit >= totalDeduction) {
+      netRefund = originalDeposit - totalDeduction;
+      payableAmount = 0;
+    } else {
+      netRefund = 0;
+      payableAmount = totalDeduction - originalDeposit;
+    }
+  } else if (settlementType === 'OVERDUE_TERMINATED') {
+    // BR-OVD-07, BR-OVD-11: Cọc đã khấu trừ hết (55% quá hạn + 45% niêm phong)
+    sealingAndImpoundFee = Math.max(0, originalDeposit - overdueFee);
+    netRefund = 0;
+    payableAmount = extraCostValue; // Chỉ thu nợ thêm nếu FM nhập phí lưu Kho Tổng
+  } else if (settlementType === 'REJECTED_CHECKIN') {
+    // BR-CHK-06: Hoàn 100% tiền thuê + cọc
+    netRefund = (earlyRentRefund > 0 ? earlyRentRefund : totalRentalFee) + originalDeposit;
+    payableAmount = 0;
+  }
 
   const handleApprove = async () => {
     setLoading(true);
@@ -73,7 +106,7 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
     try {
       const extraNoteSegment =
         showExtraCostInput && extraCostValue > 0
-          ? `[Chi phí phát sinh Kho Tổng/Khác: +${extraCostValue.toLocaleString('vi-VN')}đ${
+          ? `[Chi phí phát sinh: +${extraCostValue.toLocaleString('vi-VN')}đ${
               additionalCostReason.trim() ? ` - ${additionalCostReason.trim()}` : ''
             }]`
           : '';
@@ -81,15 +114,20 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
 
       const res = await approveSettlementRefund({
         contractId: contract.id,
-        damageCost: totalDamageCost,
+        damageCost: recordedDamage + extraCostValue,
         depositRefundAmount: netRefund,
         penaltyAmount: overdueFee,
         note: combinedNote || undefined,
+        confirmPaid: true, // FM xác nhận đã đối soát tài chính (chi hoàn hoặc thu bù) và chốt đóng HĐ ngay
       });
 
-      const successMsg = payableAmount > 0
-        ? `Đã ghi nhận công nợ bồi thường (+${payableAmount.toLocaleString('vi-VN')} đ). Hệ thống đang chờ khách hàng thanh toán để tự động thanh lý hợp đồng.`
-        : (res.message || 'Phê duyệt quyết toán và hoàn cọc thành công');
+      const successMsg =
+        res.message ||
+        (payableAmount > 0
+          ? `Đã xác nhận thu đủ tiền nộp bù (+${payableAmount.toLocaleString('vi-VN')} đ) và đóng hợp đồng thành công (CLOSED)`
+          : netRefund > 0
+          ? `Đã xác nhận hoàn trả (${netRefund.toLocaleString('vi-VN')} đ) và đóng hợp đồng thành công (CLOSED)`
+          : `Đã chốt tất toán và đóng hợp đồng thành công (CLOSED)`);
 
       onSuccess(contract.id, successMsg);
       onClose();
@@ -101,25 +139,6 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
     }
   };
 
-  const handleCashPaymentConfirm = async () => {
-    if (!preview?.pendingSettlementOrderCode) return;
-    setConfirmingCash(true);
-    setError(null);
-    try {
-      await completeSettlementPayment(preview.pendingSettlementOrderCode);
-      onSuccess(
-        contract.id,
-        `Đã xác nhận thu tiền mặt ${payableAmount.toLocaleString('vi-VN')} đ tại quầy! Hợp đồng đã đóng tất toán (CLOSED).`
-      );
-      onClose();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Không thể xác nhận thanh toán tiền mặt.';
-      setError(msg);
-    } finally {
-      setConfirmingCash(false);
-    }
-  };
-
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] border border-slate-200">
@@ -128,9 +147,9 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
           <div className="flex items-center gap-2">
             <RotateCcw className="w-5 h-5 text-purple-200" />
             <div>
-              <h3 className="font-bold text-base">Phê duyệt quyết toán & Hoàn cọc</h3>
+              <h3 className="font-bold text-base">Phê duyệt quyết toán hợp đồng</h3>
               <p className="text-xs text-purple-200">
-                Thanh lý hợp đồng và xuất lệnh hoàn tiền cọc trong 7 ngày
+                Đối soát tất toán công nợ và hoàn tất đóng hợp đồng (CLOSED)
               </p>
             </div>
           </div>
@@ -154,8 +173,10 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
               <span className="font-medium text-slate-800">{contract.customerName}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Ô kho trả:</span>
-              <span className="font-medium text-purple-700">{contract.storageUnitCode} ({contract.unitTypeName})</span>
+              <span className="text-slate-500">Ô kho thuê:</span>
+              <span className="font-medium text-purple-700">
+                {contract.storageUnitCode} ({contract.unitTypeName})
+              </span>
             </div>
           </div>
 
@@ -166,15 +187,16 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
             </div>
           )}
 
-          {/* Bảng tính quyết toán */}
+          {/* Bảng tính quyết toán minh bạch */}
           <div className="bg-purple-50/50 p-4 rounded-xl border border-purple-200 text-xs space-y-2.5">
             <div className="flex items-center justify-between gap-2">
               <h4 className="font-bold text-purple-900 uppercase tracking-wider text-[11px]">
-                {isOverdueTerminated
-                  ? 'Bảng quyết toán cưỡng chế & Lưu giữ Kho Tổng (D+7)'
-                  : 'Bảng tính quyết toán hoàn cọc'}
+                {settlementType === 'EARLY_RETURN' && 'Bảng quyết toán trả kho sớm (Win-Win BR-RET-06)'}
+                {settlementType === 'NORMAL' && 'Bảng quyết toán hoàn cọc đúng hạn (BR-RET-04)'}
+                {settlementType === 'OVERDUE_TERMINATED' && 'Bảng quyết toán cưỡng chế & Kho Tổng (D+7)'}
+                {settlementType === 'REJECTED_CHECKIN' && 'Bảng hoàn tiền từ chối bàn giao (BR-CHK-06)'}
               </h4>
-              {!showExtraCostInput && (
+              {!showExtraCostInput && settlementType !== 'REJECTED_CHECKIN' && (
                 <button
                   type="button"
                   onClick={() => setShowExtraCostInput(true)}
@@ -186,71 +208,134 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
               )}
             </div>
 
-            <div className="flex justify-between text-slate-700 pt-1">
-              <span>1. Tiền cọc ban đầu:</span>
-              <span className="font-mono font-semibold text-slate-900">
-                +{originalDeposit.toLocaleString('vi-VN')} đ
-              </span>
-            </div>
-
-            {isOverdueTerminated ? (
-              <>
-                <div className="flex justify-between text-rose-600">
-                  <span>2. Phí quá hạn lũy kế (D+1..D+7 — 15% lưu kho + 40% phạt = 55% cọc):</span>
-                  <span className="font-mono font-semibold">
-                    -{overdueFee.toLocaleString('vi-VN')} đ
+            {/* TRƯỜNG HỢP 1: TRẢ KHO SỚM (EARLY_RETURN) */}
+            {settlementType === 'EARLY_RETURN' && (
+              <div className="space-y-1.5 pt-1">
+                <div className="flex justify-between text-emerald-800 bg-emerald-50/80 p-2 rounded-lg border border-emerald-200 font-medium">
+                  <span>
+                    1. Tiền thuê ngày chưa sử dụng ({unusedDays > 0 ? `${unusedDays} ngày` : 'phần chưa dùng'}):
+                  </span>
+                  <span className="font-mono font-bold text-emerald-700">
+                    +{earlyRentRefund.toLocaleString('vi-VN')} đ
                   </span>
                 </div>
-                <div className="flex justify-between text-rose-600">
-                  <span>3. Phí cắt khóa, kiểm kê, niêm phong & chuyển về Kho Tổng (45% cọc):</span>
-                  <span className="font-mono font-semibold">
-                    -{sealingAndImpoundFee.toLocaleString('vi-VN')} đ
+                <div className="flex justify-between text-slate-500 px-1 text-[11px]">
+                  <span>2. Phạt vi phạm trả kho sớm (Phạt 100% Cọc bù phòng trống):</span>
+                  <span className="font-mono font-semibold line-through text-slate-400">
+                    +{originalDeposit.toLocaleString('vi-VN')} đ (0 đ hoàn)
                   </span>
                 </div>
-                {(recordedDamage > 0 || unpaidExtras > 0) && (
-                  <div className="flex justify-between text-rose-700">
-                    <span>4. Chi phí khắc phục / phụ phí đã ghi nhận trước đó:</span>
+                {recordedDamage > 0 && (
+                  <div className="flex justify-between text-rose-600 px-1">
+                    <span>3. Chi phí khắc phục hư hại / vệ sinh (BOM):</span>
                     <span className="font-mono font-semibold">
-                      -{(recordedDamage + unpaidExtras).toLocaleString('vi-VN')} đ
+                      -{recordedDamage.toLocaleString('vi-VN')} đ
                     </span>
                   </div>
                 )}
-                <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-900 space-y-1">
-                  <p className="font-semibold">Hướng dẫn quyết toán tài sản tại Kho Tổng (BR-OVD-11):</p>
-                  <p>• <strong>Khách đến Kho Tổng nhận lại đồ (trong 30 ngày):</strong> Bấm <em>"+ Thêm chi phí phát sinh"</em> để nhập phí lưu Kho Tổng. Khách thanh toán xong hợp đồng sẽ tự đóng (CLOSED).</p>
-                  <p>• <strong>Khách bỏ tài sản quá 1 tháng (&gt; 30 ngày):</strong> Sau khi thanh lý ngoại tuyến, giữ chi phí phát sinh = 0 đ và bấm Duyệt để đóng hợp đồng (CLOSED).</p>
+                {unpaidExtras > 0 && (
+                  <div className="flex justify-between text-rose-600 px-1">
+                    <span>4. Phụ phí dịch vụ chưa thanh toán:</span>
+                    <span className="font-mono font-semibold">
+                      -{unpaidExtras.toLocaleString('vi-VN')} đ
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TRƯỜNG HỢP 2: TRẢ KHO ĐÚNG HẠN (NORMAL) */}
+            {settlementType === 'NORMAL' && (
+              <div className="space-y-1.5 pt-1">
+                <div className="flex justify-between text-slate-700 px-1">
+                  <span>1. Tiền cọc ban đầu được bảo toàn (100%):</span>
+                  <span className="font-mono font-semibold text-slate-900">
+                    +{originalDeposit.toLocaleString('vi-VN')} đ
+                  </span>
                 </div>
-              </>
-            ) : (
-              <>
-                <div className="flex justify-between text-slate-700">
-                  <span>2. Chi phí khắc phục đã ghi nhận:</span>
-                  <span className="font-mono font-semibold text-rose-700">
+                <div className="flex justify-between text-rose-600 px-1">
+                  <span>2. Chi phí khắc phục hư hại / vệ sinh:</span>
+                  <span className="font-mono font-semibold">
                     -{recordedDamage.toLocaleString('vi-VN')} đ
                   </span>
                 </div>
-                <div className="flex justify-between text-slate-700">
+                <div className="flex justify-between text-rose-600 px-1">
                   <span>3. Phụ phí chưa thanh toán:</span>
-                  <span className="font-mono font-semibold text-rose-700">
+                  <span className="font-mono font-semibold">
                     -{unpaidExtras.toLocaleString('vi-VN')} đ
                   </span>
                 </div>
                 {overdueFee > 0 && (
-                  <div className="flex justify-between text-rose-600">
+                  <div className="flex justify-between text-rose-600 px-1">
                     <span>4. Khấu trừ phí quá hạn phát sinh:</span>
                     <span className="font-mono font-semibold">
                       -{overdueFee.toLocaleString('vi-VN')} đ
                     </span>
                   </div>
                 )}
-              </>
+              </div>
             )}
 
+            {/* TRƯỜNG HỢP 3: CƯỠNG CHẾ D+7 KHO TỔNG (OVERDUE_TERMINATED) */}
+            {settlementType === 'OVERDUE_TERMINATED' && (
+              <div className="space-y-1.5 pt-1">
+                <div className="flex justify-between text-slate-700 px-1">
+                  <span>1. Tiền cọc ban đầu:</span>
+                  <span className="font-mono font-semibold text-slate-900">
+                    +{originalDeposit.toLocaleString('vi-VN')} đ
+                  </span>
+                </div>
+                <div className="flex justify-between text-rose-600 px-1">
+                  <span>2. Phí quá hạn lũy kế (D+1..D+7 — 55% cọc):</span>
+                  <span className="font-mono font-semibold">
+                    -{overdueFee.toLocaleString('vi-VN')} đ
+                  </span>
+                </div>
+                <div className="flex justify-between text-rose-600 px-1">
+                  <span>3. Phí niêm phong & chuyển về Kho Tổng (45% cọc):</span>
+                  <span className="font-mono font-semibold">
+                    -{sealingAndImpoundFee.toLocaleString('vi-VN')} đ
+                  </span>
+                </div>
+                <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-900 space-y-1 mt-2">
+                  <p className="font-semibold">Quy chuẩn quyết toán tài sản tại Kho Tổng (BR-OVD-11):</p>
+                  <p>
+                    • <strong>Khách chuộc lại đồ trong 30 ngày:</strong> Bấm <em>"+ Thêm chi phí phát sinh"</em> nhập phí lưu Kho Tổng. Khách nộp tiền mặt/chuyển khoản quầy xong, FM bấm duyệt để đóng hợp đồng.
+                  </p>
+                  <p>
+                    • <strong>Khách bỏ đồ &gt; 30 ngày:</strong> Sau khi cơ sở thanh lý ngoại tuyến, giữ chi phí phát sinh = 0 đ và bấm chốt thanh lý để đóng hợp đồng.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* TRƯỜNG HỢP 4: TỪ CHỐI BÀN GIAO CHECK-IN (REJECTED_CHECKIN) */}
+            {settlementType === 'REJECTED_CHECKIN' && (
+              <div className="space-y-1.5 pt-1">
+                <div className="flex justify-between text-emerald-800 bg-emerald-50/80 p-2 rounded-lg border border-emerald-200 font-medium">
+                  <span>1. Hoàn 100% Tiền thuê đã thanh toán trước:</span>
+                  <span className="font-mono font-bold text-emerald-700">
+                    +{(earlyRentRefund > 0 ? earlyRentRefund : totalRentalFee).toLocaleString('vi-VN')} đ
+                  </span>
+                </div>
+                <div className="flex justify-between text-emerald-800 bg-emerald-50/80 p-2 rounded-lg border border-emerald-200 font-medium">
+                  <span>2. Hoàn 100% Tiền cọc ban đầu:</span>
+                  <span className="font-mono font-bold text-emerald-700">
+                    +{originalDeposit.toLocaleString('vi-VN')} đ
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 italic px-1">
+                  (Miễn trừ toàn bộ chi phí do từ chối bàn giao ở khâu Check-in theo BR-CHK-06)
+                </p>
+              </div>
+            )}
+
+            {/* Khung nhập chi phí phát sinh (nếu có) */}
             {showExtraCostInput && (
               <div className="p-3 bg-white rounded-xl border border-purple-300 space-y-2.5 shadow-2xs">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-purple-900 text-[11px]">
-                    Chi phí phát sinh do Quản lý cơ sở (FM) nhập thêm (Lưu Kho Tổng / Khác)
+                    Chi phí phát sinh Quản lý cơ sở (FM) ghi nhận thêm
                   </span>
                   <button
                     type="button"
@@ -268,7 +353,7 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Số tiền thu thêm (VNĐ)
+                      Số tiền phát sinh (VNĐ)
                     </label>
                     <input
                       type="number"
@@ -282,133 +367,126 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Lý do / Diễn giải phí phát sinh
+                      Lý do / Diễn giải
                     </label>
                     <input
                       type="text"
                       value={additionalCostReason}
                       onChange={(e) => setAdditionalCostReason(e.target.value)}
-                      placeholder="VD: Phí lưu giữ tại Kho Tổng 10 ngày"
+                      placeholder="VD: Phí lưu Kho Tổng 10 ngày / Vệ sinh đặc biệt"
                       className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
                     />
                   </div>
                 </div>
                 {extraCostValue > 0 && (
                   <div className="flex justify-between text-rose-700 font-semibold pt-1 border-t border-slate-100">
-                    <span>Khấu trừ / Thu thêm chi phí phát sinh:</span>
+                    <span>Khấu trừ / Thu thêm:</span>
                     <span className="font-mono">-{extraCostValue.toLocaleString('vi-VN')} đ</span>
                   </div>
                 )}
               </div>
             )}
 
+            {/* Dòng Tổng kết thực tế */}
             <div className="pt-2 border-t border-purple-200 flex justify-between items-center text-sm font-bold">
               <span className="text-purple-950">
-                {payableAmount > 0 ? 'Khách phải nộp thêm (Thu nợ VNPay):' : 'Thực hoàn trả khách hàng:'}
+                {payableAmount > 0
+                  ? 'Khách nộp bổ sung cho cơ sở:'
+                  : netRefund > 0
+                  ? 'Cơ sở thực hoàn trả khách hàng:'
+                  : 'Tất toán công nợ:'}
               </span>
-              <span className={`font-mono text-base ${payableAmount > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                {payableAmount > 0 ? `+${payableAmount.toLocaleString('vi-VN')} đ` : `${netRefund.toLocaleString('vi-VN')} đ`}
+              <span
+                className={`font-mono text-base ${
+                  payableAmount > 0
+                    ? 'text-rose-600'
+                    : netRefund > 0
+                    ? 'text-emerald-600'
+                    : 'text-slate-700'
+                }`}
+              >
+                {payableAmount > 0
+                  ? `+${payableAmount.toLocaleString('vi-VN')} đ`
+                  : `${netRefund.toLocaleString('vi-VN')} đ`}
               </span>
             </div>
 
-            {payableAmount > 0 && (
-              <div className="p-3 bg-amber-50/90 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-1.5 mt-2">
-                <div className="flex items-center gap-1.5 font-bold text-amber-800">
-                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>Quy tắc cấn trừ nợ bồi thường (BR-RET-04)</span>
-                </div>
-                <p className="text-[11px] leading-relaxed text-amber-800/90">
-                  Phụ phí hư hại vượt quá tiền cọc, khách hàng phải nộp bổ sung{' '}
-                  <strong className="text-rose-700">+{payableAmount.toLocaleString('vi-VN')} đ</strong>.
-                  Hệ thống giữ hợp đồng ở trạng thái chờ khách thanh toán qua VietQR/VNPay trên app hoặc quản lý xác nhận thu tiền mặt tại quầy để tự động đóng hợp đồng.
-                </p>
-                {preview?.pendingSettlementOrderCode && (
-                  <div className="mt-1 pt-1.5 border-t border-amber-200/80 flex items-center justify-between text-[11px]">
-                    <span className="font-medium text-amber-700">Mã đơn thu nợ PayOS/VietQR:</span>
-                    <span className="font-mono font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded">
-                      #{preview.pendingSettlementOrderCode}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Chú thích hướng dẫn thao tác trực tiếp */}
+            <div className="p-2.5 bg-slate-100/80 rounded-lg text-[11px] text-slate-600 leading-relaxed">
+              {payableAmount > 0 ? (
+                <span>
+                  💡 <strong>Thao tác:</strong> Khách thanh toán nộp bù bằng tiền mặt tại quầy hoặc chuyển khoản trực tiếp cho cơ sở. Quản lý kiểm tra nhận đủ tiền, ghi chú chứng từ và nhấn nút bên dưới để đóng hợp đồng.
+                </span>
+              ) : netRefund > 0 ? (
+                <span>
+                  💡 <strong>Thao tác:</strong> Quản lý cơ sở đã chuyển khoản trả lại số tiền này về STK của khách (hoặc chi tiền mặt tại quầy). Nhấn xác nhận để hoàn tất lệnh hoàn và đóng hợp đồng.
+                </span>
+              ) : (
+                <span>
+                  💡 <strong>Thao tác:</strong> Hợp đồng đã hoàn tất khấu trừ toàn bộ công nợ. Nhấn xác nhận để đóng hợp đồng sang trạng thái <strong>CLOSED</strong>.
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* Ghi chú phê duyệt */}
+          {/* Ghi chú đối soát & Chứng từ thực tế */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">
-              Ghi chú phê duyệt & Biên bản đối soát / Thanh lý
+              Ghi chú đối soát & Thông tin thanh toán thực tế
             </label>
             <textarea
               rows={2}
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder={
-                isOverdueTerminated
-                  ? 'Nhập ghi chú xuất trả hàng tại Kho Tổng hoặc biên bản thanh lý tài sản ngoại tuyến sau 30 ngày...'
-                  : 'Nhập ghi chú hoặc biên bản đối soát...'
+                payableAmount > 0
+                  ? 'VD: Đã thu tiền mặt 500.000đ tại quầy tiếp tân cơ sở ngày 15/11...'
+                  : netRefund > 0
+                  ? 'VD: Đã chuyển khoản hoàn 9.800.000đ về STK Vietcombank khách hàng ngày 15/11...'
+                  : 'VD: Đã đối soát hiện trường và thanh lý tài sản ngoại tuyến...'
               }
               className="w-full p-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none"
             />
           </div>
         </div>
 
-        {/* Footer actions */}
+        {/* Footer: Nút bấm dứt khoát 1-Click */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
           <button
             type="button"
             onClick={onClose}
-            disabled={loading || confirmingCash}
+            disabled={loading}
             className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-xl border border-slate-300 hover:bg-white transition-colors cursor-pointer"
           >
             Đóng
           </button>
-          <div className="flex items-center gap-2">
-            {payableAmount > 0 && preview?.pendingSettlementOrderCode && (
-              <button
-                type="button"
-                onClick={handleCashPaymentConfirm}
-                disabled={loading || confirmingCash}
-                className="px-4 py-2 text-xs font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
-                title="Khách nộp tiền mặt hoặc chuyển khoản tại quầy cho Quản lý"
-              >
-                {confirmingCash ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    Đang chốt HĐ...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
-                    Khách nộp tiền mặt tại quầy & Đóng HĐ
-                  </>
-                )}
-              </button>
-            )}
 
-            <button
-              type="button"
-              onClick={handleApprove}
-              disabled={loading || confirmingCash || preview == null}
-              className="px-5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
-            >
-              {loading ? (
-                <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  Đang ghi nhận...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  {payableAmount > 0
-                    ? 'Ghi nhận nợ & Chờ khách quét QR'
-                    : isOverdueTerminated
-                    ? 'Chốt tất toán & Đóng hợp đồng (CLOSED)'
-                    : 'Duyệt quyết toán & Hoàn cọc'}
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleApprove}
+            disabled={loading || preview == null}
+            className={`px-5 py-2 text-xs font-bold text-white rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-1.5 cursor-pointer ${
+              payableAmount > 0
+                ? 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700'
+                : 'bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800'
+            }`}
+          >
+            {loading ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                Đang xử lý đóng hợp đồng...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="w-3.5 h-3.5" />
+                {payableAmount > 0
+                  ? `Xác nhận đã thu đủ ${payableAmount.toLocaleString('vi-VN')} đ & Đóng HĐ`
+                  : netRefund > 0
+                  ? `Xác nhận đã hoàn ${netRefund.toLocaleString('vi-VN')} đ & Đóng HĐ`
+                  : 'Chốt tất toán & Đóng hợp đồng (CLOSED)'}
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>,
