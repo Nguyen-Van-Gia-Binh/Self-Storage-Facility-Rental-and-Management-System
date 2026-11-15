@@ -60,7 +60,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; dotColor
     dotColor: 'bg-orange-500',
   },
   TERMINATED: {
-    label: '🔴 Terminated',
+    label: 'Terminated',
     className: 'bg-rose-50 text-rose-700 border-rose-200/80',
     dotColor: 'bg-rose-500',
   },
@@ -70,17 +70,17 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; dotColor
     dotColor: 'bg-slate-400',
   },
   PENDING_CHECK_IN: {
-    label: '🔵 Pending Check-in',
+    label: 'Pending Check-in',
     className: 'bg-blue-50 text-blue-700 border-blue-200/80',
     dotColor: 'bg-blue-500',
   },
   RELOCATION_PENDING: {
-    label: '🟠 Chờ gán lại ô kho',
+    label: 'Chờ gán lại ô kho',
     className: 'bg-amber-50 text-amber-800 border-amber-300 font-semibold',
     dotColor: 'bg-amber-500 animate-pulse',
   },
   AWAITING_RELOCATION: {
-    label: '🟠 Chờ gán lại ô kho',
+    label: 'Chờ gán lại ô kho',
     className: 'bg-amber-50 text-amber-800 border-amber-300 font-semibold',
     dotColor: 'bg-amber-500 animate-pulse',
   },
