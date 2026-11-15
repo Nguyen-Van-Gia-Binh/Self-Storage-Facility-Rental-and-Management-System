@@ -40,12 +40,12 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; dotColor
 
   // Trạng thái Hợp đồng (ManagerContractStatus)
   ACTIVE: {
-    label: '✓ Active',
+    label: 'Active',
     className: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
     dotColor: 'bg-emerald-500',
   },
   PENDING_RETURN: {
-    label: '⏳ Pending Return',
+    label: 'Pending Return',
     className: 'bg-amber-50 text-amber-700 border-amber-200/80',
     dotColor: 'bg-amber-500',
   },
@@ -55,7 +55,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; dotColor
     dotColor: 'bg-teal-500',
   },
   OVERDUE: {
-    label: '⚠️ Overdue',
+    label: 'Overdue',
     className: 'bg-orange-50 text-orange-700 border-orange-200/80',
     dotColor: 'bg-orange-500',
   },
@@ -65,7 +65,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; dotColor
     dotColor: 'bg-rose-500',
   },
   CLOSED: {
-    label: '📋 Closed',
+    label: 'Closed',
     className: 'bg-slate-100 text-slate-700 border-slate-200',
     dotColor: 'bg-slate-400',
   },
@@ -85,34 +85,34 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; dotColor
     dotColor: 'bg-amber-500 animate-pulse',
   },
   CANCELLED: {
-    label: '❌ Đã hủy',
+    label: 'Đã hủy',
     className: 'bg-slate-100 text-slate-500 border-slate-200',
     dotColor: 'bg-slate-400',
   },
 
   // Trạng thái Sự cố (SupportStatus)
   NEW: {
-    label: '⏳ Chờ tiếp nhận',
+    label: 'Chờ tiếp nhận',
     className: 'bg-amber-50 text-amber-700 border-amber-200/80',
     dotColor: 'bg-amber-500',
   },
   OPEN: {
-    label: '⏳ Chờ tiếp nhận',
+    label: 'Chờ tiếp nhận',
     className: 'bg-amber-50 text-amber-700 border-amber-200/80',
     dotColor: 'bg-amber-500',
   },
   ASSIGNED: {
-    label: '👤 Đã phân công',
+    label: 'Đã phân công',
     className: 'bg-sky-50 text-sky-700 border-sky-200/80',
     dotColor: 'bg-sky-500',
   },
   IN_PROGRESS: {
-    label: '⚠️ Đang xử lý',
+    label: 'Đang xử lý',
     className: 'bg-orange-50 text-orange-700 border-orange-200/80',
     dotColor: 'bg-orange-500',
   },
   RESOLVED: {
-    label: '✓ Đã xử lý',
+    label: 'Đã xử lý',
     className: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
     dotColor: 'bg-emerald-500',
   },
@@ -133,9 +133,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm', c
   const sz = size === 'sm' ? 'text-xs px-2.5 py-0.5' : 'text-sm px-3 py-1';
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full font-semibold border whitespace-nowrap ${sz} ${cfg.className}`}
+      className={`inline-flex items-center justify-center rounded-full font-semibold border whitespace-nowrap ${sz} ${cfg.className}`}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dotColor}`} />
       {customLabel || cfg.label}
     </span>
   );

@@ -280,7 +280,7 @@ public class ContractController {
 
     /** T4.3: Xem trước bảng quyết toán thanh lý và hoàn cọc (FM-04) */
     @GetMapping("/{id}/settlement-preview")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('FACILITY_MANAGER', 'MANAGER', 'SYSTEM_ADMINISTRATOR', 'ADMIN', 'BUSINESS_OPERATIONS_MANAGER', 'BOM')")
     @Operation(summary = "Xem trước quyết toán thanh lý hợp đồng")
     public ResponseEntity<ApiResponse<SettlementPreviewResponse>> getSettlementPreview(
             @PathVariable Long id,
@@ -294,7 +294,7 @@ public class ContractController {
      * T4.3: FM phê duyệt quyết toán, đóng hợp đồng và kích hoạt hoàn cọc (FM-04)
      */
     @PostMapping("/{id}/settlement-approval")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('FACILITY_MANAGER', 'MANAGER', 'SYSTEM_ADMINISTRATOR', 'ADMIN', 'BUSINESS_OPERATIONS_MANAGER', 'BOM')")
     @Operation(summary = "Phê duyệt quyết toán hợp đồng và hoàn cọc")
     public ResponseEntity<ApiResponse<SettlementApprovalResponse>> approveSettlement(
             @PathVariable Long id,
@@ -308,7 +308,7 @@ public class ContractController {
 
     /** BR-RET-09: sau khi dọn xong, ô CLEANING về RESERVED hoặc AVAILABLE. */
     @PostMapping("/{id}/cleaning-complete")
-    @PreAuthorize("hasAnyRole('STAFF', 'MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('FACILITY_STAFF', 'STAFF', 'FACILITY_MANAGER', 'MANAGER', 'SYSTEM_ADMINISTRATOR', 'ADMIN')")
     @Operation(summary = "Hoàn tất dọn ô kho sau nghiệm thu trả kho")
     public ResponseEntity<ApiResponse<ContractResponse>> completeCleaning(
             @PathVariable Long id,
