@@ -76,12 +76,7 @@ export async function getStaffWorkload(facilityId: number): Promise<StaffWorkloa
     }
     return rawList.map((item: any) => {
       const active = Number(item.activeTaskCount || 0);
-      let status: 'AVAILABLE' | 'NORMAL' | 'OVERLOADED' = 'AVAILABLE';
-      if (active >= 5) {
-        status = 'OVERLOADED';
-      } else if (active >= 3) {
-        status = 'NORMAL';
-      }
+      const status: 'AVAILABLE' | 'NORMAL' = active > 0 ? 'NORMAL' : 'AVAILABLE';
 
       return {
         staffId: item.staffId,
@@ -127,12 +122,18 @@ export function enrichStaffListWithTasks(
         (t.status === 'COMPLETED' || t.status === 'RESOLVED')
     );
 
-    const activeCount = Math.max(staff.activeTaskCount || 0, activeTasks.length);
-    const completedCount = Math.max(staff.completedTaskCount || 0, completedTasks.length);
+    const hasDispatchTasksForStaff = (tasks || []).some(
+      (t) =>
+        t.assignedStaffId === staff.staffId ||
+        (t.assignedStaffName &&
+          t.assignedStaffName.trim().toLowerCase() === staff.staffName.trim().toLowerCase())
+    );
+    const activeCount = hasDispatchTasksForStaff ? activeTasks.length : (staff.activeTaskCount || 0);
+    const completedCount = hasDispatchTasksForStaff
+      ? completedTasks.length
+      : (staff.completedTaskCount || 0);
 
-    let status: 'AVAILABLE' | 'NORMAL' | 'OVERLOADED' = 'AVAILABLE';
-    if (activeCount >= 5) status = 'OVERLOADED';
-    else if (activeCount >= 3) status = 'NORMAL';
+    const status: 'AVAILABLE' | 'NORMAL' = activeCount > 0 ? 'NORMAL' : 'AVAILABLE';
 
     return {
       ...staff,

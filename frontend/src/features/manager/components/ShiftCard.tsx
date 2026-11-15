@@ -21,26 +21,18 @@ export const ShiftCard: React.FC<ShiftCardProps> = ({
   onViewDetails,
 }) => {
   const getLoadBadge = () => {
-    switch (staff.status) {
-      case 'AVAILABLE':
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            Sẵn sàng
-          </span>
-        );
-      case 'OVERLOADED':
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-            Quá tải ({staff.activeTaskCount} việc)
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-            Đang trực
-          </span>
-        );
+    if (staff.activeTaskCount === 0 || staff.status === 'AVAILABLE') {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          Sẵn sàng
+        </span>
+      );
     }
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+        Đang trực ({staff.activeTaskCount} việc)
+      </span>
+    );
   };
 
   return (

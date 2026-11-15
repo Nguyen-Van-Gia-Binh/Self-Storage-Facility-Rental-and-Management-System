@@ -36,6 +36,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -337,6 +338,45 @@ class StaffSupportServiceTest {
         assertEquals(1L, staffW.getFacilityId());
         assertEquals(3L, staffW.getActiveTaskCount());
         assertEquals(7L, staffW.getCompletedTaskCount());
+    }
+
+    @Test
+    @DisplayName("US-FM-05.1: Khi Staff hoàn thành nhiệm vụ, activeTaskCount giảm và completedTaskCount tăng")
+    void shouldReflectReducedActiveTaskCount_whenStaffCompletesWork() {
+        Facility facility = new Facility();
+        facility.setId(1L);
+        facility.setName("Cơ sở Cầu Giấy");
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(facility));
+
+        when(userFacilityAssignmentRepository.findByUserId(anyLong()))
+                .thenReturn(List.of(new UserFacilityAssignment(8L, 1L)));
+        when(userRepository.findByFilters(isNull(), eq(UserRole.FACILITY_STAFF), eq(UserStatus.ACTIVE), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(sampleStaffEntity)));
+
+        StaffDailyTaskService mockDailyService = mock(StaffDailyTaskService.class);
+        org.springframework.test.util.ReflectionTestUtils.setField(staffSupportService, "staffDailyTaskService", mockDailyService);
+
+        com.swp391.selfstorage.support.dto.DailyTasksSummaryDto summary = com.swp391.selfstorage.support.dto.DailyTasksSummaryDto.builder()
+                .totalTasks(5)
+                .pendingTasks(2) // Đã làm xong 3 việc, chỉ còn 2 việc đang làm!
+                .completedTasks(3) // 3 việc đã hoàn thành
+                .build();
+
+        com.swp391.selfstorage.support.dto.StaffDailyTasksResponse dailyResp = com.swp391.selfstorage.support.dto.StaffDailyTasksResponse.builder()
+                .summary(summary)
+                .build();
+
+        when(mockDailyService.getDailyTasks(eq(8L), any(LocalDate.class), eq(false), eq(managerUser)))
+                .thenReturn(dailyResp);
+
+        List<StaffWorkloadResponse> workload = staffSupportService.getStaffWorkload(1L, managerUser);
+
+        assertNotNull(workload);
+        assertEquals(1, workload.size());
+        StaffWorkloadResponse staffW = workload.get(0);
+        // Xác nhận số việc đang làm giảm về 2 và số việc hoàn thành là 3
+        assertEquals(2L, staffW.getActiveTaskCount());
+        assertEquals(3L, staffW.getCompletedTaskCount());
     }
 
     @Test

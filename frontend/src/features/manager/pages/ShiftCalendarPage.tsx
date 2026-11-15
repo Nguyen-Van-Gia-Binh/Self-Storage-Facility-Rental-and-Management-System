@@ -615,8 +615,7 @@ export const ShiftCalendarPage: React.FC = () => {
                 {staffList.map((st) => {
                   const isSelected = viewingStaffDetail?.staffId === st.staffId;
                   const activeCount = st.activeTaskCount || 0;
-                  const isOverloaded = activeCount >= 5;
-                  const isNormal = activeCount >= 3 && activeCount < 5;
+                  const isBusy = activeCount > 0;
 
                   // Đếm task của nhân viên này trong toàn bộ hệ thống
                   const assignedTasksForStaff = allTasks.filter(
@@ -650,11 +649,7 @@ export const ShiftCalendarPage: React.FC = () => {
                             </div>
                           </div>
 
-                          {isOverloaded ? (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 shrink-0">
-                              Quá tải
-                            </span>
-                          ) : isNormal ? (
+                          {isBusy ? (
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
                               Đang trực
                             </span>

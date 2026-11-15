@@ -26,6 +26,7 @@ import com.swp391.selfstorage.user.entity.UserStatus;
 import com.swp391.selfstorage.user.repository.UserFacilityAssignmentRepository;
 import com.swp391.selfstorage.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -50,6 +51,9 @@ public class StaffSupportServiceImpl implements StaffSupportService {
     private final FacilityRepository facilityRepository;
     private final UserRepository userRepository;
     private final UserFacilityAssignmentRepository userFacilityAssignmentRepository;
+
+    @Autowired(required = false)
+    private StaffDailyTaskService staffDailyTaskService;
 
     @Override
     public SupportRequestDetailResponse assignStaff(Long requestId, AssignStaffRequest request, UserPrincipal currentUser) {
@@ -236,10 +240,18 @@ public class StaffSupportServiceImpl implements StaffSupportService {
                 long completedTasks = supportRequestRepository.countByAssignedStaffIdAndStatusIn(
                         staff.getId(), List.of(SupportStatus.RESOLVED, SupportStatus.CLOSED, SupportStatus.AUTO_CLOSED)
                 );
-                long dailyCount = staffDailyAssignmentRepository.countByStaffIdAndWorkDate(
-                        staff.getId(), LocalDate.now()
-                );
-                long totalActive = Math.max(activeTasks, dailyCount);
+                long totalActive = activeTasks;
+
+                if (staffDailyTaskService != null) {
+                    try {
+                        var dailyTasks = staffDailyTaskService.getDailyTasks(staff.getId(), LocalDate.now(), false, currentUser);
+                        if (dailyTasks != null && dailyTasks.getSummary() != null) {
+                            totalActive = dailyTasks.getSummary().getPendingTasks();
+                            completedTasks = dailyTasks.getSummary().getCompletedTasks();
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
 
                 workloadList.add(StaffWorkloadResponse.builder()
                         .staffId(staff.getId())

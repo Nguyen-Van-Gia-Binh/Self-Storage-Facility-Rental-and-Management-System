@@ -149,7 +149,6 @@ export const QuickAssignModal: React.FC<QuickAssignModalProps> = ({
               <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
                 {staffList.map((staff) => {
                   const isSelected = selectedStaffId === staff.staffId;
-                  const isOverloaded = staff.status === 'OVERLOADED';
 
                   return (
                     <div
@@ -190,9 +189,9 @@ export const QuickAssignModal: React.FC<QuickAssignModalProps> = ({
                       <div className="text-right">
                         <span
                           className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                            isOverloaded
-                              ? 'bg-rose-50 text-rose-700 border-rose-200'
-                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            staff.activeTaskCount > 0
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : 'bg-slate-50 text-slate-600 border-slate-200'
                           }`}
                         >
                           {staff.activeTaskCount} việc đang làm
