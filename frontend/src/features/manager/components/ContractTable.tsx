@@ -5,7 +5,6 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  AlertTriangle,
   CheckCircle2,
 } from 'lucide-react';
 import type { ManagerContractItem } from '@/types/contractManager';
