@@ -230,7 +230,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                         Đã chấm dứt
                       </span>
                     )}
-                    {(c.status === 'PENDING_RETURN' || c.status === 'INSPECTED') && (
+                    {(c.status === 'PENDING_RETURN' || c.status === 'INSPECTED' || c.status === 'CANCELLED') && (
                       <span className="text-[11px] font-medium text-amber-600 mt-0.5 block">
                         Chờ quyết toán
                       </span>

@@ -570,7 +570,7 @@ class CustomerRentalServiceTest {
         contract.setMonthlyPrice(500_000L);
         contract.setDepositAmount(500_000L);
 
-        when(rentalContractRepository.findByCustomerIdAndStatusNot(eq(15L), eq(ContractStatus.CANCELLED), any(Pageable.class)))
+        when(rentalContractRepository.findByCustomerId(eq(15L), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(contract)));
 
         StorageUnit unit = new StorageUnit();
@@ -616,7 +616,7 @@ class CustomerRentalServiceTest {
         contract.setRescheduleCount(1);
         contract.setRescheduledAt(rescheduledTime);
 
-        when(rentalContractRepository.findByCustomerIdAndStatusNot(eq(15L), eq(ContractStatus.CANCELLED), any(Pageable.class)))
+        when(rentalContractRepository.findByCustomerId(eq(15L), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(contract)));
         when(rentalContractRepository.findById(701L)).thenReturn(Optional.of(contract));
 

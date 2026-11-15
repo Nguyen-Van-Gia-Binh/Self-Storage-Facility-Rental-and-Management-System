@@ -142,7 +142,10 @@ export function useCustomerContracts() {
   );
   const overdueCount = useMemo(() => contracts.filter((c) => c.status === 'OVERDUE').length, [contracts]);
   const pendingReturnCount = useMemo(
-    () => contracts.filter((c) => c.status === 'PENDING_RETURN').length,
+    () =>
+      contracts.filter(
+        (c) => c.status === 'PENDING_RETURN' || (c.status as string) === 'CANCELLED'
+      ).length,
     [contracts]
   );
   const pendingCheckinCount = useMemo(
