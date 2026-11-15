@@ -14,6 +14,7 @@ import {
   Wrench,
   PackageOpen,
   CheckCircle,
+  Lock,
 } from 'lucide-react';
 import type {
   DailyDispatchTaskItem,
@@ -262,28 +263,38 @@ export const WorkDetailPage: React.FC = () => {
                 : '⏳ CHƯA PHÂN CÔNG'}
             </span>
 
-            {/* Nút Phân công / Điều chuyển Nhân sự (Chức năng cốt lõi của Manager) */}
-            <button
-              type="button"
-              onClick={() => setAssignModalOpen(true)}
-              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer ${
-                isAssigned
-                  ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20'
-              }`}
-            >
-              {isAssigned ? (
-                <>
-                  <UserCheck className="w-4 h-4 text-amber-600" />
-                  <span>Điều chuyển nhân sự</span>
-                </>
-              ) : (
-                <>
-                  <UserPlus className="w-4 h-4" />
-                  <span>Phân công nhân viên</span>
-                </>
-              )}
-            </button>
+            {/* Nút Phân công / Điều chuyển Nhân sự (Chức năng cốt lõi của Manager - Khóa khi đã hoàn thành) */}
+            {task.status === 'COMPLETED' ? (
+              <span
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200 select-none cursor-not-allowed"
+                title="Nhiệm vụ đã hoàn thành, chức năng điều chuyển nhân sự đã được khóa"
+              >
+                <Lock className="w-3.5 h-3.5 text-slate-400" />
+                <span>Đã khóa đổi người (Đã hoàn thành)</span>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAssignModalOpen(true)}
+                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer ${
+                  isAssigned
+                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20'
+                }`}
+              >
+                {isAssigned ? (
+                  <>
+                    <UserCheck className="w-4 h-4 text-amber-600" />
+                    <span>Điều chuyển nhân sự</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4" />
+                    <span>Phân công nhân viên</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -379,13 +390,20 @@ export const WorkDetailPage: React.FC = () => {
               <span>Nhân viên phụ trách ca</span>
             </div>
             {isAssigned && (
-              <button
-                type="button"
-                onClick={() => setAssignModalOpen(true)}
-                className="text-xs text-brand-600 hover:text-brand-700 font-bold lowercase underline cursor-pointer"
-              >
-                đổi người
-              </button>
+              task.status === 'COMPLETED' ? (
+                <span className="text-[11px] text-slate-400 flex items-center gap-1 font-medium select-none">
+                  <Lock className="w-3 h-3 text-slate-400" />
+                  <span>Đã khóa đổi</span>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAssignModalOpen(true)}
+                  className="text-xs text-brand-600 hover:text-brand-700 font-bold lowercase underline cursor-pointer"
+                >
+                  đổi người
+                </button>
+              )
             )}
           </div>
 

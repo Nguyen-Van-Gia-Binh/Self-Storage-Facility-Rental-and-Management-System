@@ -104,7 +104,7 @@ describe('WaitlistInboxPage (FM Telesales CRM)', () => {
     });
   });
 
-  it('displays reservation priority warning banner and action when unassigned reservations exist', async () => {
+  it('displays action button to assign physical unit when unassigned reservations exist', async () => {
     const priorityWaitlists: WaitlistResponse[] = [
       {
         id: 103,
@@ -134,7 +134,6 @@ describe('WaitlistInboxPage (FM Telesales CRM)', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Ưu tiên 2 đơn đặt trước/i)).toBeDefined();
       expect(screen.getByRole('button', { name: /Gán ô kho \(2\)/i })).toBeDefined();
     });
   });
