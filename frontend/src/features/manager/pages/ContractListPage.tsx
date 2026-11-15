@@ -30,12 +30,12 @@ export type ContractTabFilter =
 
 const STATUS_TABS: { label: string; value: ContractTabFilter }[] = [
   { label: 'Tất cả', value: 'ALL' },
-  { label: 'Active', value: 'ACTIVE' },
+  { label: 'Đang hiệu lực', value: 'ACTIVE' },
   { label: 'Chờ quyết toán', value: 'PENDING_RETURN' },
-  { label: 'Overdue', value: 'OVERDUE' },
-  { label: 'Terminated', value: 'TERMINATED' },
-  { label: 'Closed', value: 'CLOSED' },
-  { label: 'Chờ nhận', value: 'PENDING_CHECK_IN' },
+  { label: 'Quá hạn', value: 'OVERDUE' },
+  { label: 'Đã chấm dứt', value: 'TERMINATED' },
+  { label: 'Đã đóng', value: 'CLOSED' },
+  { label: 'Chờ nhận kho', value: 'PENDING_CHECK_IN' },
 ];
 
 const DEFAULT_PAGE_SIZE = 10;

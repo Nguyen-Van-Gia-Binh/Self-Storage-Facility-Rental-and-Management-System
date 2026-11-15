@@ -247,7 +247,7 @@ export const ContractDashboardPage: React.FC = () => {
 
           <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-3 py-1.5 rounded-xl border border-emerald-500/30">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Active:</span>
+            <span>Đang hiệu lực:</span>
             <span className="font-mono font-bold text-white text-sm">
               {globalKpis.active}
             </span>

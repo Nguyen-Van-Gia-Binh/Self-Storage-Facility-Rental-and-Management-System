@@ -64,19 +64,19 @@ describe('Giám sát hợp đồng — Kiến trúc Drill-down 3 Cấp độ (FM
 
   it('1. StatusBadge: Hiển thị đúng màu và nhãn cho các trạng thái hợp đồng', () => {
     const activeHtml = cleanHtml(renderToString(<StatusBadge status="ACTIVE" />));
-    expect(activeHtml).toContain('Active');
+    expect(activeHtml).toContain('Đang hiệu lực');
 
     const pendingReturnHtml = cleanHtml(renderToString(<StatusBadge status="PENDING_RETURN" />));
-    expect(pendingReturnHtml).toContain('Pending Return');
+    expect(pendingReturnHtml).toContain('Chờ trả kho');
 
     const overdueHtml = cleanHtml(renderToString(<StatusBadge status="OVERDUE" />));
-    expect(overdueHtml).toContain('Overdue');
+    expect(overdueHtml).toContain('Quá hạn');
 
     const terminatedHtml = cleanHtml(renderToString(<StatusBadge status="TERMINATED" />));
-    expect(terminatedHtml).toContain('Terminated');
+    expect(terminatedHtml).toContain('Đã chấm dứt');
 
     const closedHtml = cleanHtml(renderToString(<StatusBadge status="CLOSED" />));
-    expect(closedHtml).toContain('Closed');
+    expect(closedHtml).toContain('Đã kết thúc');
   });
 
   it('2. Cấp 1 (FacilityContractSummaryCard): Hiển thị thông tin cơ sở, địa chỉ, hotline và nút xem chi tiết', () => {
@@ -118,7 +118,7 @@ describe('Giám sát hợp đồng — Kiến trúc Drill-down 3 Cấp độ (FM
     expect(html).toContain('HD-001');
     expect(html).toContain('Nguyễn Văn A');
     expect(html).toContain('S-101');
-    expect(html).toContain('Active');
+    expect(html).toContain('Đang hiệu lực');
     expect(html).toContain('2026-12-31');
     expect(html).toContain('Chi tiết');
   });
