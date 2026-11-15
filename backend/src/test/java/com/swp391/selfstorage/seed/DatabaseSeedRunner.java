@@ -106,7 +106,7 @@ public class DatabaseSeedRunner {
                             rs.getLong("overdue_fee"),
                             rs.getString("pin_state"));
                 }
-                assertThat(count).isEqualTo(21);
+                assertThat(count).isEqualTo(25);
             }
             System.out.println("------------------------------------------------------------------------------------------------------------------------");
             System.out.println(">>> TAI KHOAN DANG NHAP DE TEST (MAT KHAU: password123):");

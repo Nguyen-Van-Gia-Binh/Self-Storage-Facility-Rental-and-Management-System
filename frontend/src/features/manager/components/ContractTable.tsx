@@ -243,7 +243,8 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                       {onApproveSettlement &&
                         (c.status === 'INSPECTED' ||
                           c.status === 'TERMINATED' ||
-                          c.status === 'CANCELLED') && (
+                          c.status === 'CANCELLED' ||
+                          c.status === 'PENDING_RETURN') && (
                           <button
                             type="button"
                             onClick={(e) => {

@@ -192,7 +192,27 @@ VALUES
 -- RES 9022: Cho HĐ CTR-TEST-021 (Kho Q1-XL301, UT 8: UT-STD-XL) -> Quá hạn D+40 (> 37 ngày: 7 ngày quá hạn cơ sở + 30 ngày lưu Kho Tổng) nhưng FM CHƯA DUYỆT QUYẾT TOÁN (BR-OVD-07, BR-OVD-11)
 (9022, 'RES-TEST-021', 10, 5, 8, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-XL301'),
  CURRENT_DATE - INTERVAL '130 day', 3, CURRENT_DATE - INTERVAL '40 day', 2500000,
- 1, 2500000, 7500000, 10000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ 1, 2500000, 7500000, 10000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- RES 9023: Cho HĐ CTR-TEST-022 (Kho Q1-A301, UT 1: UT-STD-S) -> Nhóm 1.1: Khách hủy nhận kho trước bàn giao (Hủy trước ≥ 7 ngày) (BR-CAN-01)
+(9023, 'RES-TEST-022', 10, 5, 1, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-A301'),
+ CURRENT_DATE + INTERVAL '10 day', 3, CURRENT_DATE + INTERVAL '100 day', 750000,
+ 1, 750000, 2250000, 3000000, 'CANCELLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, NULL),
+
+-- RES 9024: Cho HĐ CTR-TEST-023 (Kho Q1-A302, UT 2: UT-STD-M) -> Nhóm 1.2: Khách hủy nhận kho trước bàn giao (Hủy trước 2 - 6 ngày) (BR-CAN-02)
+(9024, 'RES-TEST-023', 10, 5, 2, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-A302'),
+ CURRENT_DATE + INTERVAL '4 day', 3, CURRENT_DATE + INTERVAL '94 day', 1500000,
+ 1, 1500000, 4500000, 6000000, 'CANCELLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, NULL),
+
+-- RES 9025: Cho HĐ CTR-TEST-024 (Kho Q1-C301, UT 4: UT-CLIM-S) -> Nhóm 1.3: Khách hủy nhận kho trước bàn giao (Hủy sát giờ < 48h) (BR-CAN-03)
+(9025, 'RES-TEST-024', 10, 5, 4, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-C301'),
+ CURRENT_DATE + INTERVAL '1 day', 3, CURRENT_DATE + INTERVAL '91 day', 1200000,
+ 1, 1200000, 3600000, 4800000, 'CANCELLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, NULL),
+
+-- RES 9026: Cho HĐ CTR-TEST-025 (Kho Q1-AC-M301, UT 5: UT-AC-M) -> Nhóm 2: Từ chối bàn giao ở khâu Check-in do cơ sở vi phạm (BR-CHK-06)
+(9026, 'RES-TEST-025', 10, 5, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-AC-M301'),
+ CURRENT_DATE, 3, CURRENT_DATE + INTERVAL '90 day', 2400000,
+ 1, 2400000, 7200000, 9600000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
@@ -329,7 +349,31 @@ VALUES
 (9021, 'CTR-TEST-021', 9022, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-XL301'), 8,
  CURRENT_DATE - INTERVAL '130 day', CURRENT_DATE - INTERVAL '40 day', 3, 2500000, 7500000,
  2500000, 0, NULL, 'TERMINATED', CURRENT_DATE - INTERVAL '130 day', 1,
- 1375000, CURRENT_TIMESTAMP - INTERVAL '130 day', CURRENT_TIMESTAMP - INTERVAL '33 day', NULL)
+ 1375000, CURRENT_TIMESTAMP - INTERVAL '130 day', CURRENT_TIMESTAMP - INTERVAL '33 day', NULL),
+
+-- Case 22: CTR-TEST-022 (CANCELLED - Hủy nhận kho sớm ≥ 7 ngày: Hoàn 100% tiền thuê + Hoàn 100% cọc - Phạt 0đ - BR-CAN-01)
+(9022, 'CTR-TEST-022', 9023, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-A301'), 1,
+ CURRENT_DATE + INTERVAL '10 day', CURRENT_DATE + INTERVAL '100 day', 3, 750000, 2250000,
+ 750000, 750000, NULL, 'CANCELLED', NULL, 1,
+ 0, NULL, NULL, NULL),
+
+-- Case 23: CTR-TEST-023 (CANCELLED - Hủy nhận kho 2 - 6 ngày: Hoàn 100% tiền thuê + Hoàn 50% cọc - Phạt 50% cọc - BR-CAN-02)
+(9023, 'CTR-TEST-023', 9024, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-A302'), 2,
+ CURRENT_DATE + INTERVAL '4 day', CURRENT_DATE + INTERVAL '94 day', 3, 1500000, 4500000,
+ 1500000, 1500000, NULL, 'CANCELLED', NULL, 1,
+ 0, NULL, NULL, NULL),
+
+-- Case 24: CTR-TEST-024 (CANCELLED - Hủy nhận kho sát giờ < 48h: Hoàn 100% tiền thuê + Phạt 100% cọc - Hoàn 0% cọc - BR-CAN-03)
+(9024, 'CTR-TEST-024', 9025, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-C301'), 4,
+ CURRENT_DATE + INTERVAL '1 day', CURRENT_DATE + INTERVAL '91 day', 3, 1200000, 3600000,
+ 1200000, 1200000, NULL, 'CANCELLED', NULL, 1,
+ 0, NULL, NULL, NULL),
+
+-- Case 25: CTR-TEST-025 (TERMINATED - Từ chối bàn giao ở khâu Check-in: Miễn trừ toàn bộ chi phí - Hoàn 100% thuê + 100% cọc - BR-CHK-06)
+(9025, 'CTR-TEST-025', 9026, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-AC-M301'), 5,
+ CURRENT_DATE, CURRENT_DATE + INTERVAL '90 day', 3, 2400000, 7200000,
+ 2400000, 2400000, NULL, 'TERMINATED', NULL, 1,
+ 0, NULL, CURRENT_TIMESTAMP, NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
@@ -444,6 +488,64 @@ VALUES
 (9019, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao lúc nhận kho ban đầu. Hợp đồng sau đó phát sinh quá hạn D+7 cưỡng chế.', CURRENT_TIMESTAMP - INTERVAL '135 day', CURRENT_TIMESTAMP - INTERVAL '135 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '135 day', FALSE),
 (9020, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao lúc nhận kho ban đầu. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '30 day', CURRENT_TIMESTAMP - INTERVAL '30 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '30 day', FALSE),
 (9021, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao lúc nhận kho ban đầu. Hợp đồng sau đó phát sinh quá hạn D+7 cưỡng chế.', CURRENT_TIMESTAMP - INTERVAL '130 day', CURRENT_TIMESTAMP - INTERVAL '130 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '130 day', FALSE)
+ON CONFLICT (contract_id) DO UPDATE SET
+    rejected = EXCLUDED.rejected,
+    condition_note = EXCLUDED.condition_note,
+    status = EXCLUDED.status,
+    customer_confirmed = EXCLUDED.customer_confirmed;
+
+-- 4.8 Các kịch bản Trả kho & Quyết toán bao phủ 5 Nhóm nghiệp vụ (BR-CAN, BR-CHK, BR-RET, BR-OVD):
+-- Case 22 (CTR-TEST-022): Nhóm 1.1 - Khách hủy nhận kho trước bàn giao (Hủy trước ≥ 7 ngày) (BR-CAN-01)
+INSERT INTO return_request (
+    contract_id, requested_at, requested_return_date, appointment_slot,
+    status, inspected_by, inspected_at, is_intact, damage_cost, deposit_refund_amount, condition_note, customer_confirmed
+)
+VALUES (
+    9022, CURRENT_TIMESTAMP, CURRENT_DATE, '08:00 - 09:00',
+    'PENDING', NULL, NULL, TRUE, 0, 3000000,
+    'Khách hủy nhận kho trước bàn giao (Hủy trước ≥ 7 ngày): Đổi kế hoạch công tác', TRUE
+);
+
+-- Case 23 (CTR-TEST-023): Nhóm 1.2 - Khách hủy nhận kho trước bàn giao (Hủy trước 2 - 6 ngày) (BR-CAN-02)
+INSERT INTO return_request (
+    contract_id, requested_at, requested_return_date, appointment_slot,
+    status, inspected_by, inspected_at, is_intact, damage_cost, deposit_refund_amount, condition_note, customer_confirmed
+)
+VALUES (
+    9023, CURRENT_TIMESTAMP, CURRENT_DATE, '09:00 - 10:00',
+    'PENDING', NULL, NULL, TRUE, 0, 5250000,
+    'Khách hủy nhận kho trước bàn giao (Hủy trước 2 - 6 ngày): Thay đổi địa điểm thuê', TRUE
+);
+
+-- Case 24 (CTR-TEST-024): Nhóm 1.3 - Khách hủy nhận kho trước bàn giao (Hủy sát giờ < 48h) (BR-CAN-03)
+INSERT INTO return_request (
+    contract_id, requested_at, requested_return_date, appointment_slot,
+    status, inspected_by, inspected_at, is_intact, damage_cost, deposit_refund_amount, condition_note, customer_confirmed
+)
+VALUES (
+    9024, CURRENT_TIMESTAMP, CURRENT_DATE, '10:00 - 11:00',
+    'PENDING', NULL, NULL, TRUE, 0, 3600000,
+    'Khách hủy nhận kho trước bàn giao (Hủy sát giờ < 48h): Việc gia đình đột xuất', TRUE
+);
+
+-- Case 25 (CTR-TEST-025): Nhóm 2 - Từ chối bàn giao ở khâu Check-in do cơ sở vi phạm (BR-CHK-06)
+INSERT INTO return_request (
+    contract_id, requested_at, requested_return_date, appointment_slot,
+    status, inspected_by, inspected_at, is_intact, damage_cost, deposit_refund_amount, condition_note, customer_confirmed
+)
+VALUES (
+    9025, CURRENT_TIMESTAMP, CURRENT_DATE, '14:00 - 15:00',
+    'PENDING', 9, CURRENT_TIMESTAMP, FALSE, 0, 9600000,
+    'Từ chối nhận kho tại quầy: Ô kho thấm dột, không đạt tiêu chuẩn chất lượng (BR-CHK-06)', TRUE
+);
+
+-- Biên bản từ chối nhận kho cho Case 25 (handover_record với rejected = TRUE)
+INSERT INTO handover_record (
+    contract_id, staff_id, condition_note, customer_signed_at, staff_signed_at,
+    status, customer_confirmed, customer_confirmed_at, rejected
+)
+VALUES
+(9025, 9, 'Ô kho bị thấm dột trần không đạt chuẩn lưu trữ, khách từ chối nhận kho (BR-CHK-06)', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'COMPLETED', TRUE, CURRENT_TIMESTAMP, TRUE)
 ON CONFLICT (contract_id) DO UPDATE SET
     rejected = EXCLUDED.rejected,
     condition_note = EXCLUDED.condition_note,

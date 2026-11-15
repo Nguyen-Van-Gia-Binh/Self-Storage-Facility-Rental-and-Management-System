@@ -23,8 +23,22 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
   const [additionalCost, setAdditionalCost] = useState<number>(0);
   const [additionalCostReason, setAdditionalCostReason] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [fetchingPreview, setFetchingPreview] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<SettlementPreviewData | null>(null);
+
+  const fetchPreviewData = React.useCallback(async (contractId: number) => {
+    setFetchingPreview(true);
+    setError(null);
+    try {
+      const data = await getSettlementPreview(contractId);
+      setPreview(data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Không tải được bảng tất toán từ hệ thống.');
+    } finally {
+      setFetchingPreview(false);
+    }
+  }, []);
 
   React.useEffect(() => {
     if (!isOpen || !contract) return;
@@ -33,13 +47,8 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
     setAdditionalCost(0);
     setAdditionalCostReason('');
     setPreview(null);
-    setError(null);
-    getSettlementPreview(contract.id)
-      .then(setPreview)
-      .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : 'Không tải được bảng tất toán.');
-      });
-  }, [isOpen, contract]);
+    fetchPreviewData(contract.id);
+  }, [isOpen, contract, fetchPreviewData]);
 
   if (!isOpen || !contract) return null;
 
@@ -78,41 +87,49 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
   let payableAmount = 0;
   let sealingAndImpoundFee = 0;
 
-  if (settlementType === 'EARLY_RETURN') {
-    // BR-RET-06: Hoàn tiền thuê chưa dùng, phạt 100% cọc phòng trống
-    const available = earlyRentRefund;
-    if (available >= totalDeductionBase) {
-      netRefund = available - totalDeductionBase;
-      payableAmount = 0;
-    } else {
+  if (preview) {
+    if (settlementType === 'EARLY_RETURN') {
+      // BR-RET-06: Hoàn tiền thuê chưa dùng, phạt 100% cọc phòng trống
+      const available = earlyRentRefund;
+      if (available >= totalDeductionBase) {
+        netRefund = available - totalDeductionBase;
+        payableAmount = 0;
+      } else {
+        netRefund = 0;
+        payableAmount = totalDeductionBase - available;
+      }
+    } else if (settlementType === 'NORMAL') {
+      // BR-RET-04: Bảo toàn 100% cọc ban đầu
+      const totalDeduction = totalDeductionBase + overdueFee;
+      if (originalDeposit >= totalDeduction) {
+        netRefund = originalDeposit - totalDeduction;
+        payableAmount = 0;
+      } else {
+        netRefund = 0;
+        payableAmount = totalDeduction - originalDeposit;
+      }
+    } else if (settlementType === 'OVERDUE_TERMINATED') {
+      // BR-OVD-07, BR-OVD-11: Cọc đã khấu trừ hết (55% quá hạn + 45% niêm phong)
+      sealingAndImpoundFee = Math.max(0, originalDeposit - overdueFee);
       netRefund = 0;
-      payableAmount = totalDeductionBase - available;
-    }
-  } else if (settlementType === 'NORMAL') {
-    // BR-RET-04: Bảo toàn 100% cọc ban đầu
-    const totalDeduction = totalDeductionBase + overdueFee;
-    if (originalDeposit >= totalDeduction) {
-      netRefund = originalDeposit - totalDeduction;
+      payableAmount = extraCostValue; // Chỉ thu nợ thêm nếu FM nhập phí lưu Kho Tổng
+    } else if (settlementType === 'REJECTED_CHECKIN') {
+      // BR-CHK-06: Hoàn 100% tiền thuê + cọc
+      netRefund = preview.depositRefundAmount ?? ((earlyRentRefund > 0 ? earlyRentRefund : totalRentalFee) + originalDeposit);
       payableAmount = 0;
-    } else {
-      netRefund = 0;
-      payableAmount = totalDeduction - originalDeposit;
+    } else if (settlementType === 'CANCELLED_CHECKIN') {
+      // Hủy nhận kho theo chính sách 3 mức (≥ 7 ngày: hoàn 100% cọc; 2-6 ngày: phạt 50% cọc; < 48h: phạt 100% cọc)
+      const rentRefund = earlyRentRefund > 0 ? earlyRentRefund : totalRentalFee;
+      const depositRefund = Math.max(0, originalDeposit - depositForfeited);
+      const baseRefund = preview.depositRefundAmount ?? (rentRefund + depositRefund);
+      if (baseRefund >= extraCostValue) {
+        netRefund = baseRefund - extraCostValue;
+        payableAmount = 0;
+      } else {
+        netRefund = 0;
+        payableAmount = extraCostValue - baseRefund;
+      }
     }
-  } else if (settlementType === 'OVERDUE_TERMINATED') {
-    // BR-OVD-07, BR-OVD-11: Cọc đã khấu trừ hết (55% quá hạn + 45% niêm phong)
-    sealingAndImpoundFee = Math.max(0, originalDeposit - overdueFee);
-    netRefund = 0;
-    payableAmount = extraCostValue; // Chỉ thu nợ thêm nếu FM nhập phí lưu Kho Tổng
-  } else if (settlementType === 'REJECTED_CHECKIN') {
-    // BR-CHK-06: Hoàn 100% tiền thuê + cọc
-    netRefund = (earlyRentRefund > 0 ? earlyRentRefund : totalRentalFee) + originalDeposit;
-    payableAmount = 0;
-  } else if (settlementType === 'CANCELLED_CHECKIN') {
-    // Hủy nhận kho theo chính sách 3 mức (≥ 7 ngày: hoàn 100% cọc; 2-6 ngày: phạt 50% cọc; < 48h: phạt 100% cọc)
-    const rentRefund = earlyRentRefund > 0 ? earlyRentRefund : totalRentalFee;
-    const depositRefund = Math.max(0, originalDeposit - depositForfeited);
-    netRefund = preview?.depositRefundAmount ?? rentRefund + depositRefund;
-    payableAmount = 0;
   }
 
   const handleApprove = async () => {
@@ -192,15 +209,39 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
             </div>
           </div>
 
-          {error && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
-              <span>{error}</span>
+          {fetchingPreview ? (
+            <div className="py-12 flex flex-col items-center justify-center gap-3 text-center bg-purple-50/40 rounded-xl border border-purple-100">
+              <RefreshCw className="w-7 h-7 text-purple-600 animate-spin" />
+              <p className="text-xs font-semibold text-slate-800">Đang đối soát & nạp dữ liệu quyết toán...</p>
+              <p className="text-[11px] text-slate-500">Hệ thống đang truy xuất bảng tính hoàn cọc, tiền thuê và phụ phí từ máy chủ</p>
             </div>
-          )}
+          ) : error && !preview ? (
+            <div className="p-6 bg-rose-50 border border-rose-200 rounded-xl text-center space-y-3">
+              <div className="flex items-center justify-center gap-2 text-rose-700 text-xs font-semibold">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{error}</span>
+              </div>
+              <p className="text-[11px] text-rose-600/80">Không thể tính toán chi phí quyết toán do gặp sự cố kết nối.</p>
+              <button
+                type="button"
+                onClick={() => contract && fetchPreviewData(contract.id)}
+                className="px-3.5 py-1.5 text-xs font-bold text-rose-700 hover:text-white bg-white hover:bg-rose-600 border border-rose-300 rounded-lg inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Thử tải lại bảng quyết toán
+              </button>
+            </div>
+          ) : (
+            <>
+              {error && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
 
-          {/* Bảng tính quyết toán minh bạch */}
-          <div className="bg-purple-50/50 p-4 rounded-xl border border-purple-200 text-xs space-y-2.5">
+              {/* Bảng tính quyết toán minh bạch */}
+              <div className="bg-purple-50/50 p-4 rounded-xl border border-purple-200 text-xs space-y-2.5">
             <div className="flex items-center justify-between gap-2">
               <h4 className="font-bold text-purple-900 uppercase tracking-wider text-[11px]">
                 {settlementType === 'EARLY_RETURN' && 'Bảng quyết toán trả kho sớm'}
@@ -494,6 +535,8 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
               className="w-full p-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none"
             />
           </div>
+            </>
+          )}
         </div>
 
         {/* Footer: Nút bấm dứt khoát 1-Click */}
@@ -510,7 +553,7 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
           <button
             type="button"
             onClick={handleApprove}
-            disabled={loading || preview == null}
+            disabled={loading || fetchingPreview || preview == null}
             className={`px-5 py-2 text-xs font-bold text-white rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center cursor-pointer ${
               payableAmount > 0
                 ? 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700'
@@ -521,6 +564,11 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
               <span className="flex items-center gap-1.5">
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 Đang xử lý đóng hợp đồng...
+              </span>
+            ) : fetchingPreview ? (
+              <span className="flex items-center gap-1.5">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                Đang nạp bảng tính...
               </span>
             ) : payableAmount > 0 ? (
               `Xác nhận đã thu đủ ${payableAmount.toLocaleString('vi-VN')} đ & Đóng HĐ`
