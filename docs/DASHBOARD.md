@@ -77,6 +77,7 @@
 | `ISS-170` | Tối ưu hóa Mục 3 Business Rules (`docs/FINAL-REPORT.md`) sang cấu trúc bảng 2 cột Function và Rule tinh gọn, phục vụ bảo vệ đồ án và SRS. | Gom nhóm 82 quy tắc nguyên tử vào 12 phân hệ chức năng cốt lõi (Function) kèm danh sách quy tắc đánh số (Rule) rõ ràng, triệt tiêu 100% biến code (PR #344). |  Gia Bình  | `RESOLVED (PR #344)` |
 | `ISS-171` | Hoàn thiện đặc tả Mục 3 Business Rules với 25 phân hệ chức năng chi tiết, loại bỏ 100% key code/method theo triết lý Ponytail. | Phân rã chi tiết 25 chức năng (Function) và đánh số danh mục quy tắc (Business Rules) bằng ngôn ngữ domain chuẩn, loại bỏ API endpoints và cú pháp lập trình. |  Gia Bình  | `RESOLVED` |
 | `ISS-172` | Hoàn thiện trọn vẹn cụm Flow 6: Chuẩn hóa tự gia hạn >= 20d, Force Renewal FM < 20d (+200k), xóa dead code hồi sinh OVERDUE và Flyway V33. | Đồng bộ docs toàn diện; thêm Flyway V33, RenewalServiceImpl processForceRenewal, ForceRenewalModal FE, 28/28 tests xanh, FE build 0 lỗi. |  Gia Bình  |      `RESOLVED`      |
+| `ISS-173` | Lỗi nhiệm vụ trả kho sớm bị báo quá hạn (trễ 6 ngày), hiển thị sai ngày hẹn trả (lấy endDate) và bảng quyết toán nghiệm thu không hiện tiền hoàn trả thuê chưa dùng (BR-RET-06). | Sửa toReturnDto lấy đúng returnDate, tách lọc taskType RETURN trong assignTask, thêm Flyway V34 & fallback 1.00 returnEarlyRefundRate, bổ sung card quyết toán trả sớm trên FE. |  Gia Bình  |      `RESOLVED`      |
 
 _(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/\_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))_
 

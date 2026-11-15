@@ -8,6 +8,7 @@ import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
+import com.swp391.selfstorage.support.dto.DailyReturnTaskDto;
 import com.swp391.selfstorage.support.dto.StaffDailyTasksResponse;
 import com.swp391.selfstorage.support.entity.*;
 import com.swp391.selfstorage.support.repository.StaffDailyAssignmentRepository;
@@ -432,5 +433,41 @@ class StaffDailyTaskServiceTest {
         assertThat(futureRes.getCheckInTasks()).hasSize(1);
         assertThat(futureRes.getCheckInTasks().get(0).getContractCode()).isEqualTo("CTR-RESCHEDULED");
         assertThat(futureRes.getCheckInTasks().get(0).getScheduledDate()).isEqualTo(futureDate);
+    }
+
+    @Test
+    @DisplayName("BUG-FLOW3: Khách báo trả kho sớm cho HĐ còn hạn xa -> Task hôm nay KHÔNG bị đánh dấu trễ hạn và scheduledDate đúng ngày hẹn trả")
+    void testEarlyReturn_AssignedToday_IsNotMarkedAsLate_AndScheduledDateIsReturnDate() {
+        LocalDate today = LocalDate.now(StaffDailyTaskServiceImpl.VN_ZONE);
+        LocalDate futureEndDate = today.plusDays(30);
+
+        when(userRepository.findById(8L)).thenReturn(Optional.of(sampleStaff));
+        when(userFacilityAssignmentRepository.findFacilityIdsByUserId(8L)).thenReturn(List.of(1L));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(sampleFacility));
+
+        // Hợp đồng còn hạn 30 ngày, nhưng khách đã báo trả kho vào hôm nay
+        RentalContract earlyReturnContract = createContract(801L, "CTR-TEST-013", 4001L, 15L, 1L, 101L,
+                today.minusDays(60), futureEndDate, ContractStatus.PENDING_RETURN, today.minusDays(60), today);
+
+        StaffDailyAssignment assignment = StaffDailyAssignment.builder()
+                .id(101L).staffId(8L).facilityId(1L).workDate(today).taskType(AssignmentTaskType.RETURN)
+                .referenceType("CONTRACT").referenceId(801L).build();
+
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(org.mockito.ArgumentMatchers.eq(8L), any(), org.mockito.ArgumentMatchers.eq(today)))
+                .thenReturn(List.of(assignment));
+        when(rentalContractRepository.findById(801L)).thenReturn(Optional.of(earlyReturnContract));
+        when(supportRequestRepository.findAllByAssignedStaffId(8L)).thenReturn(Collections.emptyList());
+        when(userRepository.findById(15L)).thenReturn(Optional.of(sampleCustomer));
+        when(storageUnitRepository.findById(101L)).thenReturn(Optional.of(sampleUnit));
+
+        StaffDailyTasksResponse todayRes = staffDailyTaskService.getDailyTasks(8L, today, false, staffPrincipal);
+        assertThat(todayRes.getReturnTasks()).hasSize(1);
+
+        DailyReturnTaskDto returnTask = todayRes.getReturnTasks().get(0);
+        assertThat(returnTask.getContractCode()).isEqualTo("CTR-TEST-013");
+        assertThat(returnTask.isLate()).isFalse();
+        assertThat(returnTask.getDaysLate()).isNull();
+        assertThat(returnTask.getScheduledDate()).isEqualTo(today);
+        assertThat(returnTask.getReturnDate()).isEqualTo(today);
     }
 }

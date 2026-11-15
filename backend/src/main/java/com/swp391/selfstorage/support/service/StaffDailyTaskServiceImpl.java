@@ -351,10 +351,18 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                     return;
                 }
 
-                LocalDate workDate = a.getWorkDate() != null ? a.getWorkDate() : c.getEndDateExclusive();
+                LocalDate targetReturnDate = c.getReturnDate();
+                if (targetReturnDate == null && reqOpt.isPresent() && reqOpt.get().getRequestedReturnDate() != null) {
+                    targetReturnDate = reqOpt.get().getRequestedReturnDate();
+                }
+                LocalDate workDate = a.getWorkDate() != null ? a.getWorkDate() : targetReturnDate;
+                if (workDate == null) {
+                    workDate = c.getEndDateExclusive();
+                }
+
                 LocalDate returnCreatedDate = reqOpt.isPresent() && reqOpt.get().getRequestedAt() != null
                         ? reqOpt.get().getRequestedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
-                        : c.getReturnDate();
+                        : targetReturnDate;
 
                 boolean isInspected = reqOpt.isPresent() && reqOpt.get().getInspectedAt() != null;
                 boolean isCompleted = c.getStatus() == ContractStatus.RETURNED
@@ -365,12 +373,21 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
 
                 if (!isCompleted) {
                     isTodayTask = (workDate != null && workDate.isEqual(date))
+                            || (targetReturnDate != null && targetReturnDate.isEqual(date))
                             || (returnCreatedDate != null && returnCreatedDate.isEqual(date));
-                    isLatePending = workDate != null
-                            && workDate.isBefore(date)
-                            && (c.getStatus() == ContractStatus.PENDING_RETURN || c.getStatus() == ContractStatus.OVERDUE);
-                    if (!isTodayTask && !isLatePending && returnCreatedDate != null && returnCreatedDate.isBefore(date)) {
-                        isLatePending = (c.getStatus() == ContractStatus.PENDING_RETURN || c.getStatus() == ContractStatus.OVERDUE);
+
+                    // Một nhiệm vụ trả kho chỉ bị tính là Trễ (isLatePending) khi:
+                    // 1) Hợp đồng đang OVERDUE (đã qua hạn kết thúc c.getEndDateExclusive())
+                    // 2) HOẶC ngày hẹn trả kho (targetReturnDate) đã trôi qua trước ngày đang xét
+                    // VÀ hôm nay không phải ngày hẹn trả kho (!isTodayTask).
+                    if (!isTodayTask) {
+                        if (c.getStatus() == ContractStatus.OVERDUE) {
+                            LocalDate overdueBase = c.getEndDateExclusive() != null ? c.getEndDateExclusive() : workDate;
+                            isLatePending = overdueBase != null && overdueBase.isBefore(date);
+                        } else if (c.getStatus() == ContractStatus.PENDING_RETURN) {
+                            LocalDate deadline = targetReturnDate != null ? targetReturnDate : workDate;
+                            isLatePending = deadline != null && deadline.isBefore(date);
+                        }
                     }
                 } else {
                     LocalDate inspectedDate = isInspected
@@ -385,7 +402,9 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                         DailyReturnTaskDto dto = toReturnDto(c, cache);
                         if (isLatePending) {
                             dto.setLate(true);
-                            LocalDate baseDate = workDate != null ? workDate : returnCreatedDate;
+                            LocalDate baseDate = (c.getStatus() == ContractStatus.OVERDUE && c.getEndDateExclusive() != null)
+                                    ? c.getEndDateExclusive()
+                                    : (targetReturnDate != null ? targetReturnDate : workDate);
                             if (baseDate != null) {
                                 long diff = java.time.temporal.ChronoUnit.DAYS.between(baseDate, date);
                                 dto.setDaysLate((int) Math.max(1, diff));
@@ -427,10 +446,23 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                                 || c.getStatus() == ContractStatus.CLOSED
                                 || req.getInspectedAt() != null;
                         boolean include;
+                        boolean isLate = false;
+                        LocalDate targetReturnDate = c.getReturnDate() != null
+                                ? c.getReturnDate()
+                                : req.getRequestedReturnDate();
+                        LocalDate refDate = targetReturnDate != null ? targetReturnDate : returnCreatedDate;
                         if (!isContractCompleted) {
-                            include = returnCreatedDate == null
-                                    || returnCreatedDate.isEqual(date)
-                                    || !returnCreatedDate.isAfter(date);
+                            boolean isTodayRef = refDate != null && refDate.isEqual(date);
+                            boolean isLatePending = false;
+                            if (!isTodayRef) {
+                                if (c.getStatus() == ContractStatus.OVERDUE && c.getEndDateExclusive() != null) {
+                                    isLatePending = c.getEndDateExclusive().isBefore(date);
+                                } else if (refDate != null) {
+                                    isLatePending = refDate.isBefore(date);
+                                }
+                            }
+                            include = isTodayRef || isLatePending;
+                            isLate = !isTodayRef && isLatePending;
                         } else {
                             include = (inspectedDate != null && inspectedDate.isEqual(date))
                                     || (inspectedDate == null && returnCreatedDate != null && returnCreatedDate.isEqual(date));
@@ -438,6 +470,16 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                         if (include && processedContractIds.add(c.getId())) {
                             if (!onlyPending || !isContractCompleted) {
                                 DailyReturnTaskDto dto = toReturnDto(c, cache);
+                                if (isLate) {
+                                    dto.setLate(true);
+                                    LocalDate baseDate = (c.getStatus() == ContractStatus.OVERDUE && c.getEndDateExclusive() != null)
+                                            ? c.getEndDateExclusive()
+                                            : refDate;
+                                    if (baseDate != null) {
+                                        long diff = java.time.temporal.ChronoUnit.DAYS.between(baseDate, date);
+                                        dto.setDaysLate((int) Math.max(1, diff));
+                                    }
+                                }
                                 result.add(dto);
                             }
                         }
@@ -585,13 +627,10 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
     }
 
     private DailyReturnTaskDto toReturnDto(RentalContract c, RequestCache cache) {
-        boolean isInspected = false;
-        if (returnRequestRepository != null) {
-            var reqOpt = getReturnRequestCached(c.getId(), cache);
-            if (reqOpt.isPresent() && reqOpt.get().getInspectedAt() != null) {
-                isInspected = true;
-            }
-        }
+        var reqOpt = returnRequestRepository != null
+                ? getReturnRequestCached(c.getId(), cache)
+                : Optional.<com.swp391.selfstorage.contract.entity.ReturnRequest>empty();
+        boolean isInspected = reqOpt.isPresent() && reqOpt.get().getInspectedAt() != null;
         boolean completed = c.getStatus() == ContractStatus.RETURNED
                 || c.getStatus() == ContractStatus.CLOSED
                 || isInspected;
@@ -630,6 +669,14 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
             }
         }
 
+        LocalDate effectiveReturnDate = c.getReturnDate();
+        if (effectiveReturnDate == null && reqOpt.isPresent() && reqOpt.get().getRequestedReturnDate() != null) {
+            effectiveReturnDate = reqOpt.get().getRequestedReturnDate();
+        }
+        if (effectiveReturnDate == null) {
+            effectiveReturnDate = c.getEndDateExclusive();
+        }
+
         return DailyReturnTaskDto.builder()
                 .contractId(c.getId())
                 .contractCode(c.getCode())
@@ -640,7 +687,8 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                 .storageUnitCode(unitCode)
                 .facilityId(c.getFacilityId())
                 .facilityName(facilityName)
-                .scheduledDate(c.getEndDateExclusive())
+                .scheduledDate(effectiveReturnDate)
+                .returnDate(effectiveReturnDate)
                 .status(status)
                 .completed(completed)
                 .build();

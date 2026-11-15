@@ -37,6 +37,9 @@ public class DailyReturnTaskDto {
     @Schema(description = "Ngày hẹn trả / ngày hết hạn hợp đồng")
     private LocalDate scheduledDate;
 
+    @Schema(description = "Ngày hẹn trả thực tế")
+    private LocalDate returnDate;
+
     @Schema(description = "Trạng thái trả kho (PENDING, COMPLETED, OVERDUE)")
     private String status;
 
@@ -167,6 +170,14 @@ public class DailyReturnTaskDto {
         this.scheduledDate = scheduledDate;
     }
 
+    public LocalDate getReturnDate() {
+        return returnDate != null ? returnDate : scheduledDate;
+    }
+
+    public void setReturnDate(LocalDate returnDate) {
+        this.returnDate = returnDate;
+    }
+
     public String getStatus() {
         return status;
     }
@@ -210,6 +221,7 @@ public class DailyReturnTaskDto {
         private Long facilityId;
         private String facilityName;
         private LocalDate scheduledDate;
+        private LocalDate returnDate;
         private String status;
         private boolean completed;
         private boolean isLate;
@@ -265,6 +277,11 @@ public class DailyReturnTaskDto {
             return this;
         }
 
+        public Builder returnDate(LocalDate returnDate) {
+            this.returnDate = returnDate;
+            return this;
+        }
+
         public Builder status(String status) {
             this.status = status;
             return this;
@@ -286,9 +303,11 @@ public class DailyReturnTaskDto {
         }
 
         public DailyReturnTaskDto build() {
-            return new DailyReturnTaskDto(contractId, contractCode, customerId, customerName, customerPhone,
+            DailyReturnTaskDto dto = new DailyReturnTaskDto(contractId, contractCode, customerId, customerName, customerPhone,
                     storageUnitId, storageUnitCode, facilityId, facilityName, scheduledDate, status, completed,
                     isLate, daysLate);
+            dto.setReturnDate(returnDate != null ? returnDate : scheduledDate);
+            return dto;
         }
     }
 }

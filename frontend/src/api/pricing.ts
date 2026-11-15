@@ -263,7 +263,11 @@ export async function fetchActivePolicy(): Promise<ActivePolicyInfo> {
     rentalBufferDays: Number(res.rentalBufferDays ?? 15),
     cancelNoShowRefundRate: Number(res.cancelNoShowRefundRate ?? 0),
     renewalReminderDays: typeof res.renewalReminderDays === 'string' ? res.renewalReminderDays : '',
-    returnEarlyRefundRate: Number(res.returnEarlyRefundRate ?? 0),
+    returnEarlyRefundRate: Number(
+      res.returnEarlyRefundRate != null && Number(res.returnEarlyRefundRate) > 0
+        ? res.returnEarlyRefundRate
+        : 1.0
+    ),
     overdueLockAccessDays: Number(res.overdueLockAccessDays ?? 10),
     overdueTerminationDays: Number(res.overdueTerminationDays ?? 10),
     accessPinLength: Number(res.accessPinLength ?? 6),
