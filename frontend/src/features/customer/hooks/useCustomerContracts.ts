@@ -153,7 +153,13 @@ export function useCustomerContracts() {
     [contracts]
   );
   const closedCount = useMemo(
-    () => contracts.filter((c) => c.status === 'CLOSED' || c.status === 'TERMINATED').length,
+    () =>
+      contracts.filter(
+        (c) =>
+          c.status === 'CLOSED' ||
+          c.status === 'TERMINATED' ||
+          (c.status as string) === 'CANCELLED'
+      ).length,
     [contracts]
   );
 

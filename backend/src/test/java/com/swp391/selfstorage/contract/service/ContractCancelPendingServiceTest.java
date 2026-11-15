@@ -4,6 +4,9 @@ import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.dto.ContractResponse;
+import com.swp391.selfstorage.contract.dto.SettlementApprovalRequest;
+import com.swp391.selfstorage.contract.dto.SettlementApprovalResponse;
+import com.swp391.selfstorage.contract.dto.SettlementPreviewResponse;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
@@ -242,5 +245,42 @@ class ContractCancelPendingServiceTest {
         verify(paymentTransactionRepository, atLeastOnce()).save(captor.capture());
         long total = captor.getAllValues().stream().mapToLong(PaymentTransaction::getAmount).sum();
         assertEquals(2_800_000L, total);
+    }
+
+    @Test
+    @DisplayName("FM xem preview và duyệt quyết toán hợp đồng khách đã hủy nhận kho -> chuyển sang CLOSED và chốt hoàn tiền theo 3 mức")
+    void managerPreviewAndApproveSettlement_AfterCustomerCancelPendingCheckIn() {
+        // Khách hủy trước 4 ngày (Tier 2: Phạt 50% cọc = 750k, hoàn 100% thuê 1.5tr + 50% cọc 750k = 2.25tr)
+        contract.setCreatedAt(OffsetDateTime.now().minusDays(4));
+        contract.setStartDate(LocalDate.now().plusDays(4));
+        contractService.cancelPendingContract(100L, new CancelReservationRequest("Bận công tác đột xuất"), customerUser);
+        assertEquals(ContractStatus.CANCELLED, contract.getStatus());
+
+        ArgumentCaptor<PaymentTransaction> captor = ArgumentCaptor.forClass(PaymentTransaction.class);
+        verify(paymentTransactionRepository, atLeastOnce()).save(captor.capture());
+        List<PaymentTransaction> savedRefundTxns = captor.getAllValues();
+        when(paymentTransactionRepository.findByContractId(100L)).thenReturn(savedRefundTxns);
+        when(contractRepository.findByIdAndFacilityIdIn(100L, List.of(1L))).thenReturn(Optional.of(contract));
+
+        // 1. FM mở modal xem preview quyết toán
+        SettlementPreviewResponse preview = contractService.getSettlementPreview(100L, List.of(1L));
+        assertEquals("CANCELLED_CHECKIN", preview.getSettlementType());
+        assertEquals(1_500_000L, preview.getTotalRentalFee());
+        assertEquals(1_500_000L, preview.getDepositAmount());
+        assertEquals(750_000L, preview.getDepositForfeited());
+        assertEquals(2_250_000L, preview.getDepositRefundAmount());
+        assertEquals(0L, preview.getPayableAmount());
+
+        // 2. FM bấm xác nhận duyệt quyết toán hoàn tiền -> Hợp đồng chuyển sang CLOSED
+        SettlementApprovalRequest approvalReq = new SettlementApprovalRequest();
+        approvalReq.setApprovedNotes("Đã chuyển khoản hoàn 2.250.000đ cho khách");
+        approvalReq.setConfirmPaid(true);
+
+        SettlementApprovalResponse approvalRes = contractService.approveSettlement(100L, approvalReq, 99L, List.of(1L));
+        assertEquals(ContractStatus.CLOSED, approvalRes.getStatus());
+        assertEquals(ContractStatus.CLOSED, contract.getStatus());
+        assertEquals(0L, contract.getDepositBalance());
+        assertEquals(2_250_000L, approvalRes.getDepositRefundAmount());
+        assertTrue(savedRefundTxns.stream().allMatch(t -> "SUCCESS".equals(t.getStatus())));
     }
 }

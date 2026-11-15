@@ -134,12 +134,18 @@ export const ContractsHubPage: React.FC = () => {
           (c) =>
             c.status === 'NOTICE_SUBMITTED' ||
             c.status === 'INSPECTED' ||
-            (c.status as string) === 'PENDING_RETURN'
+            (c.status as string) === 'PENDING_RETURN' ||
+            (c.status as string) === 'CANCELLED'
         );
       case 'OVERDUE':
         return contracts.filter((c) => c.status === 'OVERDUE');
       case 'TERMINATED':
-        return contracts.filter((c) => c.status === 'TERMINATED' || c.status === 'CLOSED');
+        return contracts.filter(
+          (c) =>
+            c.status === 'TERMINATED' ||
+            c.status === 'CLOSED' ||
+            (c.status as string) === 'CANCELLED'
+        );
       default:
         return contracts;
     }
@@ -356,7 +362,7 @@ export const ContractsHubPage: React.FC = () => {
             <XCircle className="w-4 h-4" />
             <span>5. Đã chấm dứt / Hủy</span>
             <span className="px-2 py-0.5 rounded-full text-[10px] bg-rose-100 text-rose-800 font-bold">
-              {contracts.filter((c) => c.status === 'TERMINATED' || c.status === 'CLOSED').length}
+              {contracts.filter((c) => c.status === 'TERMINATED' || c.status === 'CLOSED' || (c.status as string) === 'CANCELLED').length}
             </span>
           </button>
         </div>
@@ -522,7 +528,11 @@ export const ContractsHubPage: React.FC = () => {
 
                         {activeTab === 'RETURN' && (
                           <div className="space-y-1">
-                            {contract.status === 'INSPECTED' ? (
+                            {(contract.status as string) === 'CANCELLED' ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                                Khách hủy nhận kho • Chờ duyệt hoàn tiền
+                              </span>
+                            ) : contract.status === 'INSPECTED' ? (
                               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-800 border border-purple-200">
                                 Đã nghiệm thu • Chờ hoàn cọc
                               </span>
@@ -536,7 +546,7 @@ export const ContractsHubPage: React.FC = () => {
                                 <UserPlus className="w-3 h-3 text-blue-600" />
                                 Phụ trách: {contract.assignedStaffName}
                               </span>
-                            ) : contract.status !== 'INSPECTED' ? (
+                            ) : contract.status !== 'INSPECTED' && (contract.status as string) !== 'CANCELLED' ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                 Chưa phân công nhân viên
                               </span>
@@ -617,16 +627,20 @@ export const ContractsHubPage: React.FC = () => {
                         {activeTab === 'TERMINATED' && (
                           <div className="space-y-1">
                             {(() => {
+                              const isCancelledCheckIn = (contract.status as string) === 'CANCELLED';
                               const isOverdueImpounded =
-                                Boolean(contract.checkinDate) ||
-                                (contract.overdueDays ?? 0) > 0 ||
-                                contract.depositBalance === 0;
+                                !isCancelledCheckIn &&
+                                (Boolean(contract.checkinDate) ||
+                                  (contract.overdueDays ?? 0) > 0 ||
+                                  contract.depositBalance === 0);
                               return (
                                 <>
                                   <span
                                     className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                                       contract.status === 'CLOSED'
                                         ? 'bg-slate-100 text-slate-700 border border-slate-300'
+                                        : isCancelledCheckIn
+                                        ? 'bg-amber-100 text-amber-900 border border-amber-300'
                                         : isOverdueImpounded
                                         ? 'bg-purple-100 text-purple-900 border border-purple-300'
                                         : 'bg-rose-100 text-rose-800 border border-rose-300'
@@ -634,6 +648,8 @@ export const ContractsHubPage: React.FC = () => {
                                   >
                                     {contract.status === 'CLOSED'
                                       ? 'Đã tất toán & Đóng hợp đồng'
+                                      : isCancelledCheckIn
+                                      ? 'Khách hủy nhận kho • Chờ duyệt hoàn tiền'
                                       : isOverdueImpounded
                                       ? 'Đã cưỡng chế & Niêm phong Kho Tổng (D+7)'
                                       : 'Đã chấm dứt • Chờ hoàn tiền 100%'}
@@ -696,7 +712,7 @@ export const ContractsHubPage: React.FC = () => {
                         )}
 
                         {/* Nút Phân công Staff khi đơn đang chờ kiểm tra trả kho */}
-                        {activeTab === 'RETURN' && contract.status !== 'INSPECTED' && (
+                        {activeTab === 'RETURN' && contract.status !== 'INSPECTED' && (contract.status as string) !== 'CANCELLED' && (
                           <Link
                             to={`/manager/staff-assignment?contractId=${contract.id}`}
                             className="px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors inline-flex items-center gap-1"
@@ -708,14 +724,14 @@ export const ContractsHubPage: React.FC = () => {
                         )}
 
                         {/* Nút Quyết toán hoàn cọc (chỉ ở Tab Return) */}
-                        {activeTab === 'RETURN' && contract.status === 'INSPECTED' && (
+                        {activeTab === 'RETURN' && (contract.status === 'INSPECTED' || (contract.status as string) === 'CANCELLED') && (
                           <button
                             type="button"
                             onClick={() => {
                               setSelectedForSettlement(contract);
                               setSettlementModalOpen(true);
                             }}
-                            className="px-2.5 py-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors inline-flex items-center gap-1"
+                            className="px-2.5 py-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors inline-flex items-center gap-1 cursor-pointer"
                           >
                             <CheckCircle2 className="w-3 h-3" />
                             Duyệt quyết toán
@@ -725,7 +741,7 @@ export const ContractsHubPage: React.FC = () => {
                         {/* Thao tác Tab 5: Đã chấm dứt / Hủy */}
                         {activeTab === 'TERMINATED' && (
                           <>
-                            {contract.status === 'TERMINATED' && (
+                            {(contract.status === 'TERMINATED' || (contract.status as string) === 'CANCELLED') && (
                               <>
                                 <button
                                   type="button"
@@ -735,18 +751,22 @@ export const ContractsHubPage: React.FC = () => {
                                   }}
                                   className="px-2.5 py-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-colors inline-flex items-center gap-1 shadow-2xs cursor-pointer"
                                   title={
-                                    Boolean(contract.checkinDate) ||
-                                    (contract.overdueDays ?? 0) > 0 ||
-                                    contract.depositBalance === 0
+                                    (contract.status as string) === 'CANCELLED'
+                                      ? 'Duyệt quyết toán hủy nhận kho và hoàn trả tiền thuê + tiền cọc cho khách hàng'
+                                      : Boolean(contract.checkinDate) ||
+                                        (contract.overdueDays ?? 0) > 0 ||
+                                        contract.depositBalance === 0
                                       ? 'Quyết toán hợp đồng cưỡng chế D+7 (Nhập phí lưu Kho Tổng hoặc Chốt thanh lý sau 30 ngày)'
                                       : 'Duyệt quyết toán và xuất lệnh hoàn trả 100% (cọc + tiền thuê) cho khách hàng'
                                   }
                                 >
                                   <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                                   <span>
-                                    {Boolean(contract.checkinDate) ||
-                                    (contract.overdueDays ?? 0) > 0 ||
-                                    contract.depositBalance === 0
+                                    {(contract.status as string) === 'CANCELLED'
+                                      ? 'Duyệt quyết toán'
+                                      : Boolean(contract.checkinDate) ||
+                                        (contract.overdueDays ?? 0) > 0 ||
+                                        contract.depositBalance === 0
                                       ? 'Quyết toán Kho Tổng'
                                       : 'Duyệt hoàn tiền 100%'}
                                   </span>

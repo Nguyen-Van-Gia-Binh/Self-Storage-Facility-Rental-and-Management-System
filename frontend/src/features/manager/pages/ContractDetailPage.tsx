@@ -97,14 +97,15 @@ export const ContractDetailPage: React.FC = () => {
           setError(`Không tìm thấy hợp đồng #${contractIdNum} trong các cơ sở được phân công.`);
         } else {
           setContract(loadedContract);
-          // Nạp bảng tính quyết toán nếu hợp đồng đang ở chu trình trả kho / quá hạn / chấm dứt
+          // Nạp bảng tính quyết toán nếu hợp đồng đang ở chu trình trả kho / quá hạn / chấm dứt / hủy nhận kho
           if (
             loadedContract.status !== 'CLOSED' &&
             (loadedContract.isInspected ||
               loadedContract.status === 'PENDING_RETURN' ||
               (loadedContract.status as string) === 'INSPECTED' ||
               loadedContract.status === 'OVERDUE' ||
-              loadedContract.status === 'TERMINATED')
+              loadedContract.status === 'TERMINATED' ||
+              loadedContract.status === 'CANCELLED')
           ) {
             getSettlementPreview(loadedContract.id)
               .then(setSettlementPreview)
@@ -181,17 +182,22 @@ export const ContractDetailPage: React.FC = () => {
   const isInspected =
     Boolean(contract.isInspected) || (contract.status as string) === 'INSPECTED';
   const isTerminated = contract.status === 'TERMINATED';
+  const isCancelled =
+    contract.status === 'CANCELLED' || settlementPreview?.settlementType === 'CANCELLED_CHECKIN';
   const isOverdueTerminated =
     isTerminated &&
+    !isCancelled &&
     (Boolean(contract.checkinDate) ||
       (contract.overdueDays ?? 0) > 0 ||
       contract.depositBalance === 0);
   const canRelocate =
     !isTerminated &&
+    !isCancelled &&
     Boolean(contract.relocationEligible) &&
     (isActive || isPendingCheckIn);
-  // Cho phép duyệt quyết toán khi nhân viên ĐÃ nghiệm thu hoặc hợp đồng ở trạng thái TERMINATED
-  const isSettlementReady = (isInspected || isTerminated) && contract.status !== 'CLOSED';
+  // Cho phép duyệt quyết toán khi nhân viên ĐÃ nghiệm thu hoặc hợp đồng ở trạng thái TERMINATED / CANCELLED
+  const isSettlementReady =
+    (isInspected || isTerminated || isCancelled) && contract.status !== 'CLOSED';
 
   // Điều kiện Force Renewal (FM-01, BR-REN-01, BR-REN-10): Hợp đồng ACTIVE và còn < 20 ngày
   const daysRemaining = contract.endDateExclusive
@@ -391,8 +397,50 @@ export const ContractDetailPage: React.FC = () => {
         </div>
       )}
 
+      {/* Banner Khách hàng Hủy nhận kho trước bàn giao (Chờ FM duyệt quyết toán hoàn tiền) */}
+      {isCancelled && contract.status !== 'CLOSED' && (
+        <div className="bg-amber-50/90 border border-amber-300 text-amber-950 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl shrink-0 mt-0.5 bg-amber-100 text-amber-700">
+              <AlertCircle className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="text-sm font-bold text-amber-950">
+                  Khách hàng đã hủy nhận kho trước bàn giao — Chờ Quản lý duyệt quyết toán hoàn tiền
+                </h4>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-900">
+                  {settlementPreview
+                    ? `Hoàn trả dự kiến: ${fmt(settlementPreview.depositRefundAmount)}`
+                    : 'Chờ duyệt hoàn tiền theo chính sách 3 mức'}
+                </span>
+              </div>
+              <p className="text-xs mt-0.5 text-amber-800">
+                Ô kho <span className="font-mono font-bold">{contract.storageUnitCode || 'Chưa gán'}</span> đã được tự động giải phóng về trạng thái trống.{' '}
+                {contract.damageNotes ? (
+                  <>
+                    Ghi nhận: <strong>{contract.damageNotes}</strong>.{' '}
+                  </>
+                ) : null}
+                Quản lý cơ sở vui lòng bấm <strong>Duyệt quyết toán & Hoàn tiền</strong> bên phải để kiểm tra bảng tính hoàn tiền và chốt đóng hợp đồng (CLOSED).
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setSettlementModalOpen(true)}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Duyệt quyết toán & Hoàn tiền</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Banner Hợp đồng Chấm dứt (do Cưỡng chế quá hạn D+7 hoặc do Sự cố bàn giao) */}
-      {isTerminated && (
+      {isTerminated && !isCancelled && (
         <div
           className={`${
             isOverdueTerminated

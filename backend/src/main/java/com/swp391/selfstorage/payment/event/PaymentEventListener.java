@@ -38,20 +38,30 @@ public class PaymentEventListener {
 
         // 1. Dư cọc sau khi đối trừ -> Tạo giao dịch hoàn tiền thành công (FM quyết toán chốt hoàn cọc ngay)
         if (event.getDepositRefundAmount() > 0) {
-            Instant paidAt = event.getSettledAt() != null ? event.getSettledAt().toInstant() : Instant.now();
-            PaymentTransaction refundTxn = PaymentTransaction.builder()
-                    .contractId(event.getContractId())
-                    .amount(event.getDepositRefundAmount())
-                    .transactionType("DEPOSIT_REFUND")
-                    .paymentMethod("BANK_TRANSFER")
-                    .status("SUCCESS")
-                    .paidAt(paidAt)
-                    .providerReference("Hoàn cọc quyết toán hợp đồng #" + event.getContractId())
-                    .orderCode(System.currentTimeMillis())
-                    .build();
+            boolean alreadyRefunded = paymentTransactionRepository != null
+                    && paymentTransactionRepository.findByContractId(event.getContractId()) != null
+                    && paymentTransactionRepository.findByContractId(event.getContractId()).stream()
+                            .anyMatch(t -> "DEPOSIT_REFUND".equalsIgnoreCase(t.getTransactionType())
+                                    || "RENT_REFUND".equalsIgnoreCase(t.getTransactionType()));
 
-            paymentTransactionRepository.save(refundTxn);
-            log.info("Đã tạo bản ghi DEPOSIT_REFUND SUCCESS cho contractId={}", event.getContractId());
+            if (!alreadyRefunded) {
+                Instant paidAt = event.getSettledAt() != null ? event.getSettledAt().toInstant() : Instant.now();
+                PaymentTransaction refundTxn = PaymentTransaction.builder()
+                        .contractId(event.getContractId())
+                        .amount(event.getDepositRefundAmount())
+                        .transactionType("DEPOSIT_REFUND")
+                        .paymentMethod("BANK_TRANSFER")
+                        .status("SUCCESS")
+                        .paidAt(paidAt)
+                        .providerReference("Hoàn cọc quyết toán hợp đồng #" + event.getContractId())
+                        .orderCode(System.currentTimeMillis())
+                        .build();
+
+                paymentTransactionRepository.save(refundTxn);
+                log.info("Đã tạo bản ghi DEPOSIT_REFUND SUCCESS cho contractId={}", event.getContractId());
+            } else {
+                log.info("Hợp đồng contractId={} đã có sẵn giao dịch hoàn tiền, bỏ qua tạo trùng lặp", event.getContractId());
+            }
         }
 
         // 2. Nợ thêm do hư hại/quá hạn vượt tiền cọc -> Tạo giao dịch thu nợ

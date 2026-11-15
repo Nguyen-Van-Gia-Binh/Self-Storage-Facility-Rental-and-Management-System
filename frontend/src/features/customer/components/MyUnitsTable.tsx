@@ -168,7 +168,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
 
   return (
     <>
-      <div className="w-full overflow-x-auto rounded-2xl border border-slate-200/90 bg-white shadow-xs">
+      <div className="w-full overflow-x-auto rounded-2xl border border-slate-200/90 bg-white shadow-xs min-h-[280px]">
         <table className="w-full text-left text-xs border-collapse">
           <thead className="bg-slate-50/85 border-b border-slate-200/80 text-slate-500 uppercase tracking-wider text-[11px] font-bold">
             <tr>
@@ -182,7 +182,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
           </thead>
           <tbody className="divide-y divide-slate-100 text-slate-700">
             {paginatedItems.map((item, idx) => {
-              const isLastRows = idx >= paginatedItems.length - 2;
+              const isLastRows = paginatedItems.length >= 3 && idx >= paginatedItems.length - 2 && idx >= 2;
 
               if (item.kind === 'RESERVATION') {
                 const rsv = item.data;
@@ -347,7 +347,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                 (contract.status === 'PENDING_RETURN' && !contract.inspectionDone) ||
                 contract.status === 'OVERDUE';
 
-              const isClosed = contract.status === 'CLOSED' || (contract.status as string) === 'TERMINATED';
+              const isClosed =
+                contract.status === 'CLOSED' ||
+                (contract.status as string) === 'TERMINATED' ||
+                (contract.status as string) === 'CANCELLED';
               const isRelocating =
                 Boolean(contract.relocationEligible) &&
                 (contract.status === 'PENDING_CHECKIN' ||
@@ -609,6 +612,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                       <Badge variant={contract.inspectionDone ? 'info' : 'warning'} className="w-[136px] justify-center">
                         {contract.inspectionDone ? 'Đã nghiệm thu' : 'Chờ nghiệm thu'}
                       </Badge>
+                    ) : (contract.status as string) === 'CANCELLED' ? (
+                      <Badge variant="warning" className="w-[136px] justify-center bg-amber-50 text-amber-800 border-amber-300 font-bold" title="Đã hủy nhận kho - Đang chờ Quản lý cơ sở duyệt quyết toán hoàn tiền">
+                        Đã hủy · Chờ hoàn
+                      </Badge>
                     ) : (contract.status as string) === 'TERMINATED' ? (
                       (contract.depositHeld === 0 || (contract.overdueDays ?? 0) >= 7) ? (
                         <Badge variant="danger" className="w-[136px] justify-center bg-purple-50 text-purple-800 border-purple-200">
@@ -827,32 +834,6 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                       >
                                         <CreditCard className="w-3.5 h-3.5 text-emerald-600" />
                                         <span>Thanh toán ngay</span>
-                                      </button>
-                                    )}
-                                    {!contract.hasPendingInitialPayment && isStorageUnitAssigned(contract.unitNumber) && (
-                                      <button
-                                        type="button"
-                                        disabled={!isCheckInAllowedToday(contract.startDate)}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          if (!isCheckInAllowedToday(contract.startDate)) return;
-                                          setOpenMenuId(null);
-                                          setActivePassMode('checkin');
-                                          setActivePassContract(contract);
-                                        }}
-                                        title={
-                                          isCheckInAllowedToday(contract.startDate)
-                                            ? 'Tự làm thủ tục ký số nhận bàn giao & kích hoạt mã PIN mở kho 24/7'
-                                            : `Chưa đến ngày nhận kho (${formatDateVN(contract.startDate)}). Chỉ được check-in vào đúng ngày trên hợp đồng.`
-                                        }
-                                        className={`w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors font-bold ${
-                                          isCheckInAllowedToday(contract.startDate)
-                                            ? 'hover:bg-emerald-50 text-[#0d6050] cursor-pointer'
-                                            : 'opacity-40 cursor-not-allowed text-slate-400 bg-slate-50'
-                                        }`}
-                                      >
-                                        <KeyRound className={`w-3.5 h-3.5 ${isCheckInAllowedToday(contract.startDate) ? 'text-emerald-600' : 'text-slate-400'}`} />
-                                        <span>Check-in online (24/7)</span>
                                       </button>
                                     )}
                                     <button

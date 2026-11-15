@@ -17,6 +17,7 @@ import { Breadcrumb } from '../components/Breadcrumb';
 import { ContractTable, type ContractSortField, type SortDirection } from '../components/ContractTable';
 import { Pagination } from '../components/Pagination';
 import { CreateDirectContractModal } from '../components/CreateDirectContractModal';
+import { SettlementApprovalModal } from '../components/SettlementApprovalModal';
 
 export type ContractTabFilter =
   | 'ALL'
@@ -62,6 +63,7 @@ export const ContractListPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [showDirectContractModal, setShowDirectContractModal] = useState(false);
+  const [selectedForSettlement, setSelectedForSettlement] = useState<ManagerContractItem | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const handleDirectContractSuccess = (_newContract: any, message: string) => {
@@ -106,7 +108,6 @@ export const ContractListPage: React.FC = () => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, sortField, sortDirection, pageSize]);
 
-
   // Đếm số lượng theo từng tab trạng thái
   const tabCounts = useMemo(() => {
     const counts: Record<ContractTabFilter, number> = {
@@ -121,6 +122,13 @@ export const ContractListPage: React.FC = () => {
     contracts.forEach((c) => {
       if (counts[c.status as ContractTabFilter] !== undefined) {
         counts[c.status as ContractTabFilter] += 1;
+      }
+      if ((c.status as string) === 'INSPECTED') {
+        counts.PENDING_RETURN += 1;
+      }
+      if (c.status === 'CANCELLED') {
+        counts.PENDING_RETURN += 1;
+        counts.TERMINATED += 1;
       }
       if (c.status === 'RELOCATION_PENDING') {
         counts.PENDING_CHECK_IN += 1;
@@ -146,6 +154,16 @@ export const ContractListPage: React.FC = () => {
         if (statusFilter === 'ALL') return true;
         if (statusFilter === 'PENDING_CHECK_IN') {
           return c.status === 'PENDING_CHECK_IN' || c.status === 'RELOCATION_PENDING';
+        }
+        if (statusFilter === 'PENDING_RETURN') {
+          return (
+            c.status === 'PENDING_RETURN' ||
+            (c.status as string) === 'INSPECTED' ||
+            c.status === 'CANCELLED'
+          );
+        }
+        if (statusFilter === 'TERMINATED') {
+          return c.status === 'TERMINATED' || c.status === 'CANCELLED';
         }
         return c.status === statusFilter;
       })
@@ -311,6 +329,7 @@ export const ContractListPage: React.FC = () => {
           <ContractTable
             contracts={paginatedContracts}
             onSelectContract={(c) => navigate(`/manager/contracts/${c.id}`)}
+            onApproveSettlement={(c) => setSelectedForSettlement(c)}
             sortField={sortField}
             sortDirection={sortDirection}
             onSort={handleSort}
@@ -353,6 +372,19 @@ export const ContractListPage: React.FC = () => {
         onClose={() => setShowDirectContractModal(false)}
         onSuccess={handleDirectContractSuccess}
         defaultFacilityId={facilityIdNum}
+      />
+
+      {/* Settlement Approval Modal */}
+      <SettlementApprovalModal
+        isOpen={Boolean(selectedForSettlement)}
+        contract={selectedForSettlement}
+        onClose={() => setSelectedForSettlement(null)}
+        onSuccess={(_contractId, message) => {
+          setSelectedForSettlement(null);
+          setToastMessage({ text: message || 'Đã phê duyệt quyết toán thành công!', type: 'success' });
+          loadData(true);
+          setTimeout(() => setToastMessage(null), 5000);
+        }}
       />
     </div>
   );

@@ -91,7 +91,9 @@ export const ContractDashboardPage: React.FC = () => {
           (c) =>
             c.status === 'PENDING_RETURN' ||
             c.status === 'PENDING_CHECK_IN' ||
-            (c.status as string) === 'INSPECTED'
+            (c.status as string) === 'INSPECTED' ||
+            (c.status as string) === 'CANCELLED' ||
+            (c.status as string) === 'TERMINATED'
         ).length;
         const overdue = facContracts.filter((c) => c.status === 'OVERDUE').length;
 
@@ -125,7 +127,9 @@ export const ContractDashboardPage: React.FC = () => {
       (c) =>
         c.status === 'PENDING_RETURN' ||
         c.status === 'PENDING_CHECK_IN' ||
-        (c.status as string) === 'INSPECTED'
+        (c.status as string) === 'INSPECTED' ||
+        (c.status as string) === 'CANCELLED' ||
+        (c.status as string) === 'TERMINATED'
     ).length;
     return { total, active, overdue, pending };
   }, [allContracts]);
