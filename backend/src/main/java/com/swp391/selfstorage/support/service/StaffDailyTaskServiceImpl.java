@@ -341,15 +341,11 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
             if (a.getReferenceId() == null || processedContractIds.contains(a.getReferenceId())) continue;
             boolean isReturnType = a.getTaskType() == AssignmentTaskType.RETURN
                     || a.getTaskType() == AssignmentTaskType.INSPECTION;
-            boolean isHandoverFallback = a.getTaskType() == AssignmentTaskType.HANDOVER;
-            if (!isReturnType && !isHandoverFallback) continue;
+            if (!isReturnType) continue;
 
             getContractCached(a.getReferenceId(), cache).ifPresent(c -> {
-                if (isHandoverFallback && c.getStatus() != ContractStatus.PENDING_RETURN) {
-                    return;
-                }
                 var reqOpt = getReturnRequestCached(c.getId(), cache);
-                if (isHandoverFallback && reqOpt.isPresent()
+                if (reqOpt.isPresent()
                         && reqOpt.get().getInspectedBy() != null
                         && !reqOpt.get().getInspectedBy().equals(staffId)) {
                     return;

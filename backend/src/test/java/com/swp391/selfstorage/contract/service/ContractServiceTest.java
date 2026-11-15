@@ -17,6 +17,7 @@ import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
+import com.swp391.selfstorage.support.entity.AssignmentTaskType;
 import com.swp391.selfstorage.support.entity.SupportCategory;
 import com.swp391.selfstorage.support.entity.SupportRequest;
 import com.swp391.selfstorage.support.entity.SupportStatus;
@@ -770,7 +771,7 @@ class ContractServiceTest {
                 .build();
 
         when(contractRepository.findByIdAndFacilityIdIn(800L, List.of(1L))).thenReturn(Optional.of(contract));
-        when(staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", 800L))
+        when(staffDailyAssignmentRepository.findByReferenceTypeAndReferenceIdAndTaskType("CONTRACT", 800L, AssignmentTaskType.HANDOVER))
                 .thenReturn(Optional.empty());
 
         AssignReturnStaffRequest req = AssignReturnStaffRequest.builder()

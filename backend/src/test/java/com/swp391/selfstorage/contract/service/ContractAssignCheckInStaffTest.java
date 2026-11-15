@@ -3,7 +3,9 @@ package com.swp391.selfstorage.contract.service;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.dto.AssignReturnStaffRequest;
+import com.swp391.selfstorage.contract.dto.ContractFilterRequest;
 import com.swp391.selfstorage.contract.dto.ContractResponse;
+import com.swp391.selfstorage.contract.dto.ContractSummaryResponse;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
@@ -47,6 +49,8 @@ class ContractAssignCheckInStaffTest {
     private UserFacilityAssignmentRepository userFacilityAssignmentRepository;
     @Mock
     private StaffDailyAssignmentRepository staffDailyAssignmentRepository;
+    @Mock
+    private com.swp391.selfstorage.contract.repository.ReturnRequestRepository returnRequestRepository;
 
     @InjectMocks
     private ContractServiceImpl contractService;
@@ -59,6 +63,7 @@ class ContractAssignCheckInStaffTest {
         ReflectionTestUtils.setField(contractService, "userRepository", userRepository);
         ReflectionTestUtils.setField(contractService, "userFacilityAssignmentRepository", userFacilityAssignmentRepository);
         ReflectionTestUtils.setField(contractService, "staffDailyAssignmentRepository", staffDailyAssignmentRepository);
+        ReflectionTestUtils.setField(contractService, "returnRequestRepository", returnRequestRepository);
 
         pendingContract = RentalContract.builder()
                 .id(100L)
@@ -153,5 +158,84 @@ class ContractAssignCheckInStaffTest {
                 contractService.assignCheckInStaff(100L, req, 2L, List.of(1L)));
 
         assertEquals(ErrorCode.CONTRACT_NOT_PENDING_CHECKIN, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("FM-05: assignReturnStaff gán đúng AssignmentTaskType.RETURN và không ghi đè HANDOVER")
+    void testAssignReturnInspectionStaff_success() {
+        RentalContract returnContract = RentalContract.builder()
+                .id(200L)
+                .code("CTR-20261114-5766")
+                .facilityId(1L)
+                .storageUnitId(20L)
+                .customerId(10L)
+                .status(ContractStatus.PENDING_RETURN)
+                .build();
+
+        AssignReturnStaffRequest req = new AssignReturnStaffRequest();
+        req.setStaffId(5L);
+        req.setNotes("Kiểm tra nghiệm thu trả kho");
+
+        when(contractRepository.findByIdAndFacilityIdIn(200L, List.of(1L)))
+                .thenReturn(Optional.of(returnContract));
+        when(userRepository.findById(5L)).thenReturn(Optional.of(activeStaff));
+        when(userFacilityAssignmentRepository.existsByUserIdAndFacilityId(5L, 1L)).thenReturn(true);
+        when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(200L))
+                .thenReturn(Optional.empty());
+
+        ContractResponse response = contractService.assignReturnStaff(200L, req, 2L, List.of(1L));
+
+        assertNotNull(response);
+        verify(staffDailyAssignmentRepository).save(argThat(a ->
+                a.getTaskType() == AssignmentTaskType.RETURN && a.getStaffId().equals(5L)
+        ));
+    }
+
+    @Test
+    @DisplayName("getContractsPage: Hợp đồng PENDING_RETURN chưa gán nghiệm thu không được tự động gán nhân viên từ check-in HANDOVER")
+    void testGetContractsPage_PendingReturn_DoesNotAutoAssignHandoverStaff() {
+        RentalContract returnContract = RentalContract.builder()
+                .id(200L)
+                .code("CTR-20261114-5766")
+                .facilityId(1L)
+                .storageUnitId(20L)
+                .customerId(10L)
+                .status(ContractStatus.PENDING_RETURN)
+                .build();
+
+        com.swp391.selfstorage.contract.entity.ReturnRequest req = com.swp391.selfstorage.contract.entity.ReturnRequest.builder()
+                .id(1L)
+                .contractId(200L)
+                .inspectedBy(null) // Chưa phân công nhân sự nghiệm thu!
+                .build();
+
+        StaffDailyAssignment handoverAssign = StaffDailyAssignment.builder()
+                .id(1L)
+                .staffId(8L) // Trần Văn Hùng tiếp đón từ lúc check-in
+                .referenceType("CONTRACT")
+                .referenceId(200L)
+                .taskType(AssignmentTaskType.HANDOVER)
+                .build();
+
+        when(contractRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(returnContract)));
+        when(returnRequestRepository.findByContractIdInOrderByCreatedAtDesc(anyCollection()))
+                .thenReturn(List.of(req));
+        when(staffDailyAssignmentRepository.findByReferenceTypeAndReferenceIdIn(eq("CONTRACT"), anyCollection()))
+                .thenReturn(List.of(handoverAssign));
+
+        ContractFilterRequest filter = ContractFilterRequest.builder()
+                .facilityId(1L)
+                .status(ContractStatus.PENDING_RETURN)
+                .build();
+
+        com.swp391.selfstorage.common.dto.PageResponse<ContractSummaryResponse> page =
+                contractService.getContractsPage(filter, org.springframework.data.domain.PageRequest.of(0, 10), List.of(1L));
+
+        assertNotNull(page);
+        assertEquals(1, page.getContent().size());
+        // KHÔNG ĐƯỢC lấy staffId 8 từ handover! Phải trả về null để giao diện hiện Chưa gán nhân sự
+        assertNull(page.getContent().get(0).getAssignedStaffId());
+        assertNull(page.getContent().get(0).getAssignedStaffName());
     }
 }
