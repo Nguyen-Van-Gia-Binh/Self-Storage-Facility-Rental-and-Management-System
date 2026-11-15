@@ -537,7 +537,15 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
 
                   {/* Cột 6: Trạng thái */}
                   <td className="py-3.5 px-4 whitespace-nowrap">
-                    {contract.status === 'ACTIVE' && isExpiringSoon ? (
+                    {contract.hasPendingRenewal ? (
+                      <Badge
+                        variant="warning"
+                        className="w-[136px] justify-center text-[11px] bg-amber-100 text-amber-900 border-amber-300 font-bold"
+                        title="Đang có đơn gia hạn chờ thanh toán VNPay"
+                      >
+                        Chờ thanh toán gia hạn
+                      </Badge>
+                    ) : contract.status === 'ACTIVE' && isExpiringSoon ? (
                       <Badge
                         variant={isUrgentExpiring ? 'overdue' : 'warning'}
                         className={`w-[136px] justify-center ${isUrgentExpiring ? 'bg-red-50 text-red-700 border-red-300' : ''}`}
@@ -676,23 +684,29 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                           <CreditCard className="w-3.5 h-3.5 mr-1" />
                           Tất toán nợ
                         </Button>
-                      ) : canRenewOnline && isExpiringSoon ? (
+                      ) : (canRenewOnline && isExpiringSoon) || contract.hasPendingRenewal ? (
                         <Link
-                          to={`/customer/renew/${contract.id}`}
+                          to={
+                            contract.hasPendingRenewal && contract.pendingRenewalOrderCode
+                              ? `/customer/renew/${contract.id}?orderCode=${contract.pendingRenewalOrderCode}&step=3`
+                              : `/customer/renew/${contract.id}`
+                          }
                           className="shrink-0"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Button
                             variant="primary"
                             size="sm"
-                            className={`h-7 w-[112px] justify-center text-xs px-2.5 font-bold cursor-pointer whitespace-nowrap shrink-0 shadow-xs ${
-                              isUrgentExpiring
+                            className={`h-7 min-w-[112px] px-2.5 justify-center text-xs font-bold cursor-pointer whitespace-nowrap shrink-0 shadow-xs ${
+                              contract.hasPendingRenewal
+                                ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                                : isUrgentExpiring
                                 ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white'
                                 : 'bg-gradient-to-r from-amber-600 to-orange-600 text-white'
                             }`}
                           >
                             <RefreshCw className="w-3 h-3 mr-1" />
-                            Gia hạn
+                            {contract.hasPendingRenewal ? 'Tiếp tục thanh toán' : 'Gia hạn'}
                           </Button>
                         </Link>
                       ) : (
@@ -746,7 +760,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                 } w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-40 py-1 text-xs divide-y divide-slate-100 text-left`}
                               >
                                 {/* Xem chi tiết nếu nút chính đang là Gia hạn, Đóng phí hoặc Báo trả kho */}
-                                {(isExpiringSoon || contract.status === 'OVERDUE' || settlementDeficit > 0) && (
+                                {(isExpiringSoon || contract.hasPendingRenewal || contract.status === 'OVERDUE' || settlementDeficit > 0) && (
                                   <div className="py-0.5">
                                     <button
                                       type="button"
@@ -857,7 +871,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                 {/* Menu cho ACTIVE */}
                                 {contract.status === 'ACTIVE' && (
                                   <div className="py-0.5">
-                                    {canRenewOnline && !isExpiringSoon && (
+                                    {canRenewOnline && !isExpiringSoon && !contract.hasPendingRenewal && (
                                       <Link
                                         to={`/customer/renew/${contract.id}`}
                                         onClick={(e) => {

@@ -100,6 +100,15 @@ class PaymentControllerTest {
                 .andExpect(jsonPath("$.status").value("SUCCESS"));
     }
 
+    @Test
+    @DisplayName("POST /payments/order/{orderCode}/cancel - Hủy đơn thanh toán PENDING thành công (200 OK)")
+    void cancelPendingPayment_Success() throws Exception {
+        mockMvc.perform(post("/payments/order/123456789/cancel"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Đã hủy đơn thanh toán thành công"));
+        verify(paymentService).cancelPendingPayment(eq(123456789L));
+    }
+
 @Test
     void vnpayReturn_WhenConfirmThrows_RedirectsFailed() throws Exception {
         when(vnPayGateway.verify(any())).thenReturn(true);

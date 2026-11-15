@@ -303,6 +303,27 @@ class PaymentServiceTest {
     }
 
     @Test
+    @DisplayName("cancelPendingPayment: Chuyển trạng thái giao dịch PENDING thành FAILED")
+    void cancelPendingPayment_Success() {
+        PaymentTransaction pendingTxn = PaymentTransaction.builder()
+                .id(50L)
+                .contractId(9016L)
+                .orderCode(123456789L)
+                .amount(3_200_000L)
+                .status("PENDING")
+                .transactionType("CONTRACT_RENEWAL")
+                .build();
+
+        when(paymentTransactionRepository.findByOrderCode(123456789L)).thenReturn(Optional.of(pendingTxn));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
+
+        paymentService.cancelPendingPayment(123456789L);
+
+        assertEquals("FAILED", pendingTxn.getStatus());
+        verify(paymentTransactionRepository).save(pendingTxn);
+    }
+
+    @Test
     @DisplayName("completeVnpayPayment: Xác nhận chuyển tiền thành công -> Chuyển SUCCESS, confirm và bắn Event")
     void completeVnpayPayment_Success() {
         PaymentTransaction pendingTxn = PaymentTransaction.builder()

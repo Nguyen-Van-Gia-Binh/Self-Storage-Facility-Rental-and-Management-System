@@ -623,6 +623,20 @@ private void publishContractRenewalCompleted(PaymentTransaction payment) {
     }
 
     @Override
+    @Transactional
+    public void cancelPendingPayment(Long orderCode) {
+        PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND,
+                        "Không tìm thấy giao dịch với orderCode=" + orderCode));
+        assertPayer(payment.getReservationId(), payment.getContractId());
+        if (PaymentStatus.PENDING.name().equalsIgnoreCase(payment.getStatus())) {
+            payment.setStatus(PaymentStatus.FAILED.name());
+            paymentTransactionRepository.save(payment);
+            log.info("Cancelled pending payment transaction orderCode={}", orderCode);
+        }
+    }
+
+    @Override
     @Transactional(noRollbackFor = CustomException.class)
     public PaymentResponse processPayment(CreatePaymentRequest request) {
         log.info("Processing payment for referenceType={}, referenceId={}, amount={}",

@@ -30,6 +30,7 @@ import { RenewalReceiptModal } from '../components/RenewalReceiptModal';
 import { ScheduleReturnModal } from '../components/ScheduleReturnModal';
 import { tokenStorage } from '@/utils/tokenStorage';
 import { useActivePolicy } from '@/hooks/useActivePolicy';
+import { customerApi } from '../api/customerApi';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
 import { discountTag, termMonthChoices } from '../utils/policyTerms';
 import { useRenewalPricing } from '../hooks/useRenewalPricing';
@@ -106,7 +107,10 @@ export const RenewalPage: React.FC = () => {
     urlOrderCode,
     onCapacityConflict: setCapacityConflict,
     onRenewalApplied: setContract,
-    onRequestStepReset: () => setCurrentStep(1),
+    onRequestStepReset: () => {
+      setCurrentStep(1);
+      navigate(`/customer/renew/${contractId}`, { replace: true });
+    },
   });
 
   const {
@@ -401,7 +405,7 @@ export const RenewalPage: React.FC = () => {
                   </p>
                 </div>
                 <div className="text-left sm:text-right">
-                  <span className="text-[11px] text-slate-400 block font-medium">Giá thuê tháng cơ sở</span>
+                  <span className="text-[11px] text-slate-400 block font-medium">Giá hợp đồng hiện tại</span>
                   <span className="text-base font-extrabold text-brand-600">
                     {formatVND(contract.monthlyRent)}/tháng
                   </span>
@@ -502,7 +506,16 @@ export const RenewalPage: React.FC = () => {
             <div className="flex items-center justify-between pt-2">
               <Button
                 variant="outline"
-                onClick={() => navigate('/customer/my-units')}
+                onClick={async () => {
+                  if (contract?.hasPendingRenewal && contract?.pendingRenewalOrderCode) {
+                    try {
+                      await customerApi.cancelPaymentOrder(contract.pendingRenewalOrderCode);
+                    } catch {
+                      // ignore
+                    }
+                  }
+                  navigate('/customer/my-units');
+                }}
               >
                 Hủy bỏ
               </Button>
@@ -538,7 +551,7 @@ export const RenewalPage: React.FC = () => {
 
               <div className="space-y-2.5 text-xs sm:text-sm">
                 <div className="flex justify-between text-slate-600">
-                  <span>Giá thuê niêm yết:</span>
+                  <span>Giá niêm yết áp dụng mới:</span>
                   <span className="font-semibold text-slate-800">{formatVND(pricing.monthlyRent)}/tháng</span>
                 </div>
                 <div className="flex justify-between text-slate-600">
@@ -726,7 +739,7 @@ export const RenewalPage: React.FC = () => {
               </div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold shrink-0">
                 <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-                <span>Hết hạn sau:</span>
+                <span>Hiệu lực phiên giao dịch:</span>
                 <span className="font-mono text-xs text-amber-900 font-extrabold tracking-wider bg-amber-100/80 px-2 py-0.5 rounded border border-amber-300/60 shadow-2xs">
                   {formatCountdown(countdownSeconds)}
                 </span>

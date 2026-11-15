@@ -252,12 +252,21 @@ export function useRenewalPayment({
   };
 
   // --- Hủy lệnh thanh toán: hủy đơn tại cổng rồi reset về Bước 1 ---
-  const handleCancelPayment = () => {
+  const handleCancelPayment = async () => {
+    const code = checkoutData?.orderCode || (urlOrderCode ? Number(urlOrderCode) : null);
     setIsCancelling(true);
-    setShowCancelDialog(false);
-    resetPaymentOrder();
-    onRequestStepReset();
-    setIsCancelling(false);
+    try {
+      if (code) {
+        await customerApi.cancelPaymentOrder(code);
+      }
+    } catch (err) {
+      console.warn('Lỗi khi hủy đơn thanh toán:', err);
+    } finally {
+      setIsCancelling(false);
+      setShowCancelDialog(false);
+      resetPaymentOrder();
+      onRequestStepReset();
+    }
   };
 
   const resetPaymentOrder = () => {
