@@ -10,4 +10,7 @@ public class SettlementApprovalRequest {
 
     @JsonAlias("note")
     private String approvedNotes;
+
+    // Khi FM xác nhận đã thu đủ tiền mặt / chuyển khoản quầy từ khách, đóng hợp đồng CLOSED ngay lập tức
+    private Boolean confirmPaid;
 }

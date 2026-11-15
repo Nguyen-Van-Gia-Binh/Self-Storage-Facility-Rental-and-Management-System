@@ -1382,7 +1382,9 @@ public class ContractServiceImpl implements ContractService {
                                 long totalPaid = rentAmount + deposit;
                                 return SettlementPreviewResponse.builder()
                                                 .contractId(contract.getId())
+                                                .settlementType("REJECTED_CHECKIN")
                                                 .depositAmount(deposit)
+                                                .totalRentalFee(rentAmount)
                                                 .damageCost(0L)
                                                 .overdueFee(0L)
                                                 .unpaidExtraCharges(0L)
@@ -1392,7 +1394,7 @@ public class ContractServiceImpl implements ContractService {
                                                 .earlyReturn(false)
                                                 .build();
                         } else {
-                                // BR-OVD-07: Chấm dứt do quá hạn D+10 sau khi đã nhận kho -> không hoàn tiền thuê
+                                // BR-OVD-07, BR-OVD-11: Chấm dứt do quá hạn D+7 sau khi đã nhận kho -> không hoàn tiền thuê
                                 long deposit = contract.getDepositAmount();
                                 long overdue = contract.getOverdueFeeAccrued();
                                 long damage = 0L;
@@ -1418,6 +1420,7 @@ public class ContractServiceImpl implements ContractService {
                                 }
                                 return SettlementPreviewResponse.builder()
                                                 .contractId(contract.getId())
+                                                .settlementType("OVERDUE_TERMINATED")
                                                 .depositAmount(deposit)
                                                 .damageCost(damage)
                                                 .overdueFee(overdue)
@@ -1445,6 +1448,18 @@ public class ContractServiceImpl implements ContractService {
                 long totalDeduction = damage + overdue + totalUnpaid;
                 long earlyRentRefund = earlyRentRefund(contract, contract.getReturnDate());
                 boolean isEarlyReturn = earlyRentRefund > 0;
+                long unusedDays = 0L;
+                long dailyRent = 0L;
+                if (contract.getEndDateExclusive() != null && contract.getReturnDate() != null) {
+                        unusedDays = Math.max(0L, java.time.temporal.ChronoUnit.DAYS.between(contract.getReturnDate(), contract.getEndDateExclusive()));
+                        PolicyVersion policy = (contract.getPolicyVersionId() != null && policyVersionRepository != null)
+                                        ? policyVersionRepository.findById(contract.getPolicyVersionId()).orElse(null)
+                                        : null;
+                        dailyRent = PolicyNumbers.dailyRent(contract.getMonthlyPrice(), policy);
+                }
+                long depositForfeited = isEarlyReturn ? deposit : 0L;
+                String settlementType = isEarlyReturn ? "EARLY_RETURN" : "NORMAL";
+
                 // BR-RET-06: Trả kho sớm phạt 100% cọc. Nguồn hoàn tiền tính từ phần tiền thuê chưa dùng.
                 long availableBalance = isEarlyReturn ? earlyRentRefund : deposit;
                 long net = totalDeduction - availableBalance;
@@ -1462,6 +1477,10 @@ public class ContractServiceImpl implements ContractService {
 
                 return SettlementPreviewResponse.builder()
                                 .contractId(contract.getId())
+                                .settlementType(settlementType)
+                                .unusedDays(unusedDays)
+                                .dailyRent(dailyRent)
+                                .depositForfeited(depositForfeited)
                                 .depositAmount(deposit)
                                 .damageCost(damage)
                                 .overdueFee(overdue)
@@ -1528,7 +1547,9 @@ public class ContractServiceImpl implements ContractService {
                                 long netDeduction = returnReq.getDamageCost() + totalUnpaid;
                                 long refundAmount = Math.max(0, availableBalance - netDeduction);
                                 long payableAmount = Math.max(0, netDeduction - availableBalance);
-                                if (payableAmount > 0) {
+
+                                boolean confirmPaid = request != null && Boolean.TRUE.equals(request.getConfirmPaid());
+                                if (payableAmount > 0 && !confirmPaid) {
                                         returnReq.setDepositRefundAmount(0L);
                                         returnRequestRepository.save(returnReq);
                                         contract.setAccessCode(null);
@@ -1551,7 +1572,7 @@ public class ContractServiceImpl implements ContractService {
                                                         .message("Khách còn phải nộp phần thiếu (chi phí lưu Kho Tổng / phát sinh). Hợp đồng đóng sau khi thanh toán thành công")
                                                         .build();
                                 }
-                                return closeSettledContract(contract, returnReq, managerId, refundAmount, 0L);
+                                return closeSettledContract(contract, returnReq, managerId, refundAmount, payableAmount);
                         }
                 }
 
@@ -1567,6 +1588,9 @@ public class ContractServiceImpl implements ContractService {
                 if (request != null && request.getAdjustedDamageCost() != null && !catalogInspection) {
                         returnReq.setDamageCost(request.getAdjustedDamageCost());
                 }
+                if (request != null && request.getApprovedNotes() != null && !request.getApprovedNotes().isBlank()) {
+                        returnReq.setConditionNote(request.getApprovedNotes().trim());
+                }
                 long totalUnpaid = unpaidChargesOutsideLegacyDamage(unpaidCharges);
 
                 long deposit = contract.getDepositAmount();
@@ -1581,8 +1605,10 @@ public class ContractServiceImpl implements ContractService {
                 long refundAmount = Math.max(0, -net);
                 long payableAmount = Math.max(0, net);
 
-                // BR-RET-04: còn phần thiếu thì giữ hợp đồng mở và chờ thanh toán SETTLEMENT.
-                if (payableAmount > 0) {
+                // BR-RET-04: Nếu FM đã bấm xác nhận thu đủ tiền tại quầy / chuyển khoản (confirmPaid == true)
+                // thì đóng hợp đồng CLOSED ngay lập tức, không bắt khách phải tạo đơn quét QR.
+                boolean confirmPaid = request != null && Boolean.TRUE.equals(request.getConfirmPaid());
+                if (payableAmount > 0 && !confirmPaid) {
                         returnReq.setDepositRefundAmount(0L);
                         returnRequestRepository.save(returnReq);
                         contract.setAccessCode(null);
@@ -1606,7 +1632,7 @@ public class ContractServiceImpl implements ContractService {
                                         .build();
                 }
 
-                return closeSettledContract(contract, returnReq, managerId, refundAmount, 0L);
+                return closeSettledContract(contract, returnReq, managerId, refundAmount, payableAmount);
         }
 
         @Override
@@ -1681,7 +1707,7 @@ public class ContractServiceImpl implements ContractService {
                         });
                 }
 
-                if (refundAmount > 0) {
+                if (refundAmount > 0 || payableAmount > 0) {
                         eventPublisher.publishEvent(ContractSettledEvent.builder()
                                         .contractId(contract.getId())
                                         .customerId(contract.getCustomerId())
@@ -1692,16 +1718,20 @@ public class ContractServiceImpl implements ContractService {
                                         .build());
                 }
 
+                String successMsg = (payableAmount > 0)
+                                ? "Đã xác nhận thu đủ tiền nộp bù (" + String.format("%,d", payableAmount) + " đ) và hoàn tất đóng hợp đồng (CLOSED)"
+                                : (refundAmount > 0
+                                                ? "Phê duyệt quyết toán và hoàn cọc thành công. Hoàn trong "
+                                                                + refundWorkingDays(contract) + " ngày làm việc"
+                                                : "Đã chốt tất toán và đóng hợp đồng thành công (CLOSED)");
+
                 return SettlementApprovalResponse.builder()
                                 .contractId(contract.getId())
                                 .status(contract.getStatus())
                                 .depositRefundAmount(refundAmount)
                                 .payableAmount(payableAmount)
                                 .settledAt(returnReq.getSettledAt())
-                                .message(refundAmount > 0
-                                                ? "Phê duyệt quyết toán và hoàn cọc thành công. Hoàn trong "
-                                                                + refundWorkingDays(contract) + " ngày làm việc"
-                                                : "Đã đóng hợp đồng sau khi khách nộp đủ phần thiếu")
+                                .message(successMsg)
                                 .build();
         }
 

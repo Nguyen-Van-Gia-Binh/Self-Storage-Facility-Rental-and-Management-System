@@ -130,4 +130,5 @@ export interface SettlementApprovalRequest {
   depositRefundAmount: number;
   penaltyAmount?: number;
   note?: string;
+  confirmPaid?: boolean;
 }
