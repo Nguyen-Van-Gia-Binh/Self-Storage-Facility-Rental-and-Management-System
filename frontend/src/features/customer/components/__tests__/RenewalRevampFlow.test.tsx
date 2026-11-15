@@ -136,7 +136,7 @@ describe('RenewalRevampFlow (Task 10 / Phase 4)', () => {
     expect(screen.queryByRole('button', { name: /^Gia hạn$/i })).not.toBeInTheDocument();
   });
 
-  it('2. Hợp đồng OVERDUE đã tất toán nợ phạt: hiển thị nút Gia hạn trực tuyến và nút Báo trả kho', () => {
+  it('2. Hợp đồng OVERDUE đã tất toán nợ phạt: hiển thị nút Báo trả kho và khóa nút gia hạn trực tuyến (chỉ FM force renew)', () => {
     const contract = createOverdueClearedContract();
     render(
       <BrowserRouter>
@@ -147,9 +147,9 @@ describe('RenewalRevampFlow (Task 10 / Phase 4)', () => {
     // Hiển thị badge đã tất toán nợ phạt (rút ngắn thành Chờ trả kho)
     expect(screen.getByText(/Chờ trả kho/i)).toBeInTheDocument();
 
-    // Hiển thị nút Gia hạn
-    const renewBtn = screen.getByRole('button', { name: /^Gia hạn$/i });
-    expect(renewBtn).toBeInTheDocument();
+    // Khóa nút Gia hạn trực tuyến đối với OVERDUE (theo BR-REN-01 & PR #353)
+    const renewBtn = screen.queryByRole('button', { name: /^Gia hạn$/i });
+    expect(renewBtn).not.toBeInTheDocument();
 
     // Hiển thị nút Báo trả kho
     const returnBtn = screen.getByRole('button', { name: /Báo trả kho/i });
@@ -189,7 +189,7 @@ describe('RenewalRevampFlow (Task 10 / Phase 4)', () => {
     expect(screen.getByRole('button', { name: /Lên lịch nghiệm thu & Trả kho/i })).toBeInTheDocument();
   });
 
-  it('4. Hợp đồng OVERDUE trong 3 ngày ân hạn (D+1..D+3): hiển thị nhãn Ân hạn và nút Gia hạn hợp đồng trực tuyến', () => {
+  it('4. Hợp đồng OVERDUE trong 3 ngày ân hạn (D+1..D+3): hiển thị nhãn Ân hạn và nút Báo trả kho (khóa tự gia hạn)', () => {
     const contract = createGracePeriodContract(2);
     render(
       <BrowserRouter>
@@ -200,10 +200,9 @@ describe('RenewalRevampFlow (Task 10 / Phase 4)', () => {
     // Hiển thị nhãn Ân hạn
     expect(screen.getByText(/Ân hạn D\+2/i)).toBeInTheDocument();
 
-    // Hiển thị nút Gia hạn sáng và click được
-    const renewBtn = screen.getByRole('button', { name: /^Gia hạn$/i });
-    expect(renewBtn).toBeInTheDocument();
-    expect(renewBtn).not.toBeDisabled();
+    // Hợp đồng OVERDUE không thể tự gia hạn trực tuyến (theo BR-REN-01 & PR #353)
+    const renewBtn = screen.queryByRole('button', { name: /^Gia hạn$/i });
+    expect(renewBtn).not.toBeInTheDocument();
 
     // Hiển thị nút Báo trả kho
     const returnBtn = screen.getByRole('button', { name: /Báo trả kho/i });

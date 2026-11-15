@@ -351,6 +351,9 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
         overdueFee={settlementPreview?.overdueFee ?? 0}
         unpaidExtraCharges={settlementPreview?.unpaidExtraCharges ?? 0}
         condition={condition}
+        earlyRentRefund={settlementPreview?.earlyRentRefund}
+        isEarlyReturn={settlementPreview?.earlyReturn}
+        unusedDays={settlementPreview?.unusedDays}
       />
 
       {/* 4. Khung ký số điện tử */}

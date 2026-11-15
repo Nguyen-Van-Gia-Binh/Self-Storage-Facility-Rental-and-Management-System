@@ -8,6 +8,9 @@ interface SettlementPreviewCardProps {
   overdueFee?: number;
   unpaidExtraCharges?: number;
   condition: InspectionCondition;
+  earlyRentRefund?: number;
+  isEarlyReturn?: boolean;
+  unusedDays?: number;
 }
 
 export const SettlementPreviewCard: React.FC<SettlementPreviewCardProps> = ({
@@ -16,11 +19,16 @@ export const SettlementPreviewCard: React.FC<SettlementPreviewCardProps> = ({
   overdueFee = 0,
   unpaidExtraCharges = 0,
   condition,
+  earlyRentRefund = 0,
+  isEarlyReturn = false,
+  unusedDays = 0,
 }) => {
-  // Áp dụng công thức BR-RET-04
+  // Áp dụng công thức BR-RET-04 & BR-RET-06 (Best-of-Both)
+  const isEarly = Boolean(isEarlyReturn || earlyRentRefund > 0);
+  const availableBalance = isEarly ? earlyRentRefund : depositAmount;
   const totalDeductions = damageCost + overdueFee + unpaidExtraCharges;
-  const refundAmount = Math.max(0, depositAmount - totalDeductions);
-  const payableAmount = Math.max(0, totalDeductions - depositAmount);
+  const refundAmount = Math.max(0, availableBalance - totalDeductions);
+  const payableAmount = Math.max(0, totalDeductions - availableBalance);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
@@ -30,20 +38,28 @@ export const SettlementPreviewCard: React.FC<SettlementPreviewCardProps> = ({
             <DollarSign className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900 text-sm">Dự toán quyết toán hoàn cọc</h3>
-            <p className="text-xs text-slate-500">Tiêu chuẩn thanh lý hợp đồng & quyết toán cọc</p>
+            <h3 className="font-semibold text-slate-900 text-sm">
+              {isEarly ? 'Dự toán quyết toán trả kho sớm' : 'Dự toán quyết toán hoàn cọc'}
+            </h3>
+            <p className="text-xs text-slate-500">
+              {isEarly ? 'Chính sách trả sớm Win-Win (BR-RET-06)' : 'Tiêu chuẩn thanh lý hợp đồng & quyết toán cọc (BR-RET-04)'}
+            </p>
           </div>
         </div>
         <span
           className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-            condition === 'GOOD'
+            isEarly
+              ? 'bg-purple-50 text-purple-700 border border-purple-200 font-bold'
+              : condition === 'GOOD'
               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
               : condition === 'MINOR_DAMAGE'
               ? 'bg-amber-50 text-amber-700 border border-amber-200'
               : 'bg-rose-50 text-rose-700 border border-rose-200'
           }`}
         >
-          {condition === 'GOOD'
+          {isEarly
+            ? 'Trả sớm Win-Win (BR-RET-06)'
+            : condition === 'GOOD'
             ? 'Đạt chuẩn (100% Cọc)'
             : condition === 'MINOR_DAMAGE'
             ? 'Khấu trừ hư hại nhẹ'
@@ -53,12 +69,31 @@ export const SettlementPreviewCard: React.FC<SettlementPreviewCardProps> = ({
 
       {/* Chi tiết khấu trừ */}
       <div className="space-y-2 text-sm">
-        <div className="flex justify-between text-slate-600">
-          <span>Tiền cọc ban đầu:</span>
-          <span className="font-mono font-medium text-slate-900">
-            {depositAmount.toLocaleString('vi-VN')} đ
-          </span>
-        </div>
+        {isEarly ? (
+          <>
+            <div className="flex justify-between text-emerald-800 bg-emerald-50/80 p-2 rounded-lg border border-emerald-200 font-medium">
+              <span>
+                1. Tiền thuê ngày chưa sử dụng ({unusedDays > 0 ? `${unusedDays} ngày` : 'phần chưa dùng'}):
+              </span>
+              <span className="font-mono font-bold text-emerald-700">
+                +{earlyRentRefund.toLocaleString('vi-VN')} đ
+              </span>
+            </div>
+            <div className="flex justify-between text-slate-500 px-1 text-[11px]">
+              <span>2. Phạt vi phạm trả kho sớm (Phạt 100% Cọc bù phòng trống):</span>
+              <span className="font-mono font-semibold line-through text-slate-400">
+                +{depositAmount.toLocaleString('vi-VN')} đ (0 đ hoàn)
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="flex justify-between text-slate-600">
+            <span>Tiền cọc ban đầu được bảo toàn (100%):</span>
+            <span className="font-mono font-medium text-slate-900">
+              {depositAmount.toLocaleString('vi-VN')} đ
+            </span>
+          </div>
+        )}
 
         <div className="flex justify-between text-slate-600">
           <span className="flex items-center gap-1">
@@ -91,12 +126,16 @@ export const SettlementPreviewCard: React.FC<SettlementPreviewCardProps> = ({
         <div className="pt-3 border-t border-slate-100 flex justify-between items-baseline">
           <div>
             <span className="font-semibold text-slate-900">
-              {payableAmount > 0 ? 'Số tiền khách phải nộp thêm:' : 'Số tiền cọc hoàn trả khách:'}
+              {payableAmount > 0
+                ? 'Số tiền khách phải nộp thêm:'
+                : isEarly
+                ? 'Số tiền thuê hoàn trả khách:'
+                : 'Số tiền cọc hoàn trả khách:'}
             </span>
             <p className="text-[11px] text-slate-400">
               {payableAmount > 0
-                ? 'Hư hại vượt quá tiền cọc giữ chỗ ban đầu'
-                : 'Quản lý cơ sở sẽ duyệt chuyển khoản hoàn cọc trong 7 ngày làm việc'}
+                ? 'Hư hại vượt quá tiền khả dụng'
+                : 'Quản lý cơ sở sẽ duyệt chuyển khoản quyết toán trong 7 ngày làm việc'}
             </p>
           </div>
           <span
@@ -105,14 +144,19 @@ export const SettlementPreviewCard: React.FC<SettlementPreviewCardProps> = ({
             }`}
           >
             {payableAmount > 0
-              ? `${payableAmount.toLocaleString('vi-VN')} đ`
+              ? `+${payableAmount.toLocaleString('vi-VN')} đ`
               : `${refundAmount.toLocaleString('vi-VN')} đ`}
           </span>
         </div>
       </div>
 
       {/* Cảnh báo hoặc gợi ý */}
-      {condition === 'GOOD' ? (
+      {isEarly ? (
+        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-purple-50 text-purple-900 text-xs border border-purple-200">
+          <CheckCircle2 className="w-4 h-4 text-purple-600 shrink-0" />
+          <span>Hợp đồng trả sớm trước hạn dài. Khách hàng được hoàn trả tiền thuê ngày chưa dùng theo chính sách Win-Win.</span>
+        </div>
+      ) : condition === 'GOOD' ? (
         <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-50 text-emerald-800 text-xs">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>Mặt bằng nguyên vẹn. Đề xuất hoàn 100% tiền cọc cho khách hàng.</span>

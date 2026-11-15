@@ -141,13 +141,22 @@ public class StaffAssignmentServiceImpl implements StaffAssignmentService {
         final Long finalFacilityId = targetFacilityId;
         final AssignmentTaskType finalAssignmentType = assignmentType;
 
+        LocalDate effectiveWorkDate = LocalDate.now();
+        if ("RETURN".equals(taskTypeStr) && contractId != null) {
+            effectiveWorkDate = rentalContractRepository.findById(contractId)
+                    .map(c -> c.getReturnDate() != null ? c.getReturnDate() : LocalDate.now())
+                    .orElse(LocalDate.now());
+        }
+
+        final LocalDate finalWorkDate = effectiveWorkDate;
         StaffDailyAssignment assignment = staffDailyAssignmentRepository
                 .findByReferenceTypeAndReferenceIdAndTaskType(refType, refId, assignmentType)
                 .orElseGet(() -> staffDailyAssignmentRepository
                         .findByReferenceTypeAndReferenceId(refType, refId)
+                        .filter(existing -> existing.getTaskType() == finalAssignmentType)
                         .orElseGet(() -> StaffDailyAssignment.builder()
                                 .facilityId(finalFacilityId)
-                                .workDate(LocalDate.now())
+                                .workDate(finalWorkDate)
                                 .taskType(finalAssignmentType)
                                 .referenceType(refType)
                                 .referenceId(refId)
@@ -158,7 +167,7 @@ public class StaffAssignmentServiceImpl implements StaffAssignmentService {
         assignment.setFacilityId(targetFacilityId);
         assignment.setAssignedBy(assignedBy);
         assignment.setTaskType(assignmentType);
-        assignment.setWorkDate(LocalDate.now());
+        assignment.setWorkDate(effectiveWorkDate);
 
         staffDailyAssignmentRepository.save(assignment);
         log.info("Phân công nhân viên {} (ID: {}) cho nhiệm vụ {} (ref: {} #{}) thành công",

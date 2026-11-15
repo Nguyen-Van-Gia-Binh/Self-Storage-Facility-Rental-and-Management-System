@@ -12,7 +12,10 @@ import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.policy.entity.ExtraFeeType;
+import com.swp391.selfstorage.policy.entity.PolicyVersion;
 import com.swp391.selfstorage.policy.repository.ExtraFeeTypeRepository;
+import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
+import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -54,12 +57,15 @@ class ContractReturnServiceTest {
         private ApplicationEventPublisher eventPublisher;
         @Mock
         private ExtraFeeTypeRepository extraFeeTypeRepository;
+        @Mock
+        private PolicyVersionRepository policyVersionRepository;
         @InjectMocks
         private ContractServiceImpl contractService;
 
         @BeforeEach
         void wireFeeCatalog() {
                 ReflectionTestUtils.setField(contractService, "extraFeeTypeRepository", extraFeeTypeRepository);
+                ReflectionTestUtils.setField(contractService, "policyVersionRepository", policyVersionRepository);
         }
 
         @Test
@@ -685,6 +691,41 @@ class ContractReturnServiceTest {
                 assertFalse(preview.isEarlyReturn(), "Còn <= 7 ngày cuối kỳ phải được tính là trả kho đúng hạn cuối kỳ, không phải trả sớm");
                 assertEquals(0L, preview.getEarlyRentRefund(), "Không hoàn tiền thuê lẻ những ngày cuối kỳ");
                 assertEquals(1_200_000L, preview.getDepositRefundAmount(), "Bảo toàn 100% tiền cọc Deposit cho khách");
+                assertEquals(0L, preview.getPayableAmount());
+        }
+
+        @Test
+        @DisplayName("BR-RET-06: Khi policy_version có return_early_refund_rate = 0.00 thì fallback 100% hoàn tiền thuê chưa dùng")
+        void testEarlyReturn_WhenPolicyVersionHasZeroRefundRate_FallsBackTo100PercentRefund() {
+                LocalDate returnDate = LocalDate.of(2026, 11, 10);
+                LocalDate endDateExclusive = LocalDate.of(2027, 1, 9); // 60 ngày = 1.200.000 đ
+                RentalContract contract = RentalContract.builder()
+                                .id(605L)
+                                .facilityId(1L)
+                                .monthlyPrice(600_000L)
+                                .depositAmount(1_200_000L)
+                                .depositBalance(1_200_000L)
+                                .startDate(LocalDate.of(2026, 10, 10))
+                                .endDateExclusive(endDateExclusive)
+                                .returnDate(returnDate)
+                                .policyVersionId(1L)
+                                .status(ContractStatus.PENDING_RETURN)
+                                .build();
+                ReturnRequest returnReq = ReturnRequest.builder().contractId(605L).damageCost(0L).build();
+                PolicyVersion policyWithZeroRate = new PolicyVersion();
+                policyWithZeroRate.setReturnNoticeDays(30);
+                policyWithZeroRate.setReturnEarlyRefundRate(BigDecimal.ZERO);
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(605L), anyList())).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(605L)).thenReturn(Optional.of(returnReq));
+                when(extraChargeRepository.findByContractIdAndStatus(605L, ExtraChargeStatus.UNPAID)).thenReturn(List.of());
+                when(policyVersionRepository.findById(1L)).thenReturn(Optional.of(policyWithZeroRate));
+
+                SettlementPreviewResponse preview = contractService.getSettlementPreview(605L, List.of(1L));
+
+                assertTrue(preview.isEarlyReturn());
+                assertEquals(1_200_000L, preview.getEarlyRentRefund(), "Fallback 100% hoàn tiền thuê chưa dùng");
+                assertEquals(1_200_000L, preview.getDepositRefundAmount());
                 assertEquals(0L, preview.getPayableAmount());
         }
 

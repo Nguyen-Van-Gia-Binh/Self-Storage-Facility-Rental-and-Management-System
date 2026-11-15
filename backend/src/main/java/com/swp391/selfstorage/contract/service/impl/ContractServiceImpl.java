@@ -1951,11 +1951,16 @@ public class ContractServiceImpl implements ContractService {
                 returnRequestRepository.save(returnRequest);
 
                 if (staffDailyAssignmentRepository != null && request.getStaffId() != null) {
+                        LocalDate effectiveWorkDate = contract.getReturnDate() != null
+                                        ? contract.getReturnDate()
+                                        : (returnRequest.getRequestedReturnDate() != null
+                                                        ? returnRequest.getRequestedReturnDate()
+                                                        : LocalDate.now());
                         StaffDailyAssignment assignment = staffDailyAssignmentRepository
                                         .findByReferenceTypeAndReferenceIdAndTaskType("CONTRACT", contractId, AssignmentTaskType.RETURN)
                                         .orElseGet(() -> StaffDailyAssignment.builder()
                                                         .facilityId(contract.getFacilityId())
-                                                        .workDate(LocalDate.now())
+                                                        .workDate(effectiveWorkDate)
                                                         .taskType(AssignmentTaskType.RETURN)
                                                         .referenceType("CONTRACT")
                                                         .referenceId(contract.getId())
@@ -1964,7 +1969,7 @@ public class ContractServiceImpl implements ContractService {
                         assignment.setAssignedBy(managerId != null ? managerId : request.getStaffId());
                         assignment.setFacilityId(contract.getFacilityId());
                         assignment.setTaskType(AssignmentTaskType.RETURN);
-                        assignment.setWorkDate(LocalDate.now());
+                        assignment.setWorkDate(effectiveWorkDate);
                         staffDailyAssignmentRepository.save(assignment);
                 }
 
@@ -2105,11 +2110,11 @@ public class ContractServiceImpl implements ContractService {
                         return 0L;
                 }
                 long unusedRent = PolicyNumbers.dailyRent(contract.getMonthlyPrice(), policy) * unusedDays;
-                if (policy == null || policy.getReturnEarlyRefundRate() == null) {
-                        // BR-RET-06: Trả sớm trước hạn dài (> 30 ngày): Hoàn 100% tiền thuê thời gian chưa dùng, phạt 100% cọc.
-                        return unusedRent;
-                }
-                return PolicyNumbers.share(unusedRent, policy.getReturnEarlyRefundRate());
+                // BR-RET-06: Trả sớm trước hạn dài (> 30 ngày): Hoàn 100% tiền thuê thời gian chưa dùng, phạt 100% cọc.
+                BigDecimal rate = (policy != null && policy.getReturnEarlyRefundRate() != null && policy.getReturnEarlyRefundRate().signum() > 0)
+                                ? policy.getReturnEarlyRefundRate()
+                                : BigDecimal.ONE;
+                return PolicyNumbers.share(unusedRent, rate);
         }
 
         private record UnitConflictCheckResult(boolean available, String reason) {}
