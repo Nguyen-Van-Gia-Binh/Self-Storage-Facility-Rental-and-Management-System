@@ -314,7 +314,7 @@ export const WaitlistInboxPage: React.FC = () => {
                     <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                       {/* Customer Info */}
                       <td className="px-4 py-3">
-                        <div className="font-semibold text-gray-900">{item.customerName || 'Khách vãng lai'}</div>
+                        <div className="font-semibold text-gray-900">{item.customerName || 'Khách hàng'}</div>
                         <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
                           <Phone className="h-3 w-3 text-teal-600" />
                           <a href={`tel:${item.customerPhone}`} className="hover:underline font-mono">
