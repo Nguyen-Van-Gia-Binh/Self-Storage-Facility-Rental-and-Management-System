@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   X,
   Calendar,
@@ -9,6 +10,7 @@ import {
   Lock,
   AlertCircle,
   Loader2,
+  ArrowRight,
 } from 'lucide-react';
 import type { StaffWorkloadItem } from '../types/staffAssignment';
 import type { StaffDailyTaskReport } from '@/types';
@@ -25,6 +27,7 @@ export const StaffDailyScheduleModal: React.FC<StaffDailyScheduleModalProps> = (
   onClose,
   staff,
 }) => {
+  const navigate = useNavigate();
   const [schedule, setSchedule] = useState<StaffDailyTaskReport | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -196,28 +199,49 @@ export const StaffDailyScheduleModal: React.FC<StaffDailyScheduleModalProps> = (
                     {schedule.pendingReturns.map((ret) => (
                       <div
                         key={ret.contractId}
-                        className="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between text-xs"
+                        className="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-purple-200 transition-colors text-xs space-y-2.5"
                       >
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-800">{ret.customerName}</span>
-                            <span className="px-1.5 py-0.2 rounded bg-purple-100 text-purple-700 font-mono text-[10px] font-bold">
-                              {ret.unitCode}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-800">{ret.customerName}</span>
+                              <span className="px-1.5 py-0.2 rounded bg-purple-100 text-purple-700 font-mono text-[10px] font-bold">
+                                {ret.unitCode}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              {ret.contractCode} · Cọc:{' '}
+                              {(ret.depositAmount || 0).toLocaleString('vi-VN')}đ
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-bold text-slate-900 flex items-center gap-1 justify-end">
+                              <Calendar className="w-3 h-3 text-slate-400" />
+                              {ret.returnDate || 'Trong ngày'}
+                            </span>
+                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 mt-0.5">
+                              {ret.status}
                             </span>
                           </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5">
-                            {ret.contractCode} · Cọc:{' '}
-                            {(ret.depositAmount || 0).toLocaleString('vi-VN')}đ
-                          </p>
                         </div>
-                        <div className="text-right">
-                          <span className="font-bold text-slate-900 flex items-center gap-1 justify-end">
-                            <Calendar className="w-3 h-3 text-slate-400" />
-                            {ret.returnDate || 'Trong ngày'}
+
+                        {/* Nút tắt chuyển thẳng tới duyệt quyết toán hợp đồng */}
+                        <div className="pt-1 border-t border-slate-100 flex items-center justify-between">
+                          <span className="text-[11px] text-slate-400">
+                            Cần Quản lý cơ sở duyệt hoàn cọc / khấu trừ
                           </span>
-                          <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 mt-0.5">
-                            {ret.status}
-                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onClose();
+                              navigate(`/manager/contracts/${ret.contractId}?action=settlement`);
+                            }}
+                            className="inline-flex items-center gap-1 px-3 py-1 bg-purple-50 hover:bg-purple-600 text-purple-700 hover:text-white rounded-lg text-[11px] font-bold border border-purple-200 hover:border-purple-600 transition-all cursor-pointer"
+                          >
+                            <FileCheck className="w-3.5 h-3.5" />
+                            <span>Duyệt quyết toán</span>
+                            <ArrowRight className="w-3 h-3" />
+                          </button>
                         </div>
                       </div>
                     ))}

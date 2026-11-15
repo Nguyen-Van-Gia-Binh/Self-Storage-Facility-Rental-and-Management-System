@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Search,
   FileCheck,
@@ -33,6 +34,7 @@ export const DailyTasksDispatchBoard: React.FC<DailyTasksDispatchBoardProps> = (
   onClearStaffFilter,
   onAssignClick,
 }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('ALL');
   const [keyword, setKeyword] = useState<string>('');
   const [onlyUnassigned, setOnlyUnassigned] = useState<boolean>(false);
@@ -303,9 +305,27 @@ export const DailyTasksDispatchBoard: React.FC<DailyTasksDispatchBoardProps> = (
                     <div className="mb-1">{getTaskBadge(task)}</div>
                     <p className="font-semibold text-slate-900 leading-snug">{task.title}</p>
                     {task.referenceCode && (
-                      <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-                        Mã: {task.referenceCode}
-                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const targetContractId =
+                            task.referenceId ||
+                            (task.id >= 200000
+                              ? task.id - 200000
+                              : task.id >= 100000
+                              ? task.id - 100000
+                              : task.id);
+                          if (task.taskType === 'RETURN') {
+                            navigate(`/manager/contracts/${targetContractId}?action=settlement`);
+                          } else {
+                            navigate(`/manager/contracts/${targetContractId}`);
+                          }
+                        }}
+                        className="text-[11px] font-mono text-blue-600 hover:text-blue-800 hover:underline mt-0.5 cursor-pointer block text-left"
+                        title="Nhấp để xem chi tiết hợp đồng"
+                      >
+                        HĐ: {task.referenceCode} ↗
+                      </button>
                     )}
                   </td>
 
@@ -346,7 +366,47 @@ export const DailyTasksDispatchBoard: React.FC<DailyTasksDispatchBoardProps> = (
 
                   {/* Thao tác */}
                   <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                    {task.status === 'COMPLETED' || task.status === 'RESOLVED' ? (
+                    {task.taskType === 'RETURN' ? (
+                      (() => {
+                        const targetContractId =
+                          task.referenceId || (task.id >= 200000 ? task.id - 200000 : task.id);
+                        return (
+                          <div className="flex items-center justify-end gap-1.5">
+                            {task.status === 'COMPLETED' || task.status === 'RESOLVED' ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                <span>Đã nghiệm thu</span>
+                              </span>
+                            ) : null}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                navigate(`/manager/contracts/${targetContractId}?action=settlement`)
+                              }
+                              className="py-1 px-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
+                              title="Chuyển thẳng sang duyệt quyết toán và tất toán hợp đồng"
+                            >
+                              <FileCheck className="w-3.5 h-3.5" />
+                              <span>Duyệt quyết toán</span>
+                            </button>
+                            {task.status !== 'COMPLETED' && task.status !== 'RESOLVED' && (
+                              <button
+                                type="button"
+                                onClick={() => onAssignClick(task)}
+                                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 text-xs transition-colors cursor-pointer"
+                                title={task.assignedStaffId ? 'Điều chuyển nhân sự' : 'Phân công nhân sự'}
+                              >
+                                {task.assignedStaffId ? (
+                                  <ArrowRightLeft className="w-3.5 h-3.5 text-slate-500" />
+                                ) : (
+                                  <UserPlus className="w-3.5 h-3.5 text-blue-600" />
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()
+                    ) : task.status === 'COMPLETED' || task.status === 'RESOLVED' ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
                         <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                         <span>Đã xong</span>

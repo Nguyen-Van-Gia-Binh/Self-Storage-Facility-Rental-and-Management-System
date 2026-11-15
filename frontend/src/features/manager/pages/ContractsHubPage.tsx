@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Search,
   FileCheck,
@@ -33,12 +33,21 @@ type TabKey = 'ACTIVE' | 'PENDING_CHECK_IN' | 'RETURN' | 'OVERDUE' | 'TERMINATED
 
 export const ContractsHubPage: React.FC = () => {
   const policy = useActivePolicy();
-  const [activeTab, setActiveTab] = useState<TabKey>('ACTIVE');
+  const [searchParams] = useSearchParams();
+  const urlTab = searchParams.get('tab') as TabKey | null;
+  const urlSearch = searchParams.get('search') || searchParams.get('keyword');
+
+  const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    if (urlTab && ['ACTIVE', 'PENDING_CHECK_IN', 'RETURN', 'OVERDUE', 'TERMINATED'].includes(urlTab)) {
+      return urlTab;
+    }
+    return 'ACTIVE';
+  });
   const [facilities, setFacilities] = useState<Array<{ id: number; name: string }>>([
     { id: 0, name: 'Tất cả cơ sở' },
   ]);
   const [selectedFacilityId, setSelectedFacilityId] = useState<number>(0);
-  const [searchKeyword, setSearchKeyword] = useState<string>('');
+  const [searchKeyword, setSearchKeyword] = useState<string>(() => urlSearch || '');
   const [filterExpiringOnly, setFilterExpiringOnly] = useState<boolean>(false);
 
   const [contracts, setContracts] = useState<ManagerContractItem[]>([]);
@@ -72,6 +81,18 @@ export const ContractsHubPage: React.FC = () => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 5000);
   };
+
+  // Đồng bộ tab và keyword từ query URL nếu có thay đổi
+  useEffect(() => {
+    const tab = searchParams.get('tab') as TabKey | null;
+    if (tab && ['ACTIVE', 'PENDING_CHECK_IN', 'RETURN', 'OVERDUE', 'TERMINATED'].includes(tab)) {
+      setActiveTab(tab);
+    }
+    const kw = searchParams.get('search') || searchParams.get('keyword');
+    if (kw) {
+      setSearchKeyword(kw);
+    }
+  }, [searchParams]);
 
   // Nạp danh mục cơ sở thực tế từ API backend (chỉ hiển thị cơ sở được phân công cho FM)
   useEffect(() => {

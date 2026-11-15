@@ -14,6 +14,7 @@ import {
   UserPlus,
   RotateCcw,
   Lock,
+  FileCheck,
 } from 'lucide-react';
 import type { DailyDispatchTaskItem, DispatchTaskType, DispatchTaskStatus } from '../types/staffAssignment';
 
@@ -21,9 +22,15 @@ interface WorkItemCardProps {
   task: DailyDispatchTaskItem;
   onViewDetails: (taskId: number) => void;
   onAssign?: (task: DailyDispatchTaskItem) => void;
+  onDirectSettlement?: (contractId: number) => void;
 }
 
-export const WorkItemCard: React.FC<WorkItemCardProps> = ({ task, onViewDetails, onAssign }) => {
+export const WorkItemCard: React.FC<WorkItemCardProps> = ({
+  task,
+  onViewDetails,
+  onAssign,
+  onDirectSettlement,
+}) => {
   const getTypeBadge = (type: DispatchTaskType) => {
     switch (type) {
       case 'CHECK_IN':
@@ -201,6 +208,21 @@ export const WorkItemCard: React.FC<WorkItemCardProps> = ({ task, onViewDetails,
               <span>Đổi người</span>
             </button>
           )
+        )}
+
+        {task.taskType === 'RETURN' && onDirectSettlement && (
+          <button
+            type="button"
+            onClick={() => {
+              const contractId = task.referenceId || (task.id >= 200000 ? task.id - 200000 : task.id);
+              onDirectSettlement(contractId);
+            }}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-all cursor-pointer shadow-sm shadow-purple-500/20 active:scale-95"
+            title="Duyệt quyết toán hợp đồng này ngay"
+          >
+            <FileCheck className="w-3.5 h-3.5" />
+            <span>Duyệt quyết toán</span>
+          </button>
         )}
 
         <button

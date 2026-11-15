@@ -397,7 +397,12 @@ export const WorkListPage: React.FC = () => {
           ) : (
             <div className="space-y-3">
               {paginatedTasks.map((t) => (
-                <WorkItemCard key={t.id} task={t} onViewDetails={handleViewTaskDetail} />
+                <WorkItemCard
+                  key={t.id}
+                  task={t}
+                  onViewDetails={handleViewTaskDetail}
+                  onDirectSettlement={(cId) => navigate(`/manager/contracts/${cId}?action=settlement`)}
+                />
               ))}
             </div>
           )}

@@ -1,6 +1,6 @@
 // frontend/src/features/manager/pages/ContractDetailPage.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   FileText,
   Building2,
@@ -41,6 +41,7 @@ const fmt = (p: number) => new Intl.NumberFormat('vi-VN').format(p) + ' đ';
 export const ContractDetailPage: React.FC = () => {
   const { contractId } = useParams<{ contractId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const contractIdNum = Number(contractId) || 0;
 
   const [contract, setContract] = useState<ManagerContractItem | null>(null);
@@ -144,6 +145,13 @@ export const ContractDetailPage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Tự động mở modal duyệt quyết toán nếu URL có tham số action=settlement
+  useEffect(() => {
+    if (contract && searchParams.get('action') === 'settlement') {
+      setSettlementModalOpen(true);
+    }
+  }, [contract, searchParams]);
 
   if (loading) {
     return (
