@@ -268,6 +268,9 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
     initialWaitlist && (initialWaitlist.unassignedReservationCount ?? 0) > 0
   );
 
+  // Chặn khi hạng kho đã chọn hoàn toàn hết ô kho trống khả dụng
+  const isNoAvailableUnits = !loadingUnits && availableUnits.length === 0;
+
   // Submit Handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -276,6 +279,13 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
     if (isBlockedByPriority) {
       showError(
         `Quy chế ưu tiên: Không thể tạo hợp đồng cho khách từ Danh sách chờ khi còn ${initialWaitlist?.unassignedReservationCount} đơn đặt trước chưa được gán ô kho. Vui lòng vào mục "Gán ô kho" để xử lý trước!`
+      );
+      return;
+    }
+
+    if (isNoAvailableUnits) {
+      showError(
+        'Không thể tạo hợp đồng: Hạng kho đã chọn hiện không còn ô kho nào trống khả dụng. Vui lòng chọn hạng kho khác còn trống hoặc liên hệ khách hàng khi có ô trả!'
       );
       return;
     }
@@ -399,6 +409,24 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
                       Chuyển sang màn hình Gán ô kho ngay →
                     </a>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Alert Banner when no units are available for the selected unit type */}
+          {isNoAvailableUnits && !isBlockedByPriority && (
+            <div className="p-4 bg-rose-50 border border-rose-300 rounded-2xl text-xs text-rose-900 shadow-sm">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-rose-600 mt-0.5 shrink-0" />
+                <div className="space-y-1.5 flex-1">
+                  <h4 className="font-bold text-sm text-rose-900">
+                    HẠNG KHO NÀY HIỆN ĐÃ HẾT Ô TRỐNG (0 Ô KHẢ DỤNG)
+                  </h4>
+                  <p className="text-xs text-rose-800 leading-relaxed">
+                    Cơ sở hiện không còn ô kho nào thuộc hạng này sẵn sàng cho thuê. Quản lý cơ sở (FM) không thể tạo hợp đồng trực tiếp khi chưa có ô kho trống.
+                    Vui lòng tư vấn khách hàng đổi sang hạng kho còn trống khác hoặc chỉ tạo hợp đồng khi có khách trả kho!
+                  </p>
                 </div>
               </div>
             </div>
@@ -800,11 +828,13 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
                 type="submit"
                 disabled={
                   submitting ||
+                  loadingUnits ||
                   isBlockedByPriority ||
+                  isNoAvailableUnits ||
                   !selectedCustomer ||
                   !customerPhone.trim()
                 }
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-700 to-brand-700 hover:from-teal-800 hover:to-brand-800 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-700 to-brand-700 hover:from-teal-800 hover:to-brand-800 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {submitting ? (
                   <>
@@ -815,6 +845,11 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
                   <>
                     <AlertCircle className="w-4 h-4 text-amber-300" />
                     <span>Bị khóa: Cần gán ô kho cho khách đặt trước</span>
+                  </>
+                ) : isNoAvailableUnits ? (
+                  <>
+                    <AlertCircle className="w-4 h-4 text-rose-300" />
+                    <span>Hết ô kho trống khả dụng</span>
                   </>
                 ) : (
                   <>
