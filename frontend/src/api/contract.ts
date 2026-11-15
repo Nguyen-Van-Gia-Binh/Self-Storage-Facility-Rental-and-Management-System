@@ -633,6 +633,17 @@ export interface ForceRenewalQuoteResponse {
   overdueFeeSettled?: number;
   totalAmount: number;
   policyVersionId?: number;
+  hasCapacityConflict?: boolean;
+  canReassignAlternative?: boolean;
+  conflictMessage?: string;
+  conflictingReservationId?: number;
+  conflictingReservationCode?: string;
+  conflictingCustomerName?: string;
+  conflictingCustomerPhone?: string;
+  conflictingStartDate?: string;
+  alternativeUnitId?: number;
+  alternativeUnitCode?: string;
+  alternativeAvailableUnits?: string[];
 }
 
 export interface ForceRenewalSubmitRequest {
@@ -693,4 +704,19 @@ export async function submitForceRenewal(
     }
   );
   return res.data;
+}
+
+/**
+ * FM điều chuyển đơn đặt cọc mới sang ô kho trống khác cùng loại để giải phóng ô cho khách cũ Force Renewal (FM-02, BR-REN-10)
+ * POST /api/v1/contracts/{id}/renewals/resolve-conflict
+ */
+export async function resolveRenewalConflict(
+  contractId: number,
+  reservationId: number,
+  targetStorageUnitId: number
+): Promise<void> {
+  await apiClient<ApiResponse<void>>(
+    `/contracts/${contractId}/renewals/resolve-conflict?reservationId=${reservationId}&targetStorageUnitId=${targetStorageUnitId}`,
+    { method: 'POST' }
+  );
 }

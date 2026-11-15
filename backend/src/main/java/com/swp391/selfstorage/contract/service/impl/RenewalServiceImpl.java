@@ -33,6 +33,13 @@ import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
 import com.swp391.selfstorage.unit.entity.UnitType;
 import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
+import com.swp391.selfstorage.reservation.entity.Reservation;
+import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
+import com.swp391.selfstorage.unit.entity.StorageUnit;
+import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
+import com.swp391.selfstorage.user.entity.AppUser;
+import com.swp391.selfstorage.user.repository.UserRepository;
+import java.util.Collections;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -52,6 +59,12 @@ public class RenewalServiceImpl implements RenewalService {
 
     @Autowired(required = false)
     private AppliedPriceLookup appliedPriceLookup;
+
+    @Autowired(required = false)
+    private StorageUnitRepository storageUnitRepository;
+
+    @Autowired(required = false)
+    private UserRepository userRepository;
 
     /**
      * 1. Tính toán báo giá xem trước cho khách hàng trước khi thanh toán (Quote).
@@ -140,7 +153,16 @@ public class RenewalServiceImpl implements RenewalService {
                 ? payment.getRenewalMonths()
                 : request.getRenewalMonths();
         long paid = payment.getAmount() == null ? 0L : payment.getAmount();
-        long monthly = months > 0 ? paid / months : paid;
+
+        boolean isForce = (payment.getProviderReference() != null && payment.getProviderReference().startsWith("FORCE_"));
+        long lateAdminFee = 0L;
+        long rentalFeeAmount = paid;
+        if (isForce || (paid > getLatestMonthlyPrice(contract) * months)) {
+            lateAdminFee = 200000L;
+            rentalFeeAmount = Math.max(0L, paid - lateAdminFee);
+            isForce = true;
+        }
+        long monthly = months > 0 ? rentalFeeAmount / months : rentalFeeAmount;
 
         LocalDate previousEnd = contract.getEndDateExclusive();
         LocalDate newEnd = previousEnd.plusMonths(months);
@@ -158,7 +180,11 @@ public class RenewalServiceImpl implements RenewalService {
                 monthly,
                 policyVersionId,
                 0L,
-                paid,
+                rentalFeeAmount,
+                lateAdminFee,
+                isForce,
+                payment.getPaymentMethod() != null ? payment.getPaymentMethod() : "ONLINE_PAYMENT",
+                isForce ? "Gia hạn ngoại lệ T-20 qua cổng Online" : null,
                 paid,
                 paymentTransactionId);
         ContractRenewal savedRenewal = contractRenewalRepository.save(renewal);
@@ -234,8 +260,72 @@ public class RenewalServiceImpl implements RenewalService {
                     bufferDays,
                     contract.getId());
             if (hasUpcomingReservation || hasOtherContract) {
-                throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE,
-                        "Ô kho này đã có khách hàng khác đặt cọc trước cho chu kỳ tiếp theo. Không thể thực hiện gia hạn ngoại lệ!");
+                // Kiểm tra xem cơ sở có còn ô kho khác cùng loại đang khả dụng không
+                List<StorageUnit> alternativeUnits = storageUnitRepository != null
+                        ? storageUnitRepository.findByFacilityId(contract.getFacilityId()).stream()
+                                .filter(u -> u.getUnitTypeId().equals(contract.getUnitTypeId())
+                                        && !u.getId().equals(contract.getStorageUnitId())
+                                        && (u.getStatus() == StorageUnitStatus.AVAILABLE)
+                                        && !reservationRepository.existsOverlappingReservationForUnit(
+                                                u.getId(), contract.getEndDateExclusive(), newEndDate, OffsetDateTime.now(), bufferDays, 0L)
+                                        && !rentalContractRepository.existsOverlappingContractForUnit(
+                                                u.getId(), contract.getEndDateExclusive(), newEndDate, bufferDays, 0L))
+                                .toList()
+                        : Collections.emptyList();
+
+                if (alternativeUnits.isEmpty()) {
+                    // Trừ khi đã hết sạch ô cùng loại mới hiện lỗi Hard Lock theo đúng BR-REN-10
+                    throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE,
+                            "Toàn bộ ô kho cùng loại tại cơ sở đã kín chỗ. Không còn ô trống thay thế để điều chuyển đơn đặt cọc của khách mới!");
+                }
+
+                // Nếu còn ô trống cùng loại, tìm chi tiết đơn cọc đang xung đột để hiển thị cho FM
+                List<Reservation> overlappingReservations = reservationRepository.findOverlappingReservationsForUnit(
+                        contract.getStorageUnitId(),
+                        contract.getEndDateExclusive(),
+                        newEndDate,
+                        OffsetDateTime.now(),
+                        bufferDays,
+                        0L);
+
+                Reservation conflictRes = !overlappingReservations.isEmpty() ? overlappingReservations.get(0) : null;
+                String customerName = "Khách hàng mới";
+                String customerPhone = "";
+                if (conflictRes != null && userRepository != null) {
+                    AppUser u = userRepository.findById(conflictRes.getCustomerId()).orElse(null);
+                    if (u != null) {
+                        customerName = u.getFullName();
+                        customerPhone = u.getPhone();
+                    }
+                }
+
+                long monthlyPrice = getLatestMonthlyPrice(contract);
+                long rentalFeeAmount = monthlyPrice * months;
+                long lateAdminFee = 200000L;
+                long totalAmount = rentalFeeAmount + lateAdminFee;
+
+                RenewalQuoteResponse quote = renewalMapper.toQuoteResponse(
+                        contract, months, newEndDate, monthlyPrice,
+                        rentalFeeAmount, lateAdminFee, true, 0L, totalAmount, activePolicy.getId());
+
+                quote.setHasCapacityConflict(true);
+                quote.setCanReassignAlternative(true);
+                if (conflictRes != null) {
+                    quote.setConflictingReservationId(conflictRes.getId());
+                    quote.setConflictingReservationCode(conflictRes.getCode());
+                    quote.setConflictingCustomerName(customerName);
+                    quote.setConflictingCustomerPhone(customerPhone);
+                    quote.setConflictingStartDate(conflictRes.getStartDate());
+                }
+                quote.setAlternativeUnitId(alternativeUnits.get(0).getId());
+                quote.setAlternativeUnitCode(alternativeUnits.get(0).getCode());
+                quote.setAlternativeAvailableUnits(alternativeUnits.stream().map(StorageUnit::getCode).toList());
+                quote.setConflictMessage("Ô kho đang được phân bổ cho đơn đặt cọc " 
+                        + (conflictRes != null ? conflictRes.getCode() : "") 
+                        + " của khách " + customerName + ". Cơ sở vẫn còn " + alternativeUnits.size() 
+                        + " ô trống cùng loại (" + quote.getAlternativeUnitCode() + ").");
+
+                return quote;
             }
         }
 
@@ -263,12 +353,56 @@ public class RenewalServiceImpl implements RenewalService {
         LocalDate previousEnd = contract.getEndDateExclusive();
         LocalDate newEnd = quote.getNewEndDate();
 
+        String paymentMethod = request.getPaymentMethod() != null ? request.getPaymentMethod() : "CASH";
+
+        // Khách thanh toán trực tuyến qua cổng (VNPAY / ONLINE) theo lệnh FM duyệt cấp
+        if ("VNPAY".equalsIgnoreCase(paymentMethod) || "ONLINE".equalsIgnoreCase(paymentMethod)) {
+            paymentTransactionRepository.findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(contractId, "CONTRACT_RENEWAL")
+                    .ifPresent(existing -> {
+                        if ("PENDING".equalsIgnoreCase(existing.getStatus())) {
+                            existing.setStatus("FAILED");
+                            paymentTransactionRepository.save(existing);
+                        }
+                    });
+
+            Long orderCode = Long.parseLong(String.valueOf(System.currentTimeMillis()).substring(2)
+                    + String.format("%02d", (int) (Math.random() * 100)));
+
+            PaymentTransaction payment = PaymentTransaction.builder()
+                    .contractId(contractId)
+                    .transactionType("CONTRACT_RENEWAL")
+                    .amount(quote.getTotalAmount())
+                    .status("PENDING")
+                    .paymentMethod("VNPAY")
+                    .orderCode(orderCode)
+                    .providerReference("FORCE_GH" + contractId + "T" + months)
+                    .renewalMonths(months)
+                    .build();
+
+            paymentTransactionRepository.save(payment);
+
+            return RenewalResponse.builder()
+                    .contractId(contractId)
+                    .previousEndDate(previousEnd)
+                    .newEndDate(newEnd)
+                    .renewalMonths(months)
+                    .monthlyPriceSnapshot(quote.getMonthlyPriceSnapshot())
+                    .rentalFeeAmount(quote.getRentalFeeAmount())
+                    .lateAdminFee(quote.getLateAdminFee())
+                    .totalPaid(quote.getTotalAmount())
+                    .isForceRenewal(true)
+                    .paymentMethod("VNPAY")
+                    .notes(request.getNotes() != null && !request.getNotes().isBlank()
+                            ? request.getNotes()
+                            : "FM duyệt cấp cổng thanh toán Online gia hạn ngoại lệ T-20")
+                    .build();
+        }
+
         contract.setEndDateExclusive(newEnd);
         contract.setRentalMonths(contract.getRentalMonths() + months);
         rentalContractRepository.save(contract);
 
         long policyVersionId = contract.getPolicyVersionId() == null ? 1L : contract.getPolicyVersionId();
-        String paymentMethod = request.getPaymentMethod() != null ? request.getPaymentMethod() : "CASH";
 
         ContractRenewal renewal = renewalMapper.toEntity(
                 contractId,
@@ -325,5 +459,41 @@ public class RenewalServiceImpl implements RenewalService {
         return facilityPriceRepository.findByFacilityIdAndUnitTypeId(contract.getFacilityId(), contract.getUnitTypeId())
                 .map(FacilityUnitTypePrice::getMonthlyPrice)
                 .orElse(contract.getMonthlyPrice());
+    }
+
+    /**
+     * 6. FM điều chuyển đơn đặt cọc mới sang ô kho trống khác cùng loại để giải phóng ô cho khách cũ Force Renewal (FM-02, BR-REN-10).
+     */
+    @Override
+    @Transactional
+    public void reassignConflictingReservation(Long contractId, Long reservationId, Long targetStorageUnitId) {
+        Reservation res = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND, "Không tìm thấy đơn đặt cọc"));
+        if (storageUnitRepository == null) {
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "StorageUnitRepository chưa được khởi tạo");
+        }
+        StorageUnit targetUnit = storageUnitRepository.findById(targetStorageUnitId)
+                .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND, "Không tìm thấy ô kho thay thế"));
+
+        if (!targetUnit.getUnitTypeId().equals(res.getUnitTypeId())) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ô kho thay thế phải cùng loại kho");
+        }
+        if (targetUnit.getStatus() != StorageUnitStatus.AVAILABLE) {
+            throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Ô kho thay thế không ở trạng thái AVAILABLE");
+        }
+
+        Long previousUnitId = res.getStorageUnitId();
+        res.setStorageUnitId(targetStorageUnitId);
+        reservationRepository.save(res);
+
+        targetUnit.setStatus(StorageUnitStatus.RESERVED);
+        storageUnitRepository.save(targetUnit);
+
+        if (previousUnitId != null && !previousUnitId.equals(targetStorageUnitId)) {
+            storageUnitRepository.findById(previousUnitId).ifPresent(prev -> {
+                prev.setStatus(StorageUnitStatus.AVAILABLE);
+                storageUnitRepository.save(prev);
+            });
+        }
     }
 }

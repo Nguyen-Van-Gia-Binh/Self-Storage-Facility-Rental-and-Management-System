@@ -25,4 +25,17 @@ public class RenewalQuoteResponse {
     private Long overdueFeeSettled;
     private Long totalAmount;
     private Long policyVersionId;
+
+    // Chi tiết xung đột và khả năng điều chuyển ô kho thay thế (FM-02, BR-REN-10)
+    private Boolean hasCapacityConflict;
+    private Boolean canReassignAlternative;
+    private String conflictMessage;
+    private Long conflictingReservationId;
+    private String conflictingReservationCode;
+    private String conflictingCustomerName;
+    private String conflictingCustomerPhone;
+    private LocalDate conflictingStartDate;
+    private Long alternativeUnitId;
+    private String alternativeUnitCode;
+    private java.util.List<String> alternativeAvailableUnits;
 }

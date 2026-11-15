@@ -17,6 +17,7 @@ import {
   Calendar,
   XCircle,
   KeyRound,
+  LogOut,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
@@ -71,11 +72,9 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
 
   const penaltyFee = contract.overdueFee ?? 0;
   const isGracePeriod = contract.status === 'OVERDUE' && penaltyFee === 0 && overdueDays <= 3;
-  // Khóa nút gia hạn khi < 20 ngày theo quy chế BR-REN-01 (đối với ACTIVE)
+  // Khóa nút gia hạn khi < 20 ngày theo quy chế BR-REN-01 (đối với ACTIVE, hợp đồng OVERDUE không thể tự gia hạn trực tuyến)
   const canRenewOnline =
-    (contract.status === 'ACTIVE' && daysRemaining >= 20) ||
-    (contract.status === 'EXPIRING_SOON' && daysRemaining >= 20) ||
-    (contract.status === 'OVERDUE' && penaltyFee === 0);
+    (contract.status === 'ACTIVE' || contract.status === 'EXPIRING_SOON') && daysRemaining >= 20;
 
   const handleOpenModal = () => {
     if (contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN') {
@@ -436,7 +435,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
           )}
 
           {/* RENEW BUTTON */}
-          {canRenewOnline && (
+          {(canRenewOnline || contract.hasPendingRenewal) && (
             <Link
               to={
                 contract.hasPendingRenewal && contract.pendingRenewalOrderCode
@@ -458,6 +457,20 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 {contract.hasPendingRenewal ? 'Tiếp tục thanh toán' : 'Gia hạn'}
               </Button>
             </Link>
+          )}
+
+          {/* Khi < 20 ngày và chưa có đơn pending: Hiển thị Báo trả kho nổi bật */}
+          {isExpiringSoon && !canRenewOnline && !contract.hasPendingRenewal && onScheduleReturn && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onScheduleReturn(contract)}
+              className="text-xs font-bold text-rose-600 border-rose-200 hover:bg-rose-50 shadow-2xs cursor-pointer"
+              title="Báo trả kho và lên lịch nghiệm thu dọn đồ theo quy định T-20..T-0 (BR-REN-01)"
+            >
+              <LogOut className="w-3.5 h-3.5 mr-1" />
+              Báo trả kho
+            </Button>
           )}
         </div>
       </div>
