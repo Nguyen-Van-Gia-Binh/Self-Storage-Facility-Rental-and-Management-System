@@ -31,7 +31,7 @@ export type ContractTabFilter =
 const STATUS_TABS: { label: string; value: ContractTabFilter }[] = [
   { label: 'Tất cả', value: 'ALL' },
   { label: 'Active', value: 'ACTIVE' },
-  { label: 'Pending Return', value: 'PENDING_RETURN' },
+  { label: 'Chờ quyết toán', value: 'PENDING_RETURN' },
   { label: 'Overdue', value: 'OVERDUE' },
   { label: 'Terminated', value: 'TERMINATED' },
   { label: 'Closed', value: 'CLOSED' },

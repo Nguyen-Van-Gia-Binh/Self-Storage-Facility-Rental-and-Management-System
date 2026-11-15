@@ -1554,12 +1554,40 @@ public class ContractServiceImpl implements ContractService {
                                 returnReq.setConditionNote(request.getApprovedNotes().trim());
                         }
                         if (paymentTransactionRepository != null && contract.getId() != null) {
-                                paymentTransactionRepository.findByContractId(contract.getId()).stream()
-                                                .filter(t -> "PENDING_REFUND".equalsIgnoreCase(t.getStatus()))
-                                                .forEach(t -> {
-                                                        t.setStatus(PaymentStatus.SUCCESS.name());
-                                                        paymentTransactionRepository.save(t);
-                                                });
+                                List<PaymentTransaction> txns = paymentTransactionRepository.findByContractId(contract.getId());
+                                PaymentTransaction rentTxn = txns.stream()
+                                                .filter(t -> "RENT_REFUND".equalsIgnoreCase(t.getTransactionType()))
+                                                .findFirst().orElse(null);
+                                PaymentTransaction depTxn = txns.stream()
+                                                .filter(t -> "DEPOSIT_REFUND".equalsIgnoreCase(t.getTransactionType()))
+                                                .findFirst().orElse(null);
+
+                                if (cancelPreview.getEarlyRentRefund() > 0) {
+                                        if (rentTxn != null) {
+                                                rentTxn.setAmount(cancelPreview.getEarlyRentRefund());
+                                                rentTxn.setStatus(PaymentStatus.SUCCESS.name());
+                                                paymentTransactionRepository.save(rentTxn);
+                                        } else {
+                                                savePendingRefund(contract.getId(), contract.getReservationId(), "RENT_REFUND",
+                                                                cancelPreview.getEarlyRentRefund(), "Hoàn tiền thuê hủy nhận kho", System.currentTimeMillis());
+                                        }
+                                } else if (rentTxn != null && "PENDING_REFUND".equalsIgnoreCase(rentTxn.getStatus())) {
+                                        paymentTransactionRepository.delete(rentTxn);
+                                }
+
+                                long actualDepRefund = cancelPreview.getDepositRefundAmount() - cancelPreview.getEarlyRentRefund();
+                                if (actualDepRefund > 0) {
+                                        if (depTxn != null) {
+                                                depTxn.setAmount(actualDepRefund);
+                                                depTxn.setStatus(PaymentStatus.SUCCESS.name());
+                                                paymentTransactionRepository.save(depTxn);
+                                        } else {
+                                                savePendingRefund(contract.getId(), contract.getReservationId(), "DEPOSIT_REFUND",
+                                                                actualDepRefund, "Hoàn cọc hủy nhận kho", System.currentTimeMillis() + 1);
+                                        }
+                                } else if (depTxn != null && "PENDING_REFUND".equalsIgnoreCase(depTxn.getStatus())) {
+                                        paymentTransactionRepository.delete(depTxn);
+                                }
                         }
                         return closeSettledContract(contract, returnReq, managerId, totalRefund, 0L);
                 }
@@ -1779,7 +1807,7 @@ public class ContractServiceImpl implements ContractService {
 
                 long rentRefund;
                 long depositRefund;
-                if (!refundTxns.isEmpty()) {
+                if (contract.getStatus() == ContractStatus.CLOSED && !refundTxns.isEmpty()) {
                         rentRefund = refundTxns.stream()
                                         .filter(t -> "RENT_REFUND".equalsIgnoreCase(t.getTransactionType()))
                                         .mapToLong(PaymentTransaction::getAmount)

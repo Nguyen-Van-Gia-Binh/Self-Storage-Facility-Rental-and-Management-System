@@ -101,7 +101,7 @@ export const MyUnitsPage: React.FC = () => {
         // 1. Lọc theo Tab (Phương án A: Rành rọt từng trạng thái nghiệp vụ)
         if (activeTab === 'ACTIVE' && contract.status !== 'ACTIVE') return false;
         if (activeTab === 'OVERDUE' && contract.status !== 'OVERDUE') return false;
-        if (activeTab === 'PENDING_RETURN' && contract.status !== 'PENDING_RETURN') return false;
+        if (activeTab === 'PENDING_RETURN' && contract.status !== 'PENDING_RETURN' && (contract.status as string) !== 'CANCELLED') return false;
         if (
           activeTab === 'PENDING_CHECKIN' &&
           contract.status !== 'PENDING_CHECKIN' &&
@@ -647,7 +647,7 @@ export const MyUnitsPage: React.FC = () => {
         onCancelCheckInSuccess={() => {
           setSelectedCancelCheckInContract(null);
           loadContracts();
-          showToast('Đã hủy nhận kho thành công. Hệ thống đã tự động ghi nhận giao dịch hoàn tiền.');
+          showToast('Đã gửi yêu cầu hủy nhận kho. Hợp đồng đang chờ Quản lý cơ sở duyệt quyết toán & hoàn tiền.');
         }}
         showEarlyRenewalModal={showEarlyRenewalModal}
         onCloseEarlyRenewalModal={handleCloseEarlyRenewalModal}

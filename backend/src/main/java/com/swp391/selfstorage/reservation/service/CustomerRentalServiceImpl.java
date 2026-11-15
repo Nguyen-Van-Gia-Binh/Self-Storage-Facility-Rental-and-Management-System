@@ -141,8 +141,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         Page<RentalContract> contractPage;
 
         if (statusFilter == null || statusFilter.isBlank() || statusFilter.equalsIgnoreCase("ALL")) {
-            contractPage = rentalContractRepository.findByCustomerIdAndStatusNot(
-                    customerId, ContractStatus.CANCELLED, pageable);
+            contractPage = rentalContractRepository.findByCustomerId(customerId, pageable);
         } else if (statusFilter.equalsIgnoreCase("ACTIVE")) {
             contractPage = rentalContractRepository.findByCustomerIdAndStatus(customerId, ContractStatus.ACTIVE, pageable);
         } else if (statusFilter.equalsIgnoreCase("OVERDUE")) {
@@ -150,7 +149,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         } else if (statusFilter.equalsIgnoreCase("HISTORY")) {
             contractPage = rentalContractRepository.findByCustomerIdAndStatusIn(
                     customerId,
-                    List.of(ContractStatus.CLOSED, ContractStatus.TERMINATED),
+                    List.of(ContractStatus.CLOSED, ContractStatus.TERMINATED, ContractStatus.CANCELLED),
                     pageable
             );
         } else {
@@ -304,6 +303,8 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             }
         } else if (contract.getStatus() == ContractStatus.PENDING_CHECK_IN) {
             detail.setInstructionNotes("Quý khách vui lòng đến cơ sở để hoàn tất thủ tục bàn giao và nhận mã PIN mở khóa kho.");
+        } else if (contract.getStatus() == ContractStatus.CANCELLED) {
+            detail.setInstructionNotes("Quý khách đã gửi yêu cầu hủy nhận kho. Quản lý cơ sở đang đối soát và thực hiện thủ tục duyệt hoàn tiền.");
         } else {
             detail.setInstructionNotes("Hợp đồng đã kết thúc hoặc thanh lý.");
         }

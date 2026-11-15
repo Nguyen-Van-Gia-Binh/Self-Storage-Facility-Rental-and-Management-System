@@ -85,9 +85,9 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; dotColor
     dotColor: 'bg-amber-500 animate-pulse',
   },
   CANCELLED: {
-    label: 'Đã hủy',
-    className: 'bg-slate-100 text-slate-500 border-slate-200',
-    dotColor: 'bg-slate-400',
+    label: 'Hủy nhận kho',
+    className: 'bg-amber-50 text-amber-800 border-amber-300 font-bold',
+    dotColor: 'bg-amber-500 animate-pulse',
   },
 
   // Trạng thái Sự cố (SupportStatus)
