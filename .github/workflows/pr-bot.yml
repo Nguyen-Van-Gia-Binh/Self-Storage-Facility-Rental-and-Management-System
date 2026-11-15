@@ -1,7 +1,7 @@
 name: PR Verification and Auto-Merge Bot
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review, edited]
     branches: [main]
 
@@ -34,6 +34,8 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
         with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: 🏷️ Check Branch Naming Convention (CONTRIBUTING.md § 2)
@@ -97,7 +99,7 @@ jobs:
       - name: ✅ Auto Approve PR
         run: |
           echo "Tiến hành tự động approve PR #${{ github.event.pull_request.number }}..."
-          gh pr review "${{ github.event.pull_request.html_url }}" --approve --body "🤖 **Bot Auto-Verify**: Đã kiểm tra tự động thành công (Tên nhánh, Tiêu đề PR, Tài liệu docs, Backend test, Frontend build). Tiến hành tự động duyệt và merge vào \`main\`!"
+          gh pr review "${{ github.event.pull_request.html_url }}" --approve --body "🤖 **Bot Auto-Verify**: Đã kiểm tra tự động thành công (Tên nhánh, Tiêu đề PR, Tài liệu docs, Backend test, Frontend build). Tiến hành tự động duyệt và merge vào \`main\`!" || echo "⚠️ Bỏ qua approve nếu PR đã được duyệt hoặc không thể review bằng token."
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -112,6 +114,7 @@ jobs:
 
           echo "Đang thực hiện Squash and Merge cho PR: $PR_URL"
           gh pr merge "$PR_URL" --squash --subject "$CLEAN_TITLE" --delete-branch || \
-          gh pr merge "$PR_URL" --squash --subject "$CLEAN_TITLE" --auto --delete-branch
+          gh pr merge "$PR_URL" --squash --subject "$CLEAN_TITLE" --auto --delete-branch || \
+          gh pr merge "$PR_URL" --squash --subject "$CLEAN_TITLE"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
