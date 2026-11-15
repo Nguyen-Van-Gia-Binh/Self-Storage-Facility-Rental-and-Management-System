@@ -55,6 +55,34 @@ class PaymentEventListenerTest {
     }
 
     @Test
+    @DisplayName("FM-04: handleContractSettled khi hợp đồng đã có sẵn giao dịch hoàn tiền -> Không tạo trùng lặp")
+    void handleContractSettled_WhenRefundAlreadyExists_ShouldNotDuplicate() {
+        PaymentTransaction existingRefund = PaymentTransaction.builder()
+                .contractId(302L)
+                .transactionType("RENT_REFUND")
+                .amount(7_200_000L)
+                .status("SUCCESS")
+                .build();
+
+        org.mockito.Mockito.when(paymentTransactionRepository.findByContractId(302L))
+                .thenReturn(java.util.List.of(existingRefund));
+
+        ContractSettledEvent event = ContractSettledEvent.builder()
+                .contractId(302L)
+                .customerId(15L)
+                .facilityId(1L)
+                .depositRefundAmount(8_400_000L)
+                .payableAmount(0L)
+                .settledAt(OffsetDateTime.now())
+                .build();
+
+        paymentEventListener.handleContractSettled(event);
+
+        org.mockito.Mockito.verify(paymentTransactionRepository, org.mockito.Mockito.never())
+                .save(org.mockito.ArgumentMatchers.any(PaymentTransaction.class));
+    }
+
+    @Test
     @DisplayName("FM-04: handleContractSettled khi có payableAmount > 0 -> Lưu giao dịch SETTLEMENT PENDING")
     void handleContractSettled_WhenPayable_ShouldSaveSettlementTransaction() {
         ContractSettledEvent event = ContractSettledEvent.builder()
