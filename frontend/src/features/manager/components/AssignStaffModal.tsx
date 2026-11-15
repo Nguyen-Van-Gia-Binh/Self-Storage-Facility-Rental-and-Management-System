@@ -48,7 +48,6 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
   if (!isOpen || !task) return null;
 
   const isReassign = Boolean(task.assignedStaffId);
-  const selectedStaff = staffList.find((s) => s.staffId === selectedStaffId);
 
   const getTaskIcon = () => {
     switch (task.taskType) {
@@ -178,7 +177,6 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
                 staffList.map((staff) => {
                   const isCurrentAssigned = staff.staffId === task.assignedStaffId;
                   const isSelected = staff.staffId === selectedStaffId;
-                  const isOverloaded = staff.activeTaskCount >= 5;
 
                   return (
                     <label
@@ -220,9 +218,7 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
                         <div className="text-right">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${
-                              isOverloaded
-                                ? 'bg-rose-100 text-rose-700 border border-rose-200'
-                                : staff.activeTaskCount > 0
+                              staff.activeTaskCount > 0
                                 ? 'bg-blue-100 text-blue-700 border border-blue-200'
                                 : 'bg-slate-100 text-slate-600'
                             }`}
@@ -231,11 +227,6 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
                               ? `${staff.activeTaskCount} việc đang làm`
                               : '0 việc đang làm'}
                           </span>
-                          {isOverloaded && (
-                            <p className="text-[10px] text-rose-600 font-medium mt-0.5">
-                              Quá tải!
-                            </p>
-                          )}
                         </div>
                       </div>
                     </label>
@@ -243,18 +234,6 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
                 })
               )}
             </div>
-
-            {/* Warning if selecting overloaded staff */}
-            {selectedStaff && selectedStaff.activeTaskCount >= 5 && (
-              <div className="mt-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
-                <span>
-                  <strong>Lưu ý cân bằng tải:</strong> Nhân viên {selectedStaff.staffName}{' '}
-                  hiện đang có {selectedStaff.activeTaskCount} nhiệm vụ tồn đọng. Bạn nên cân nhắc
-                  phân bổ cho nhân viên khác có khối lượng nhẹ hơn.
-                </span>
-              </div>
-            )}
           </div>
 
 

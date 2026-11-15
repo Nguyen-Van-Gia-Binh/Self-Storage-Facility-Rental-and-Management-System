@@ -5,7 +5,6 @@ import {
   Calendar,
   Users,
   CheckCircle2,
-  AlertTriangle,
   RefreshCw,
   Clock,
   Briefcase,
@@ -276,12 +275,6 @@ export const StaffAssignmentPage: React.FC = () => {
               ({stats.availableStaff} sẵn sàng)
             </span>
           </div>
-          {stats.overloadedStaff > 0 && (
-            <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" />
-              <span>{stats.overloadedStaff} nhân viên đang quá tải (≥5 việc)</span>
-            </p>
-          )}
         </div>
 
         {/* KPI 2: Tổng nhiệm vụ trong ngày */}

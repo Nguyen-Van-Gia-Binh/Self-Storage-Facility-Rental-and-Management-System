@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Calendar,
   CheckCircle2,
-  AlertCircle,
   Building2,
   Phone,
   Mail,
@@ -26,16 +25,7 @@ export const StaffWorkloadCard: React.FC<StaffWorkloadCardProps> = ({
 }) => {
   // Xác định màu sắc và nhãn tình trạng quá tải / cân bằng tải (AC-3)
   const getWorkloadBadge = () => {
-    if (staff.status === 'OVERLOADED' || staff.activeTaskCount >= 5) {
-      return {
-        label: 'Quá tải (≥5)',
-        className: 'bg-rose-50 text-rose-700 border-rose-200',
-        dotClass: 'bg-rose-500 animate-pulse',
-        barColor: 'bg-rose-500',
-        textColor: 'text-rose-600',
-      };
-    }
-    if (staff.status === 'AVAILABLE' || staff.activeTaskCount <= 2) {
+    if (staff.activeTaskCount === 0) {
       return {
         label: 'Sẵn sàng',
         className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -45,7 +35,7 @@ export const StaffWorkloadCard: React.FC<StaffWorkloadCardProps> = ({
       };
     }
     return {
-      label: 'Bình thường',
+      label: 'Đang trực',
       className: 'bg-blue-50 text-blue-700 border-blue-200',
       dotClass: 'bg-blue-500',
       barColor: 'bg-blue-500',
@@ -100,11 +90,7 @@ export const StaffWorkloadCard: React.FC<StaffWorkloadCardProps> = ({
           <span
             className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border flex items-center gap-1 shrink-0 whitespace-nowrap ${badge.className}`}
           >
-            {staff.status === 'OVERLOADED' ? (
-              <AlertCircle className="w-3 h-3 text-rose-500 shrink-0" />
-            ) : (
-              <UserCheck className="w-3 h-3 text-emerald-500 shrink-0" />
-            )}
+            <UserCheck className="w-3 h-3 text-emerald-500 shrink-0" />
             {badge.label}
           </span>
         </div>
@@ -112,9 +98,9 @@ export const StaffWorkloadCard: React.FC<StaffWorkloadCardProps> = ({
         {/* Thanh đo tải công việc (Workload Bar) */}
         <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 mb-3">
           <div className="flex items-center justify-between text-xs mb-1.5 font-medium">
-            <span className="text-slate-500">Mức độ tiếp nhận task:</span>
+            <span className="text-slate-500">Nhiệm vụ đang phụ trách:</span>
             <span className={`font-bold ${badge.textColor}`}>
-              {staff.activeTaskCount} đang làm / 6 tối đa
+              {staff.activeTaskCount} việc đang làm
             </span>
           </div>
           <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
