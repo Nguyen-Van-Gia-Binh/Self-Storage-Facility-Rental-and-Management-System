@@ -1,6 +1,9 @@
 name: PR Verification and Auto-Merge Bot
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+    branches: [main]
   pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review, edited]
     branches: [main]
@@ -13,6 +16,11 @@ permissions:
 jobs:
   verify:
     name: 🔍 Verify PR Compliance & Tests
+    # Nếu là pull_request: chỉ chạy cho nhánh nội bộ (cùng repo)
+    # Nếu là pull_request_target: chỉ chạy cho PR từ repo fork
+    if: >-
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository)
     runs-on: ubuntu-latest
 
     services:
