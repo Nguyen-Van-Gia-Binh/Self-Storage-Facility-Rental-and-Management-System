@@ -2,14 +2,9 @@
 import React from 'react';
 import {
   FileText,
-  User,
-  Box,
-  Calendar,
-  Eye,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  AlertTriangle,
 } from 'lucide-react';
 import type { ManagerContractItem } from '@/types/contractManager';
 import { StatusBadge } from './StatusBadge';
@@ -144,54 +139,42 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                   onClick={() => onSelectContract(c)}
                   className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
                 >
-                  {/* Mã hợp đồng */}
+                  {/* Mã hợp đồng (Refactoring UI: Bỏ icon hộp rườm rà) */}
                   <td className="py-3.5 px-4">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-brand-50 group-hover:text-brand-600 text-slate-500 flex items-center justify-center transition-colors">
-                        <FileText className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <span className="font-mono font-bold text-slate-900 group-hover:text-brand-600 transition-colors text-sm">
-                          {c.code}
-                        </span>
-                        {c.startDate && (
-                          <p className="text-[10px] text-slate-400">Từ: {c.startDate}</p>
-                        )}
-                      </div>
-                    </div>
+                    <span className="font-mono font-bold text-slate-900 group-hover:text-brand-600 transition-colors text-sm block">
+                      {c.code}
+                    </span>
+                    {c.startDate && (
+                      <p className="text-[11px] text-slate-400 mt-0.5">Từ: {c.startDate}</p>
+                    )}
                   </td>
 
-                  {/* Khách thuê */}
+                  {/* Khách thuê (Bỏ icon User lặp lại) */}
                   <td className="py-3.5 px-4">
-                    <div className="font-semibold text-slate-800 flex items-center gap-1.5">
-                      <User className="w-3 h-3 text-slate-400" />
-                      <span>{c.customerName}</span>
-                    </div>
-                    <div className="text-[11px] text-slate-500">{c.customerPhone}</div>
+                    <div className="font-semibold text-slate-800">{c.customerName}</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">{c.customerPhone}</div>
                   </td>
 
-                  {/* Ô kho */}
+                  {/* Ô kho (Bỏ icon Box lặp lại) */}
                   <td className="py-3.5 px-4">
                     {c.status === 'RELOCATION_PENDING' || (c.relocationEligible && c.status === 'PENDING_CHECK_IN') || !c.storageUnitCode ? (
-                      <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center gap-1 font-mono font-bold text-amber-800 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded text-xs w-fit">
-                          <AlertTriangle className="w-3 h-3 text-amber-600 animate-pulse" />
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-mono font-bold text-amber-800 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded text-xs w-fit">
                           Chờ cấp ô mới
                         </span>
-                        <div className="text-[11px] text-amber-700">
+                        <span className="text-[11px] text-amber-700">
                           {c.unitTypeName || 'Kho tiêu chuẩn'} • Chờ phân bổ lại
-                        </div>
+                        </span>
                       </div>
                     ) : (
-                      <>
-                        <div className="font-mono font-bold text-slate-900 flex items-center gap-1.5">
-                          <Box className="w-3 h-3 text-slate-400" />
-                          <span>{c.storageUnitCode}</span>
-                        </div>
-                        <div className="text-[11px] text-slate-500">
+                      <div>
+                        <span className="font-mono font-bold text-slate-900 block text-sm">
+                          {c.storageUnitCode}
+                        </span>
+                        <span className="text-[11px] text-slate-500 mt-0.5 block">
                           {c.unitTypeName || 'Kho tiêu chuẩn'}
-                        </div>
-                      </>
+                        </span>
+                      </div>
                     )}
                   </td>
 
@@ -207,26 +190,45 @@ export const ContractTable: React.FC<ContractTableProps> = ({
 
                   {/* Hạn hợp đồng */}
                   <td className="py-3.5 px-4">
-                    <div className="font-medium text-slate-700 flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-slate-400" />
-                      <span>{c.endDateExclusive || '—'}</span>
+                    <div className="font-mono font-medium text-slate-800">
+                      {c.endDateExclusive || '—'}
                     </div>
-                    {c.daysRemaining !== undefined && (
+                    {(c.status === 'ACTIVE' || c.status === 'PENDING_CHECK_IN') && c.daysRemaining !== undefined && (
                       <span
-                        className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
+                        className={`text-[11px] font-semibold mt-0.5 inline-block ${
                           c.daysRemaining <= 7
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'text-slate-500'
+                            ? 'text-amber-700 font-bold'
+                            : 'text-slate-400'
                         }`}
                       >
-                        {c.daysRemaining >= 0
+                        {c.daysRemaining > 0
                           ? `Còn ${c.daysRemaining} ngày`
-                          : `Quá hạn ${Math.abs(c.daysRemaining)} ngày`}
+                          : 'Hết hạn hôm nay'}
+                      </span>
+                    )}
+                    {c.status === 'OVERDUE' && (
+                      <span className="text-[11px] font-medium text-rose-500 mt-0.5 block">
+                        Đã hết hạn
+                      </span>
+                    )}
+                    {c.status === 'CLOSED' && (
+                      <span className="text-[11px] font-medium text-slate-400 mt-0.5 block">
+                        Đã tất toán
+                      </span>
+                    )}
+                    {c.status === 'TERMINATED' && (
+                      <span className="text-[11px] font-medium text-rose-500 mt-0.5 block">
+                        Đã chấm dứt
+                      </span>
+                    )}
+                    {(c.status === 'PENDING_RETURN' || c.status === 'INSPECTED') && (
+                      <span className="text-[11px] font-medium text-amber-600 mt-0.5 block">
+                        Chờ quyết toán
                       </span>
                     )}
                   </td>
 
-                  {/* Thao tác */}
+                  {/* Thao tác (Bỏ icon Eye bên trong nút) */}
                   <td className="py-3.5 px-4 text-right">
                     <button
                       type="button"
@@ -234,10 +236,9 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                         e.stopPropagation();
                         onSelectContract(c);
                       }}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-brand-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg border border-brand-200 transition-colors cursor-pointer"
+                      className="px-3 py-1 text-xs font-semibold text-slate-700 hover:text-brand-600 hover:bg-brand-50/70 rounded-lg border border-slate-200 hover:border-brand-200 transition-all cursor-pointer"
                     >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Chi tiết</span>
+                      Chi tiết
                     </button>
                   </td>
                 </tr>

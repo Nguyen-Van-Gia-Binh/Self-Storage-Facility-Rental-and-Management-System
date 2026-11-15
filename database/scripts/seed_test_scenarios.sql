@@ -3,11 +3,11 @@
 -- Đường dẫn: database/scripts/seed_test_scenarios.sql
 -- Tác giả: Nguyễn Văn Gia Bình (WS2 Lead - SWP391)
 --
--- Mục tiêu: Cung cấp 20 Kịch bản Thử nghiệm Vàng (Golden Test Scenarios)
+-- Mục tiêu: Cung cấp 21 Kịch bản Thử nghiệm Vàng (Golden Test Scenarios)
 --           bao phủ 100% các Flow nghiệp vụ trọng yếu:
 --           - Flow 3: Trả sớm Win-Win, Quyết toán hoàn cọc & Quyết toán âm
 --           - Flow 6.1: Vòng đời Gia hạn hợp đồng (T-60, T-30, T-25, T-21, T-20, T-7, T-3, Force Renewal & Hard Lock Xung đột)
---           - Flow 6.2: Vòng đời Quá hạn 8 ngày (No Pay No PIN, Đóng phạt nhận PIN tạm, Niêm phong Kho Tổng & Thanh lý quá 30 ngày)
+--           - Flow 6.2: Vòng đời Quá hạn 8 ngày (No Pay No PIN, Đóng phạt nhận PIN tạm, Niêm phong Kho Tổng & HĐ quá 37 ngày chờ FM duyệt)
 --           - Flow 2: Khách chờ nhận kho (Check-in & Handover tại quầy)
 --           - Sơ đồ kho: Đầy đủ các trạng thái OCCUPIED, CLEANING, RESERVED, MAINTENANCE, AVAILABLE.
 --
@@ -187,7 +187,12 @@ VALUES
 -- RES 9021: Cho HĐ CTR-TEST-020 (Kho Q1-B301, UT 3: UT-STD-L) -> Trả sớm Win-Win trước hạn 60 ngày, Staff ĐÃ NGHIỆM THU nguyên vẹn, chờ FM duyệt quyết toán (BR-RET-06, UC-F3-07)
 (9021, 'RES-TEST-020', 10, 5, 3, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-B301'),
  CURRENT_DATE - INTERVAL '30 day', 3, CURRENT_DATE + INTERVAL '60 day', 2000000,
- 1, 2000000, 6000000, 8000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ 1, 2000000, 6000000, 8000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- RES 9022: Cho HĐ CTR-TEST-021 (Kho Q1-XL301, UT 8: UT-STD-XL) -> Quá hạn D+40 (> 37 ngày: 7 ngày quá hạn cơ sở + 30 ngày lưu Kho Tổng) nhưng FM CHƯA DUYỆT QUYẾT TOÁN (BR-OVD-07, BR-OVD-11)
+(9022, 'RES-TEST-021', 10, 5, 8, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-XL301'),
+ CURRENT_DATE - INTERVAL '130 day', 3, CURRENT_DATE - INTERVAL '40 day', 2500000,
+ 1, 2500000, 7500000, 10000000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
@@ -318,7 +323,13 @@ VALUES
 (9020, 'CTR-TEST-020', 9021, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-B301'), 3,
  CURRENT_DATE - INTERVAL '30 day', CURRENT_DATE + INTERVAL '60 day', 3, 2000000, 6000000,
  2000000, 2000000, NULL, 'PENDING_RETURN', CURRENT_DATE - INTERVAL '30 day', 1,
- 0, CURRENT_TIMESTAMP - INTERVAL '30 day', NULL, NULL)
+ 0, CURRENT_TIMESTAMP - INTERVAL '30 day', NULL, NULL),
+
+-- Case 21: CTR-TEST-021 (TERMINATED - Quá hạn D+40 (> 37 ngày lưu Kho Tổng) nhưng FM CHƯA DUYỆT QUYẾT TOÁN - BR-OVD-07, BR-OVD-11)
+(9021, 'CTR-TEST-021', 9022, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-XL301'), 8,
+ CURRENT_DATE - INTERVAL '130 day', CURRENT_DATE - INTERVAL '40 day', 3, 2500000, 7500000,
+ 2500000, 0, NULL, 'TERMINATED', CURRENT_DATE - INTERVAL '130 day', 1,
+ 1375000, CURRENT_TIMESTAMP - INTERVAL '130 day', CURRENT_TIMESTAMP - INTERVAL '33 day', NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
@@ -431,7 +442,8 @@ VALUES
 (9017, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '83 day', CURRENT_TIMESTAMP - INTERVAL '83 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '83 day', FALSE),
 (9018, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '87 day', CURRENT_TIMESTAMP - INTERVAL '87 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '87 day', FALSE),
 (9019, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao lúc nhận kho ban đầu. Hợp đồng sau đó phát sinh quá hạn D+7 cưỡng chế.', CURRENT_TIMESTAMP - INTERVAL '135 day', CURRENT_TIMESTAMP - INTERVAL '135 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '135 day', FALSE),
-(9020, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao lúc nhận kho ban đầu. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '30 day', CURRENT_TIMESTAMP - INTERVAL '30 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '30 day', FALSE)
+(9020, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao lúc nhận kho ban đầu. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '30 day', CURRENT_TIMESTAMP - INTERVAL '30 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '30 day', FALSE),
+(9021, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao lúc nhận kho ban đầu. Hợp đồng sau đó phát sinh quá hạn D+7 cưỡng chế.', CURRENT_TIMESTAMP - INTERVAL '130 day', CURRENT_TIMESTAMP - INTERVAL '130 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '130 day', FALSE)
 ON CONFLICT (contract_id) DO UPDATE SET
     rejected = EXCLUDED.rejected,
     condition_note = EXCLUDED.condition_note,
@@ -468,11 +480,11 @@ SET status = 'MAINTENANCE'
 WHERE facility_id = 5 
   AND code = 'Q1-XL101';
 
--- 5.5 Ô kho của hợp đồng CLOSED đã thanh lý xong
+-- 5.5 Ô kho của hợp đồng CLOSED / TERMINATED quá hạn dài đã giải phóng xong
 UPDATE storage_unit 
 SET status = 'AVAILABLE'  
 WHERE facility_id = 5 
-  AND code IN ('Q1-XS201', 'Q1-XL201');
+  AND code IN ('Q1-XS201', 'Q1-XL201', 'Q1-XL301');
 
 -- 5.6 Tất cả các ô kho vật lý còn lại của Cơ sở 5 (phục vụ trải nghiệm thuê mới Flow 1 trên portal)
 UPDATE storage_unit 
@@ -481,7 +493,7 @@ WHERE facility_id = 5
   AND code NOT IN (
     'Q1-A101', 'Q1-A102', 'Q1-A103', 'Q1-C101', 'Q1-XS101', 'Q1-A105', 'Q1-C102',
     'Q1-A201', 'Q1-A202', 'Q1-B202', 'Q1-C201', 'Q1-AC-M201', 'Q1-AC-L201', 'Q1-B301',
-    'Q1-B201', 'Q1-B101', 'Q1-A104', 'Q1-XL101', 'Q1-XS201'
+    'Q1-B201', 'Q1-B101', 'Q1-A104', 'Q1-XL101', 'Q1-XS201', 'Q1-XL301'
   );
 
 -- -----------------------------------------------------------------------------

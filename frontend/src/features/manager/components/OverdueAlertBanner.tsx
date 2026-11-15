@@ -1,6 +1,6 @@
 // frontend/src/features/manager/components/OverdueAlertBanner.tsx
 import React from 'react';
-import { AlertTriangle, Receipt, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Receipt, ShieldAlert, CheckCircle2, Lock } from 'lucide-react';
 import type { ManagerContractItem } from '@/types/contractManager';
 
 interface OverdueAlertBannerProps {
@@ -32,71 +32,69 @@ export const OverdueAlertBanner: React.FC<OverdueAlertBannerProps> = ({
     contract.accruedOverdueFee <= 0;
 
   return (
-    <div className="bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 border-2 border-orange-300/80 rounded-2xl p-5 shadow-xs">
-      <div className="flex items-start gap-3.5">
-        <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+    <div className="bg-amber-50/90 border border-amber-300 rounded-2xl p-5 shadow-2xs">
+      <div className="flex items-start gap-4">
+        <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
           <AlertTriangle className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-sm font-bold text-orange-950 uppercase tracking-wide">
-              Cảnh báo quá hạn (Khóa PIN ngay từ D+1)
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h3 className="text-sm font-bold text-amber-950 uppercase tracking-wide">
+              Cảnh báo quá hạn
             </h3>
-            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-orange-200/80 text-orange-900">
+            <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 border border-amber-300/60">
               D+{overdueDays}
+            </span>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-800 bg-rose-100/90 border border-rose-200 px-2 py-0.5 rounded-md">
+              <Lock className="w-3 h-3 text-rose-600" />
+              Đã khóa mã PIN
             </span>
           </div>
 
-          <p className="text-xs text-orange-800 mt-1">
-            Hợp đồng đã quá hạn thuê từ ngày{' '}
-            <strong>{contract.endDateExclusive || 'gần đây'}</strong>. Hệ thống khóa mã PIN ngay từ D+1 (No Pay, No PIN),
-            thu phí lưu kho 5% cọc/ngày (D+1..D+3), phạt 10% cọc/ngày (D+4..D+6) và cưỡng chế niêm phong về Kho Tổng tại mốc <strong>D+7</strong> (khấu trừ nốt 45% cọc, D+8 mở bán lại ô kho).
+          <p className="text-xs text-amber-900/80 mt-1">
+            Hợp đồng quá hạn từ ngày <strong className="font-semibold text-amber-950">{contract.endDateExclusive || 'gần đây'}</strong>. Chế tài cưỡng chế về Kho Tổng tự động kích hoạt tại mốc <strong className="font-semibold text-rose-700">D+7</strong> nếu khách không tất toán.
           </p>
 
-          {/* Chi tiết công nợ phạt */}
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <div className="bg-white/80 p-3 rounded-xl border border-orange-200">
-              <span className="text-slate-500 block text-[11px]">Số ngày quá hạn</span>
-              <span className="font-bold text-slate-900 text-sm mt-0.5 block">
-                {overdueDays} ngày (D+{overdueDays})
-              </span>
+          {/* 3 Thẻ thống kê tài chính gọn gàng (Equal height & clean metrics) */}
+          <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-white/95 p-3.5 rounded-xl border border-amber-200/90 shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-500 block uppercase tracking-wider">Thời gian</span>
+              <div className="text-base font-extrabold text-slate-900 mt-0.5 flex items-baseline gap-1.5">
+                <span>{overdueDays} ngày</span>
+                <span className="text-xs font-mono font-bold text-amber-700">(D+{overdueDays})</span>
+              </div>
             </div>
 
-            <div className="bg-white/80 p-3 rounded-xl border border-orange-200">
-              <span className="text-slate-500 block text-[11px]">Phí quá hạn tích lũy</span>
-              <span className="font-mono font-bold text-rose-600 text-sm mt-0.5 block">
+            <div className="bg-white/95 p-3.5 rounded-xl border border-amber-200/90 shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-500 block uppercase tracking-wider">Phí tích lũy</span>
+              <div className="text-base font-mono font-extrabold text-rose-600 mt-0.5">
                 {fmt(accruedFee)}
-              </span>
-              <span className="text-[10px] text-slate-400 block mt-0.5">
-                {overdueDays <= 3
-                  ? `(Giai đoạn 1: ${stage1Days} ngày × 5% cọc/ngày)`
-                  : `(3 ngày đầu 15% + ${stage2Days} ngày phạt × 10% cọc/ngày)`}
-              </span>
+              </div>
             </div>
 
-            <div className="bg-white/80 p-3 rounded-xl border border-orange-200">
-              <span className="text-slate-500 block text-[11px]">Cọc còn lại sau khấu trừ</span>
-              <span className="font-mono font-bold text-emerald-700 text-sm mt-0.5 block">
+            <div className="bg-white/95 p-3.5 rounded-xl border border-amber-200/90 shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-500 block uppercase tracking-wider">Cọc khả dụng</span>
+              <div className="text-base font-mono font-extrabold text-emerald-700 mt-0.5">
                 {fmt(remainingDeposit)}
-              </span>
+              </div>
             </div>
           </div>
 
-          {/* Trạng thái giám sát dành cho Quản lý cơ sở (FM) */}
-          <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-orange-200/70">
-            <div className="flex items-start sm:items-center gap-2 text-xs text-orange-900">
+          {/* Chân banner: Chế tài & Nút hành động */}
+          <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-amber-200/70">
+            <div className="flex items-center gap-2 text-xs text-amber-900">
               {isOverduePaid ? (
                 <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>
-                    <strong>Khách hàng đã tất toán nợ quá hạn:</strong> Đã mở Mã PIN tạm (đến 23:59) để khách tự dọn đồ và gửi Báo trả kho trên cổng Khách hàng.
+                    <strong>Đã tất toán nợ:</strong> Cấp PIN tạm trong ngày để khách dọn kho và báo trả.
                   </span>
                 </>
               ) : (
                 <>
-                  <ShieldAlert className="w-4 h-4 text-orange-700 shrink-0 mt-0.5 sm:mt-0" />
+                  <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0" />
                   <span>
-                    <strong>Trạng thái chế tài:</strong> Đang khóa PIN tự động. Chờ khách hàng tự đóng phí quá hạn/gia hạn trên cổng Khách hàng (hoặc tự động cưỡng chế niêm phong ở ngày <strong>D+7</strong>).
+                    Chờ khách nộp phạt trên app hoặc cưỡng chế niêm phong tại <strong>D+7</strong>.
                   </span>
                 </>
               )}
@@ -106,9 +104,9 @@ export const OverdueAlertBanner: React.FC<OverdueAlertBannerProps> = ({
               <button
                 type="button"
                 onClick={onPayPenalty}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-orange-100/70 text-orange-950 border border-orange-300 rounded-xl text-xs font-bold shadow-2xs transition-colors cursor-pointer shrink-0"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-amber-100/60 text-slate-900 border border-amber-300 rounded-xl text-xs font-bold shadow-2xs transition-colors cursor-pointer shrink-0"
               >
-                <Receipt className="w-3.5 h-3.5 text-orange-600" />
+                <Receipt className="w-3.5 h-3.5 text-amber-700" />
                 <span>Xem chi tiết công nợ & khấu trừ</span>
               </button>
             )}

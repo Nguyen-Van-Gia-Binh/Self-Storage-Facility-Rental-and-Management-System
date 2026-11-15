@@ -322,13 +322,13 @@ describe('Xử lý sự cố — Kiến trúc Drill-down 3 Cấp độ (FM-05, S
 
     it('StatusBadge hiển thị đúng trạng thái sự cố', () => {
       const openHtml = cleanHtml(renderToString(<StatusBadge status="OPEN" />));
-      expect(openHtml).toContain('⏳ Chờ tiếp nhận');
+      expect(openHtml).toContain('Chờ tiếp nhận');
 
       const inProgressHtml = cleanHtml(renderToString(<StatusBadge status="IN_PROGRESS" />));
-      expect(inProgressHtml).toContain('⚠️ Đang xử lý');
+      expect(inProgressHtml).toContain('Đang xử lý');
 
       const resolvedHtml = cleanHtml(renderToString(<StatusBadge status="RESOLVED" />));
-      expect(resolvedHtml).toContain('✓ Đã xử lý');
+      expect(resolvedHtml).toContain('Đã xử lý');
     });
   });
 });

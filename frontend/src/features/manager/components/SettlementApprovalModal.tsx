@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, CheckCircle, AlertCircle, RotateCcw, PlusCircle, Trash2, RefreshCw } from 'lucide-react';
+import { X, AlertCircle, Trash2, RefreshCw } from 'lucide-react';
 import type { ManagerContractItem } from '@/types/contractManager';
 import type { SettlementPreviewData } from '@/types';
 import { approveSettlementRefund, getSettlementPreview } from '@/api/contract';
@@ -144,14 +144,11 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] border border-slate-200">
         {/* Header */}
         <div className="px-6 py-4 bg-gradient-to-r from-purple-700 to-indigo-700 text-white flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <RotateCcw className="w-5 h-5 text-purple-200" />
-            <div>
-              <h3 className="font-bold text-base">Phê duyệt quyết toán hợp đồng</h3>
-              <p className="text-xs text-purple-200">
-                Đối soát tất toán công nợ và hoàn tất đóng hợp đồng (CLOSED)
-              </p>
-            </div>
+          <div>
+            <h3 className="font-bold text-base">Phê duyệt quyết toán hợp đồng</h3>
+            <p className="text-xs text-purple-200">
+              Đối soát tất toán công nợ và hoàn tất đóng hợp đồng
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -200,10 +197,9 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
                 <button
                   type="button"
                   onClick={() => setShowExtraCostInput(true)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-800 font-semibold text-[11px] transition-colors"
+                  className="px-2.5 py-1 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-800 font-semibold text-[11px] transition-colors"
                 >
-                  <PlusCircle className="w-3.5 h-3.5" />
-                  Thêm chi phí phát sinh
+                  + Thêm chi phí phát sinh
                 </button>
               )}
             </div>
@@ -297,14 +293,9 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
                     -{sealingAndImpoundFee.toLocaleString('vi-VN')} đ
                   </span>
                 </div>
-                <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-900 space-y-1 mt-2">
-                  <p className="font-semibold">Quy chuẩn quyết toán tài sản tại Kho Tổng (BR-OVD-11):</p>
-                  <p>
-                    • <strong>Khách chuộc lại đồ trong 30 ngày:</strong> Bấm <em>"+ Thêm chi phí phát sinh"</em> nhập phí lưu Kho Tổng. Khách nộp tiền mặt/chuyển khoản quầy xong, FM bấm duyệt để đóng hợp đồng.
-                  </p>
-                  <p>
-                    • <strong>Khách bỏ đồ &gt; 30 ngày:</strong> Sau khi cơ sở thanh lý ngoại tuyến, giữ chi phí phát sinh = 0 đ và bấm chốt thanh lý để đóng hợp đồng.
-                  </p>
+                <div className="p-2.5 bg-amber-50/80 border border-amber-200 rounded-lg text-[11px] text-amber-900 space-y-1 mt-2">
+                  <p>• <strong>Khách chuộc đồ (trong 30 ngày):</strong> Nhập phí lưu kho phát sinh rồi bấm duyệt.</p>
+                  <p>• <strong>Thanh lý ngoại tuyến (&gt; 30 ngày):</strong> Giữ chi phí phát sinh = 0 đ để chốt đóng hợp đồng.</p>
                 </div>
               </div>
             )}
@@ -410,23 +401,6 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
                   : `${netRefund.toLocaleString('vi-VN')} đ`}
               </span>
             </div>
-
-            {/* Chú thích hướng dẫn thao tác trực tiếp */}
-            <div className="p-2.5 bg-slate-100/80 rounded-lg text-[11px] text-slate-600 leading-relaxed">
-              {payableAmount > 0 ? (
-                <span>
-                  💡 <strong>Thao tác:</strong> Khách thanh toán nộp bù bằng tiền mặt tại quầy hoặc chuyển khoản trực tiếp cho cơ sở. Quản lý kiểm tra nhận đủ tiền, ghi chú chứng từ và nhấn nút bên dưới để đóng hợp đồng.
-                </span>
-              ) : netRefund > 0 ? (
-                <span>
-                  💡 <strong>Thao tác:</strong> Quản lý cơ sở đã chuyển khoản trả lại số tiền này về STK của khách (hoặc chi tiền mặt tại quầy). Nhấn xác nhận để hoàn tất lệnh hoàn và đóng hợp đồng.
-                </span>
-              ) : (
-                <span>
-                  💡 <strong>Thao tác:</strong> Hợp đồng đã hoàn tất khấu trừ toàn bộ công nợ. Nhấn xác nhận để đóng hợp đồng sang trạng thái <strong>CLOSED</strong>.
-                </span>
-              )}
-            </div>
           </div>
 
           {/* Ghi chú đối soát & Chứng từ thực tế */}
@@ -440,10 +414,10 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
               onChange={(e) => setNote(e.target.value)}
               placeholder={
                 payableAmount > 0
-                  ? 'VD: Đã thu tiền mặt 500.000đ tại quầy tiếp tân cơ sở ngày 15/11...'
+                  ? 'VD: Đã thu tiền mặt tại quầy...'
                   : netRefund > 0
-                  ? 'VD: Đã chuyển khoản hoàn 9.800.000đ về STK Vietcombank khách hàng ngày 15/11...'
-                  : 'VD: Đã đối soát hiện trường và thanh lý tài sản ngoại tuyến...'
+                  ? 'VD: Đã chuyển khoản hoàn về STK khách...'
+                  : 'VD: Đã thanh lý tài sản ngoại tuyến...'
               }
               className="w-full p-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none"
             />
@@ -465,26 +439,23 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
             type="button"
             onClick={handleApprove}
             disabled={loading || preview == null}
-            className={`px-5 py-2 text-xs font-bold text-white rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-1.5 cursor-pointer ${
+            className={`px-5 py-2 text-xs font-bold text-white rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center cursor-pointer ${
               payableAmount > 0
                 ? 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700'
                 : 'bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800'
             }`}
           >
             {loading ? (
-              <>
+              <span className="flex items-center gap-1.5">
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 Đang xử lý đóng hợp đồng...
-              </>
+              </span>
+            ) : payableAmount > 0 ? (
+              `Xác nhận đã thu đủ ${payableAmount.toLocaleString('vi-VN')} đ & Đóng HĐ`
+            ) : netRefund > 0 ? (
+              `Xác nhận đã hoàn ${netRefund.toLocaleString('vi-VN')} đ & Đóng HĐ`
             ) : (
-              <>
-                <CheckCircle className="w-3.5 h-3.5" />
-                {payableAmount > 0
-                  ? `Xác nhận đã thu đủ ${payableAmount.toLocaleString('vi-VN')} đ & Đóng HĐ`
-                  : netRefund > 0
-                  ? `Xác nhận đã hoàn ${netRefund.toLocaleString('vi-VN')} đ & Đóng HĐ`
-                  : 'Chốt tất toán & Đóng hợp đồng (CLOSED)'}
-              </>
+              'Chốt tất toán & Đóng hợp đồng'
             )}
           </button>
         </div>

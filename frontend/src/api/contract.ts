@@ -359,10 +359,10 @@ export function mapBackendToManagerContractItem(c: any): ManagerContractItem {
     daysRemaining <= 7;
 
   let overdueDays = c.overdueDays;
-  if (overdueDays === undefined || overdueDays === null) {
+  if ((overdueDays === undefined || overdueDays === null) && c.status === 'OVERDUE') {
     if (daysRemaining !== undefined && daysRemaining < 0) {
       overdueDays = Math.abs(daysRemaining);
-    } else if (c.status === 'OVERDUE') {
+    } else {
       overdueDays = 1;
     }
   }

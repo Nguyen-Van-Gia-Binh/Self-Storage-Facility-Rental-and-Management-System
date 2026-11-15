@@ -201,14 +201,22 @@ export const StorageUnitTable: React.FC<StorageUnitTableProps> = ({
                         {contract.daysRemaining !== undefined && (
                           <span
                             className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-                              contract.daysRemaining <= 7
+                              contract.status === 'OVERDUE'
+                                ? 'bg-rose-100 text-rose-800'
+                                : contract.daysRemaining <= 7
                                 ? 'bg-amber-100 text-amber-800'
                                 : 'text-slate-500'
                             }`}
                           >
                             {contract.daysRemaining >= 0
                               ? `Còn ${contract.daysRemaining} ngày`
-                              : `Quá hạn ${Math.abs(contract.daysRemaining)} ngày`}
+                              : contract.status === 'OVERDUE'
+                              ? `Quá hạn ${Math.abs(contract.daysRemaining)} ngày`
+                              : contract.status === 'CLOSED'
+                              ? 'Đã tất toán'
+                              : contract.status === 'TERMINATED'
+                              ? 'Đã chấm dứt'
+                              : 'Hết hạn'}
                           </span>
                         )}
                       </div>

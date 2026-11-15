@@ -4,7 +4,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   FileText,
   Building2,
-  Box,
   Calendar,
   Repeat,
   RefreshCw,
@@ -401,65 +400,51 @@ export const ContractDetailPage: React.FC = () => {
               : 'bg-rose-50/90 border-rose-300 text-rose-950'
           } border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs`}
         >
-          <div className="flex items-start gap-3">
-            <div
-              className={`p-2 rounded-xl shrink-0 mt-0.5 ${
-                isOverdueTerminated ? 'bg-purple-100 text-purple-700' : 'bg-rose-100 text-rose-700'
-              }`}
-            >
-              <AlertCircle
-                className={`w-5 h-5 ${isOverdueTerminated ? 'text-purple-600' : 'text-rose-600'}`}
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h4
-                  className={`text-sm font-bold ${
-                    isOverdueTerminated ? 'text-purple-950' : 'text-rose-950'
-                  }`}
-                >
-                  {isOverdueTerminated
-                    ? 'Hợp đồng đã cưỡng chế chấm dứt & Niêm phong hàng về Kho Tổng (Mốc D+7)'
-                    : 'Hợp đồng đã chấm dứt do sự cố bàn giao / khách từ chối nhận'}
-                </h4>
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    isOverdueTerminated
-                      ? 'bg-purple-200/80 text-purple-900'
-                      : 'bg-rose-200/80 text-rose-900'
-                  }`}
-                >
-                  {isOverdueTerminated
-                    ? 'Đã khấu trừ 100% cọc • Lưu Kho Tổng tối đa 30 ngày'
-                    : 'Chờ hoàn tiền 100%'}
-                </span>
-              </div>
-              <p
-                className={`text-xs mt-0.5 ${
-                  isOverdueTerminated ? 'text-purple-900' : 'text-rose-800'
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4
+                className={`text-sm font-bold ${
+                  isOverdueTerminated ? 'text-purple-950' : 'text-rose-950'
                 }`}
               >
-                {isOverdueTerminated ? (
-                  <>
-                    Ô kho <span className="font-mono font-bold">{contract.storageUnitCode}</span> đã quá hạn chạm mốc{' '}
-                    <strong>D+7</strong>. Hệ thống đã khấu trừ <strong>100% tiền cọc</strong> (15% phí lưu kho D+1..D+3 + 40% phạt quá hạn D+4..D+7 + 45% phí niêm phong & vận chuyển về Kho Tổng) và giải phóng ô kho từ ngày <strong>D+8</strong>. Quản lý cơ sở có thể bấm <strong>Quyết toán Kho Tổng</strong> để thêm chi phí lưu Kho Tổng (nếu khách đến chuộc đồ trong 30 ngày) hoặc xác nhận thanh lý ngoại tuyến (nếu khách bỏ hàng sau 30 ngày) để đóng hợp đồng.
-                  </>
-                ) : (
-                  <>
-                    Ô kho <span className="font-mono font-bold text-rose-950">{contract.storageUnitCode}</span> phát sinh sự cố và đã bị khóa bảo trì. Ngày kết thúc thuê chốt tại ngày check-in:{' '}
-                    <strong className="font-mono">{contract.endDateExclusive || contract.startDate}</strong>. Khách hàng đã chọn chấm dứt hợp đồng và yêu cầu hoàn tiền 100% — Quản lý cơ sở vui lòng bấm duyệt quyết toán bên phải để hoàn trả toàn bộ tiền cọc và tiền thuê cho khách.
-                  </>
-                )}
-              </p>
+                {isOverdueTerminated
+                  ? 'Cưỡng chế niêm phong về Kho Tổng'
+                  : 'Hợp đồng đã chấm dứt do sự cố bàn giao / khách từ chối nhận'}
+              </h4>
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  isOverdueTerminated
+                    ? 'bg-purple-200/80 text-purple-900'
+                    : 'bg-rose-200/80 text-rose-900'
+                }`}
+              >
+                {isOverdueTerminated
+                  ? 'Mốc D+7 • Khấu trừ 100% cọc'
+                  : 'Chờ hoàn tiền 100%'}
+              </span>
             </div>
+            <p
+              className={`text-xs mt-1 ${
+                isOverdueTerminated ? 'text-purple-900' : 'text-rose-800'
+              }`}
+            >
+              {isOverdueTerminated ? (
+                <>
+                  Ô kho <span className="font-mono font-bold">{contract.storageUnitCode}</span> đã niêm phong về Kho Tổng và giải phóng ô kho tại <strong className="font-semibold">D+8</strong>. Quản lý đối soát phí lưu kho nếu chuộc đồ (trong 30 ngày) hoặc thanh lý để đóng hợp đồng.
+                </>
+              ) : (
+                <>
+                  Ô kho <span className="font-mono font-bold text-rose-950">{contract.storageUnitCode}</span> phát sinh sự cố. Quản lý duyệt quyết toán để hoàn trả toàn bộ cọc và tiền thuê cho khách.
+                </>
+              )}
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setSettlementModalOpen(true)}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0 cursor-pointer"
             >
-              <CheckCircle2 className="w-4 h-4" />
               <span>
                 {isOverdueTerminated
                   ? 'Quyết toán Kho Tổng & Đóng HĐ'
@@ -616,8 +601,7 @@ export const ContractDetailPage: React.FC = () => {
         <div className="space-y-6">
           {/* Panel Thông tin Hợp đồng */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
-              <FileText className="w-4 h-4 text-brand-600" />
+            <div className="border-b border-slate-100 pb-3 mb-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
                 Thông tin Hợp đồng
               </h3>
@@ -625,45 +609,36 @@ export const ContractDetailPage: React.FC = () => {
 
             <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 font-medium">Mã hợp đồng:</span>
-                <span className="font-mono font-bold text-slate-900">{contract.code}</span>
+                <span className="text-slate-500 font-medium">Thời hạn thuê:</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-bold text-slate-900">
+                    {contract.startDate || '—'} → {contract.endDateExclusive || '—'}
+                  </span>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md">
+                    {contract.rentalMonths} tháng
+                  </span>
+                </div>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 font-medium">Cơ sở lưu trữ:</span>
-                <span className="font-semibold text-slate-800">{contract.facilityName}</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 font-medium">Trạng thái hợp đồng:</span>
+                <span className="text-slate-500 font-medium">Trạng thái:</span>
                 <StatusBadge status={canRelocate && isPendingCheckIn ? 'RELOCATION_PENDING' : contract.status} size="sm" />
               </div>
 
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 font-medium">Ngày bắt đầu:</span>
-                <span className="font-mono text-slate-800">{contract.startDate || '—'}</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 font-medium">Ngày kết thúc thuê:</span>
-                <span className="font-mono font-bold text-slate-900">
-                  {contract.endDateExclusive || '—'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 font-medium">Số tháng thuê:</span>
-                <span className="font-semibold text-slate-800">{contract.rentalMonths} tháng</span>
-              </div>
-
-              {contract.accessCode && (
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                  <span className="text-slate-500 font-medium">Mã PIN truy cập:</span>
-                  <span className="font-mono font-black text-brand-600 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                <span className="text-slate-500 font-medium">Mã PIN truy cập:</span>
+                {contract.accessCode ? (
+                  <span className="font-mono font-black text-brand-600 bg-brand-50 px-2.5 py-0.5 rounded border border-brand-200 tracking-wider">
                     {contract.accessCode}
                   </span>
-                </div>
-              )}
+                ) : isOverdue ? (
+                  <span className="text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                    Đã khóa (Quá hạn)
+                  </span>
+                ) : (
+                  <span className="text-slate-400">Chưa cấp</span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -678,8 +653,7 @@ export const ContractDetailPage: React.FC = () => {
 
           {/* Panel Thông tin Ô kho */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
-              <Box className="w-4 h-4 text-brand-600" />
+            <div className="border-b border-slate-100 pb-3 mb-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
                 Thông tin Ô kho gắn kèm
               </h3>
