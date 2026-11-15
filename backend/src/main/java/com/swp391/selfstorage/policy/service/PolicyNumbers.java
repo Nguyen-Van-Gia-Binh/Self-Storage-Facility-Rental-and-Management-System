@@ -141,7 +141,7 @@ public final class PolicyNumbers {
         int lateHours = policy != null && policy.getCancelFullRefundHours() != null
                 ? policy.getCancelFullRefundHours()
                 : 48;
-        if (withinCoolingOff || (beforeStart && hoursUntilStart >= fullHours)) {
+        if (beforeStart && hoursUntilStart >= fullHours) {
             return new RefundParts(rent, dep);
         }
         if (beforeStart && hoursUntilStart >= lateHours) {

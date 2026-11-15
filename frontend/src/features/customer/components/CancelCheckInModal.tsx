@@ -123,6 +123,10 @@ export const CancelCheckInModal: React.FC<CancelCheckInModalProps> = ({
 
   const tierStyles = getTierStyles();
   const totalDeductions = calc.depositPenalty + calc.rentCharged;
+  const totalPaid =
+    contract.totalContractAmount ||
+    (contract.totalRentalFee || calc.rentalFee) + calc.depositAmount;
+  const expectedRefund = Math.max(0, totalPaid - totalDeductions);
 
   return (
     <Modal
@@ -170,32 +174,29 @@ export const CancelCheckInModal: React.FC<CancelCheckInModalProps> = ({
             </span>
           </div>
 
-          <div className="space-y-1 pt-2 border-t border-slate-200/60 text-xs">
+          <div className="space-y-1.5 pt-2 border-t border-slate-200/60 text-xs">
             <div className="flex justify-between text-slate-600">
-              <span>Tiền thuê kho ({contract.rentalMonths || 1} tháng):</span>
-              <span className="font-medium text-slate-900">
-                {calc.refundableRentalFee > 0 ? `+${formatVND(calc.refundableRentalFee)}` : '0 ₫'}
+              <span>Tổng tiền đã thanh toán ({contract.rentalMonths || 1} tháng thuê + Cọc):</span>
+              <span className="font-semibold text-slate-900">
+                {formatVND(totalPaid)}
               </span>
             </div>
 
-            {calc.depositRefund > 0 && (
-              <div className="flex justify-between text-slate-600">
-                <span>Tiền cọc hoàn lại:</span>
-                <span className="font-medium text-emerald-700">+{formatVND(calc.depositRefund)}</span>
-              </div>
-            )}
-
-            {totalDeductions > 0 && (
-              <div className="flex justify-between text-slate-600">
-                <span>Phí giữ chỗ & chuẩn bị kho:</span>
-                <span className="font-medium text-rose-600">-{formatVND(totalDeductions)}</span>
-              </div>
-            )}
+            <div className="flex justify-between text-slate-600">
+              <span>
+                {totalDeductions > 0
+                  ? `Trừ tiền cọc (${calc.tier === 'MID_PARTIAL' ? 'Phạt 50% cọc' : 'Phạt 100% cọc'}):`
+                  : 'Khấu trừ tiền cọc:'}
+              </span>
+              <span className={`font-semibold ${totalDeductions > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                {totalDeductions > 0 ? `-${formatVND(totalDeductions)}` : '0 ₫'}
+              </span>
+            </div>
 
             <div className="pt-2 border-t border-slate-300 flex items-center justify-between font-bold text-xs text-slate-900">
               <span>Tổng tiền hoàn dự kiến:</span>
               <span className={`text-base font-extrabold ${tierStyles.refundText}`}>
-                {formatVND(calc.totalRefund)}
+                {formatVND(expectedRefund)}
               </span>
             </div>
           </div>

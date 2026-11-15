@@ -2406,15 +2406,11 @@ public class ContractServiceImpl implements ContractService {
                         cancelPolicy = policyVersionRepository.findById(contract.getPolicyVersionId()).orElse(null);
                 }
 
-                int coolingOffHours = cancelPolicy != null && cancelPolicy.getCancelFullRefundHours() != null
-                                ? cancelPolicy.getCancelFullRefundHours()
-                                : 48;
-                OffsetDateTime startDateTime = contract.getStartDate() != null
-                                ? contract.getStartDate().atStartOfDay().atOffset(now.getOffset())
-                                : now;
-                long hoursUntilStart = Duration.between(now, startDateTime).toHours();
-                boolean isWithinCoolingOff = contract.getCreatedAt() != null
-                                && Duration.between(contract.getCreatedAt(), now).toHours() <= coolingOffHours;
+                long daysUntilStart = contract.getStartDate() != null
+                                ? ChronoUnit.DAYS.between(now.toLocalDate(), contract.getStartDate())
+                                : 0;
+                long hoursUntilStart = daysUntilStart * 24;
+                boolean isWithinCoolingOff = false;
                 int graceDays = cancelPolicy != null && cancelPolicy.getCheckinGraceDays() != null
                                 ? cancelPolicy.getCheckinGraceDays()
                                 : 10;
@@ -2429,7 +2425,7 @@ public class ContractServiceImpl implements ContractService {
                                                 contract.getMonthlyPrice(),
                                                 hoursUntilStart,
                                                 isWithinCoolingOff,
-                                                now.isBefore(startDateTime),
+                                                daysUntilStart >= 0,
                                                 heldDays,
                                                 graceDays);
                 long refundAmount = parts.total();

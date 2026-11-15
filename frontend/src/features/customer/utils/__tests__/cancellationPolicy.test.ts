@@ -58,17 +58,18 @@ describe('calculateCancellationRefund — Chính sách hủy đặt chỗ 3 tầ
     expect(result.tierBadge).toContain('Phạt 100% cọc');
   });
 
-  it('Hủy trong 48h sau thanh toán (Cooling-off BR-CAN-01) ➔ Hoàn 100% toàn bộ bất kể ngày bắt đầu', () => {
+  it('Áp dụng chuẩn 3 tầng theo ngày bắt đầu (không miễn phạt khi mới thanh toán trong 48h mà sát ngày nhận kho)', () => {
     const result = calculateCancellationRefund({
       ...baseParams,
-      startDateStr: '2026-11-07', // Dù sát nút 1 ngày
+      startDateStr: '2026-11-07', // Sát nút 1 ngày (< 48h trước ngày nhận kho)
       createdAtStr: '2026-11-06T05:00:00', // Mới thanh toán cách đây 4 giờ
     });
 
-    expect(result.tier).toBe('EARLY_FULL');
-    expect(result.isWithin48hAfterPayment).toBe(true);
-    expect(result.depositRefund).toBe(800000);
-    expect(result.totalRefund).toBe(3200000);
+    expect(result.tier).toBe('LATE_NO_DEPOSIT');
+    expect(result.isWithin48hAfterPayment).toBe(false);
+    expect(result.depositRefund).toBe(0);
+    expect(result.depositPenalty).toBe(800000);
+    expect(result.totalRefund).toBe(2400000);
   });
 
   it('Chỉ còn 3 tầng chính sách (bỏ Tier 4 & 5), trường hợp < 48h hoặc sát giờ rơi vào LATE_NO_DEPOSIT (Phạt 100% cọc)', () => {

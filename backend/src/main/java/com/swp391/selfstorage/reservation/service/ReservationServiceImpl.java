@@ -518,27 +518,19 @@ public class ReservationServiceImpl implements ReservationService {
 
         boolean isNoShow = false;
 
-        // Xử lý hoàn tiền khi đơn đã thanh toán (CONFIRMED hoặc có hợp đồng PENDING_CHECK_IN) theo BR-CAN-01 & BR-CAN-02
+        // Xử lý hoàn tiền khi đơn đã thanh toán (CONFIRMED hoặc có hợp đồng PENDING_CHECK_IN) theo BR-CAN-01..03
         if (reservation.getStatus() == ReservationStatus.CONFIRMED || hasPendingContract) {
-            OffsetDateTime startDateTime = reservation.getStartDate().atStartOfDay().atOffset(now.getOffset());
-            long hoursUntilStart = Duration.between(now, startDateTime).toHours();
+            long daysUntilStart = ChronoUnit.DAYS.between(now.toLocalDate(), reservation.getStartDate());
+            long hoursUntilStart = daysUntilStart * 24;
             PolicyVersion cancelPolicy = policyOf(reservation);
-            int coolingOffHours = cancelPolicy != null && cancelPolicy.getCancelFullRefundHours() != null
-                    ? cancelPolicy.getCancelFullRefundHours()
-                    : 48;
             long deposit = reservation.getDepositAmount();
             long rentalFee = Math.max(0, reservation.getTotalPayable() - deposit);
             boolean isWithinCoolingOff = false;
-            if (reservation.getConfirmedAt() != null) {
-                isWithinCoolingOff = Duration.between(reservation.getConfirmedAt(), now).toHours() <= coolingOffHours;
-            } else if (reservation.getCreatedAt() != null) {
-                isWithinCoolingOff = Duration.between(reservation.getCreatedAt().atOffset(now.getOffset()), now).toHours() <= coolingOffHours;
-            }
             int graceDays = cancelPolicy != null && cancelPolicy.getCheckinGraceDays() != null
                     ? cancelPolicy.getCheckinGraceDays()
                     : 10;
             long heldDays = Math.max(0, ChronoUnit.DAYS.between(reservation.getStartDate(), now.toLocalDate()));
-            boolean beforeStart = now.isBefore(startDateTime);
+            boolean beforeStart = daysUntilStart >= 0;
             if (!beforeStart && heldDays > graceDays) {
                 isNoShow = true;
             }
