@@ -131,15 +131,17 @@ public class StaffAssignmentServiceImpl implements StaffAssignmentService {
         final AssignmentTaskType finalAssignmentType = assignmentType;
 
         StaffDailyAssignment assignment = staffDailyAssignmentRepository
-                .findByReferenceTypeAndReferenceId(refType, refId)
-                .orElseGet(() -> StaffDailyAssignment.builder()
-                        .facilityId(finalFacilityId)
-                        .workDate(LocalDate.now())
-                        .taskType(finalAssignmentType)
-                        .referenceType(refType)
-                        .referenceId(refId)
-                        .createdAt(OffsetDateTime.now())
-                        .build());
+                .findByReferenceTypeAndReferenceIdAndTaskType(refType, refId, assignmentType)
+                .orElseGet(() -> staffDailyAssignmentRepository
+                        .findByReferenceTypeAndReferenceId(refType, refId)
+                        .orElseGet(() -> StaffDailyAssignment.builder()
+                                .facilityId(finalFacilityId)
+                                .workDate(LocalDate.now())
+                                .taskType(finalAssignmentType)
+                                .referenceType(refType)
+                                .referenceId(refId)
+                                .createdAt(OffsetDateTime.now())
+                                .build()));
 
         assignment.setStaffId(staffId);
         assignment.setFacilityId(targetFacilityId);

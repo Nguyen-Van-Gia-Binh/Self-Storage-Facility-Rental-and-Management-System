@@ -270,7 +270,8 @@ public class ContractServiceImpl implements ContractService {
                         // Customer self check-in online: retrieve assigned staff if FM had dispatched one
                         if (staffDailyAssignmentRepository != null) {
                                 effectiveStaffId = staffDailyAssignmentRepository
-                                                .findByReferenceTypeAndReferenceId("CONTRACT", contractId)
+                                                .findByReferenceTypeAndReferenceIdAndTaskType("CONTRACT", contractId, AssignmentTaskType.HANDOVER)
+                                                .or(() -> staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", contractId))
                                                 .map(StaffDailyAssignment::getStaffId)
                                                 .orElse(null);
                         } else {
@@ -494,20 +495,27 @@ public class ContractServiceImpl implements ContractService {
                         }
                 }
 
-                Map<Long, StaffDailyAssignment> assignmentByContract = new HashMap<>();
+                Map<Long, StaffDailyAssignment> handoverAssignments = new HashMap<>();
+                Map<Long, StaffDailyAssignment> returnAssignments = new HashMap<>();
                 if (staffDailyAssignmentRepository != null && !contractIds.isEmpty()) {
                         List<StaffDailyAssignment> assignments = staffDailyAssignmentRepository
                                         .findByReferenceTypeAndReferenceIdIn("CONTRACT", contractIds);
                         if (assignments != null && !assignments.isEmpty()) {
                                 for (StaffDailyAssignment a : assignments) {
                                         if (a.getReferenceId() != null) {
-                                                assignmentByContract.putIfAbsent(a.getReferenceId(), a);
+                                                if (a.getTaskType() == AssignmentTaskType.HANDOVER) {
+                                                        handoverAssignments.putIfAbsent(a.getReferenceId(), a);
+                                                } else if (a.getTaskType() == AssignmentTaskType.RETURN || a.getTaskType() == AssignmentTaskType.INSPECTION) {
+                                                        returnAssignments.putIfAbsent(a.getReferenceId(), a);
+                                                }
                                         }
                                 }
                         } else {
                                 for (Long cId : contractIds) {
-                                        staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", cId)
-                                                        .ifPresent(a -> assignmentByContract.put(cId, a));
+                                        staffDailyAssignmentRepository.findByReferenceTypeAndReferenceIdAndTaskType("CONTRACT", cId, AssignmentTaskType.HANDOVER)
+                                                        .ifPresent(a -> handoverAssignments.put(cId, a));
+                                        staffDailyAssignmentRepository.findByReferenceTypeAndReferenceIdAndTaskType("CONTRACT", cId, AssignmentTaskType.RETURN)
+                                                        .ifPresent(a -> returnAssignments.put(cId, a));
                                 }
                         }
                 }
@@ -516,7 +524,10 @@ public class ContractServiceImpl implements ContractService {
                 latestReturnRequestByContract.values().forEach(req -> {
                         if (req.getInspectedBy() != null) userIdsToLoad.add(req.getInspectedBy());
                 });
-                assignmentByContract.values().forEach(assign -> {
+                handoverAssignments.values().forEach(assign -> {
+                        if (assign.getStaffId() != null) userIdsToLoad.add(assign.getStaffId());
+                });
+                returnAssignments.values().forEach(assign -> {
                         if (assign.getStaffId() != null) userIdsToLoad.add(assign.getStaffId());
                 });
 
@@ -623,36 +634,32 @@ public class ContractServiceImpl implements ContractService {
                                 }
                                 if (returnReq.getInspectedBy() != null) {
                                         assignedStaffId = returnReq.getInspectedBy();
-                                        AppUser staff = userMap.get(assignedStaffId);
-                                        if (staff != null) {
-                                                assignedStaffName = staff.getFullName();
-                                        } else if (userService != null) {
-                                                try {
-                                                        var staffUser = userService.getUserById(assignedStaffId);
-                                                        if (staffUser != null) {
-                                                                assignedStaffName = staffUser.getFullName();
-                                                        }
-                                                } catch (Exception ignored) {
-                                                }
+                                } else if (returnAssignments.containsKey(c.getId())) {
+                                        StaffDailyAssignment assign = returnAssignments.get(c.getId());
+                                        if (assign != null && assign.getStaffId() != null) {
+                                                assignedStaffId = assign.getStaffId();
+                                        }
+                                }
+                        } else if (c.getStatus() == ContractStatus.PENDING_CHECK_IN) {
+                                if (handoverAssignments.containsKey(c.getId())) {
+                                        StaffDailyAssignment assign = handoverAssignments.get(c.getId());
+                                        if (assign != null && assign.getStaffId() != null) {
+                                                assignedStaffId = assign.getStaffId();
                                         }
                                 }
                         }
 
-                        if (assignedStaffId == null && assignmentByContract.containsKey(c.getId())) {
-                                StaffDailyAssignment assign = assignmentByContract.get(c.getId());
-                                if (assign != null && assign.getStaffId() != null) {
-                                        assignedStaffId = assign.getStaffId();
-                                        AppUser staff = userMap.get(assignedStaffId);
-                                        if (staff != null) {
-                                                assignedStaffName = staff.getFullName();
-                                        } else if (userService != null) {
-                                                try {
-                                                        var staffUser = userService.getUserById(assignedStaffId);
-                                                        if (staffUser != null) {
-                                                                assignedStaffName = staffUser.getFullName();
-                                                        }
-                                                } catch (Exception ignored) {
+                        if (assignedStaffId != null) {
+                                AppUser staff = userMap.get(assignedStaffId);
+                                if (staff != null) {
+                                        assignedStaffName = staff.getFullName();
+                                } else if (userService != null) {
+                                        try {
+                                                var staffUser = userService.getUserById(assignedStaffId);
+                                                if (staffUser != null) {
+                                                        assignedStaffName = staffUser.getFullName();
                                                 }
+                                        } catch (Exception ignored) {
                                         }
                                 }
                         }
@@ -1782,7 +1789,7 @@ public class ContractServiceImpl implements ContractService {
 
                 if (staffDailyAssignmentRepository != null && request.getStaffId() != null) {
                         StaffDailyAssignment assignment = staffDailyAssignmentRepository
-                                        .findByReferenceTypeAndReferenceId("CONTRACT", contractId)
+                                        .findByReferenceTypeAndReferenceIdAndTaskType("CONTRACT", contractId, AssignmentTaskType.RETURN)
                                         .orElseGet(() -> StaffDailyAssignment.builder()
                                                         .facilityId(contract.getFacilityId())
                                                         .workDate(LocalDate.now())
@@ -1838,7 +1845,7 @@ public class ContractServiceImpl implements ContractService {
                                         ? contract.getStartDate()
                                         : today;
                         StaffDailyAssignment assignment = staffDailyAssignmentRepository
-                                        .findByReferenceTypeAndReferenceId("CONTRACT", contractId)
+                                        .findByReferenceTypeAndReferenceIdAndTaskType("CONTRACT", contractId, AssignmentTaskType.HANDOVER)
                                         .orElseGet(() -> StaffDailyAssignment.builder()
                                                         .facilityId(contract.getFacilityId())
                                                         .workDate(effectiveWorkDate)
@@ -2401,7 +2408,8 @@ public class ContractServiceImpl implements ContractService {
 
         private void syncStaffAssignmentWorkDate(Long contractId, LocalDate newWorkDate) {
                 if (staffDailyAssignmentRepository != null && contractId != null && newWorkDate != null) {
-                        staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", contractId)
+                        staffDailyAssignmentRepository.findByReferenceTypeAndReferenceIdAndTaskType("CONTRACT", contractId, AssignmentTaskType.HANDOVER)
+                                        .or(() -> staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", contractId))
                                         .ifPresent(assignment -> {
                                                 assignment.setWorkDate(newWorkDate);
                                                 staffDailyAssignmentRepository.save(assignment);
@@ -2674,12 +2682,29 @@ public class ContractServiceImpl implements ContractService {
                                                 } catch (Exception ignored) {
                                                 }
                                         }
+                                } else if (staffDailyAssignmentRepository != null) {
+                                        staffDailyAssignmentRepository
+                                                        .findByReferenceTypeAndReferenceIdAndTaskType("CONTRACT", c.getId(), AssignmentTaskType.RETURN)
+                                                        .ifPresent(a -> {
+                                                                if (a.getStaffId() != null) {
+                                                                        r.setAssignedStaffId(a.getStaffId());
+                                                                        if (userService != null) {
+                                                                                try {
+                                                                                        var staffUser = userService.getUserById(a.getStaffId());
+                                                                                        if (staffUser != null) {
+                                                                                                r.setAssignedStaffName(staffUser.getFullName());
+                                                                                        }
+                                                                                } catch (Exception ignored) {
+                                                                                }
+                                                                        }
+                                                                }
+                                                        });
                                 }
                         });
                 }
 
-                if (c.getStatus() == ContractStatus.PENDING_CHECK_IN && staffDailyAssignmentRepository != null) {
-                        staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", c.getId()).ifPresent(a -> {
+                if (r.getAssignedStaffId() == null && c.getStatus() == ContractStatus.PENDING_CHECK_IN && staffDailyAssignmentRepository != null) {
+                        staffDailyAssignmentRepository.findByReferenceTypeAndReferenceIdAndTaskType("CONTRACT", c.getId(), AssignmentTaskType.HANDOVER).ifPresent(a -> {
                                 if (a.getStaffId() != null) {
                                         r.setAssignedStaffId(a.getStaffId());
                                         if (userService != null) {

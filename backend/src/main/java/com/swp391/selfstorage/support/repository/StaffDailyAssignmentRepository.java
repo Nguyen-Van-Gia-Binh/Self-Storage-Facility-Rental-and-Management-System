@@ -26,7 +26,11 @@ public interface StaffDailyAssignmentRepository extends JpaRepository<StaffDaily
 
     Optional<StaffDailyAssignment> findByReferenceTypeAndReferenceId(String referenceType, Long referenceId);
 
+    Optional<StaffDailyAssignment> findByReferenceTypeAndReferenceIdAndTaskType(String referenceType, Long referenceId, AssignmentTaskType taskType);
+
     List<StaffDailyAssignment> findByReferenceTypeAndReferenceIdIn(String referenceType, java.util.Collection<Long> referenceIds);
+
+    List<StaffDailyAssignment> findByReferenceTypeAndReferenceIdInAndTaskType(String referenceType, java.util.Collection<Long> referenceIds, AssignmentTaskType taskType);
 
     List<StaffDailyAssignment> findAllByReferenceTypeAndReferenceId(String referenceType, Long referenceId);
 }

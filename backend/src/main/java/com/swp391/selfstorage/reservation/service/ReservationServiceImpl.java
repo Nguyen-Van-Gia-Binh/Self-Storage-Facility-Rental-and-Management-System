@@ -814,7 +814,8 @@ public class ReservationServiceImpl implements ReservationService {
                     LocalDate workDate = request.getScheduledDate() != null ? request.getScheduledDate() : (defaultDate.isAfter(LocalDate.now()) ? LocalDate.now() : defaultDate);
 
                     StaffDailyAssignment assignment = staffDailyAssignmentRepository
-                            .findByReferenceTypeAndReferenceId("CONTRACT", contract.getId())
+                            .findByReferenceTypeAndReferenceIdAndTaskType("CONTRACT", contract.getId(), AssignmentTaskType.HANDOVER)
+                            .or(() -> staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", contract.getId()))
                             .orElseGet(() -> StaffDailyAssignment.builder()
                                     .referenceType("CONTRACT")
                                     .referenceId(contract.getId())
@@ -860,7 +861,8 @@ public class ReservationServiceImpl implements ReservationService {
 
         if (staffDailyAssignmentRepository != null) {
             StaffDailyAssignment assignment = staffDailyAssignmentRepository
-                    .findByReferenceTypeAndReferenceId("CONTRACT", contract.getId())
+                    .findByReferenceTypeAndReferenceIdAndTaskType("CONTRACT", contract.getId(), AssignmentTaskType.HANDOVER)
+                    .or(() -> staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", contract.getId()))
                     .orElseGet(() -> StaffDailyAssignment.builder()
                             .referenceType("CONTRACT")
                             .referenceId(contract.getId())
