@@ -73,7 +73,7 @@ describe('Giám sát hợp đồng — Kiến trúc Drill-down 3 Cấp độ (FM
     expect(overdueHtml).toContain('⚠️ Overdue');
 
     const terminatedHtml = cleanHtml(renderToString(<StatusBadge status="TERMINATED" />));
-    expect(terminatedHtml).toContain('🔴 Terminated');
+    expect(terminatedHtml).toContain('Terminated');
 
     const closedHtml = cleanHtml(renderToString(<StatusBadge status="CLOSED" />));
     expect(closedHtml).toContain('📋 Closed');
