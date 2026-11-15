@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -23,11 +23,12 @@ import { fetchMyAssignedFacilities } from '@/api/facility';
 import type { UnitTypeResponse, StorageUnitResponse } from '@/types/unit';
 import type { FacilityListItem } from '@/types';
 import type { WaitlistResponse } from '@/types/waitlist';
+import type { ManagerContractItem } from '@/types/contractManager';
 
 interface CreateDirectContractModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (newContract: any, message: string) => void;
+  onSuccess: (newContract: ManagerContractItem, message: string) => void;
   defaultFacilityId?: number;
   initialWaitlist?: WaitlistResponse | null;
 }
@@ -84,120 +85,155 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
 
   // Load facilities if needed
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+
+    const initFacilities = async () => {
       setErrorMessage(null);
       if (defaultFacilityId) {
         setSelectedFacilityId(defaultFacilityId);
       }
-      fetchMyAssignedFacilities()
-        .then((facs) => {
-          setFacilities(facs);
-          if (!defaultFacilityId && facs.length > 0) {
-            setSelectedFacilityId(facs[0].id);
-          }
-        })
-        .catch((err) => console.error('Lỗi khi tải danh sách cơ sở:', err));
-    }
+      try {
+        const facs = await fetchMyAssignedFacilities();
+        setFacilities(facs);
+        if (!defaultFacilityId && facs.length > 0) {
+          setSelectedFacilityId(facs[0].id);
+        }
+      } catch (err) {
+        console.error('Lỗi khi tải danh sách cơ sở:', err);
+      }
+    };
+
+    initFacilities();
   }, [isOpen, defaultFacilityId]);
 
   // Pre-fill if opened from Waitlist
   useEffect(() => {
-    if (isOpen && initialWaitlist) {
-      setWaitlistId(initialWaitlist.id);
-      if (initialWaitlist.facilityId) {
-        setSelectedFacilityId(initialWaitlist.facilityId);
-      }
-      if (initialWaitlist.customerId) {
-        setSelectedCustomer({
-          id: initialWaitlist.customerId,
-          fullName: initialWaitlist.customerName || 'Khách hàng',
-          email: initialWaitlist.customerEmail || '',
-          phone: initialWaitlist.contactPhone || initialWaitlist.customerPhone || '',
-          role: 'STORAGE_CUSTOMER',
-          status: 'ACTIVE',
-          active: true,
-          facilityIds: [],
-          createdAt: new Date().toISOString(),
-        });
-        setCustomerPhone(initialWaitlist.contactPhone || initialWaitlist.customerPhone || '');
+    if (!isOpen) return;
+
+    const applyWaitlist = () => {
+      if (initialWaitlist) {
+        setWaitlistId(initialWaitlist.id);
+        if (initialWaitlist.facilityId) {
+          setSelectedFacilityId(initialWaitlist.facilityId);
+        }
+        if (initialWaitlist.customerId) {
+          setSelectedCustomer({
+            id: initialWaitlist.customerId,
+            fullName: initialWaitlist.customerName || 'Khách hàng',
+            email: initialWaitlist.customerEmail || '',
+            phone: initialWaitlist.contactPhone || initialWaitlist.customerPhone || '',
+            role: 'STORAGE_CUSTOMER',
+            status: 'ACTIVE',
+            active: true,
+            facilityIds: [],
+            createdAt: new Date().toISOString(),
+          });
+          setCustomerPhone(initialWaitlist.contactPhone || initialWaitlist.customerPhone || '');
+        } else {
+          const kw = initialWaitlist.contactPhone || initialWaitlist.customerPhone || initialWaitlist.customerName || '';
+          setCustomerSearchKeyword(kw);
+        }
+        if (initialWaitlist.unitTypeId) {
+          setSelectedUnitTypeId(initialWaitlist.unitTypeId);
+        }
+        if (initialWaitlist.targetStartDate) {
+          const todayStr = new Date().toISOString().split('T')[0];
+          setStartDate(initialWaitlist.targetStartDate >= todayStr ? initialWaitlist.targetStartDate : todayStr);
+        }
+        if (initialWaitlist.rentalMonths) {
+          setRentalMonths(initialWaitlist.rentalMonths);
+        }
+        if (initialWaitlist.contactNotes) {
+          setNotes(initialWaitlist.contactNotes);
+        }
       } else {
-        const kw = initialWaitlist.contactPhone || initialWaitlist.customerPhone || initialWaitlist.customerName || '';
-        setCustomerSearchKeyword(kw);
+        setWaitlistId(undefined);
       }
-      if (initialWaitlist.unitTypeId) {
-        setSelectedUnitTypeId(initialWaitlist.unitTypeId);
-      }
-      if (initialWaitlist.targetStartDate) {
-        const todayStr = new Date().toISOString().split('T')[0];
-        setStartDate(initialWaitlist.targetStartDate >= todayStr ? initialWaitlist.targetStartDate : todayStr);
-      }
-      if (initialWaitlist.rentalMonths) {
-        setRentalMonths(initialWaitlist.rentalMonths);
-      }
-      if (initialWaitlist.contactNotes) {
-        setNotes(initialWaitlist.contactNotes);
-      }
-    } else if (isOpen && !initialWaitlist) {
-      setWaitlistId(undefined);
-    }
+    };
+
+    applyWaitlist();
   }, [isOpen, initialWaitlist]);
 
   // Load unit types when facility changes
   useEffect(() => {
-    if (isOpen && selectedFacilityId) {
+    if (!isOpen || !selectedFacilityId) return;
+
+    let isSubscribed = true;
+    const loadTypes = async () => {
       setLoadingUnitTypes(true);
-      fetchUnitTypes(selectedFacilityId, { size: 100, isActive: true })
-        .then((res) => {
-          const types = res.content || [];
-          setUnitTypes(types);
-          if (types.length > 0) {
-            setSelectedUnitTypeId((prev) => {
-              if (initialWaitlist?.unitTypeId && types.some((t) => t.id === initialWaitlist.unitTypeId)) {
-                return initialWaitlist.unitTypeId;
-              }
-              if (prev && types.some((t) => t.id === prev)) {
-                return prev;
-              }
-              return types[0].id;
-            });
-          } else {
-            setSelectedUnitTypeId(0);
-          }
-        })
-        .catch((err) => {
-          console.error('Lỗi khi tải danh sách loại kho:', err);
-          setUnitTypes([]);
-        })
-        .finally(() => setLoadingUnitTypes(false));
-    }
-  }, [isOpen, selectedFacilityId]);
+      try {
+        const res = await fetchUnitTypes(selectedFacilityId, { size: 100, isActive: true });
+        if (!isSubscribed) return;
+        const types = res.content || [];
+        setUnitTypes(types);
+        if (types.length > 0) {
+          setSelectedUnitTypeId((prev) => {
+            if (initialWaitlist?.unitTypeId && types.some((t) => t.id === initialWaitlist.unitTypeId)) {
+              return initialWaitlist.unitTypeId;
+            }
+            if (prev && types.some((t) => t.id === prev)) {
+              return prev;
+            }
+            return types[0].id;
+          });
+        } else {
+          setSelectedUnitTypeId(0);
+        }
+      } catch (err) {
+        if (!isSubscribed) return;
+        console.error('Lỗi khi tải danh sách loại kho:', err);
+        setUnitTypes([]);
+      } finally {
+        if (isSubscribed) setLoadingUnitTypes(false);
+      }
+    };
+
+    loadTypes();
+    return () => {
+      isSubscribed = false;
+    };
+  }, [isOpen, selectedFacilityId, initialWaitlist?.unitTypeId]);
 
   // Load available units when unit type changes
   useEffect(() => {
-    if (isOpen && selectedFacilityId && selectedUnitTypeId) {
-      setLoadingUnits(true);
-      fetchStorageUnits(selectedFacilityId, {
-        unitTypeId: selectedUnitTypeId,
-        status: 'AVAILABLE',
-        size: 100,
-      })
-        .then((res) => {
-          setAvailableUnits(res.content || []);
-          setSelectedStorageUnitId(undefined); // Default to unassigned (allocate later via 2D map)
-        })
-        .catch((err) => {
-          console.error('Lỗi khi tải danh sách ô kho trống:', err);
-          setAvailableUnits([]);
-        })
-        .finally(() => setLoadingUnits(false));
-    } else {
-      setAvailableUnits([]);
-      setSelectedStorageUnitId(undefined);
+    let isSubscribed = true;
+    if (!isOpen || !selectedFacilityId || !selectedUnitTypeId) {
+      const resetUnits = () => {
+        setAvailableUnits([]);
+        setSelectedStorageUnitId(undefined);
+      };
+      resetUnits();
+      return;
     }
+
+    const loadUnits = async () => {
+      setLoadingUnits(true);
+      try {
+        const res = await fetchStorageUnits(selectedFacilityId, {
+          unitTypeId: selectedUnitTypeId,
+          status: 'AVAILABLE',
+          size: 100,
+        });
+        if (!isSubscribed) return;
+        setAvailableUnits(res.content || []);
+        setSelectedStorageUnitId(undefined); // Default to unassigned (allocate later via 2D map)
+      } catch (err) {
+        if (!isSubscribed) return;
+        console.error('Lỗi khi tải danh sách ô kho trống:', err);
+        setAvailableUnits([]);
+      } finally {
+        if (isSubscribed) setLoadingUnits(false);
+      }
+    };
+
+    loadUnits();
+    return () => {
+      isSubscribed = false;
+    };
   }, [isOpen, selectedFacilityId, selectedUnitTypeId]);
 
   // Search customers
-  const handleSearchCustomers = async (kw?: string) => {
+  const handleSearchCustomers = useCallback(async (kw?: string) => {
     const term = kw !== undefined ? kw : customerSearchKeyword;
     setCustomerSearching(true);
     setCustomerSearchError(null);
@@ -208,15 +244,16 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
         size: 15,
       });
       setCustomerSearchResults(res.content || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Lỗi khi tìm kiếm khách hàng:', err);
-      const msg = err?.message || 'Không thể kết nối đến hệ thống tài khoản';
+      const errObj = err as { message?: string };
+      const msg = errObj?.message || 'Không thể kết nối đến hệ thống tài khoản';
       setCustomerSearchError(msg);
       setCustomerSearchResults([]);
     } finally {
       setCustomerSearching(false);
     }
-  };
+  }, [customerSearchKeyword]);
 
   // Debounced search when keyword changes
   useEffect(() => {
@@ -225,7 +262,7 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
       handleSearchCustomers(customerSearchKeyword);
     }, 300);
     return () => clearTimeout(timer);
-  }, [isOpen, customerSearchKeyword, selectedCustomer]);
+  }, [isOpen, customerSearchKeyword, selectedCustomer, handleSearchCustomers]);
 
   // Select customer handler
   const handleSelectCustomer = (cust: AppUser) => {
@@ -340,9 +377,10 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
       const newContract = await createDirectContract(payload);
       onSuccess(newContract, 'Đã tạo hợp đồng trực tiếp thành công!');
       handleClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Lỗi khi tạo hợp đồng trực tiếp:', err);
-      const msg = err?.message || err?.error || 'Không thể tạo hợp đồng trực tiếp. Vui lòng kiểm tra lại.';
+      const errObj = err as { message?: string; error?: string };
+      const msg = errObj?.message || errObj?.error || 'Không thể tạo hợp đồng trực tiếp. Vui lòng kiểm tra lại.';
       showError(msg);
     } finally {
       setSubmitting(false);
