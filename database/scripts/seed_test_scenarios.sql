@@ -50,8 +50,9 @@ BEGIN
     -- 1.6 Xóa biên bản bàn giao (handover_record)
     DELETE FROM handover_record;
 
-    -- 1.7 Xóa file đính kèm & yêu cầu hỗ trợ (attachment & support_request)
+    -- 1.7 Xóa file đính kèm, phân công nhân sự & yêu cầu hỗ trợ (attachment, staff_daily_assignment & support_request)
     DELETE FROM attachment;
+    DELETE FROM staff_daily_assignment;
     DELETE FROM support_request;
 
     -- 1.8 Xóa sổ cái kế toán & lịch sử giao dịch thanh toán (ledger_entry & payment_transaction)
