@@ -60,7 +60,7 @@ export const ContractDashboardPage: React.FC = () => {
   const [showDirectContractModal, setShowDirectContractModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  const handleDirectContractSuccess = (_newContract: any, message: string) => {
+  const handleDirectContractSuccess = (_newContract: unknown, message: string) => {
     setToastMessage({ text: message, type: 'success' });
     loadData(true);
     setTimeout(() => setToastMessage(null), 4000);
@@ -112,11 +112,6 @@ export const ContractDashboardPage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
-
-  // Reset về trang 1 khi tìm kiếm, đổi khu vực hoặc đổi pageSize
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, selectedRegion, pageSize]);
 
   // Tổng hợp KPI toàn hệ thống
   const globalKpis = useMemo(() => {
@@ -199,7 +194,10 @@ export const ContractDashboardPage: React.FC = () => {
               type="text"
               placeholder="Tìm kiếm cơ sở..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
             />
           </div>
@@ -247,7 +245,7 @@ export const ContractDashboardPage: React.FC = () => {
 
           <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-3 py-1.5 rounded-xl border border-emerald-500/30">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Active:</span>
+            <span>Đang hiệu lực:</span>
             <span className="font-mono font-bold text-white text-sm">
               {globalKpis.active}
             </span>
@@ -273,7 +271,10 @@ export const ContractDashboardPage: React.FC = () => {
             return (
               <button
                 key={tab.value}
-                onClick={() => setSelectedRegion(tab.value)}
+                onClick={() => {
+                  setSelectedRegion(tab.value);
+                  setCurrentPage(1);
+                }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
                   isActive
                     ? 'bg-white text-slate-900 shadow-2xs font-bold'
@@ -472,7 +473,10 @@ export const ContractDashboardPage: React.FC = () => {
             totalItems={filteredFacilities.length}
             pageSize={pageSize}
             pageSizeOptions={[6, 12, 24, 48]}
-            onPageSizeChange={(newSize) => setPageSize(newSize)}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setCurrentPage(1);
+            }}
             showAlways={true}
             itemName="cơ sở"
             onPageChange={(page) => setCurrentPage(page)}

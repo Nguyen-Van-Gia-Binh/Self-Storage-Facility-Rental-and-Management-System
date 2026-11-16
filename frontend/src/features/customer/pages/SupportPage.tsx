@@ -220,9 +220,9 @@ export const SupportPage: React.FC = () => {
     .filter(t => {
       // Tab filter
       if (activeTab === 'ACTIVE') {
-        if (!['NEW', 'ASSIGNED', 'IN_PROGRESS'].includes(t.status)) return false;
+        if (!['NEW', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED'].includes(t.status)) return false;
       } else if (activeTab === 'CLOSED') {
-        if (!['CLOSED', 'AUTO_CLOSED', 'RESOLVED'].includes(t.status)) return false;
+        if (!['CLOSED', 'AUTO_CLOSED'].includes(t.status)) return false;
       }
 
       // Search query
@@ -267,8 +267,8 @@ export const SupportPage: React.FC = () => {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   // Metrics count
-  const countInProgress = tickets.filter(t => ['NEW', 'ASSIGNED', 'IN_PROGRESS'].includes(t.status)).length;
-  const countClosed = tickets.filter(t => ['CLOSED', 'AUTO_CLOSED', 'RESOLVED'].includes(t.status)).length;
+  const countInProgress = tickets.filter(t => ['NEW', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED'].includes(t.status)).length;
+  const countClosed = tickets.filter(t => ['CLOSED', 'AUTO_CLOSED'].includes(t.status)).length;
 
 
 

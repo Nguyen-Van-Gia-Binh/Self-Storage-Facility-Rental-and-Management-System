@@ -51,9 +51,9 @@ export function parseResolutionNote(rawNote?: string): ResolutionReportInfo {
   const note = rawNote.trim();
 
   // Kiểm tra pattern phân định lỗi do công ty
-  const isCompany = /l(ỗ|[\?o])i\s*do\s*c(ô|[\?o])ng\s*ty/i.test(note) || /\[Tr.*ch nhi.*m:.*c.*ng ty.*\]/i.test(note);
+  const isCompany = /l(ỗ|[?o])i\s*do\s*c(ô|[?o])ng\s*ty/i.test(note) || /\[Tr.*ch nhi.*m:.*c.*ng ty.*\]/i.test(note);
   // Kiểm tra pattern phân định lỗi do khách hàng
-  const isCustomer = /l(ỗ|[\?o])i\s*do\s*kh(á|[\?a])ch\s*h(à|[\?a])ng/i.test(note) || /\[Tr.*ch nhi.*m:.*kh.*ch h.*ng.*\]/i.test(note);
+  const isCustomer = /l(ỗ|[?o])i\s*do\s*kh(á|[?a])ch\s*h(à|[?a])ng/i.test(note) || /\[Tr.*ch nhi.*m:.*kh.*ch h.*ng.*\]/i.test(note);
 
   let faultParty: 'COMPANY' | 'CUSTOMER' | 'NONE' = 'NONE';
   let faultPartyLabel = 'Đã hoàn tất khắc phục';
@@ -74,19 +74,19 @@ export function parseResolutionNote(rawNote?: string): ResolutionReportInfo {
     faultPartyLabel = 'Lỗi phát sinh do phía khách hàng';
 
     // Bóc tách Phụ phí
-    const feeMatch = note.match(/Ph[ụ\?u]\s*ph[í\?i]:\s*([^|\]]+)/i);
+    const feeMatch = note.match(/Ph[ụ?u]\s*ph[í?i]:\s*([^|\]]+)/i);
     if (feeMatch) {
       surchargesText = feeMatch[1].trim();
     }
 
     // Bóc tách Tổng thu
-    const totalMatch = note.match(/T[ổ\?o]ng\s*thu:\s*([^|\]]+)/i);
+    const totalMatch = note.match(/T[ổ?o]ng\s*thu:\s*([^|\]]+)/i);
     if (totalMatch) {
       totalCollected = totalMatch[1].trim();
     }
 
     // Bóc tách xác nhận thanh toán
-    if (/thanh\s*to[á\?a]n/i.test(note)) {
+    if (/thanh\s*to[á?a]n/i.test(note)) {
       isPaidFully = true;
     }
   }
@@ -109,6 +109,7 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
   ticket,
   isOpen,
   onClose,
+  onConfirmResolution,
   onCancelTicket,
 }) => {
   const [submitting, setSubmitting] = useState(false);
@@ -408,7 +409,7 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 shrink-0">
           <div>
             {ticket.status === 'NEW' && onCancelTicket && (
               <button
@@ -425,14 +426,59 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
             )}
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onClose}
-            className="text-xs cursor-pointer"
-          >
-            Đóng cửa sổ
-          </Button>
+          <div className="flex items-center gap-2">
+            {ticket.status === 'RESOLVED' && onConfirmResolution && (
+              <>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={async () => {
+                    const notes = window.prompt('Vui lòng nhập lý do chưa hài lòng (để nhân viên xử lý tiếp):');
+                    if (notes === null) return;
+                    try {
+                      setSubmitting(true);
+                      await onConfirmResolution(ticket.id, false, notes.trim() || undefined);
+                      onClose();
+                    } catch (e) {
+                      console.error(e);
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 text-xs font-semibold cursor-pointer disabled:opacity-50"
+                >
+                  Chưa đạt (Yêu cầu làm lại)
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={async () => {
+                    try {
+                      setSubmitting(true);
+                      await onConfirmResolution(ticket.id, true);
+                      onClose();
+                    } catch (e) {
+                      console.error(e);
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
+                >
+                  Nghiệm thu & Đóng phiếu
+                </button>
+              </>
+            )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onClose}
+              className="text-xs cursor-pointer"
+            >
+              Đóng cửa sổ
+            </Button>
+          </div>
         </div>
 
         {/* Lightbox Image Zoom Modal */}

@@ -48,6 +48,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @RequiredArgsConstructor
 public class RenewalServiceImpl implements RenewalService {
 
+    private static final long LATE_ADMIN_FEE = 200_000L; // BR-REN-10 renewal.late_admin_fee
+
     private final RentalContractRepository rentalContractRepository;
     private final ContractRenewalRepository contractRenewalRepository;
     private final ReservationRepository reservationRepository;
@@ -158,7 +160,7 @@ public class RenewalServiceImpl implements RenewalService {
         long lateAdminFee = 0L;
         long rentalFeeAmount = paid;
         if (isForce || (paid > getLatestMonthlyPrice(contract) * months)) {
-            lateAdminFee = 200000L;
+            lateAdminFee = LATE_ADMIN_FEE;
             rentalFeeAmount = Math.max(0L, paid - lateAdminFee);
             isForce = true;
         }
@@ -301,7 +303,7 @@ public class RenewalServiceImpl implements RenewalService {
 
                 long monthlyPrice = getLatestMonthlyPrice(contract);
                 long rentalFeeAmount = monthlyPrice * months;
-                long lateAdminFee = 200000L;
+                long lateAdminFee = LATE_ADMIN_FEE;
                 long totalAmount = rentalFeeAmount + lateAdminFee;
 
                 RenewalQuoteResponse quote = renewalMapper.toQuoteResponse(
@@ -331,7 +333,7 @@ public class RenewalServiceImpl implements RenewalService {
 
         long monthlyPrice = getLatestMonthlyPrice(contract);
         long rentalFeeAmount = monthlyPrice * months;
-        long lateAdminFee = 200000L; // renewal.late_admin_fee theo BR-REN-10
+        long lateAdminFee = LATE_ADMIN_FEE; // renewal.late_admin_fee theo BR-REN-10
         long totalAmount = rentalFeeAmount + lateAdminFee;
 
         return renewalMapper.toQuoteResponse(

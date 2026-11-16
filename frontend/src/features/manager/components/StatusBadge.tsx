@@ -40,12 +40,12 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; dotColor
 
   // Trạng thái Hợp đồng (ManagerContractStatus)
   ACTIVE: {
-    label: 'Active',
+    label: 'Đang hiệu lực',
     className: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
     dotColor: 'bg-emerald-500',
   },
   PENDING_RETURN: {
-    label: 'Pending Return',
+    label: 'Chờ trả kho',
     className: 'bg-amber-50 text-amber-700 border-amber-200/80',
     dotColor: 'bg-amber-500',
   },
@@ -55,37 +55,37 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; dotColor
     dotColor: 'bg-teal-500',
   },
   OVERDUE: {
-    label: 'Overdue',
+    label: 'Quá hạn',
     className: 'bg-orange-50 text-orange-700 border-orange-200/80',
     dotColor: 'bg-orange-500',
   },
   TERMINATED: {
-    label: 'Terminated',
+    label: 'Đã chấm dứt',
     className: 'bg-rose-50 text-rose-700 border-rose-200/80',
     dotColor: 'bg-rose-500',
   },
   CLOSED: {
-    label: 'Closed',
+    label: 'Đã kết thúc',
     className: 'bg-slate-100 text-slate-700 border-slate-200',
     dotColor: 'bg-slate-400',
   },
   PENDING_CHECK_IN: {
-    label: 'Pending Check-in',
+    label: 'Chờ nhận kho',
     className: 'bg-blue-50 text-blue-700 border-blue-200/80',
     dotColor: 'bg-blue-500',
   },
   RELOCATION_PENDING: {
-    label: 'Chờ gán lại ô kho',
+    label: 'Chờ đổi ô kho',
     className: 'bg-amber-50 text-amber-800 border-amber-300 font-semibold',
     dotColor: 'bg-amber-500 animate-pulse',
   },
   AWAITING_RELOCATION: {
-    label: 'Chờ gán lại ô kho',
+    label: 'Chờ đổi ô kho',
     className: 'bg-amber-50 text-amber-800 border-amber-300 font-semibold',
     dotColor: 'bg-amber-500 animate-pulse',
   },
   CANCELLED: {
-    label: 'Hủy nhận kho',
+    label: 'Đã hủy',
     className: 'bg-amber-50 text-amber-800 border-amber-300 font-bold',
     dotColor: 'bg-amber-500 animate-pulse',
   },

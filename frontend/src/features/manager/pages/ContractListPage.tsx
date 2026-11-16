@@ -1,5 +1,5 @@
 // frontend/src/features/manager/pages/ContractListPage.tsx
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -30,12 +30,12 @@ export type ContractTabFilter =
 
 const STATUS_TABS: { label: string; value: ContractTabFilter }[] = [
   { label: 'Tất cả', value: 'ALL' },
-  { label: 'Active', value: 'ACTIVE' },
+  { label: 'Đang hiệu lực', value: 'ACTIVE' },
   { label: 'Chờ quyết toán', value: 'PENDING_RETURN' },
-  { label: 'Overdue', value: 'OVERDUE' },
-  { label: 'Terminated', value: 'TERMINATED' },
-  { label: 'Closed', value: 'CLOSED' },
-  { label: 'Chờ nhận', value: 'PENDING_CHECK_IN' },
+  { label: 'Quá hạn', value: 'OVERDUE' },
+  { label: 'Đã chấm dứt', value: 'TERMINATED' },
+  { label: 'Đã đóng', value: 'CLOSED' },
+  { label: 'Chờ nhận kho', value: 'PENDING_CHECK_IN' },
 ];
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -66,47 +66,40 @@ export const ContractListPage: React.FC = () => {
   const [selectedForSettlement, setSelectedForSettlement] = useState<ManagerContractItem | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  const handleDirectContractSuccess = (_newContract: any, message: string) => {
+  const handleDirectContractSuccess = (_newContract: unknown, message: string) => {
     setToastMessage({ text: message, type: 'success' });
     loadData(true);
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  const loadData = useCallback(
-    async (isManual = false) => {
-      if (!facilityIdNum) return;
-      if (isManual) setRefreshing(true);
-      else setLoading(true);
-      setError(null);
+  const loadData = async (isManual = false) => {
+    if (!facilityIdNum) return;
+    if (isManual) setRefreshing(true);
+    else setLoading(true);
+    setError(null);
 
-      try {
-        // 1. Tải thông tin cơ sở
-        const facList = await fetchMyAssignedFacilities();
-        const currentFac = facList.find((f) => f.id === facilityIdNum) || null;
-        setFacility(currentFac);
+    try {
+      // 1. Tải thông tin cơ sở
+      const facList = await fetchMyAssignedFacilities();
+      const currentFac = facList.find((f) => f.id === facilityIdNum) || null;
+      setFacility(currentFac);
 
-        // 2. Tải danh sách hợp đồng của cơ sở
-        const list = await getManagerContracts({ facilityId: facilityIdNum, status: 'ALL' });
-        setContracts(list || []);
-      } catch (err) {
-        console.error('Lỗi khi tải danh sách hợp đồng:', err);
-        setError('Không thể tải danh sách hợp đồng của cơ sở này.');
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [facilityIdNum]
-  );
+      // 2. Tải danh sách hợp đồng của cơ sở
+      const list = await getManagerContracts({ facilityId: facilityIdNum, status: 'ALL' });
+      setContracts(list || []);
+    } catch (err) {
+      console.error('Lỗi khi tải danh sách hợp đồng:', err);
+      setError('Không thể tải danh sách hợp đồng của cơ sở này.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
-
-  // Reset trang về 1 khi đổi bộ lọc hoặc đổi pageSize
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, statusFilter, sortField, sortDirection, pageSize]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [facilityIdNum]);
 
   // Đếm số lượng theo từng tab trạng thái
   const tabCounts = useMemo(() => {
@@ -138,6 +131,7 @@ export const ContractListPage: React.FC = () => {
   }, [contracts]);
 
   const handleSort = (field: ContractSortField) => {
+    setCurrentPage(1);
     if (sortField === field) {
       setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
@@ -180,7 +174,7 @@ export const ContractListPage: React.FC = () => {
 
     // 2. Sort
     return filtered.sort((a, b) => {
-      let cmp = 0;
+      let cmp: number;
       switch (sortField) {
         case 'code':
           cmp = a.code.localeCompare(b.code, 'vi', { numeric: true });
@@ -253,7 +247,10 @@ export const ContractListPage: React.FC = () => {
               type="text"
               placeholder="Tìm mã HĐ, tên khách, số điện thoại..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
             />
           </div>
@@ -298,7 +295,10 @@ export const ContractListPage: React.FC = () => {
           return (
             <button
               key={tab.value}
-              onClick={() => setStatusFilter(tab.value)}
+              onClick={() => {
+                setStatusFilter(tab.value);
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
                 isActive
                   ? 'bg-white text-slate-900 shadow-2xs font-bold'
@@ -342,7 +342,10 @@ export const ContractListPage: React.FC = () => {
             totalItems={processedContracts.length}
             pageSize={pageSize}
             pageSizeOptions={[5, 10, 20, 50]}
-            onPageSizeChange={(newSize) => setPageSize(newSize)}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setCurrentPage(1);
+            }}
             showAlways={true}
             itemName="hợp đồng"
             onPageChange={(page) => setCurrentPage(page)}
