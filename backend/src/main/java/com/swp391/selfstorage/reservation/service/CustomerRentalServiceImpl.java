@@ -6,6 +6,7 @@ import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.RentalContract;
+import com.swp391.selfstorage.contract.entity.ReturnRequest;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.contract.service.ContractService;
 import com.swp391.selfstorage.contract.repository.ReturnRequestRepository;
@@ -281,6 +282,59 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
                             detail.setRelocationSupportRequestCode(ticket.getCode());
                             detail.setRelocationReason(ticket.getDescription());
                         });
+            }
+        }
+
+        // Điền thông tin quyết toán thanh lý hợp đồng (Settlement Addendum - PL-SETTLEMENT)
+        if (contract.getStatus() == ContractStatus.CLOSED
+                || contract.getStatus() == ContractStatus.PENDING_RETURN
+                || contract.getStatus() == ContractStatus.TERMINATED
+                || contract.getStatus() == ContractStatus.CANCELLED) {
+
+            ReturnRequest returnReq = (returnRequestRepository != null && contract.getId() != null)
+                    ? returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contract.getId()).orElse(null)
+                    : null;
+
+            if (returnReq != null) {
+                if (returnReq.getSettledAt() != null) {
+                    detail.setSettledAt(returnReq.getSettledAt());
+                }
+                if (returnReq.getSettledBy() != null && userRepository != null) {
+                    userRepository.findById(returnReq.getSettledBy()).ifPresent(u -> detail.setSettledByName(u.getFullName()));
+                }
+                if (returnReq.getDepositRefundAmount() != null) {
+                    detail.setSettlementRefundAmount(returnReq.getDepositRefundAmount());
+                }
+                detail.setSettlementDamageCost(returnReq.getDamageCost());
+                detail.setSettlementNote(returnReq.getConditionNote());
+            }
+
+            if (contractService != null && contract.getId() != null) {
+                try {
+                    com.swp391.selfstorage.contract.dto.SettlementPreviewResponse preview =
+                            contractService.getSettlementPreview(contract.getId(), null);
+                    if (preview != null) {
+                        detail.setSettlementType(preview.getSettlementType());
+                        detail.setSettlementDepositForfeited(preview.getDepositForfeited());
+                        detail.setSettlementOverdueFee(preview.getOverdueFee());
+                        detail.setSettlementEarlyRentRefund(preview.getEarlyRentRefund());
+                        detail.setSettlementUnusedDays(preview.getUnusedDays());
+                        detail.setSettlementDailyRent(preview.getDailyRent());
+                        if (detail.getSettlementRefundAmount() == null) {
+                            detail.setSettlementRefundAmount(preview.getDepositRefundAmount());
+                        }
+                        if (detail.getSettlementDamageCost() == null) {
+                            detail.setSettlementDamageCost(preview.getDamageCost());
+                        }
+                        detail.setSettlementPayableAmount(preview.getPayableAmount());
+                        if ("OVERDUE_TERMINATED".equals(preview.getSettlementType())) {
+                            long sealingFee = Math.max(0, preview.getDepositAmount() - preview.getOverdueFee());
+                            detail.setSettlementSealingFee(sealingFee);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Không thể lấy trước bảng quyết toán cho hợp đồng {}: {}", contract.getId(), e.getMessage());
+                }
             }
         }
 

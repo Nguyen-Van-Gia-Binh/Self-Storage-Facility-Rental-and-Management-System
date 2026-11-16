@@ -2,10 +2,12 @@ import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { RentedContract } from '../types';
 import type { CustomerRentalDetail } from '@/api/customerRentals';
+import type { ContractRenewalHistoryItem } from '@/api/contract';
 
 export interface ContractPrintDocumentProps {
   contract: RentedContract;
   detail?: CustomerRentalDetail | null;
+  renewals?: ContractRenewalHistoryItem[];
 }
 
 function formatCurrencyVND(amount: number): string {
@@ -15,6 +17,7 @@ function formatCurrencyVND(amount: number): string {
 export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
   contract,
   detail,
+  renewals = [],
 }) => {
   const effectiveContractNumber = detail?.contractCode || contract.contractNumber || 'CTR-2026-0000';
   const effectiveUnitNumber = detail?.unitCode || contract.unitNumber || 'HC-B203';
@@ -89,27 +92,34 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
   const printMonth = dateParts[1] || '09';
   const printDay = dateParts[2] || '15';
 
-  // Xác định chữ Watermark tương ứng
-  let watermarkText = 'HỢP ĐỒNG HIỆU LỰC';
-  if (contract.status === 'TERMINATED') {
-    if (contract.handoverRejected || contract.contractNumber?.includes('REJ') || contract.contractNumber?.includes('REFUND')) {
-      watermarkText = 'TỪ CHỐI NHẬN - HOÀN 100%';
-    } else if (!contract.unitNumber || contract.unitNumber === 'Chưa gán ô kho' || contract.contractNumber?.includes('NO-UNIT')) {
-      watermarkText = 'ĐÃ HỦY - HOÀN CỌC 100%';
-    } else {
-      watermarkText = 'ĐÃ HỦY - GIẢI PHÓNG Ô';
-    }
-  } else if (contract.relocationEligible || detail?.relocationEligible) {
-    watermarkText = 'ĐANG ĐỔI Ô KHO';
-  } else if (contract.status === 'OVERDUE') {
-    watermarkText = 'HỢP ĐỒNG QUÁ HẠN';
-  } else if (contract.status === 'PENDING_RETURN') {
-    watermarkText = 'CHỜ TRẢ KHO & HOÀN CỌC';
-  } else if (contract.status === 'CLOSED') {
-    watermarkText = 'ĐÃ THANH LÝ HỢP ĐỒNG';
-  } else if (isPendingCheckin) {
-    watermarkText = 'CHỜ BÀN GIAO';
-  }
+  // Quyết toán tài chính & Tất toán thanh lý hợp đồng (PL-SETTLEMENT)
+  const hasSettlement = isClosed || Boolean(detail?.settledAt) || Boolean(detail?.settlementType);
+  const settlementType = detail?.settlementType || (
+    (contract.status as string) === 'CANCELLED'
+      ? 'CANCELLED_CHECKIN'
+      : contract.status === 'TERMINATED'
+      ? detail?.checkinDate == null ? 'REJECTED_CHECKIN' : 'OVERDUE_TERMINATED'
+      : 'NORMAL'
+  );
+  const settledByName = detail?.settledByName || 'Quản lý cơ sở';
+  const settledAtDate = detail?.settledAt ? new Date(detail.settledAt) : new Date();
+  const settleYear = String(settledAtDate.getFullYear());
+  const settleMonth = String(settledAtDate.getMonth() + 1).padStart(2, '0');
+  const settleDay = String(settledAtDate.getDate()).padStart(2, '0');
+  const settlementRefund = detail?.settlementRefundAmount ?? (
+    isClosed ? (contract.depositHeld ?? effectiveDeposit) : 0
+  );
+  const settlementPayable = detail?.settlementPayableAmount ?? 0;
+  const settlementDamage = detail?.settlementDamageCost ?? 0;
+  const settlementOverdue = detail?.settlementOverdueFee ?? (detail?.overdueFeeAccrued ?? 0);
+  const settlementDepositForfeited = detail?.settlementDepositForfeited ?? (
+    settlementType === 'EARLY_RETURN' || settlementType === 'OVERDUE_TERMINATED' ? effectiveDeposit : 0
+  );
+  const settlementEarlyRentRefund = detail?.settlementEarlyRentRefund ?? 0;
+  const settlementSealingFee = detail?.settlementSealingFee ?? (
+    settlementType === 'OVERDUE_TERMINATED' ? Math.max(0, effectiveDeposit - settlementOverdue) : 0
+  );
+  const settlementNote = detail?.settlementNote || 'Đã đối soát đầy đủ hiện trạng vật chất và nghĩa vụ tài chính.';
 
   const qrPayload = JSON.stringify({
     contract: effectiveContractNumber,
@@ -126,12 +136,6 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
       className="contract-print-document font-serif text-[12.5px] leading-relaxed text-slate-900 bg-white p-6 max-w-[210mm] mx-auto print:p-0 print:m-0 relative overflow-hidden"
       style={{ fontFamily: "'Times New Roman', Times, serif" }}
     >
-      {/* Watermark mờ chìm văn bản pháp lý */}
-      <div className="pointer-events-none select-none absolute inset-0 flex items-center justify-center opacity-[0.05] z-0 overflow-hidden">
-        <div className="transform -rotate-25 font-black text-6xl tracking-widest text-slate-900 border-8 border-slate-900 px-8 py-4 uppercase text-center max-w-lg">
-          {watermarkText}
-        </div>
-      </div>
       {/* 1. Quốc hiệu & Tiêu ngữ chuẩn văn bản pháp lý Việt Nam đặt trên cùng chính giữa */}
       <div className="text-center mb-3">
         <div className="font-bold text-[13px] uppercase tracking-wide text-slate-950">
@@ -515,6 +519,522 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 5. CÁC PHỤ LỤC HỢP ĐỒNG IN ẤN RỜI (TỰ ĐỘNG NGẮT TRANG RIÊNG BIỆT THEO ĐIỀU 403 BLDS) */}
+      {renewals && renewals.length > 0 && renewals.map((renewal, idx) => {
+        const addendumCode = `PL-${String(idx + 1).padStart(2, '0')}`;
+        const renewalDateParts = (renewal.createdAt ? renewal.createdAt.slice(0, 10) : (renewal.previousEndDate || effectiveStartDate)).split('-');
+        const rYear = renewalDateParts[0] || printYear;
+        const rMonth = renewalDateParts[1] || printMonth;
+        const rDay = renewalDateParts[2] || printDay;
+        const isPriceChanged = renewal.monthlyPriceSnapshot && renewal.monthlyPriceSnapshot !== effectiveMonthlyRent;
+        const priceDiff = (renewal.monthlyPriceSnapshot || effectiveMonthlyRent) - effectiveMonthlyRent;
+
+        const addendumQrPayload = JSON.stringify({
+          type: 'CONTRACT_ADDENDUM',
+          addendumCode,
+          contract: effectiveContractNumber,
+          customer: effectiveCustomerName,
+          previousEnd: renewal.previousEndDate,
+          newEnd: renewal.newEndDate,
+          monthlyPrice: renewal.monthlyPriceSnapshot || effectiveMonthlyRent,
+          paid: renewal.totalPaid || renewal.rentalFeeAmount,
+        });
+
+        return (
+          <section
+            key={renewal.id || idx}
+            data-testid={`contract-addendum-${idx + 1}`}
+            className="contract-addendum-page ss-page-break print:break-before-page pt-8 border-t-2 border-dashed border-slate-300 print:border-none font-serif text-[12.5px] leading-relaxed text-slate-900"
+          >
+            {/* Quốc hiệu & Tiêu ngữ */}
+            <div className="text-center mb-3">
+              <div className="font-bold text-[13px] uppercase tracking-wide text-slate-950">
+                CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+              </div>
+              <div className="font-bold text-[12px] text-slate-950 mt-0.5">
+                Độc lập - Tự do - Hạnh phúc
+              </div>
+              <div className="w-36 mx-auto border-b border-slate-800 my-1.5" />
+              <div className="text-[11px] italic text-slate-600">
+                {effectiveFacilityAddress.includes('Hà Nội') ? 'Hà Nội' : 'TP. Hồ Chí Minh'}, ngày {rDay} tháng {rMonth} năm {rYear}
+              </div>
+            </div>
+
+            {/* Thông tin đơn vị SmartStorage */}
+            <div className="flex justify-between items-center text-[11px] text-slate-700 mb-3">
+              <div>
+                <span className="font-bold uppercase tracking-wider text-slate-900 text-[12px]">SMARTSTORAGE VIỆT NAM</span>
+                <span className="mx-1.5 text-slate-400">·</span>
+                <span className="italic">{effectiveFacilityName}</span>
+              </div>
+              <div className="text-[10.5px] text-slate-500">
+                Hotline: <strong className="text-slate-700">{effectiveFacilityPhone}</strong> · www.smartstorage.vn
+              </div>
+            </div>
+
+            {/* Tiêu đề Phụ lục */}
+            <div className="text-center my-4">
+              <h2 className="text-[15px] font-bold uppercase tracking-wide leading-tight">
+                PHỤ LỤC HỢP ĐỒNG SỐ {String(idx + 1).padStart(2, '0')}
+                <br />
+                V/V GIA HẠN THỜI HẠN THUÊ Ô KHO &amp; ĐIỀU CHỈNH ĐƠN GIÁ (NẾU CÓ)
+              </h2>
+              <div className="text-[12px] font-bold mt-1 tracking-wider text-slate-800">
+                (Đính kèm Hợp đồng thuê ô kho tự quản số: <span className="font-mono text-[13px]">{effectiveContractNumber}</span>)
+              </div>
+              <p className="text-[10.5px] italic text-slate-600 mt-0.5">
+                (Xác lập theo Điều 403 Bộ luật Dân sự 2015 &amp; Luật Giao dịch Điện tử 2023)
+              </p>
+            </div>
+
+            {/* Căn cứ pháp lý */}
+            <div className="text-[11px] italic text-slate-700 space-y-0.5 mb-3">
+              <p>• Căn cứ Bộ luật Dân sự số 91/2015/QH13 có hiệu lực thi hành;</p>
+              <p>• Căn cứ Hợp đồng thuê ô kho tự quản số <strong>{effectiveContractNumber}</strong> đã ký kết giữa hai bên;</p>
+              <p>• Căn cứ đề nghị gia hạn và thanh toán giao dịch điện tử đã được hai bên đồng thuận ghi nhận vào Hệ thống.</p>
+            </div>
+
+            {/* Thông tin 2 bên */}
+            <div className="grid grid-cols-2 gap-6 text-[11.5px] mb-3 leading-relaxed">
+              <div>
+                <div className="font-bold uppercase text-slate-950 mb-0.5">BÊN CHO THUÊ (BÊN A):</div>
+                <p>• <strong>Cơ sở:</strong> {effectiveFacilityName}</p>
+                <p>• <strong>Đại diện tiếp nhận:</strong> {effectiveHandoverStaff}</p>
+              </div>
+              <div>
+                <div className="font-bold uppercase text-slate-950 mb-0.5">BÊN THUÊ KHO (BÊN B):</div>
+                <p>• <strong>Khách hàng:</strong> {effectiveCustomerName}</p>
+                <p>• <strong>Số CCCD:</strong> <span className="font-mono font-bold">{effectiveCustomerIdentity}</span></p>
+              </div>
+            </div>
+
+            <p className="text-[11.5px] mb-2 font-medium">Hai bên thống nhất ký kết Phụ lục hợp đồng với các nội dung sau:</p>
+
+            {/* Nội dung thỏa thuận */}
+            <div className="space-y-2 text-[11.5px] mb-4">
+              <div>
+                <strong>Điều 1: Gia hạn thời hạn thuê ô kho {effectiveUnitNumber}</strong>
+                <p className="pl-4 text-[11px] text-slate-800">
+                  1.1. Thời hạn thuê trước khi gia hạn: Kết thúc ngày <strong>{renewal.previousEndDate}</strong>.
+                </p>
+                <p className="pl-4 text-[11px] text-slate-800">
+                  1.2. Thời gian gia hạn bổ sung: <strong>{renewal.renewalMonths} tháng</strong>.
+                </p>
+                <p className="pl-4 text-[11px] text-slate-800">
+                  1.3. Thời hạn thuê mới có hiệu lực đến hết ngày: <strong>{renewal.newEndDate}</strong>.
+                </p>
+              </div>
+
+              <div>
+                <strong>Điều 2: Biểu giá thuê kỳ gia hạn &amp; Bảo lưu tiền cọc bảo đảm</strong>
+                <p className="pl-4 text-[11px] text-slate-800">
+                  2.1. Đơn giá thuê trong kỳ gia hạn: <strong>{formatCurrencyVND(renewal.monthlyPriceSnapshot || effectiveMonthlyRent)} / tháng</strong>.
+                  {isPriceChanged ? (
+                    <span className="italic block mt-0.5 text-slate-600">
+                      * Ghi chú điều chỉnh: {priceDiff > 0 ? `Tăng ${formatCurrencyVND(priceDiff)}/tháng` : `Giảm ${formatCurrencyVND(Math.abs(priceDiff))}/tháng`} theo Biểu giá niêm yết hiện hành của Bên A. Nguyên tắc không áp dụng hồi tố kỳ thuê ban đầu theo quy định tại Điều 403 Bộ luật Dân sự.
+                    </span>
+                  ) : (
+                    <span className="italic block mt-0.5 text-slate-600">
+                      * Giữ nguyên mức đơn giá thuê ban đầu theo hợp đồng gốc.
+                    </span>
+                  )}
+                </p>
+                <p className="pl-4 text-[11px] text-slate-800">
+                  2.2. Tổng số tiền gia hạn đã thanh toán: <strong>{formatCurrencyVND(renewal.totalPaid || renewal.rentalFeeAmount)}</strong> (Phương thức: {renewal.paymentMethod || 'Thanh toán trực tuyến / Cổng VNPay'}).
+                </p>
+                <p className="pl-4 text-[11px] text-slate-800">
+                  2.3. Tiền cọc bảo đảm (Theo quy định BR-DEP-01): <strong>Bảo lưu 100% khoản cọc ban đầu là {formatCurrencyVND(effectiveDeposit)}</strong>. Bên Cho Thuê không thu thêm bất kỳ khoản bổ sung tiền cọc nào đối với kỳ gia hạn này.
+                </p>
+              </div>
+
+              <div>
+                <strong>Điều 3: Điều khoản thi hành &amp; Hiệu lực pháp lý</strong>
+                <p className="pl-4 text-[11px] text-slate-800">
+                  3.1. Phụ lục này có hiệu lực kể từ ngày <strong>{renewal.previousEndDate}</strong> và là bộ phận cấu thành không thể tách rời của Hợp đồng số <strong>{effectiveContractNumber}</strong>.
+                </p>
+                <p className="pl-4 text-[11px] text-slate-800">
+                  3.2. Mọi điều khoản khác của Hợp đồng số {effectiveContractNumber} không được sửa đổi, bổ sung tại Phụ lục này vẫn giữ nguyên giá trị và hiệu lực pháp lý ràng buộc hai bên.
+                </p>
+              </div>
+            </div>
+
+            {/* Chữ ký số 2 bên của phụ lục */}
+            <div className="grid grid-cols-2 gap-6 text-center mt-6 break-inside-avoid">
+              <div>
+                <div className="font-bold uppercase text-[12px] text-slate-950">
+                  ĐẠI DIỆN BÊN CHO THUÊ (BÊN A)
+                </div>
+                <div className="text-[10.5px] text-slate-500 italic mb-1">Ban Quản lý cơ sở</div>
+                <div className="my-2 py-1 px-3 inline-block border border-emerald-700 bg-emerald-50/50 text-[11px] font-bold text-emerald-800 tracking-wider">
+                  ✓ ĐÃ KÝ SỐ XÁC NHẬN
+                </div>
+                <div className="font-semibold text-[11.5px] text-slate-800 mt-1">{effectiveHandoverStaff}</div>
+              </div>
+
+              <div>
+                <div className="font-bold uppercase text-[12px] text-slate-950">
+                  ĐẠI DIỆN BÊN THUÊ KHO (BÊN B)
+                </div>
+                <div className="text-[10.5px] text-slate-500 italic mb-1">Khách hàng xác nhận</div>
+                <div className="my-2 py-1 px-3 inline-block border border-emerald-700 bg-emerald-50/50 text-[11px] font-bold text-emerald-800 tracking-wider">
+                  ✓ ĐÃ XÁC NHẬN ĐIỆN TỬ
+                </div>
+                <div className="font-semibold text-[11.5px] text-slate-800 mt-1">{effectiveCustomerName}</div>
+              </div>
+            </div>
+
+            {/* Footer QR phụ lục */}
+            <div className="pt-3 mt-4 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-500 break-inside-avoid">
+              <div>
+                <p>Chứng thực Phụ lục Hợp đồng điện tử SmartStorage System.</p>
+                <p>Mã phụ lục: <strong className="font-mono">{addendumCode} / {effectiveContractNumber}</strong></p>
+              </div>
+              <div className="flex items-center gap-2">
+                <QRCodeSVG
+                  value={addendumQrPayload}
+                  size={44}
+                  level="M"
+                  className="border border-slate-200 p-0.5 bg-white"
+                />
+                <div className="text-[9px] text-slate-400 max-w-[110px] leading-tight text-right">
+                  Quét QR để xác minh hiệu lực phụ lục
+                </div>
+              </div>
+            </div>
+          </section>
+        );
+      })}
+
+      {/* 6. PHỤ LỤC ĐIỀU CHUYỂN Ô KHO KỸ THUẬT IN ẤN RỜI (NẾU CÓ) */}
+      {relocationCode && (
+        <section
+          data-testid="contract-addendum-relocation"
+          className="contract-addendum-page ss-page-break print:break-before-page pt-8 border-t-2 border-dashed border-slate-300 print:border-none font-serif text-[12.5px] leading-relaxed text-slate-900"
+        >
+          {/* Quốc hiệu & Tiêu ngữ */}
+          <div className="text-center mb-3">
+            <div className="font-bold text-[13px] uppercase tracking-wide text-slate-950">
+              CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+            </div>
+            <div className="font-bold text-[12px] text-slate-950 mt-0.5">
+              Độc lập - Tự do - Hạnh phúc
+            </div>
+            <div className="w-36 mx-auto border-b border-slate-800 my-1.5" />
+            <div className="text-[11px] italic text-slate-600">
+              {effectiveFacilityAddress.includes('Hà Nội') ? 'Hà Nội' : 'TP. Hồ Chí Minh'}, ngày {printDay} tháng {printMonth} năm {printYear}
+            </div>
+          </div>
+
+          <div className="text-center my-4">
+            <h2 className="text-[15px] font-bold uppercase tracking-wide leading-tight">
+              PHỤ LỤC HỢP ĐỒNG ĐIỀU CHUYỂN Ô KHO KỸ THUẬT
+            </h2>
+            <div className="text-[12px] font-bold mt-1 tracking-wider text-slate-800">
+              Mã phụ lục: <span className="font-mono text-[13px]">{relocationCode}</span> (Đính kèm Hợp đồng số: {effectiveContractNumber})
+            </div>
+          </div>
+
+          <div className="text-[11px] italic text-slate-700 space-y-0.5 mb-3">
+            <p>• Căn cứ Hợp đồng thuê ô kho tự quản số <strong>{effectiveContractNumber}</strong>;</p>
+            <p>• Căn cứ sự cố kỹ thuật phát sinh tại hiện trường và biên bản kiểm tra thực địa của Ban Quản lý.</p>
+          </div>
+
+          <div className="space-y-2 text-[11.5px] mb-4">
+            <div>
+              <strong>Điều 1: Điều chuyển sang ô kho mới thay thế</strong>
+              <p className="pl-4 text-[11px] text-slate-800">
+                1.1. Do phát sinh sự cố tại ô kho ban đầu ({relocationReason || 'Sự cố vật lý tại ô cũ'}), Bên A tiến hành bàn giao cho Bên B ô kho mới thay thế đạt chuẩn: <strong>{effectiveUnitNumber}</strong> (Loại kho: {effectiveUnitTypeName}, Tầng {effectiveFloor}).
+              </p>
+            </div>
+            <div>
+              <strong>Điều 2: Cam kết giữ nguyên quyền lợi tài chính</strong>
+              <p className="pl-4 text-[11px] text-slate-800">
+                2.1. Đơn giá thuê ({formatCurrencyVND(effectiveMonthlyRent)}/tháng) và số tiền cọc bảo đảm ({formatCurrencyVND(effectiveDeposit)}) được giữ nguyên trọn vẹn, Bên B không phải chi trả thêm bất kỳ phụ phí nào.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 text-center mt-6 break-inside-avoid">
+            <div>
+              <div className="font-bold uppercase text-[12px] text-slate-950">
+                ĐẠI DIỆN BÊN CHO THUÊ (BÊN A)
+              </div>
+              <div className="my-2 py-1 px-3 inline-block border border-emerald-700 bg-emerald-50/50 text-[11px] font-bold text-emerald-800 tracking-wider">
+                ✓ ĐÃ DUYỆT ĐIỀU CHUYỂN
+              </div>
+              <div className="font-semibold text-[11.5px] text-slate-800 mt-1">{effectiveHandoverStaff}</div>
+            </div>
+
+            <div>
+              <div className="font-bold uppercase text-[12px] text-slate-950">
+                ĐẠI DIỆN BÊN THUÊ KHO (BÊN B)
+              </div>
+              <div className="my-2 py-1 px-3 inline-block border border-emerald-700 bg-emerald-50/50 text-[11px] font-bold text-emerald-800 tracking-wider">
+                ✓ ĐÃ ĐỒNG THUẬN TIẾP NHẬN
+              </div>
+              <div className="font-semibold text-[11.5px] text-slate-800 mt-1">{effectiveCustomerName}</div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 7. PHỤ LỤC THỎA THUẬN CHẤM DỨT TRƯỚC HẠN & TRẢ KHO SỚM IN ẤN RỜI (NẾU CÓ) */}
+      {(contract.status === 'PENDING_RETURN' || Boolean(contract.scheduledReturnDate || detail?.scheduledReturnDate)) && (
+        <section
+          data-testid="contract-addendum-early-return"
+          className="contract-addendum-page ss-page-break print:break-before-page pt-8 border-t-2 border-dashed border-slate-300 print:border-none font-serif text-[12.5px] leading-relaxed text-slate-900"
+        >
+          {/* Quốc hiệu & Tiêu ngữ */}
+          <div className="text-center mb-3">
+            <div className="font-bold text-[13px] uppercase tracking-wide text-slate-950">
+              CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+            </div>
+            <div className="font-bold text-[12px] text-slate-950 mt-0.5">
+              Độc lập - Tự do - Hạnh phúc
+            </div>
+            <div className="w-36 mx-auto border-b border-slate-800 my-1.5" />
+            <div className="text-[11px] italic text-slate-600">
+              {effectiveFacilityAddress.includes('Hà Nội') ? 'Hà Nội' : 'TP. Hồ Chí Minh'}, ngày {printDay} tháng {printMonth} năm {printYear}
+            </div>
+          </div>
+
+          <div className="text-center my-4">
+            <h2 className="text-[15px] font-bold uppercase tracking-wide leading-tight">
+              PHỤ LỤC THỎA THUẬN CHẤM DỨT HỢP ĐỒNG TRƯỚC HẠN
+              <br />
+              VÀ BÀN GIAO TRẢ Ô KHO TỰ QUẢN
+            </h2>
+            <div className="text-[12px] font-bold mt-1 tracking-wider text-slate-800">
+              Mã phụ lục: <span className="font-mono text-[13px]">PL-RETURN / {effectiveContractNumber}</span>
+            </div>
+            <p className="text-[10.5px] italic text-slate-600 mt-0.5">
+              (Xác lập theo Điều 422 Bộ luật Dân sự 2015 &amp; Quy định dịch vụ SmartStorage BR-RET-06)
+            </p>
+          </div>
+
+          <div className="text-[11px] italic text-slate-700 space-y-0.5 mb-3">
+            <p>• Căn cứ Hợp đồng thuê ô kho tự quản số <strong>{effectiveContractNumber}</strong> đã ký kết giữa hai bên;</p>
+            <p>• Căn cứ nhu cầu và thông báo đề nghị trả kho của Bên B đã được Hệ thống tiếp nhận điện tử.</p>
+          </div>
+
+          <div className="space-y-2 text-[11.5px] mb-4">
+            <div>
+              <strong>Điều 1: Thỏa thuận chấm dứt thời hạn thuê kho trước hạn</strong>
+              <p className="pl-4 text-[11px] text-slate-800">
+                1.1. Hai bên thống nhất chấm dứt việc thuê ô kho <strong>{effectiveUnitNumber}</strong> trước thời hạn ban đầu ({effectiveEndDate}).
+              </p>
+              <p className="pl-4 text-[11px] text-slate-800">
+                1.2. Thời điểm Bên B tiến hành bàn giao trả kho thực tế: Ngày <strong>{detail?.scheduledReturnDate || contract.scheduledReturnDate || 'Theo đăng ký điện tử của khách hàng'}</strong>.
+              </p>
+            </div>
+            <div>
+              <strong>Điều 2: Nghĩa vụ tài chính &amp; Hoàn cọc bảo đảm</strong>
+              <p className="pl-4 text-[11px] text-slate-800">
+                2.1. Tiền cọc bảo đảm: Bên A cam kết hoàn trả 100% tiền cọc <strong>{formatCurrencyVND(effectiveDeposit)}</strong> cho Bên B sau khi hoàn tất kiểm tra vật lý hiện trường 4 tiêu chí nghiệm thu.
+              </p>
+              <p className="pl-4 text-[11px] text-slate-800">
+                2.2. Quyết toán tiền thuê chưa sử dụng: Số tiền thuê tương ứng với thời gian chưa sử dụng (nếu có) sẽ được tính toán và chi trả cho Bên B theo đúng quy định tại chính sách hoàn phí BR-RET-06.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 text-center mt-6 break-inside-avoid">
+            <div>
+              <div className="font-bold uppercase text-[12px] text-slate-950">
+                ĐẠI DIỆN BÊN CHO THUÊ (BÊN A)
+              </div>
+              <div className="my-2 py-1 px-3 inline-block border border-emerald-700 bg-emerald-50/50 text-[11px] font-bold text-emerald-800 tracking-wider">
+                ✓ ĐÃ TIẾP NHẬN YÊU CẦU
+              </div>
+              <div className="font-semibold text-[11.5px] text-slate-800 mt-1">{effectiveHandoverStaff}</div>
+            </div>
+
+            <div>
+              <div className="font-bold uppercase text-[12px] text-slate-950">
+                ĐẠI DIỆN BÊN THUÊ KHO (BÊN B)
+              </div>
+              <div className="my-2 py-1 px-3 inline-block border border-emerald-700 bg-emerald-50/50 text-[11px] font-bold text-emerald-800 tracking-wider">
+                ✓ ĐÃ XÁC NHẬN TRẢ KHO
+              </div>
+              <div className="font-semibold text-[11.5px] text-slate-800 mt-1">{effectiveCustomerName}</div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 8. BIÊN BẢN QUYẾT TOÁN TÀI CHÍNH VÀ THANH LÝ HỢP ĐỒNG IN ẤN RỜI (PL-SETTLEMENT) */}
+      {hasSettlement && (
+        <section
+          data-testid="contract-addendum-settlement"
+          className="contract-addendum-page ss-page-break print:break-before-page pt-8 border-t-2 border-dashed border-slate-300 print:border-none font-serif text-[12.5px] leading-relaxed text-slate-900"
+        >
+          {/* Quốc hiệu & Tiêu ngữ */}
+          <div className="text-center mb-3">
+            <div className="font-bold text-[13px] uppercase tracking-wide text-slate-950">
+              CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+            </div>
+            <div className="font-bold text-[12px] text-slate-950 mt-0.5">
+              Độc lập - Tự do - Hạnh phúc
+            </div>
+            <div className="w-36 mx-auto border-b border-slate-800 my-1.5" />
+            <div className="text-[11px] italic text-slate-600">
+              {effectiveFacilityAddress.includes('Hà Nội') ? 'Hà Nội' : 'TP. Hồ Chí Minh'}, ngày {settleDay} tháng {settleMonth} năm {settleYear}
+            </div>
+          </div>
+
+          <div className="text-center my-4">
+            <h2 className="text-[15px] font-bold uppercase tracking-wide leading-tight">
+              BIÊN BẢN QUYẾT TOÁN TÀI CHÍNH
+              <br />
+              VÀ TẤT TOÁN THANH LÝ HỢP ĐỒNG THUÊ KHO
+            </h2>
+            <div className="text-[12px] font-bold mt-1 tracking-wider text-slate-800">
+              Mã phụ lục: <span className="font-mono text-[13px]">PL-SETTLEMENT / {effectiveContractNumber}</span>
+            </div>
+            <p className="text-[10.5px] italic text-slate-600 mt-0.5">
+              (Căn cứ Điều 422 Bộ luật Dân sự 2015 &amp; Quy chế quản lý kho tự quản SmartStorage)
+            </p>
+          </div>
+
+          <div className="text-[11px] italic text-slate-700 space-y-0.5 mb-3">
+            <p>• Căn cứ Hợp đồng thuê ô kho tự quản số <strong>{effectiveContractNumber}</strong> ký giữa Bên A và Bên B;</p>
+            <p>• Căn cứ Biên bản nghiệm thu bàn giao hiện trạng thực tế ô kho <strong>{effectiveUnitNumber}</strong>;</p>
+            <p>• Căn cứ kết quả đối soát nghĩa vụ tài chính và phê duyệt quyết toán của Quản lý cơ sở.</p>
+          </div>
+
+          {/* Thành phần tham gia */}
+          <div className="grid grid-cols-2 gap-4 text-[11.5px] mb-3 bg-slate-50/80 p-2.5 rounded border border-slate-200">
+            <div>
+              <strong className="text-slate-950 block">ĐẠI DIỆN BÊN CHO THUÊ (BÊN A):</strong>
+              <div>Ông/Bà: <strong>{settledByName}</strong></div>
+              <div>Chức vụ: <strong>Quản lý cơ sở (Facility Manager)</strong></div>
+              <div>Đơn vị: {effectiveFacilityName}</div>
+            </div>
+            <div>
+              <strong className="text-slate-950 block">ĐẠI DIỆN BÊN THUÊ KHO (BÊN B):</strong>
+              <div>Khách hàng: <strong>{effectiveCustomerName}</strong></div>
+              <div>Số CCCD: {effectiveCustomerIdentity}</div>
+              <div>Số điện thoại: {effectiveCustomerPhone}</div>
+            </div>
+          </div>
+
+          <div className="space-y-3 text-[11.5px] mb-4">
+            <div>
+              <strong>Điều 1: Căn cứ &amp; Loại hình quyết toán hợp đồng</strong>
+              <p className="pl-4 text-[11px] text-slate-800 mt-0.5">
+                {settlementType === 'NORMAL' && '1.1. Quyết toán thanh lý hợp đồng đúng hạn / tháng cuối (BR-RET-04). Hai bên nghiệm thu hoàn tất hiện trạng ô kho, đối soát hoàn trả tiền cọc bảo đảm.'}
+                {settlementType === 'EARLY_RETURN' && '1.1. Quyết toán chấm dứt hợp đồng trước hạn theo thỏa thuận (BR-RET-06). Khách hàng được hoàn trả 100% tiền thuê của thời gian chưa sử dụng, phạt tiền cọc bảo vệ phòng trống theo quy định.'}
+                {settlementType === 'OVERDUE_TERMINATED' && '1.1. Quyết toán cưỡng chế chấm dứt hợp đồng do quá hạn D+7 (BR-OVD-07, BR-OVD-11). Toàn bộ tiền cọc được khấu trừ thanh toán nợ quá hạn và chi phí niêm phong vận chuyển về Kho Tổng.'}
+                {settlementType === 'REJECTED_CHECKIN' && '1.1. Quyết toán hủy hợp đồng do từ chối nhận kho vì lỗi cơ sở (BR-CHK-06). Khách hàng được hoàn trả 100% tiền thuê đã nộp và 100% tiền cọc bảo đảm.'}
+                {settlementType === 'CANCELLED_CHECKIN' && '1.1. Quyết toán hủy đơn nhận kho trước thời điểm bắt đầu (BR-CAN). Khách hàng được hoàn tiền thuê và hoàn/phạt cọc theo quy chế mốc thời gian quy định.'}
+              </p>
+              <p className="pl-4 text-[10.5px] italic text-slate-600 mt-1">
+                Ghi chú đối soát hiện trường: {settlementNote}
+              </p>
+            </div>
+
+            <div>
+              <strong>Điều 2: Bảng chiết tính quyết toán dòng tiền chi tiết</strong>
+              <div className="mt-1 pl-4">
+                <table className="w-full border-collapse border border-slate-300 text-[11px]">
+                  <thead>
+                    <tr className="bg-slate-100 text-slate-900 font-bold">
+                      <th className="border border-slate-300 px-2 py-1 text-center w-10">STT</th>
+                      <th className="border border-slate-300 px-2 py-1 text-left">Hạng mục quyết toán nghĩa vụ tài chính</th>
+                      <th className="border border-slate-300 px-2 py-1 text-right w-36">Số tiền (VNĐ)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="border border-slate-300 px-2 py-1 text-center font-mono">1</td>
+                      <td className="border border-slate-300 px-2 py-1">Tiền đặt cọc bảo đảm ban đầu (Deposit)</td>
+                      <td className="border border-slate-300 px-2 py-1 text-right font-mono font-semibold">+{formatCurrencyVND(effectiveDeposit)}</td>
+                    </tr>
+                    {settlementEarlyRentRefund > 0 && (
+                      <tr className="text-emerald-800">
+                        <td className="border border-slate-300 px-2 py-1 text-center font-mono">2</td>
+                        <td className="border border-slate-300 px-2 py-1">Hoàn trả tiền thuê thời gian chưa sử dụng ({detail?.settlementUnusedDays || 0} ngày)</td>
+                        <td className="border border-slate-300 px-2 py-1 text-right font-mono font-semibold">+{formatCurrencyVND(settlementEarlyRentRefund)}</td>
+                      </tr>
+                    )}
+                    {settlementDepositForfeited > 0 && (
+                      <tr className="text-amber-800">
+                        <td className="border border-slate-300 px-2 py-1 text-center font-mono">3</td>
+                        <td className="border border-slate-300 px-2 py-1">Khấu trừ tiền cọc phạt giữ phòng trống / hủy kho</td>
+                        <td className="border border-slate-300 px-2 py-1 text-right font-mono font-semibold">-{formatCurrencyVND(settlementDepositForfeited)}</td>
+                      </tr>
+                    )}
+                    {settlementDamage > 0 && (
+                      <tr className="text-rose-800">
+                        <td className="border border-slate-300 px-2 py-1 text-center font-mono">4</td>
+                        <td className="border border-slate-300 px-2 py-1">Khấu trừ chi phí bồi thường hư hại ô kho (Biên bản nghiệm thu)</td>
+                        <td className="border border-slate-300 px-2 py-1 text-right font-mono font-semibold">-{formatCurrencyVND(settlementDamage)}</td>
+                      </tr>
+                    )}
+                    {settlementOverdue > 0 && (
+                      <tr className="text-rose-800">
+                        <td className="border border-slate-300 px-2 py-1 text-center font-mono">5</td>
+                        <td className="border border-slate-300 px-2 py-1">Khấu trừ phí phạt lưu kho quá hạn (BR-OVD-02..04)</td>
+                        <td className="border border-slate-300 px-2 py-1 text-right font-mono font-semibold">-{formatCurrencyVND(settlementOverdue)}</td>
+                      </tr>
+                    )}
+                    {settlementSealingFee > 0 && (
+                      <tr className="text-purple-800">
+                        <td className="border border-slate-300 px-2 py-1 text-center font-mono">6</td>
+                        <td className="border border-slate-300 px-2 py-1">Khấu trừ chi phí niêm phong, kiểm kê và vận chuyển Kho Tổng (BR-OVD-07)</td>
+                        <td className="border border-slate-300 px-2 py-1 text-right font-mono font-semibold">-{formatCurrencyVND(settlementSealingFee)}</td>
+                      </tr>
+                    )}
+                    <tr className="bg-emerald-50/80 font-bold text-slate-950">
+                      <td colSpan={2} className="border border-slate-300 px-2 py-1.5 text-right uppercase">
+                        {settlementPayable > 0 ? 'Tổng số tiền Bên B nộp bù cho Bên A:' : 'Tổng số tiền Bên A hoàn trả cho Bên B:'}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono text-[12px] text-emerald-900">
+                        {settlementPayable > 0 ? formatCurrencyVND(settlementPayable) : `+${formatCurrencyVND(settlementRefund)}`}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div>
+              <strong>Điều 3: Cam kết thanh lý dứt điểm &amp; Giải phóng trách nhiệm</strong>
+              <p className="pl-4 text-[11px] text-slate-800">
+                3.1. Hai bên xác nhận mọi nghĩa vụ tài sản, hàng hóa trong ô kho và các khoản phí thuê đã được đối soát chính xác, đầy đủ.
+              </p>
+              <p className="pl-4 text-[11px] text-slate-800">
+                3.2. Căn cứ Điều 422 Bộ luật Dân sự 2015, Hợp đồng số <strong>{effectiveContractNumber}</strong> chính thức chấm dứt và tất toán toàn bộ quyền, nghĩa vụ kể từ ngày ký biên bản này. Hai bên cam kết không còn bất kỳ khiếu nại hay tranh chấp nào liên quan.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 text-center mt-6 break-inside-avoid">
+            <div>
+              <div className="font-bold uppercase text-[12px] text-slate-950">
+                ĐẠI DIỆN BÊN CHO THUÊ (BÊN A)
+              </div>
+              <div className="text-[10.5px] text-slate-500 italic mb-1">Quản lý cơ sở phê duyệt</div>
+              <div className="my-2 py-1 px-3 inline-block border border-emerald-700 bg-emerald-50/50 text-[11px] font-bold text-emerald-800 tracking-wider">
+                ✓ ĐÃ DUYỆT TẤT TOÁN
+              </div>
+              <div className="font-semibold text-[11.5px] text-slate-800 mt-1">{settledByName}</div>
+            </div>
+
+            <div>
+              <div className="font-bold uppercase text-[12px] text-slate-950">
+                ĐẠI DIỆN BÊN THUÊ KHO (BÊN B)
+              </div>
+              <div className="text-[10.5px] text-slate-500 italic mb-1">Khách hàng xác nhận</div>
+              <div className="my-2 py-1 px-3 inline-block border border-emerald-700 bg-emerald-50/50 text-[11px] font-bold text-emerald-800 tracking-wider">
+                ✓ ĐÃ ĐỒNG THUẬN TẤT TOÁN
+              </div>
+              <div className="font-semibold text-[11.5px] text-slate-800 mt-1">{effectiveCustomerName}</div>
+            </div>
+          </div>
+        </section>
+      )}
     </article>
   );
 };

@@ -15,10 +15,12 @@ import {
   Circle,
   Clock,
   AlertTriangle,
+  Layers,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { isStorageUnitAssigned } from '../utils/unitAssignment';
 import { getMyRentalDetail, type CustomerRentalDetail } from '@/api/customerRentals';
+import { getContractRenewalHistory, type ContractRenewalHistoryItem } from '@/api/contract';
 import type { RentedContract } from '../types';
 import { ContractPrintDocument } from './ContractPrintDocument';
 
@@ -40,15 +42,17 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   onReschedulePeriod,
 }) => {
   const [detail, setDetail] = useState<CustomerRentalDetail | null>(null);
+  const [renewals, setRenewals] = useState<ContractRenewalHistoryItem[]>([]);
   const [isClosing, setIsClosing] = useState(false);
-
 
   useEffect(() => {
     if (!isOpen || !contract) {
       setDetail(null);
+      setRenewals([]);
       return;
     }
     setDetail(null);
+    setRenewals([]);
     let isMounted = true;
 
     // Tải chi tiết bổ sung từ backend (thông tin khách hàng, biên bản bàn giao, phụ lục đổi kho)
@@ -58,6 +62,17 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
       })
       .catch((err) => {
         console.error('Lỗi tải chi tiết hợp đồng:', err);
+      });
+
+    // Tải lịch sử gia hạn hợp đồng (Phụ lục gia hạn & biến động giá)
+    getContractRenewalHistory(Number(contract.id))
+      .then((history) => {
+        if (isMounted && Array.isArray(history)) {
+          setRenewals(history);
+        }
+      })
+      .catch((err) => {
+        console.error('Lỗi tải phụ lục gia hạn:', err);
       });
 
     return () => {
@@ -73,6 +88,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
       onClose();
       setIsClosing(false);
       setDetail(null);
+      setRenewals([]);
     }, 180);
   };
 
@@ -138,30 +154,6 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
     effectiveStatus === 'PENDING_CHECKIN' ||
     effectiveStatus === 'PENDING_CHECK_IN';
 
-  // Xác định chữ Watermark tương ứng
-  let watermarkText = 'HỢP ĐỒNG HIỆU LỰC';
-  if (effectiveStatus === 'TERMINATED') {
-    if (isOverdueTerminated) {
-      watermarkText = 'NIÊM PHONG KHO TỔNG (D+7)';
-    } else if (isHandoverRejected) {
-      watermarkText = 'TỪ CHỐI NHẬN - HOÀN 100%';
-    } else if (!isStorageUnitAssigned(contract.unitNumber) || contract.unitNumber === 'Chưa gán ô kho' || contract.contractNumber?.includes('NO-UNIT')) {
-      watermarkText = 'ĐÃ HỦY - HOÀN CỌC 100%';
-    } else {
-      watermarkText = 'ĐÃ HỦY - GIẢI PHÓNG Ô';
-    }
-  } else if (contract.relocationEligible || effectiveDetail?.relocationEligible) {
-    watermarkText = 'ĐANG ĐỔI Ô KHO';
-  } else if (effectiveStatus === 'OVERDUE') {
-    watermarkText = 'HỢP ĐỒNG QUÁ HẠN';
-  } else if (effectiveStatus === 'PENDING_RETURN') {
-    watermarkText = 'CHỜ TRẢ KHO & HOÀN CỌC';
-  } else if (effectiveStatus === 'CLOSED') {
-    watermarkText = 'ĐÃ THANH LÝ HỢP ĐỒNG';
-  } else if (isPendingCheckin) {
-    watermarkText = 'CHỜ BÀN GIAO';
-  }
-
   const isHandoverCompleted =
     !isPendingCheckin &&
     !isCancelledAtHandover;
@@ -186,7 +178,40 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   const relocationId = (isCancelledAtHandover || isClosed)
     ? undefined
     : (effectiveDetail?.relocationSupportRequestId || contract.relocationSupportRequestId);
-  const relocationCode = effectiveDetail?.relocationSupportRequestCode || contract.relocationSupportRequestCode || 'SUP-202610-0001';
+  const relocationCode = (isCancelledAtHandover || isClosed)
+    ? undefined
+    : (effectiveDetail?.relocationSupportRequestCode || contract.relocationSupportRequestCode || (relocationId ? 'SUP-202610-0001' : undefined));
+  const relocationReason = effectiveDetail?.relocationReason || contract.relocationReason || contract.rejectionReason;
+  const isReturnScheduled = effectiveStatus === 'PENDING_RETURN' || Boolean(contract.scheduledReturnDate || effectiveDetail?.scheduledReturnDate);
+  const scheduledReturnDate = effectiveDetail?.scheduledReturnDate || contract.scheduledReturnDate || (effectiveStatus === 'PENDING_RETURN' ? 'Chờ kiểm tra hiện trường' : undefined);
+  const hasSettlement = isClosed || Boolean(effectiveDetail?.settledAt) || Boolean(effectiveDetail?.settlementType);
+  const hasAnyAddenda = renewals.length > 0 || Boolean(relocationCode) || isReturnScheduled || hasSettlement;
+  const addendaCount = renewals.length + (relocationCode ? 1 : 0) + (isReturnScheduled ? 1 : 0) + (hasSettlement ? 1 : 0);
+
+  // Dữ liệu quyết toán tất toán hợp đồng (PL-SETTLEMENT)
+  const settlementType = effectiveDetail?.settlementType || (
+    effectiveStatus === 'CANCELLED'
+      ? 'CANCELLED_CHECKIN'
+      : effectiveStatus === 'TERMINATED'
+      ? effectiveDetail?.checkinDate == null ? 'REJECTED_CHECKIN' : 'OVERDUE_TERMINATED'
+      : isReturnScheduled ? 'EARLY_RETURN' : 'NORMAL'
+  );
+  const settledAt = effectiveDetail?.settledAt;
+  const settledByName = effectiveDetail?.settledByName || 'Quản lý cơ sở';
+  const settlementRefund = effectiveDetail?.settlementRefundAmount ?? (
+    isClosed ? (contract.depositHeld ?? effectiveDeposit) : 0
+  );
+  const settlementPayable = effectiveDetail?.settlementPayableAmount ?? 0;
+  const settlementDamage = effectiveDetail?.settlementDamageCost ?? 0;
+  const settlementOverdue = effectiveDetail?.settlementOverdueFee ?? (effectiveDetail?.overdueFeeAccrued ?? 0);
+  const settlementDepositForfeited = effectiveDetail?.settlementDepositForfeited ?? (
+    settlementType === 'EARLY_RETURN' || settlementType === 'OVERDUE_TERMINATED' ? effectiveDeposit : 0
+  );
+  const settlementEarlyRentRefund = effectiveDetail?.settlementEarlyRentRefund ?? 0;
+  const settlementSealingFee = effectiveDetail?.settlementSealingFee ?? (
+    settlementType === 'OVERDUE_TERMINATED' ? Math.max(0, effectiveDeposit - settlementOverdue) : 0
+  );
+  const settlementNote = effectiveDetail?.settlementNote || 'Đã đối soát đầy đủ hiện trạng vật chất và nghĩa vụ tài chính.';
 
   return createPortal(
     <>
@@ -233,84 +258,72 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
         {/* Modal Content */}
         <div className="p-5 sm:p-6 max-h-[72vh] overflow-y-auto space-y-4 relative">
-            {/* Watermark mờ chìm văn bản */}
-            <div className="pointer-events-none select-none absolute inset-0 flex items-center justify-center opacity-[0.04] z-0 overflow-hidden">
-              <div className="transform -rotate-25 font-black text-6xl tracking-widest text-slate-900 border-8 border-slate-900 px-8 py-4 uppercase text-center max-w-lg">
-                {watermarkText}
-              </div>
-            </div>
-
-            <div className="space-y-4 text-xs relative z-10">
+          <div className="space-y-4 text-xs relative z-10">
               {/* Chỉ hiển thị 1 banner trạng thái quan trọng nhất tại 1 thời điểm */}
               {(effectiveStatus === 'TERMINATED' || isCancelledAtHandover) ? (
                 isOverdueTerminated ? (
                   /* Trường hợp 3A: Quá hạn D+7 cưỡng chế chấm dứt & Niêm phong Kho Tổng */
-                  <div className="p-4 rounded-xl bg-purple-50 border-2 border-purple-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
+                  <div className="p-3.5 rounded-xl bg-purple-50 border border-purple-300 space-y-1.5 animate-in fade-in duration-200 shadow-xs">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-purple-900 font-extrabold text-xs uppercase tracking-wide">
+                      <div className="flex items-center gap-2 text-purple-900 font-bold text-xs uppercase">
                         <AlertTriangle className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                        <span>Biên bản chấm dứt hợp đồng &amp; niêm phong Kho Tổng</span>
+                        <span>Hợp đồng chấm dứt quá hạn D+7 (Niêm phong Kho Tổng)</span>
                       </div>
-                      <span className="text-[11px] font-mono font-bold bg-purple-200 text-purple-900 px-2 py-0.5 rounded">
-                        Bị niêm phong
+                      <span className="text-[10.5px] font-mono font-bold bg-purple-200 text-purple-900 px-2 py-0.5 rounded">
+                        Đã niêm phong
                       </span>
                     </div>
-                    <p className="text-xs text-purple-900 leading-relaxed">
-                      Hợp đồng đã quá hạn vượt mốc D+7 và bị chấm dứt. Toàn bộ tiền cọc bảo đảm ({formatVND(detail?.depositAmount || contract.depositHeld || 2500000)}) đã được khấu trừ để bù đắp phí quá hạn (55% cọc) và chi phí kiểm kê, niêm phong tài sản về Kho Tổng (45% cọc).
-                    </p>
-                    <div className="text-[11px] font-semibold text-purple-900 bg-purple-100/70 px-3 py-1.5 rounded-lg border border-purple-200 flex items-center gap-1.5">
-                      <AlertTriangle className="w-4 h-4 text-purple-700 flex-shrink-0" />
-                      <span>
-                        Quý khách có 30 ngày để liên hệ Quản lý cơ sở thanh toán phụ phí phát sinh và nhận lại tài sản tại Kho Tổng. Sau 30 ngày, tài sản sẽ được thanh lý theo quy định hợp đồng.
-                      </span>
+                    <div className="text-[11px] text-purple-950 flex flex-wrap gap-x-4 gap-y-1 pt-0.5">
+                      <span>• Cấn trừ cọc: <strong>100%</strong> (55% nợ quá hạn + 45% phí lưu Kho Tổng)</span>
+                      <span>• Chuộc đồ: <strong>Trong 30 ngày</strong> tại Kho Tổng</span>
                     </div>
                   </div>
                 ) : isHandoverRejected ? (
                   /* Trường hợp 3B: Từ chối nhận kho tại chỗ -> Hủy & Hoàn 100% */
-                  <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
+                  <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-300 space-y-1.5 animate-in fade-in duration-200 shadow-xs">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-rose-900 font-extrabold text-xs uppercase tracking-wide">
+                      <div className="flex items-center gap-2 text-rose-900 font-bold text-xs uppercase">
                         <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-                        <span>Biên bản từ chối bàn giao &amp; hoàn tiền 100%</span>
+                        <span>Từ chối nhận kho do lỗi cơ sở (BR-CHK-06)</span>
                       </div>
-                      <span className="text-[11px] font-mono font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded">
+                      <span className="text-[10.5px] font-mono font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded">
                         Hoàn tiền 100%
                       </span>
                     </div>
-                    <p className="text-xs text-rose-900 leading-relaxed">
-                      Do phát sinh khiếm khuyết tại hiện trường (<strong>{contract.rejectionReason || 'Ô kho bị ẩm ướt / có dấu hiệu thấm dột từ trần kho'}</strong>), khách hàng đã <strong>từ chối nhận bàn giao</strong> và yêu cầu chấm dứt hợp đồng. Hoàn trả 100% tiền cọc ({formatVND(detail?.depositAmount || contract.depositHeld)}) và tiền thuê đã đóng ({formatVND(detail?.monthlyPrice || contract.monthlyRent)}).
+                    <p className="text-[11px] text-rose-950">
+                      Lý do: <strong>{contract.rejectionReason || 'Khiếm khuyết kỹ thuật tại ô kho'}</strong>. Cơ sở hoàn trả <strong>100% tiền thuê + 100% tiền cọc</strong> trong 3 ngày làm việc.
                     </p>
                   </div>
                 ) : (!isStorageUnitAssigned(contract.unitNumber) || contract.unitNumber === 'Chưa gán ô kho' || contract.contractNumber?.includes('NO-UNIT')) ? (
                   /* Trường hợp 3C: Chưa gán kho mà đã hủy */
-                  <div className="p-4 rounded-xl bg-orange-50 border-2 border-orange-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
+                  <div className="p-3.5 rounded-xl bg-orange-50 border border-orange-300 space-y-1.5 animate-in fade-in duration-200 shadow-xs">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-orange-900 font-extrabold text-xs uppercase tracking-wide">
+                      <div className="flex items-center gap-2 text-orange-900 font-bold text-xs uppercase">
                         <AlertTriangle className="w-4 h-4 text-orange-600 flex-shrink-0" />
-                        <span>Biên bản hủy đặt chỗ kho</span>
+                        <span>Hủy đặt chỗ trước khi nhận ô kho</span>
                       </div>
-                      <span className="text-[11px] font-mono font-bold bg-orange-200 text-orange-950 px-2 py-0.5 rounded">
+                      <span className="text-[10.5px] font-mono font-bold bg-orange-200 text-orange-950 px-2 py-0.5 rounded">
                         Hoàn cọc 100%
                       </span>
                     </div>
-                    <p className="text-xs text-orange-900 leading-relaxed">
-                      Khách hàng đã hủy giao dịch trước khi phân bổ ô kho vật lý. Số tiền cọc {formatVND(detail?.depositAmount || contract.depositHeld)} được hoàn trả đầy đủ.
+                    <p className="text-[11px] text-orange-950">
+                      Giao dịch đã hủy trước khi nhận ô vật lý. Tiền cọc {formatVND(detail?.depositAmount || contract.depositHeld)} được hoàn trả trọn vẹn.
                     </p>
                   </div>
                 ) : (
                   /* Trường hợp 3D: Đã gán ô nhưng hủy trước nhận kho (giải phóng ô) */
-                  <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
+                  <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-300 space-y-1.5 animate-in fade-in duration-200 shadow-xs">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-rose-900 font-extrabold text-xs uppercase tracking-wide">
+                      <div className="flex items-center gap-2 text-rose-900 font-bold text-xs uppercase">
                         <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-                        <span>Biên bản hủy giữ chỗ &amp; giải phóng ô kho</span>
+                        <span>Hủy nhận kho &amp; Giải phóng ô kho (BR-CAN)</span>
                       </div>
-                      <span className="text-[11px] font-mono font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded">
-                        Đã giải phóng ô kho
+                      <span className="text-[10.5px] font-mono font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded">
+                        Đã giải phóng ô
                       </span>
                     </div>
-                    <p className="text-xs text-rose-900 leading-relaxed">
-                      Khách hàng đã hủy đơn trước ngày nhận kho. Ô kho <strong>{effectiveUnitNumber}</strong> đã được trả về trạng thái trống và tiền cọc được quyết toán theo chính sách hợp đồng.
+                    <p className="text-[11px] text-rose-950">
+                      Ô kho <strong>{effectiveUnitNumber}</strong> đã giải phóng. Hoàn trả 100% tiền thuê; cọc đối soát theo thời điểm hủy.
                     </p>
                   </div>
                 )
@@ -717,6 +730,312 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* Điều 5: Phụ lục hợp đồng & Thỏa thuận bổ sung */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                  <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs uppercase tracking-wider">
+                    <Layers className="w-4 h-4 text-brand-600" />
+                    <span>ĐIỀU 5: PHỤ LỤC HỢP ĐỒNG &amp; THỎA THUẬN BỔ SUNG</span>
+                  </h4>
+                  <span className="text-[10px] font-semibold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+                    {hasAnyAddenda
+                      ? `${addendaCount} phụ lục hiệu lực`
+                      : 'Hợp đồng gốc'}
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-slate-500 italic leading-relaxed">
+                  (Căn cứ Điều 403 Bộ luật Dân sự 2015: Phụ lục hợp đồng là bộ phận không thể tách rời, có hiệu lực pháp lý xác lập các biến động về thời hạn thuê, điều chỉnh đơn giá hoặc điều chuyển ô kho)
+                </p>
+
+                {/* Danh sách các phụ lục gia hạn (nếu có) */}
+                {renewals.length > 0 && (
+                  <div className="space-y-2.5 pt-1">
+                    {renewals.map((renewal, index) => {
+                      const isPriceChanged = renewal.monthlyPriceSnapshot && renewal.monthlyPriceSnapshot !== effectiveMonthlyRent;
+                      const priceDiff = (renewal.monthlyPriceSnapshot || effectiveMonthlyRent) - effectiveMonthlyRent;
+                      const renewalAddendumNum = String(index + 1).padStart(2, '0');
+
+                      return (
+                        <div
+                          key={renewal.id || index}
+                          className="bg-slate-50/90 rounded-xl p-3.5 border border-slate-200 space-y-2"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-1.5 pb-2 border-b border-slate-200">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-[11px] font-black bg-brand-100 text-brand-900 px-2 py-0.5 rounded">
+                                PL-{renewalAddendumNum}
+                              </span>
+                              <span className="font-bold text-slate-800 text-xs">
+                                Phụ lục Gia hạn thời hạn &amp; Biểu giá thuê
+                              </span>
+                            </div>
+                            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                              +{renewal.renewalMonths} tháng
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
+                            <div>
+                              <span className="text-slate-400 block text-[10.5px]">Khoảng thời gian gia hạn:</span>
+                              <span className="font-semibold text-slate-800">
+                                {renewal.previousEndDate} → <strong className="text-brand-700">{renewal.newEndDate}</strong>
+                              </span>
+                            </div>
+
+                            <div>
+                              <span className="text-slate-400 block text-[10.5px]">Đơn giá thuê chu kỳ mới:</span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-slate-900 text-xs">
+                                  {formatVND(renewal.monthlyPriceSnapshot || effectiveMonthlyRent)}/tháng
+                                </span>
+                                {isPriceChanged ? (
+                                  <span
+                                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                                      priceDiff > 0
+                                        ? 'text-amber-800 bg-amber-50 border-amber-200'
+                                        : 'text-emerald-800 bg-emerald-50 border-emerald-200'
+                                    }`}
+                                  >
+                                    {priceDiff > 0 ? `+${formatVND(priceDiff)}` : `-${formatVND(Math.abs(priceDiff))}`} (Giá mới BOM)
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-slate-500 font-medium">
+                                    (Giữ nguyên đơn giá gốc)
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div>
+                              <span className="text-slate-400 block text-[10.5px]">Tổng tiền gia hạn đã nộp:</span>
+                              <span className="font-bold text-brand-800">
+                                {formatVND(renewal.totalPaid || renewal.rentalFeeAmount)}
+                              </span>
+                              <span className="text-[10px] text-slate-400 ml-1">
+                                ({renewal.paymentMethod || 'Thanh toán trực tuyến'})
+                              </span>
+                            </div>
+
+                            <div>
+                              <span className="text-slate-400 block text-[10.5px]">Tiền cọc bảo đảm (BR-DEP-01):</span>
+                              <span className="font-medium text-emerald-700">
+                                Bảo lưu {formatVND(effectiveDeposit)} (Miễn thu bổ sung)
+                              </span>
+                            </div>
+                          </div>
+
+                          {isPriceChanged && (
+                            <div className="text-[10.5px] text-slate-500 bg-white p-2 rounded border border-slate-100 flex items-start gap-1.5">
+                              <ShieldCheck className="w-3.5 h-3.5 text-brand-600 shrink-0 mt-0.5" />
+                              <span>
+                                <strong>Nguyên tắc không hồi tố (Điều 403 BLDS):</strong> Đơn giá điều chỉnh chỉ áp dụng cho kỳ gia hạn từ ngày {renewal.previousEndDate}. Chu kỳ thuê trước đó không bị truy thu chênh lệch.
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between pt-1.5 text-[10.5px] text-slate-500 border-t border-slate-200/60">
+                            <span>Ký kết điện tử: <strong>Đã xác nhận tự động qua cổng thanh toán</strong></span>
+                            <span className="text-emerald-700 font-bold flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              Hiệu lực pháp lý đầy đủ
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Phụ lục điều chuyển ô kho kỹ thuật (nếu có) */}
+                {relocationCode && (
+                  <div className="bg-amber-50/70 rounded-xl p-3.5 border border-amber-200 space-y-2">
+                    <div className="flex items-center justify-between pb-2 border-b border-amber-200">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[11px] font-black bg-amber-200 text-amber-900 px-2 py-0.5 rounded">
+                          {relocationCode}
+                        </span>
+                        <span className="font-bold text-amber-950 text-xs">
+                          Phụ lục Điều chuyển Ô kho Kỹ thuật Hiện trường
+                        </span>
+                      </div>
+                      <span className="text-[10.5px] font-bold text-amber-800 bg-white px-2 py-0.5 rounded border border-amber-300">
+                        Sự cố kỹ thuật
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
+                      <div>
+                        <span className="text-amber-800/80 block text-[10.5px]">Ô kho mới điều chuyển:</span>
+                        <span className="font-black text-amber-950 text-xs">
+                          {effectiveUnitNumber} ({effectiveUnitTypeName} - Tầng {effectiveFloor})
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-amber-800/80 block text-[10.5px]">Lý do điều chuyển:</span>
+                        <span className="font-medium text-amber-900">
+                          {relocationReason || effectiveDetail?.rejectionReason || 'Sự cố vật lý tại ô ban đầu'}
+                        </span>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <span className="text-amber-800/80 block text-[10.5px]">Cam kết tài chính:</span>
+                        <span className="font-semibold text-emerald-800">
+                          Giữ nguyên 100% đơn giá thuê ({formatVND(effectiveMonthlyRent)}/tháng) và tiền cọc ({formatVND(effectiveDeposit)}), không phát sinh phụ phí.
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Phụ lục / Thỏa thuận chấm dứt trước hạn & Bàn giao trả kho sớm */}
+                {isReturnScheduled && (
+                  <div className="bg-indigo-50/80 rounded-xl p-3.5 border border-indigo-200 space-y-2">
+                    <div className="flex items-center justify-between pb-2 border-b border-indigo-200">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[11px] font-black bg-indigo-200 text-indigo-900 px-2 py-0.5 rounded">
+                          PL-RETURN
+                        </span>
+                        <span className="font-bold text-indigo-950 text-xs">
+                          Phụ lục Thỏa thuận Trả kho Sớm &amp; Chấm dứt Hợp đồng
+                        </span>
+                      </div>
+                      <span className="text-[10.5px] font-bold text-indigo-800 bg-white px-2 py-0.5 rounded border border-indigo-300">
+                        {contract.inspectionDone ? 'Đã nghiệm thu' : 'Chờ nghiệm thu'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
+                      <div>
+                        <span className="text-indigo-800/80 block text-[10.5px]">Ngày đề nghị trả kho thực tế:</span>
+                        <span className="font-bold text-indigo-950">
+                          {scheduledReturnDate}
+                        </span>
+                        <span className="text-[10px] text-slate-500 block">
+                          (Thời hạn kết thúc ban đầu: {contract.endDate})
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-indigo-800/80 block text-[10.5px]">Chính sách hoàn cọc bảo đảm:</span>
+                        <span className="font-semibold text-emerald-800">
+                          Hoàn trả 100% ({formatVND(effectiveDeposit)}) sau khi nghiệm thu
+                        </span>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <span className="text-indigo-800/80 block text-[10.5px]">Quyết toán tiền thuê &amp; nghĩa vụ (BR-RET-06):</span>
+                        <span className="text-slate-700">
+                          Hai bên đồng thuận chấm dứt hợp đồng sớm hơn thời hạn ban đầu. Tiền thuê chưa sử dụng (nếu có) và tiền cọc sẽ được Ban Quản lý lập biên bản quyết toán hoàn trả đầy đủ sau khi hoàn tất kiểm tra hiện trường 4 tiêu chí.
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1.5 text-[10.5px] text-slate-500 border-t border-indigo-200/60">
+                      <span>Xác lập: <strong>Đã ghi nhận yêu cầu trả kho điện tử</strong></span>
+                      <span className="text-indigo-700 font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        Có hiệu lực pháp lý
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Phụ lục Quyết toán Tài chính & Tất toán Thanh lý Hợp đồng */}
+                {hasSettlement && (
+                  <div className="bg-emerald-50/90 rounded-xl p-3.5 border-2 border-emerald-300 space-y-2.5">
+                    <div className="flex items-center justify-between pb-2 border-b border-emerald-200">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[11px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded shadow-xs">
+                          PL-SETTLEMENT
+                        </span>
+                        <span className="font-bold text-emerald-950 text-xs">
+                          Biên bản Quyết toán Tài chính &amp; Tất toán Hợp đồng
+                        </span>
+                      </div>
+                      <span className="text-[10.5px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-300 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        {settledAt ? 'Đã duyệt' : 'Đang đối soát'}
+                      </span>
+                    </div>
+
+                    {/* Kịch bản quyết toán 1 dòng ngắn gọn */}
+                    <div className="text-[11px] text-emerald-950 bg-white/80 px-2.5 py-1 rounded border border-emerald-200/60 font-medium">
+                      {settlementType === 'NORMAL' && '• Trả kho đúng hạn (BR-RET-04) — Bảo toàn 100% tiền cọc gốc'}
+                      {settlementType === 'EARLY_RETURN' && '• Trả kho sớm > 30 ngày (BR-RET-06) — Hoàn 100% tiền thuê chưa dùng'}
+                      {settlementType === 'OVERDUE_TERMINATED' && '• Quá hạn D+7 niêm phong Kho Tổng (BR-OVD-07) — Khấu trừ 100% cọc'}
+                      {settlementType === 'REJECTED_CHECKIN' && '• Từ chối nhận kho do lỗi cơ sở (BR-CHK-06) — Hoàn 100% tiền thuê & cọc'}
+                      {settlementType === 'CANCELLED_CHECKIN' && '• Hủy nhận kho trước hạn (BR-CAN) — Hoàn tiền thuê & hoàn/phạt cọc'}
+                    </div>
+
+                    {/* Bảng kê dòng tiền quyết toán */}
+                    <div className="bg-white rounded-lg p-2.5 border border-emerald-200 text-[11px] space-y-1.5 font-mono">
+                      <div className="flex justify-between items-center text-slate-700">
+                        <span>1. Tiền đặt cọc ban đầu (Deposit):</span>
+                        <span className="font-bold text-slate-900">+{formatVND(effectiveDeposit)}</span>
+                      </div>
+                      {settlementEarlyRentRefund > 0 && (
+                        <div className="flex justify-between items-center text-emerald-700">
+                          <span>2. Tiền thuê chưa dùng hoàn lại:</span>
+                          <span className="font-bold">+{formatVND(settlementEarlyRentRefund)}</span>
+                        </div>
+                      )}
+                      {settlementDepositForfeited > 0 && (
+                        <div className="flex justify-between items-center text-amber-700">
+                          <span>3. Phạt cọc giữ phòng trống / hủy kho:</span>
+                          <span className="font-bold">-{formatVND(settlementDepositForfeited)}</span>
+                        </div>
+                      )}
+                      {settlementDamage > 0 && (
+                        <div className="flex justify-between items-center text-rose-700">
+                          <span>4. Khấu trừ bồi thường hư hại ô kho:</span>
+                          <span className="font-bold">-{formatVND(settlementDamage)}</span>
+                        </div>
+                      )}
+                      {settlementOverdue > 0 && (
+                        <div className="flex justify-between items-center text-rose-700">
+                          <span>5. Khấu trừ phạt nợ quá hạn lưu kho:</span>
+                          <span className="font-bold">-{formatVND(settlementOverdue)}</span>
+                        </div>
+                      )}
+                      {settlementSealingFee > 0 && (
+                        <div className="flex justify-between items-center text-purple-700">
+                          <span>6. Khấu trừ phí niêm phong Kho Tổng:</span>
+                          <span className="font-bold">-{formatVND(settlementSealingFee)}</span>
+                        </div>
+                      )}
+
+                      {/* Dòng tổng kết */}
+                      <div className="pt-2 mt-1 border-t border-slate-200 flex justify-between items-center text-xs font-bold">
+                        {settlementPayable > 0 ? (
+                          <>
+                            <span className="text-rose-800">Số tiền Khách hàng nộp bù:</span>
+                            <span className="text-rose-800 text-sm">{formatVND(settlementPayable)} (Đã thu)</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-emerald-800">Số tiền Công ty hoàn trả Khách hàng:</span>
+                            <span className="text-emerald-800 text-sm">+{formatVND(settlementRefund)}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Footer phê duyệt */}
+                    <div className="flex flex-wrap items-center justify-between pt-1 text-[10.5px] text-slate-500 border-t border-emerald-200/60">
+                      <span>Người duyệt: <strong>{settledByName}</strong> {settledAt ? `(${new Date(settledAt).toLocaleDateString('vi-VN')})` : ''}</span>
+                      <span className="text-slate-600 italic">Căn cứ: {settlementNote}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Nếu chưa phát sinh phụ lục nào */}
+                {!hasAnyAddenda && (
+                  <div className="p-3 bg-slate-50 rounded-lg border border-dashed border-slate-200 text-slate-500 text-center text-[11px]">
+                    Hợp đồng đang thực hiện theo các điều khoản nguyên bản. Chưa phát sinh phụ lục gia hạn hoặc điều chuyển kho.
+                  </div>
+                )}
+              </div>
             </div>
         </div>
 
@@ -812,6 +1131,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
     <ContractPrintDocument
       contract={contract}
       detail={detail}
+      renewals={renewals}
     />
   </>,
   document.body

@@ -69,4 +69,58 @@ public class CustomerRentalDetailResponse extends CustomerRentalSummaryResponse 
 
     public String getRelocationReason() { return relocationReason; }
     public void setRelocationReason(String relocationReason) { this.relocationReason = relocationReason; }
+
+    // Thông tin quyết toán thanh lý & hoàn cọc (Settlement & Termination Addendum - PL-SETTLEMENT)
+    private String settlementType;
+    private Long settlementRefundAmount;
+    private Long settlementPayableAmount;
+    private Long settlementDamageCost;
+    private Long settlementOverdueFee;
+    private Long settlementDepositForfeited;
+    private Long settlementEarlyRentRefund;
+    private Long settlementSealingFee;
+    private Long settlementUnusedDays;
+    private Long settlementDailyRent;
+    private OffsetDateTime settledAt;
+    private String settledByName;
+    private String settlementNote;
+
+    public String getSettlementType() { return settlementType; }
+    public void setSettlementType(String settlementType) { this.settlementType = settlementType; }
+
+    public Long getSettlementRefundAmount() { return settlementRefundAmount; }
+    public void setSettlementRefundAmount(Long settlementRefundAmount) { this.settlementRefundAmount = settlementRefundAmount; }
+
+    public Long getSettlementPayableAmount() { return settlementPayableAmount; }
+    public void setSettlementPayableAmount(Long settlementPayableAmount) { this.settlementPayableAmount = settlementPayableAmount; }
+
+    public Long getSettlementDamageCost() { return settlementDamageCost; }
+    public void setSettlementDamageCost(Long settlementDamageCost) { this.settlementDamageCost = settlementDamageCost; }
+
+    public Long getSettlementOverdueFee() { return settlementOverdueFee; }
+    public void setSettlementOverdueFee(Long settlementOverdueFee) { this.settlementOverdueFee = settlementOverdueFee; }
+
+    public Long getSettlementDepositForfeited() { return settlementDepositForfeited; }
+    public void setSettlementDepositForfeited(Long settlementDepositForfeited) { this.settlementDepositForfeited = settlementDepositForfeited; }
+
+    public Long getSettlementEarlyRentRefund() { return settlementEarlyRentRefund; }
+    public void setSettlementEarlyRentRefund(Long settlementEarlyRentRefund) { this.settlementEarlyRentRefund = settlementEarlyRentRefund; }
+
+    public Long getSettlementSealingFee() { return settlementSealingFee; }
+    public void setSettlementSealingFee(Long settlementSealingFee) { this.settlementSealingFee = settlementSealingFee; }
+
+    public Long getSettlementUnusedDays() { return settlementUnusedDays; }
+    public void setSettlementUnusedDays(Long settlementUnusedDays) { this.settlementUnusedDays = settlementUnusedDays; }
+
+    public Long getSettlementDailyRent() { return settlementDailyRent; }
+    public void setSettlementDailyRent(Long settlementDailyRent) { this.settlementDailyRent = settlementDailyRent; }
+
+    public OffsetDateTime getSettledAt() { return settledAt; }
+    public void setSettledAt(OffsetDateTime settledAt) { this.settledAt = settledAt; }
+
+    public String getSettledByName() { return settledByName; }
+    public void setSettledByName(String settledByName) { this.settledByName = settledByName; }
+
+    public String getSettlementNote() { return settlementNote; }
+    public void setSettlementNote(String settlementNote) { this.settlementNote = settlementNote; }
 }

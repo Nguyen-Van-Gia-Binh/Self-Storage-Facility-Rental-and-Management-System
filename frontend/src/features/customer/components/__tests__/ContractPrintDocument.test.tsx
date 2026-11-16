@@ -42,6 +42,30 @@ vi.mock('@/api/customerRentals', () => ({
   ),
 }));
 
+// Mock getContractRenewalHistory để kiểm thử phụ lục gia hạn
+vi.mock('@/api/contract', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/api/contract')>();
+  return {
+    ...actual,
+    getContractRenewalHistory: vi.fn().mockImplementation(() =>
+      Promise.resolve([
+        {
+          id: 501,
+          contractId: 101,
+          previousEndDate: '2027-04-15',
+          newEndDate: '2027-07-15',
+          renewalMonths: 3,
+          monthlyPriceSnapshot: 1550000,
+          rentalFeeAmount: 4650000,
+          totalPaid: 4650000,
+          paymentMethod: 'VNPAY',
+          createdAt: '2027-04-10T08:30:00Z',
+        },
+      ])
+    ),
+  };
+});
+
 describe('ContractPrintDocument & Print Contract Flow', () => {
   const sampleContract: RentedContract = {
     id: 101,
@@ -234,5 +258,108 @@ describe('ContractPrintDocument & Print Contract Flow', () => {
     expect(screen.getByText(/CHỜ XÁC NHẬN KHI NHẬN KHO/i)).toBeInTheDocument();
     expect(screen.queryByText(/✓ ĐÃ KÝ SỐ ĐIỆN TỬ/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/✓ ĐÃ XÁC NHẬN BÀN GIAO/i)).not.toBeInTheDocument();
+  });
+
+  it('confirms ContractDetailModal has no watermark element in DOM (watermark removed)', () => {
+    render(
+      <ContractDetailModal
+        isOpen={true}
+        onClose={vi.fn()}
+        contract={sampleContract}
+      />
+    );
+
+    // Xác nhận triệt tiêu hoàn toàn không còn bất kỳ watermark xoay nghiêng -25 nào trong DOM
+    const rotatedWatermarks = document.querySelectorAll('.-rotate-25');
+    expect(rotatedWatermarks.length).toBe(0);
+  });
+
+  it('renders contract addenda section (Điều 5) with renewal details and price adjustment in ContractDetailModal', async () => {
+    render(
+      <ContractDetailModal
+        isOpen={true}
+        onClose={vi.fn()}
+        contract={sampleContract}
+      />
+    );
+
+    // Chờ tải thông tin phụ lục gia hạn
+    expect(await screen.findByText(/ĐIỀU 5: PHỤ LỤC HỢP ĐỒNG & THỎA THUẬN BỔ SUNG/i)).toBeInTheDocument();
+    expect((await screen.findAllByText(/PL-01/i)).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Phụ lục Gia hạn thời hạn & Biểu giá thuê/i)).toBeInTheDocument();
+    expect(screen.getByText(/\+3 tháng/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/2027-04-15/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/2027-07-15/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/1\.550\.000/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Nguyên tắc không hồi tố/i)).toBeInTheDocument();
+    expect(screen.getByText(/Bảo lưu 1\.450\.000/i)).toBeInTheDocument();
+  });
+
+  it('renders printed addendum page with print:break-before-page in ContractPrintDocument', () => {
+    const sampleRenewals = [
+      {
+        id: 501,
+        contractId: 101,
+        previousEndDate: '2027-04-15',
+        newEndDate: '2027-07-15',
+        renewalMonths: 3,
+        monthlyPriceSnapshot: 1550000,
+        rentalFeeAmount: 4650000,
+        totalPaid: 4650000,
+        paymentMethod: 'VNPAY',
+        createdAt: '2027-04-10T08:30:00Z',
+      },
+    ];
+
+    render(
+      <ContractPrintDocument
+        contract={sampleContract}
+        detail={sampleDetail}
+        renewals={sampleRenewals}
+      />
+    );
+
+    const addendumSection = screen.getByTestId('contract-addendum-1');
+    expect(addendumSection).toBeInTheDocument();
+    expect(addendumSection).toHaveClass('print:break-before-page');
+    expect(screen.getByText(/PHỤ LỤC HỢP ĐỒNG SỐ 01/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/GIA HẠN THỜI HẠN THUÊ Ô KHO/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Bảo lưu 100% khoản cọc ban đầu/i)).toBeInTheDocument();
+  });
+
+  it('renders settlement addendum (PL-SETTLEMENT) in ContractPrintDocument when contract is closed', () => {
+    const closedContract: RentedContract = {
+      ...sampleContract,
+      status: 'CLOSED',
+    };
+
+    const settlementDetail: CustomerRentalDetail = {
+      ...sampleDetail,
+      status: 'CLOSED',
+      settlementType: 'NORMAL',
+      settlementRefundAmount: 1250000,
+      settlementDamageCost: 200000,
+      settlementOverdueFee: 0,
+      settledAt: '2027-04-16T10:00:00Z',
+      settledByName: 'Nguyễn Văn Quản Lý',
+      settlementNote: 'Biên bản nghiệm thu ô kho nguyên vẹn, trừ 200k vệ sinh',
+    };
+
+    render(
+      <ContractPrintDocument
+        contract={closedContract}
+        detail={settlementDetail}
+      />
+    );
+
+    const settlementSection = screen.getByTestId('contract-addendum-settlement');
+    expect(settlementSection).toBeInTheDocument();
+    expect(settlementSection).toHaveClass('print:break-before-page');
+    expect(screen.getByText(/BIÊN BẢN QUYẾT TOÁN TÀI CHÍNH/i)).toBeInTheDocument();
+    expect(screen.getByText(/PL-SETTLEMENT/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Nguyễn Văn Quản Lý/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/ĐÃ DUYỆT TẤT TOÁN/i)).toBeInTheDocument();
+    expect(screen.getByText(/1\.250\.000/i)).toBeInTheDocument();
+    expect(screen.getByText(/200\.000/i)).toBeInTheDocument();
   });
 });
