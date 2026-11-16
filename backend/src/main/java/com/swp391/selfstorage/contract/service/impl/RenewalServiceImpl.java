@@ -462,7 +462,7 @@ public class RenewalServiceImpl implements RenewalService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof UserPrincipal user) {
             if (user.getRole() == UserRole.STORAGE_CUSTOMER
-                    && !contract.getCustomerId().equals(user.getId())) {
+                    && !java.util.Objects.equals(contract.getCustomerId(), user.getId())) {
                 throw new CustomException(ErrorCode.ACCESS_DENIED,
                         "Bạn không có quyền truy cập thông tin gia hạn của hợp đồng này");
             }

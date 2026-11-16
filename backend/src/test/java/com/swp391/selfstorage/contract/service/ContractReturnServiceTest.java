@@ -665,10 +665,10 @@ class ContractReturnServiceTest {
         }
 
         @Test
-        @DisplayName("BR-RET-01 & BR-RET-06: Trả kho trong 7 ngày cuối hợp đồng (unusedDays <= 7) được tính là trả kho cuối kỳ đúng hạn, hoàn đủ 100% Deposit")
+        @DisplayName("BR-RET-01 & BR-RET-06: Trả kho trong 30 ngày cuối hợp đồng (unusedDays <= return.notice_days) được tính là trả kho cuối kỳ đúng hạn, hoàn đủ 100% Deposit")
         void testEndOfTermReturnWindow_Within7Days_DoesNotForfeitDeposit() {
                 LocalDate returnDate = LocalDate.of(2026, 12, 7);
-                LocalDate endDateExclusive = LocalDate.of(2026, 12, 10); // Còn 3 ngày (<= 7 ngày cuối kỳ)
+                LocalDate endDateExclusive = LocalDate.of(2026, 12, 10); // Còn 3 ngày (<= return.notice_days = 30 ngày cuối kỳ)
                 RentalContract contract = RentalContract.builder()
                                 .id(604L)
                                 .facilityId(1L)
@@ -688,7 +688,7 @@ class ContractReturnServiceTest {
 
                 SettlementPreviewResponse preview = contractService.getSettlementPreview(604L, List.of(1L));
 
-                assertFalse(preview.isEarlyReturn(), "Còn <= 7 ngày cuối kỳ phải được tính là trả kho đúng hạn cuối kỳ, không phải trả sớm");
+                assertFalse(preview.isEarlyReturn(), "Còn <= return.notice_days (30 ngày) cuối kỳ phải được tính là trả kho đúng hạn cuối kỳ, không phải trả sớm");
                 assertEquals(0L, preview.getEarlyRentRefund(), "Không hoàn tiền thuê lẻ những ngày cuối kỳ");
                 assertEquals(1_200_000L, preview.getDepositRefundAmount(), "Bảo toàn 100% tiền cọc Deposit cho khách");
                 assertEquals(0L, preview.getPayableAmount());

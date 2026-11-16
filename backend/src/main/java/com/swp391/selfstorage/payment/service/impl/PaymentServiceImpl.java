@@ -630,7 +630,7 @@ private void publishContractRenewalCompleted(PaymentTransaction payment) {
                         "Không tìm thấy giao dịch với orderCode=" + orderCode));
         assertPayer(payment.getReservationId(), payment.getContractId());
         if (PaymentStatus.PENDING.name().equalsIgnoreCase(payment.getStatus())) {
-            payment.setStatus(PaymentStatus.FAILED.name());
+            payment.setStatus(PaymentStatus.CANCELLED.name());
             paymentTransactionRepository.save(payment);
             log.info("Cancelled pending payment transaction orderCode={}", orderCode);
         }
