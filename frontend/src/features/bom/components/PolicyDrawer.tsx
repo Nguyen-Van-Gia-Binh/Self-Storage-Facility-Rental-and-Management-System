@@ -74,7 +74,7 @@ function percentToRate(raw: string): number {
   return Number(raw) / 100;
 }
 
-function fromPolicySource(source: Record<string, unknown> | null | undefined): FormState {
+function fromPolicySource(source?: ActivePolicyInfo | Record<string, unknown> | null): FormState {
   if (!source) {
     return {
       effectiveDate: todayInVietnam(),
@@ -104,35 +104,36 @@ function fromPolicySource(source: Record<string, unknown> | null | undefined): F
     };
   }
 
-  const date = source.effectiveFrom
-    ? new Date(String(source.effectiveFrom)).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
-    : String(source.effectiveDate || todayInVietnam());
+  const s = source as Record<string, unknown>;
+  const date = s.effectiveFrom
+    ? new Date(String(s.effectiveFrom)).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
+    : String(s.effectiveDate || todayInVietnam());
   const today = todayInVietnam();
 
   return {
     effectiveDate: date < today ? today : date,
-    depositMultiplier: String(source.depositMultiplier ?? 1),
-    reservationHoldHours: String(source.reservationHoldHours ?? 48),
-    rentalBufferDays: String(source.rentalBufferDays ?? 8),
-    rentalDailyDivisor: String(source.rentalDailyDivisor ?? 30),
-    checkinGraceDays: String(source.checkinGraceDays ?? 10),
-    cancelFullRefundHours: String(source.cancelFullRefundHours ?? 48),
-    cancelLateRefundRate: rateToPercent(source.cancelLateRefundRate as number, 0.5),
-    cancelNoShowRefundRate: rateToPercent(source.cancelNoShowRefundRate as number, 0),
-    renewalReminderDays: (source.renewalReminderDays as string) || '60,30,25,21',
-    renewalMinMonths: String(source.renewalMinMonths ?? 1),
-    renewalMaxMonths: String(source.renewalMaxMonths ?? 12),
-    overdueGraceDays: String(source.overdueGraceDays ?? 3),
-    overdueDailyRate: rateToPercent(source.overdueDailyRate as number, 0.1),
-    overdueCapRate: rateToPercent(source.overdueCapRate as number, 0.55),
-    overdueLockAccessDays: String(source.overdueLockAccessDays ?? 1),
-    overdueTerminationDays: String(source.overdueTerminationDays ?? 7),
-    returnNoticeDays: String(source.returnNoticeDays ?? 30),
-    returnRefundWorkingDays: String(source.returnRefundWorkingDays ?? 7),
-    returnEarlyRefundRate: rateToPercent(source.returnEarlyRefundRate as number, 0),
-    accessPinLength: String(source.accessPinLength ?? 6),
-    supportUrgentSlaHours: String(source.supportUrgentSlaHours ?? 2),
-    supportAutoCloseWorkingDays: String(source.supportAutoCloseWorkingDays ?? 7),
+    depositMultiplier: String(s.depositMultiplier ?? 1),
+    reservationHoldHours: String(s.reservationHoldHours ?? 48),
+    rentalBufferDays: String(s.rentalBufferDays ?? 8),
+    rentalDailyDivisor: String(s.rentalDailyDivisor ?? 30),
+    checkinGraceDays: String(s.checkinGraceDays ?? 10),
+    cancelFullRefundHours: String(s.cancelFullRefundHours ?? 48),
+    cancelLateRefundRate: rateToPercent(s.cancelLateRefundRate as number, 0.5),
+    cancelNoShowRefundRate: rateToPercent(s.cancelNoShowRefundRate as number, 0),
+    renewalReminderDays: (s.renewalReminderDays as string) || '60,30,25,21',
+    renewalMinMonths: String(s.renewalMinMonths ?? 1),
+    renewalMaxMonths: String(s.renewalMaxMonths ?? 12),
+    overdueGraceDays: String(s.overdueGraceDays ?? 3),
+    overdueDailyRate: rateToPercent(s.overdueDailyRate as number, 0.1),
+    overdueCapRate: rateToPercent(s.overdueCapRate as number, 0.55),
+    overdueLockAccessDays: String(s.overdueLockAccessDays ?? 1),
+    overdueTerminationDays: String(s.overdueTerminationDays ?? 7),
+    returnNoticeDays: String(s.returnNoticeDays ?? 30),
+    returnRefundWorkingDays: String(s.returnRefundWorkingDays ?? 7),
+    returnEarlyRefundRate: rateToPercent(s.returnEarlyRefundRate as number, 0),
+    accessPinLength: String(s.accessPinLength ?? 6),
+    supportUrgentSlaHours: String(s.supportUrgentSlaHours ?? 2),
+    supportAutoCloseWorkingDays: String(s.supportAutoCloseWorkingDays ?? 7),
     confirmed: false,
   };
 }

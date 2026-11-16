@@ -109,6 +109,7 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
   ticket,
   isOpen,
   onClose,
+  onConfirmResolution,
   onCancelTicket,
 }) => {
   const [submitting, setSubmitting] = useState(false);
