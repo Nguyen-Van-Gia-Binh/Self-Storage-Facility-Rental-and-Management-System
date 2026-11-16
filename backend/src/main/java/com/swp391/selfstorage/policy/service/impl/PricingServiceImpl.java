@@ -41,13 +41,6 @@ public class PricingServiceImpl implements PricingService {
     private final UnitTypeRepository unitTypeRepository;
     private final AppliedPriceLookup appliedPriceLookup;
 
-    public PricingServiceImpl(
-            FacilityUnitTypePriceRepository priceRepository,
-            FacilityRepository facilityRepository,
-            UnitTypeRepository unitTypeRepository) {
-        this(priceRepository, null, facilityRepository, unitTypeRepository, null);
-    }
-
     @org.springframework.beans.factory.annotation.Autowired
     public PricingServiceImpl(
             FacilityUnitTypePriceRepository priceRepository,

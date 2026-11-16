@@ -114,39 +114,29 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
                 storageUnitId = contract.getStorageUnitId();
             }
         } else if (storageUnitId != null) {
-            if (rentalContractRepository != null) {
-                org.springframework.data.domain.Page<RentalContract> activePage = rentalContractRepository.findByCustomerIdAndStatus(
-                        customerId, ContractStatus.ACTIVE, org.springframework.data.domain.PageRequest.of(0, 10)
-                );
-                if (activePage != null && activePage.getContent() != null) {
-                    for (RentalContract ac : activePage.getContent()) {
-                        if (storageUnitId.equals(ac.getStorageUnitId())) {
-                            contractId = ac.getId();
-                            break;
-                        }
+            org.springframework.data.domain.Page<RentalContract> activePage = rentalContractRepository.findByCustomerIdAndStatus(
+                    customerId, ContractStatus.ACTIVE, org.springframework.data.domain.PageRequest.of(0, 10)
+            );
+            if (activePage != null && activePage.getContent() != null) {
+                for (RentalContract ac : activePage.getContent()) {
+                    if (storageUnitId.equals(ac.getStorageUnitId())) {
+                        contractId = ac.getId();
+                        break;
                     }
                 }
             }
         } else {
-            if (rentalContractRepository != null) {
-                org.springframework.data.domain.Page<RentalContract> activePage = rentalContractRepository.findByCustomerIdAndStatus(
-                        customerId, ContractStatus.ACTIVE, org.springframework.data.domain.PageRequest.of(0, 10)
-                );
-                if (activePage != null && activePage.getContent() != null && !activePage.getContent().isEmpty()) {
-                    Long targetFacId = request.getFacilityId();
-                    RentalContract matched = null;
-                    if (targetFacId != null) {
-                        matched = activePage.getContent().stream()
-                                .filter(c -> targetFacId.equals(c.getFacilityId()))
-                                .findFirst()
-                                .orElse(null);
-                    }
-                    if (matched == null) {
-                        matched = activePage.getContent().get(0);
-                    }
-                    contractId = matched.getId();
-                    storageUnitId = matched.getStorageUnitId();
-                }
+            org.springframework.data.domain.Page<RentalContract> activePage = rentalContractRepository.findByCustomerIdAndStatus(
+                    customerId, ContractStatus.ACTIVE, org.springframework.data.domain.PageRequest.of(0, 10)
+            );
+            if (activePage != null && activePage.getContent() != null && !activePage.getContent().isEmpty()) {
+                Long targetFacId = request.getFacilityId();
+                RentalContract matched = activePage.getContent().stream()
+                        .filter(c -> targetFacId == null || targetFacId.equals(c.getFacilityId()))
+                        .findFirst()
+                        .orElse(activePage.getContent().get(0));
+                contractId = matched.getId();
+                storageUnitId = matched.getStorageUnitId();
             }
         }
 
