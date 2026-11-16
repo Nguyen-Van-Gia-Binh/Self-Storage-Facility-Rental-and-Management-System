@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
@@ -54,7 +55,14 @@ public class CacheConfig {
         if (StringUtils.hasText(redisUrl)) {
             try {
                 RedisConfiguration redisConfig = LettuceConnectionFactory.createRedisConfiguration(redisUrl.trim());
-                LettuceConnectionFactory connectionFactory = new LettuceConnectionFactory(redisConfig);
+
+                LettuceClientConfiguration.LettuceClientConfigurationBuilder clientConfigBuilder = LettuceClientConfiguration.builder()
+                        .commandTimeout(Duration.ofSeconds(5));
+                if (redisUrl.trim().startsWith("rediss://")) {
+                    clientConfigBuilder.useSsl();
+                }
+
+                LettuceConnectionFactory connectionFactory = new LettuceConnectionFactory(redisConfig, clientConfigBuilder.build());
                 connectionFactory.afterPropertiesSet();
 
                 ObjectMapper objectMapper = new ObjectMapper();

@@ -110,4 +110,17 @@ class TwoLevelCacheTest {
         assertThat(cache).isSameAs(l1Cache);
         verify(l2Manager, never()).getCache("userDetails");
     }
+
+    @Test
+    @DisplayName("CacheConfig: Khởi tạo kết nối Redis với SSL khi url bắt đầu bằng rediss://")
+    void testCacheConfig_redisWithSsl() throws Exception {
+        com.swp391.selfstorage.common.config.CacheConfig config = new com.swp391.selfstorage.common.config.CacheConfig();
+        java.lang.reflect.Field field = com.swp391.selfstorage.common.config.CacheConfig.class.getDeclaredField("redisUrl");
+        field.setAccessible(true);
+        field.set(config, "rediss://default:dummy@dummy.upstash.io:6379");
+
+        CacheManager manager = config.cacheManager();
+        assertThat(manager).isNotNull();
+        assertThat(manager).isInstanceOf(TwoLevelCacheManager.class);
+    }
 }
