@@ -230,9 +230,14 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                         Đã chấm dứt
                       </span>
                     )}
-                    {(c.status === 'PENDING_RETURN' || c.status === 'INSPECTED' || c.status === 'CANCELLED') && (
+                    {(c.status === 'INSPECTED' || c.status === 'CANCELLED') && (
                       <span className="text-[11px] font-medium text-amber-600 mt-0.5 block">
                         Chờ quyết toán
+                      </span>
+                    )}
+                    {c.status === 'PENDING_RETURN' && (
+                      <span className="text-[11px] font-medium text-blue-600 mt-0.5 block">
+                        {c.assignedStaffId ? 'Chờ nghiệm thu' : 'Chờ phân bổ'}
                       </span>
                     )}
                   </td>
@@ -243,8 +248,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                       {onApproveSettlement &&
                         (c.status === 'INSPECTED' ||
                           c.status === 'TERMINATED' ||
-                          c.status === 'CANCELLED' ||
-                          c.status === 'PENDING_RETURN') && (
+                          c.status === 'CANCELLED') && (
                           <button
                             type="button"
                             onClick={(e) => {

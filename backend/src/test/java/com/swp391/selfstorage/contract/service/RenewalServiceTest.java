@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,7 +25,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
+import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.dto.ForceRenewalRequest;
@@ -47,6 +52,9 @@ import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
 import com.swp391.selfstorage.unit.entity.UnitType;
 import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
+import com.swp391.selfstorage.user.entity.AppUser;
+import com.swp391.selfstorage.user.entity.UserRole;
+import com.swp391.selfstorage.user.entity.UserStatus;
 
 @ExtendWith(MockitoExtension.class)
 class RenewalServiceTest {
@@ -89,6 +97,11 @@ class RenewalServiceTest {
                 paymentTransactionRepository);
         org.mockito.Mockito.lenient().when(unitTypeRepository.findById(7L))
                 .thenReturn(Optional.of(UnitType.builder().id(7L).code("UT-S").isActive(true).build()));
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     private RentalContract buildContract(ContractStatus status) {
@@ -185,6 +198,7 @@ class RenewalServiceTest {
                 () -> renewalService.getRenewalQuote(100L, new RenewalRequest(2)));
 
         assertEquals(ErrorCode.RENEWAL_NOT_ALLOWED, ex.getErrorCode());
+        assertEquals("Hợp đồng đã quá hạn không thể gia hạn (máy trạng thái một chiều). Quý khách vui lòng thanh toán phí quá hạn để nhận mã PIN tạm và làm thủ tục trả kho.", ex.getMessage());
     }
 
     @Test
@@ -198,6 +212,7 @@ class RenewalServiceTest {
                 () -> renewalService.getRenewalQuote(100L, new RenewalRequest(3)));
 
         assertEquals(ErrorCode.RENEWAL_NOT_ALLOWED, ex.getErrorCode());
+        assertEquals("Hợp đồng đã quá hạn không thể gia hạn (máy trạng thái một chiều). Quý khách vui lòng thanh toán phí quá hạn để nhận mã PIN tạm và làm thủ tục trả kho.", ex.getMessage());
     }
 
     @Test
@@ -213,6 +228,7 @@ class RenewalServiceTest {
                 () -> renewalService.processRenewal(100L, new RenewalRequest(3), 777L));
 
         assertEquals(ErrorCode.RENEWAL_NOT_ALLOWED, ex.getErrorCode());
+        assertEquals("Hợp đồng đã quá hạn không thể gia hạn (máy trạng thái một chiều). Quý khách vui lòng thanh toán phí quá hạn để nhận mã PIN tạm và làm thủ tục trả kho.", ex.getMessage());
         verify(rentalContractRepository, never()).save(any());
     }
 
@@ -237,6 +253,7 @@ class RenewalServiceTest {
                 () -> renewalService.getRenewalQuote(100L, new RenewalRequest(3)));
 
         assertEquals(ErrorCode.RENEWAL_NOT_ALLOWED, ex.getErrorCode());
+        assertEquals("Chỉ hợp đồng đang hoạt động (ACTIVE) mới được phép tự gia hạn trực tuyến.", ex.getMessage());
     }
 
     @Test
@@ -477,6 +494,7 @@ class RenewalServiceTest {
                 () -> renewalService.processForceRenewal(100L, req));
 
         assertEquals(ErrorCode.RENEWAL_NOT_ALLOWED, ex.getErrorCode());
+        assertEquals("Hợp đồng đã quá hạn không thể gia hạn. Vui lòng xử lý theo quy trình nợ quá hạn và tất toán kho.", ex.getMessage());
         verify(contractRenewalRepository, never()).save(any());
         verify(rentalContractRepository, never()).save(any());
     }
@@ -561,5 +579,45 @@ class RenewalServiceTest {
         verify(mockUnitRepo).save(targetUnit);
         assertEquals(com.swp391.selfstorage.unit.entity.StorageUnitStatus.AVAILABLE, prevUnit.getStatus());
         verify(mockUnitRepo).save(prevUnit);
+    }
+
+    @Test
+    @DisplayName("Ném ACCESS_DENIED khi khách hàng khác cố lấy báo giá gia hạn (chống IDOR)")
+    void testGetRenewalQuote_otherCustomer_throwsAccessDenied() {
+        RentalContract contract = buildContract(ContractStatus.ACTIVE);
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+
+        AppUser otherCustomer = new AppUser("other@example.com", "hash", "Other User", "0123456789", "ID123",
+                UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE);
+        otherCustomer.setId(999L);
+        UserPrincipal principal = UserPrincipal.create(otherCustomer, List.of());
+        Authentication auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> renewalService.getRenewalQuote(100L, new RenewalRequest(1)));
+
+        assertEquals(ErrorCode.ACCESS_DENIED, ex.getErrorCode());
+        assertEquals("Bạn không có quyền truy cập thông tin gia hạn của hợp đồng này", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Ném ACCESS_DENIED khi khách hàng khác cố xem lịch sử gia hạn (chống IDOR)")
+    void testGetRenewalHistory_otherCustomer_throwsAccessDenied() {
+        RentalContract contract = buildContract(ContractStatus.ACTIVE);
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+
+        AppUser otherCustomer = new AppUser("other@example.com", "hash", "Other User", "0123456789", "ID123",
+                UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE);
+        otherCustomer.setId(999L);
+        UserPrincipal principal = UserPrincipal.create(otherCustomer, List.of());
+        Authentication auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> renewalService.getRenewalHistory(100L));
+
+        assertEquals(ErrorCode.ACCESS_DENIED, ex.getErrorCode());
+        assertEquals("Bạn không có quyền truy cập thông tin gia hạn của hợp đồng này", ex.getMessage());
     }
 }

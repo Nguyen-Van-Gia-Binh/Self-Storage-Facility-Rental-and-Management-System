@@ -1547,6 +1547,11 @@ public class ContractServiceImpl implements ContractService {
                                                 .depositRefundAmount(contract.getDepositAmount())
                                                 .build());
 
+                if (returnReq.getStatus() == ReturnRequestStatus.COMPLETED) {
+                        throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
+                                        "Hồ sơ trả kho này đã được phê duyệt quyết toán hoàn tất trước đó.");
+                }
+
                 if (isCustomerCancelledCheckIn(contract)) {
                         SettlementPreviewResponse cancelPreview = computeCancelledCheckInPreview(contract);
                         long totalRefund = cancelPreview.getDepositRefundAmount();
