@@ -52,4 +52,18 @@ describe('ContractsHubPage & ContractDetailPage Handover Defect & Relocation Int
     // Banner tiếp đón thông thường bị ẩn khi có sự cố đổi ô hoặc terminate
     expect(content).toMatch(/isPendingCheckIn && !canRelocate && !isTerminated/);
   });
+
+  it('WorkDetailPage: Đã loại bỏ nút "Mở tab Quyết toán trong Hub", chỉ giữ nút tắt trực tiếp', () => {
+    const workDetailPagePath = resolveSource('src/features/manager/pages/WorkDetailPage.tsx');
+    const content = fs.readFileSync(workDetailPagePath, 'utf-8');
+    expect(content).not.toMatch(/Mở tab Quyết toán trong Hub/);
+    expect(content).toMatch(/Duyệt quyết toán HĐ #/);
+  });
+
+  it('ContractDetailPage: Xóa query param action=settlement khi đóng/hoàn tất quyết toán và chặn mở lại khi CLOSED', () => {
+    const content = fs.readFileSync(detailPagePath, 'utf-8');
+    expect(content).toMatch(/handleCloseSettlementModal/);
+    expect(content).toMatch(/next\.delete\('action'\)/);
+    expect(content).toMatch(/contract\.status !== 'CLOSED'/);
+  });
 });

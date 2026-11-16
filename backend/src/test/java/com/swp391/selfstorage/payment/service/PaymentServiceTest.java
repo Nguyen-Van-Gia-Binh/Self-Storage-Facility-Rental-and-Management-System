@@ -303,7 +303,7 @@ class PaymentServiceTest {
     }
 
     @Test
-    @DisplayName("cancelPendingPayment: Chuyển trạng thái giao dịch PENDING thành FAILED")
+    @DisplayName("cancelPendingPayment: Chuyển trạng thái giao dịch PENDING thành CANCELLED")
     void cancelPendingPayment_Success() {
         PaymentTransaction pendingTxn = PaymentTransaction.builder()
                 .id(50L)
@@ -319,7 +319,7 @@ class PaymentServiceTest {
 
         paymentService.cancelPendingPayment(123456789L);
 
-        assertEquals("FAILED", pendingTxn.getStatus());
+        assertEquals("CANCELLED", pendingTxn.getStatus());
         verify(paymentTransactionRepository).save(pendingTxn);
     }
 

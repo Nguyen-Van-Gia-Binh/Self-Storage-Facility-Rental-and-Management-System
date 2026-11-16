@@ -38,10 +38,14 @@ import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.user.entity.AppUser;
+import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.repository.UserRepository;
 import java.util.Collections;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.swp391.selfstorage.auth.service.UserPrincipal;
 
 @Service
 @Transactional(readOnly = true)
@@ -199,9 +203,9 @@ public class RenewalServiceImpl implements RenewalService {
      */
     @Override
     public List<RenewalResponse> getRenewalHistory(Long contractId) {
-        if (!rentalContractRepository.existsById(contractId)) {
-            throw new CustomException(ErrorCode.CONTRACT_NOT_FOUND);
-        }
+        RentalContract contract = rentalContractRepository.findById(contractId)
+                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+        assertContractOwner(contract);
         return contractRenewalRepository.findByContractIdOrderByCreatedAtDesc(contractId)
                 .stream()
                 .map(renewalMapper::toResponse)
@@ -430,6 +434,8 @@ public class RenewalServiceImpl implements RenewalService {
         RentalContract contract = rentalContractRepository.findById(contractId)
                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
 
+        assertContractOwner(contract);
+
         // CAT-04 / BR-BOM-04: Chặn gia hạn nếu loại kho đã bị BOM chuyển sang INACTIVE
         if (unitTypeRepository != null && contract.getUnitTypeId() != null) {
             UnitType unitType = unitTypeRepository.findById(contract.getUnitTypeId())
@@ -443,13 +449,24 @@ public class RenewalServiceImpl implements RenewalService {
         // Muốn xin gia hạn ngoại lệ bắt buộc phải liên hệ Quản lý cơ sở (FM).
         if (contract.getStatus() == ContractStatus.OVERDUE) {
             throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED,
-                    "Hợp đồng đã quá hạn không thể tự gia hạn trực tuyến. Vui lòng liên hệ Quản lý cơ sở (FM) hoặc hoàn tất thủ tục trả kho.");
+                    "Hợp đồng đã quá hạn không thể gia hạn (máy trạng thái một chiều). Quý khách vui lòng thanh toán phí quá hạn để nhận mã PIN tạm và làm thủ tục trả kho.");
         } else if (contract.getStatus() != ContractStatus.ACTIVE) {
             throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED,
                     "Chỉ hợp đồng đang hoạt động (ACTIVE) mới được phép tự gia hạn trực tuyến.");
         }
 
         return contract;
+    }
+
+    private void assertContractOwner(RentalContract contract) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof UserPrincipal user) {
+            if (user.getRole() == UserRole.STORAGE_CUSTOMER
+                    && !java.util.Objects.equals(contract.getCustomerId(), user.getId())) {
+                throw new CustomException(ErrorCode.ACCESS_DENIED,
+                        "Bạn không có quyền truy cập thông tin gia hạn của hợp đồng này");
+            }
+        }
     }
 
     private long getLatestMonthlyPrice(RentalContract contract) {

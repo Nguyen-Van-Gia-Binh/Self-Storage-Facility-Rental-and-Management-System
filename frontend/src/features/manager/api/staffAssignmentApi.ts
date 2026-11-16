@@ -331,12 +331,26 @@ export async function getDailyDispatchTasks(
   const tasks: DailyDispatchTaskItem[] = [];
 
   try {
-    const [incidents, pendingCheckIns, returnContracts, activePolicy] = await Promise.all([
+    const [incidents, pendingCheckIns, returnContracts, closedContracts, activePolicy] = await Promise.all([
       getManagementSupportRequests({ facilityId }),
       getPendingContracts(facilityId).catch(() => []),
       getManagerContracts({ facilityId, status: 'PENDING_RETURN' }).catch(() => []),
+      getManagerContracts({ facilityId, status: 'CLOSED' }).catch(() => []),
       fetchActivePolicy().catch(() => null),
     ]);
+
+    // Hợp nhất các hợp đồng hoàn trả (PENDING_RETURN và CLOSED đã nghiệm thu/yêu cầu trả kho)
+    const allReturnContracts: any[] = Array.isArray(returnContracts) ? [...returnContracts] : [];
+    if (Array.isArray(closedContracts)) {
+      closedContracts.forEach((contract: any) => {
+        if (
+          !allReturnContracts.some((r) => r.id === contract.id) &&
+          (contract.isInspected || contract.returnNoticeDate || contract.returnRequestCreatedAt)
+        ) {
+          allReturnContracts.push(contract);
+        }
+      });
+    }
 
     // 1. Map các sự cố kỹ thuật (INCIDENT) - lọc theo ngày tạo phiếu yêu cầu (createdAt)
     incidents.forEach((ticket) => {
@@ -376,7 +390,9 @@ export async function getDailyDispatchTasks(
     if (Array.isArray(pendingCheckIns)) {
       pendingCheckIns.forEach((contract: any) => {
         let dispatchStatus: DailyDispatchTaskItem['status'] = 'UNASSIGNED';
-        if (contract.assignedStaffId) {
+        if (contract.status === 'ACTIVE' || (contract.status as string) === 'CHECKED_IN') {
+          dispatchStatus = 'COMPLETED';
+        } else if (contract.assignedStaffId) {
           dispatchStatus = 'ASSIGNED';
         }
 
@@ -405,10 +421,15 @@ export async function getDailyDispatchTasks(
     }
 
     // 3. Map các hợp đồng chờ kiểm tra trả kho (RETURN) - lọc theo ngày tạo yêu cầu trả kho (returnRequestCreatedAt)
-    if (Array.isArray(returnContracts)) {
-      returnContracts.forEach((contract: any) => {
+    if (Array.isArray(allReturnContracts)) {
+      allReturnContracts.forEach((contract: any) => {
         let dispatchStatus: DailyDispatchTaskItem['status'] = 'UNASSIGNED';
-        if (contract.status === 'INSPECTED') {
+        if (
+          contract.status === 'INSPECTED' ||
+          Boolean(contract.isInspected) ||
+          contract.status === 'CLOSED' ||
+          contract.status === 'RETURNED'
+        ) {
           dispatchStatus = 'COMPLETED';
         } else if (contract.assignedStaffId) {
           dispatchStatus = 'ASSIGNED';
@@ -458,7 +479,7 @@ export async function getDailyDispatchTasks(
         if (ov.staffName !== undefined && ov.staffName !== '') {
           t.assignedStaffName = ov.staffName;
         }
-        if (t.assignedStaffId) {
+        if (t.assignedStaffId && t.status === 'UNASSIGNED') {
           t.status = 'ASSIGNED';
         }
       }

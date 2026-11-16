@@ -41,7 +41,7 @@ const fmt = (p: number) => new Intl.NumberFormat('vi-VN').format(p) + ' đ';
 export const ContractDetailPage: React.FC = () => {
   const { contractId } = useParams<{ contractId: string }>();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const contractIdNum = Number(contractId) || 0;
 
   const [contract, setContract] = useState<ManagerContractItem | null>(null);
@@ -146,12 +146,38 @@ export const ContractDetailPage: React.FC = () => {
     loadData();
   }, [loadData]);
 
+  const handleCloseSettlementModal = useCallback(() => {
+    setSettlementModalOpen(false);
+    if (searchParams.get('action') === 'settlement') {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete('action');
+          return next;
+        },
+        { replace: true }
+      );
+    }
+  }, [searchParams, setSearchParams]);
+
   // Tự động mở modal duyệt quyết toán nếu URL có tham số action=settlement
   useEffect(() => {
     if (contract && searchParams.get('action') === 'settlement') {
-      setSettlementModalOpen(true);
+      if (contract.status !== 'CLOSED') {
+        setSettlementModalOpen(true);
+      } else {
+        // Hợp đồng đã đóng (CLOSED), xóa query param action để tránh vòng lặp mở lại popup
+        setSearchParams(
+          (prev) => {
+            const next = new URLSearchParams(prev);
+            next.delete('action');
+            return next;
+          },
+          { replace: true }
+        );
+      }
     }
-  }, [contract, searchParams]);
+  }, [contract, searchParams, setSearchParams]);
 
   if (loading) {
     return (
@@ -971,9 +997,9 @@ export const ContractDetailPage: React.FC = () => {
         <SettlementApprovalModal
           isOpen={settlementModalOpen}
           contract={contract}
-          onClose={() => setSettlementModalOpen(false)}
+          onClose={handleCloseSettlementModal}
           onSuccess={(_contractId, message) => {
-            setSettlementModalOpen(false);
+            handleCloseSettlementModal();
             showToast(message || 'Đã ghi nhận quyết toán thành công!');
             loadData(true);
           }}

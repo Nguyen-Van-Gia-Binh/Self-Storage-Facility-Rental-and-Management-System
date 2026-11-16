@@ -39,6 +39,7 @@ public class ContractRenewalController {
      * Preview).
      */
     @PostMapping("/{id}/renewals/quote")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Xem trước bảng tính toán chi phí gia hạn hợp đồng")
     public ResponseEntity<ApiResponse<RenewalQuoteResponse>> getRenewalQuote(
             @PathVariable Long id,
@@ -51,6 +52,7 @@ public class ContractRenewalController {
      * 2. Xử lý gia hạn hợp đồng sau khi thanh toán thành công (SC-05, BR-REN-*).
      */
     @PostMapping("/{id}/renewals")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Kích hoạt gia hạn hợp đồng thuê sau khi thanh toán")
     public ResponseEntity<ApiResponse<RenewalResponse>> processRenewal(
             @PathVariable Long id,
@@ -65,6 +67,7 @@ public class ContractRenewalController {
      * 3. Lấy lịch sử tất cả các lần gia hạn của hợp đồng.
      */
     @GetMapping("/{id}/renewals")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Lấy lịch sử các lần gia hạn của hợp đồng")
     public ResponseEntity<ApiResponse<List<RenewalResponse>>> getRenewalHistory(@PathVariable Long id) {
         List<RenewalResponse> history = renewalService.getRenewalHistory(id);

@@ -64,6 +64,7 @@ class CustomerRentalServiceTest {
     @Mock private com.swp391.selfstorage.user.repository.UserRepository userRepository;
     @Mock private com.swp391.selfstorage.contract.repository.HandoverRecordRepository handoverRecordRepository;
     @Mock private com.swp391.selfstorage.support.repository.SupportRequestRepository supportRequestRepository;
+    @Mock private com.swp391.selfstorage.contract.service.ContractService contractService;
 
     @InjectMocks
     private CustomerRentalServiceImpl customerRentalService;
@@ -721,6 +722,70 @@ class CustomerRentalServiceTest {
         assertEquals("051306007726", detail.getCustomerIdentityNumber());
         assertEquals(6_000_000L, detail.getTotalContractAmount());
         assertEquals("Bánh Flan", accountUser.getFullName(), "Tên tài khoản đăng nhập không bị thay đổi");
+    }
+
+    @Test
+    @DisplayName("US-SC-05: getMyRentalDetail trả về đầy đủ thông tin phụ lục quyết toán khi hợp đồng đã thanh lý CLOSED")
+    void testGetMyRentalDetail_IncludesSettlementAddendumInfo_WhenContractClosed() {
+        RentalContract closedContract = new RentalContract();
+        closedContract.setId(777L);
+        closedContract.setCode("CTR-202611-0777");
+        closedContract.setCustomerId(15L);
+        closedContract.setStatus(ContractStatus.CLOSED);
+        closedContract.setDepositAmount(1_200_000L);
+        closedContract.setDepositBalance(0L);
+        closedContract.setFacilityId(1L);
+        closedContract.setStorageUnitId(42L);
+        closedContract.setUnitTypeId(7L);
+
+        OffsetDateTime settledTime = OffsetDateTime.now().minusDays(1);
+        com.swp391.selfstorage.contract.entity.ReturnRequest returnReq = com.swp391.selfstorage.contract.entity.ReturnRequest.builder()
+                .contractId(777L)
+                .requestedReturnDate(LocalDate.now().minusDays(1))
+                .status(com.swp391.selfstorage.contract.entity.ReturnRequestStatus.COMPLETED)
+                .settledAt(settledTime)
+                .settledBy(88L)
+                .damageCost(200_000L)
+                .depositRefundAmount(1_000_000L)
+                .conditionNote("Biên bản nghiệm thu hoàn tất, xước sơn nhẹ trừ 200k")
+                .build();
+
+        com.swp391.selfstorage.user.entity.AppUser manager = new com.swp391.selfstorage.user.entity.AppUser();
+        manager.setId(88L);
+        manager.setFullName("Trần Quản Lý");
+
+        com.swp391.selfstorage.contract.dto.SettlementPreviewResponse preview = com.swp391.selfstorage.contract.dto.SettlementPreviewResponse.builder()
+                .contractId(777L)
+                .settlementType("NORMAL")
+                .depositAmount(1_200_000L)
+                .damageCost(200_000L)
+                .overdueFee(0L)
+                .depositRefundAmount(1_000_000L)
+                .payableAmount(0L)
+                .earlyRentRefund(0L)
+                .build();
+
+        when(rentalContractRepository.findById(777L)).thenReturn(Optional.of(closedContract));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(facility));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(storageUnit));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+        when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(777L)).thenReturn(Optional.of(returnReq));
+        when(userRepository.findById(15L)).thenReturn(Optional.empty());
+        when(userRepository.findById(88L)).thenReturn(Optional.of(manager));
+        when(contractService.getSettlementPreview(777L, null)).thenReturn(preview);
+
+        CustomerRentalDetailResponse res = customerRentalService.getMyRentalDetail(777L, customerUser);
+
+        assertNotNull(res);
+        assertEquals("CTR-202611-0777", res.getContractCode());
+        assertEquals(ContractStatus.CLOSED.name(), res.getStatus());
+        assertEquals("NORMAL", res.getSettlementType());
+        assertEquals(1_000_000L, res.getSettlementRefundAmount());
+        assertEquals(200_000L, res.getSettlementDamageCost());
+        assertEquals(0L, res.getSettlementPayableAmount());
+        assertEquals(settledTime, res.getSettledAt());
+        assertEquals("Trần Quản Lý", res.getSettledByName());
+        assertEquals("Biên bản nghiệm thu hoàn tất, xước sơn nhẹ trừ 200k", res.getSettlementNote());
     }
 }
 

@@ -165,10 +165,10 @@ export const RenewalPage: React.FC = () => {
 
   const isTerminated = contract ? (contract.status === 'TERMINATED' || contract.status === 'CLOSED') : false;
   const isPendingReturn = contract ? contract.status === 'PENDING_RETURN' : false;
-  const hasUnpaidOverdue = contract ? (contract.status === 'OVERDUE' && (contract.overdueFee ?? 0) > 0) : false;
+  const isOverdue = contract ? contract.status === 'OVERDUE' : false;
   const daysRemaining = contract?.endDate ? calculateDaysRemaining(contract.endDate) : 999;
   const isPastRenewalDeadline = (contract?.status === 'ACTIVE' && daysRemaining < 20) || isPastDeadlineFromBackend;
-  const isRenewalBlocked = isTerminated || isPendingReturn || hasUnpaidOverdue || isCapacityConflict || isPastRenewalDeadline || isUnitTypeInactive;
+  const isRenewalBlocked = isTerminated || isPendingReturn || isOverdue || isCapacityConflict || isPastRenewalDeadline || isUnitTypeInactive;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -185,6 +185,31 @@ export const RenewalPage: React.FC = () => {
           Gia Hạn Hợp Đồng Thuê Kho
         </h1>
       </div>
+
+      {isOverdue && (
+        <div className="p-4 bg-rose-50 border-2 border-rose-300 rounded-xl flex items-start gap-3 text-rose-900 shadow-xs">
+          <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+          <div className="space-y-1 text-xs flex-1">
+            <h4 className="font-bold text-sm text-rose-950">
+              Hợp đồng đã quá hạn — Khóa tự gia hạn trực tuyến (Quy chế BR-REN-06)
+            </h4>
+            <p className="leading-relaxed text-rose-800">
+              Hợp đồng của Quý khách đã quá hạn ngày kết thúc (máy trạng thái một chiều). Theo quy định, hợp đồng quá hạn không được phép gia hạn tiếp. Quý khách vui lòng thanh toán phí quá hạn để nhận mã PIN tạm thời dọn dẹp tài sản và thực hiện thủ tục Báo trả kho.
+            </p>
+            <div className="pt-2 flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowReturnModal(true)}
+                className="text-xs font-bold border-rose-300 text-rose-800 hover:bg-rose-100"
+              >
+                <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                Lên lịch trả kho
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isUnitTypeInactive && (
         <div className="p-4 bg-rose-50 border-2 border-rose-300 rounded-xl flex flex-col sm:flex-row sm:items-start justify-between gap-4 text-rose-900 shadow-xs">

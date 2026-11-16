@@ -84,7 +84,7 @@ export function useRenewalPayment({
       const updatedContract: RentedContract = {
         ...(refreshed || contract),
         endDate,
-        status: 'ACTIVE',
+        status: (refreshed?.status || contract.status),
         overdueDays: 0,
         overdueFee: 0,
       };
@@ -124,12 +124,10 @@ export function useRenewalPayment({
           throw new Error('Hợp đồng đang ở trạng thái chờ nghiệm thu trả kho. Vui lòng hủy yêu cầu trả kho trước nếu muốn gia hạn.');
         }
         if (contract.status === 'OVERDUE') {
-          const fee = contract.overdueFee ?? 0;
-          if (fee > 0) {
-            throw new Error('Hợp đồng đang có nợ phạt quá hạn. Vui lòng thanh toán nợ phạt trước khi gia hạn.');
-          }
-        } else if (contract.status !== 'ACTIVE') {
-          throw new Error(`Hợp đồng đang ở trạng thái "${contract.status}". Chỉ hợp đồng ACTIVE hoặc OVERDUE đã tất toán nợ mới được phép gia hạn.`);
+          throw new Error('Hợp đồng đã quá hạn (máy trạng thái một chiều theo BR-REN-06) không thể tự gia hạn trực tuyến. Quý khách vui lòng thanh toán nợ quá hạn để mở PIN tạm và thực hiện Báo trả kho.');
+        }
+        if (contract.status !== 'ACTIVE') {
+          throw new Error(`Hợp đồng đang ở trạng thái "${contract.status}". Chỉ hợp đồng đang hoạt động (ACTIVE) mới được phép tự gia hạn trực tuyến.`);
         }
 
         const numId = parseInt(contract.id, 10);

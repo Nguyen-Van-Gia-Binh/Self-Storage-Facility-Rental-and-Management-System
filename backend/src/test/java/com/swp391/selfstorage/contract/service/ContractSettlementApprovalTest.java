@@ -440,4 +440,38 @@ class ContractSettlementApprovalTest {
                 assertEquals(0L, preview.getEarlyRentRefund());
                 assertEquals(3_200_000L, preview.getDepositRefundAmount()); // Bảo toàn 100% cọc
         }
+
+        @Test
+        @DisplayName("approveSettlement: Hồ sơ trả kho đã COMPLETED ném INVALID_STATUS_TRANSITION chống duyệt trùng lặp")
+        void approveSettlement_alreadyCompleted_throwsInvalidStatusTransition() {
+                RentalContract contract = RentalContract.builder()
+                                .id(500L)
+                                .customerId(15L)
+                                .facilityId(1L)
+                                .storageUnitId(42L)
+                                .depositAmount(1_000_000L)
+                                .status(ContractStatus.PENDING_RETURN)
+                                .build();
+
+                ReturnRequest returnReq = ReturnRequest.builder()
+                                .id(20L)
+                                .contractId(500L)
+                                .status(ReturnRequestStatus.COMPLETED)
+                                .inspectedAt(OffsetDateTime.now())
+                                .build();
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(500L), anyList())).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(500L))
+                                .thenReturn(Optional.of(returnReq));
+
+                SettlementApprovalRequest request = SettlementApprovalRequest.builder()
+                                .approvedNotes("Duyệt lại")
+                                .build();
+
+                CustomException ex = assertThrows(CustomException.class,
+                                () -> contractService.approveSettlement(500L, request, 99L, List.of(1L)));
+
+                assertEquals(ErrorCode.INVALID_STATUS_TRANSITION, ex.getErrorCode());
+                assertTrue(ex.getMessage().contains("đã được phê duyệt quyết toán hoàn tất trước đó"));
+        }
 }
