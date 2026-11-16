@@ -26,7 +26,7 @@ interface PolicyDrawerProps {
   activePolicy: ActivePolicyInfo | null;
   viewingVersion: PolicyVersionListItem | null;
   onPublishSuccess: () => void;
-  onSwitchToPublishWithSnapshot?: (snapshot: any) => void;
+  onSwitchToPublishWithSnapshot?: (snapshot: Record<string, unknown>) => void;
 }
 
 type FormState = {
@@ -74,26 +74,26 @@ function percentToRate(raw: string): number {
   return Number(raw) / 100;
 }
 
-function fromPolicySource(source: any): FormState {
+function fromPolicySource(source: Record<string, unknown> | null | undefined): FormState {
   if (!source) {
     return {
       effectiveDate: todayInVietnam(),
       depositMultiplier: '1',
       reservationHoldHours: '48',
-      rentalBufferDays: '15',
+      rentalBufferDays: '8',
       rentalDailyDivisor: '30',
       checkinGraceDays: '10',
       cancelFullRefundHours: '48',
       cancelLateRefundRate: '50',
       cancelNoShowRefundRate: '0',
-      renewalReminderDays: '60,7,3,1',
+      renewalReminderDays: '60,30,25,21',
       renewalMinMonths: '1',
       renewalMaxMonths: '12',
       overdueGraceDays: '3',
       overdueDailyRate: '10',
-      overdueCapRate: '70',
-      overdueLockAccessDays: '7',
-      overdueTerminationDays: '10',
+      overdueCapRate: '55',
+      overdueLockAccessDays: '1',
+      overdueTerminationDays: '7',
       returnNoticeDays: '30',
       returnRefundWorkingDays: '7',
       returnEarlyRefundRate: '0',
@@ -105,31 +105,31 @@ function fromPolicySource(source: any): FormState {
   }
 
   const date = source.effectiveFrom
-    ? new Date(source.effectiveFrom).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
-    : source.effectiveDate || todayInVietnam();
+    ? new Date(String(source.effectiveFrom)).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
+    : String(source.effectiveDate || todayInVietnam());
   const today = todayInVietnam();
 
   return {
     effectiveDate: date < today ? today : date,
     depositMultiplier: String(source.depositMultiplier ?? 1),
     reservationHoldHours: String(source.reservationHoldHours ?? 48),
-    rentalBufferDays: String(source.rentalBufferDays ?? 15),
+    rentalBufferDays: String(source.rentalBufferDays ?? 8),
     rentalDailyDivisor: String(source.rentalDailyDivisor ?? 30),
     checkinGraceDays: String(source.checkinGraceDays ?? 10),
     cancelFullRefundHours: String(source.cancelFullRefundHours ?? 48),
-    cancelLateRefundRate: rateToPercent(source.cancelLateRefundRate, 0.5),
-    cancelNoShowRefundRate: rateToPercent(source.cancelNoShowRefundRate, 0),
-    renewalReminderDays: source.renewalReminderDays || '60,7,3,1',
+    cancelLateRefundRate: rateToPercent(source.cancelLateRefundRate as number, 0.5),
+    cancelNoShowRefundRate: rateToPercent(source.cancelNoShowRefundRate as number, 0),
+    renewalReminderDays: (source.renewalReminderDays as string) || '60,30,25,21',
     renewalMinMonths: String(source.renewalMinMonths ?? 1),
     renewalMaxMonths: String(source.renewalMaxMonths ?? 12),
     overdueGraceDays: String(source.overdueGraceDays ?? 3),
-    overdueDailyRate: rateToPercent(source.overdueDailyRate, 0.1),
-    overdueCapRate: rateToPercent(source.overdueCapRate, 0.7),
-    overdueLockAccessDays: String(source.overdueLockAccessDays ?? 7),
-    overdueTerminationDays: String(source.overdueTerminationDays ?? 10),
+    overdueDailyRate: rateToPercent(source.overdueDailyRate as number, 0.1),
+    overdueCapRate: rateToPercent(source.overdueCapRate as number, 0.55),
+    overdueLockAccessDays: String(source.overdueLockAccessDays ?? 1),
+    overdueTerminationDays: String(source.overdueTerminationDays ?? 7),
     returnNoticeDays: String(source.returnNoticeDays ?? 30),
     returnRefundWorkingDays: String(source.returnRefundWorkingDays ?? 7),
-    returnEarlyRefundRate: rateToPercent(source.returnEarlyRefundRate, 0),
+    returnEarlyRefundRate: rateToPercent(source.returnEarlyRefundRate as number, 0),
     accessPinLength: String(source.accessPinLength ?? 6),
     supportUrgentSlaHours: String(source.supportUrgentSlaHours ?? 2),
     supportAutoCloseWorkingDays: String(source.supportAutoCloseWorkingDays ?? 7),
@@ -267,8 +267,8 @@ export const PolicyDrawer: React.FC<PolicyDrawerProps> = ({
     const grace = Number(form.overdueGraceDays);
     const lock = Number(form.overdueLockAccessDays);
     const termination = Number(form.overdueTerminationDays);
-    if (!(Number.isInteger(grace) && Number.isInteger(lock) && Number.isInteger(termination) && grace < lock && lock <= termination)) {
-      return 'Ân hạn phải nhỏ hơn mốc khóa truy cập, và mốc khóa không được sau ngày chấm dứt';
+    if (!(Number.isInteger(grace) && Number.isInteger(lock) && Number.isInteger(termination) && grace < termination && lock >= 1 && lock <= termination)) {
+      return 'Giai đoạn 1 phải nhỏ hơn ngày chấm dứt, và mốc khóa truy cập phải nằm trong khoảng từ ngày 1 đến ngày chấm dứt';
     }
     if (!form.confirmed) {
       return 'Cần đánh dấu xác nhận ban hành trước khi lưu phiên bản mới';

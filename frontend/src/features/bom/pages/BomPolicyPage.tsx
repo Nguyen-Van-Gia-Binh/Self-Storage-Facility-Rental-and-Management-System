@@ -186,8 +186,8 @@ export const BomPolicyPage: React.FC = () => {
     const grace = Number(form.overdueGraceDays);
     const lock = Number(form.overdueLockAccessDays);
     const termination = Number(form.overdueTerminationDays);
-    if (!(Number.isInteger(grace) && Number.isInteger(lock) && Number.isInteger(termination) && grace < lock && lock <= termination)) {
-      return 'Ân hạn phải nhỏ hơn mốc khóa truy cập, và mốc khóa không được sau ngày chấm dứt';
+    if (!(Number.isInteger(grace) && Number.isInteger(lock) && Number.isInteger(termination) && grace < termination && lock >= 1 && lock <= termination)) {
+      return 'Giai đoạn 1 phải nhỏ hơn ngày chấm dứt, và mốc khóa truy cập phải nằm trong khoảng từ ngày 1 đến ngày chấm dứt';
     }
     if (!form.confirmed) {
       return 'Cần xác nhận ban hành trước khi lưu phiên bản mới';
@@ -305,7 +305,7 @@ export const BomPolicyPage: React.FC = () => {
       <section className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-2xs space-y-4">
         <h2 className="font-semibold text-slate-900 text-base">Quá hạn</h2>
         <p className="text-xs text-slate-500">
-          Phí bắt đầu vào ngày ngay sau ân hạn. Ân hạn phải nhỏ hơn mốc khóa truy cập, và mốc khóa không được sau ngày chấm dứt. Khách quá hạn không đặt chỗ mới.
+          Phí bắt đầu vào ngày ngay sau ân hạn. Giai đoạn 1 phải nhỏ hơn ngày chấm dứt, và mốc khóa truy cập từ ngày 1 đến ngày chấm dứt. Khách quá hạn không đặt chỗ mới.
         </p>
         <p className="text-sm font-medium text-slate-700">
           Bắt đầu tính phí: ngày thứ {Number.isInteger(Number(form.overdueGraceDays)) ? Number(form.overdueGraceDays) + 1 : '—'} sau ngày hết hạn
