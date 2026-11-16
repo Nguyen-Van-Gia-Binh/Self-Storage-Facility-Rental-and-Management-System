@@ -180,8 +180,9 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
     const noteElements = await screen.findAllByText(/Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao/i);
     expect(noteElements.length).toBeGreaterThanOrEqual(1);
 
-    // Banner Phụ lục điều chuyển ô kho do sự cố kỹ thuật
-    expect(await screen.findByText(/PHỤ LỤC ĐIỀU CHUYỂN Ô KHO/i)).toBeInTheDocument();
+    // Banner Phụ lục điều chuyển ô kho do sự cố kỹ thuật (có thể xuất hiện ở banner trên cùng và Điều 5)
+    const relocationHeaders = await screen.findAllByText(/PHỤ LỤC ĐIỀU CHUYỂN Ô KHO/i);
+    expect(relocationHeaders.length).toBeGreaterThanOrEqual(1);
     const relocationElements = await screen.findAllByText(/SUP-202610-0001/i);
     expect(relocationElements.length).toBeGreaterThanOrEqual(1);
     expect(await screen.findByText(/Ô KHO MỚI: U-102/i)).toBeInTheDocument();
@@ -298,8 +299,8 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
       />
     );
 
-    // Huy hiệu và banner dừng do sự cố
-    expect(await screen.findByText(/Biên bản từ chối bàn giao & hoàn tiền 100%/i)).toBeInTheDocument();
+    // Huy hiệu và banner dừng do sự cố (chuẩn hóa gọn theo BR-CHK-06)
+    expect(await screen.findByText(/Từ chối nhận kho do lỗi cơ sở|Biên bản từ chối bàn giao/i)).toBeInTheDocument();
     const incidentReports = await screen.findAllByText(/Biên bản tạm dừng nhận kho do sự cố tại hiện trường/i);
     expect(incidentReports.length).toBeGreaterThanOrEqual(1);
 

@@ -67,6 +67,7 @@ export interface BackendRentalSummary {
   relocationEligible?: boolean;
   handoverRejected?: boolean;
   rejectionReason?: string;
+  scheduledReturnDate?: string;
   createdAt?: string;
 }
 
@@ -114,6 +115,21 @@ export interface CustomerRentalDetail extends CustomerRentalSummary {
   handoverRejected?: boolean;
   rejectionReason?: string;
   overdueDays?: number;
+  scheduledReturnDate?: string;
+  // Thông tin quyết toán thanh lý & hoàn cọc (Settlement & Termination Addendum - PL-SETTLEMENT)
+  settlementType?: 'NORMAL' | 'EARLY_RETURN' | 'OVERDUE_TERMINATED' | 'REJECTED_CHECKIN' | 'CANCELLED_CHECKIN' | string;
+  settlementRefundAmount?: number;
+  settlementPayableAmount?: number;
+  settlementDamageCost?: number;
+  settlementOverdueFee?: number;
+  settlementDepositForfeited?: number;
+  settlementEarlyRentRefund?: number;
+  settlementSealingFee?: number;
+  settlementUnusedDays?: number;
+  settlementDailyRent?: number;
+  settledAt?: string;
+  settledByName?: string;
+  settlementNote?: string;
 }
 
 export interface RenewalQuote {

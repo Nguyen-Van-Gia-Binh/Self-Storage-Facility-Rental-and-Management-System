@@ -721,3 +721,39 @@ export async function resolveRenewalConflict(
     { method: 'POST' }
   );
 }
+
+export interface ContractRenewalHistoryItem {
+  id: number;
+  contractId: number;
+  previousEndDate: string;
+  newEndDate: string;
+  renewalMonths: number;
+  monthlyPriceSnapshot: number;
+  policyVersionId?: number;
+  overdueFeeSettled?: number;
+  rentalFeeAmount: number;
+  lateAdminFee?: number;
+  isForceRenewal?: boolean;
+  paymentMethod?: string;
+  notes?: string;
+  totalPaid: number;
+  createdAt?: string;
+}
+
+/**
+ * Lấy lịch sử các lần gia hạn của hợp đồng (Customer & Manager)
+ * GET /api/v1/contracts/{id}/renewals
+ */
+export async function getContractRenewalHistory(
+  contractId: number | string
+): Promise<ContractRenewalHistoryItem[]> {
+  try {
+    const res = await apiClient<ApiResponse<ContractRenewalHistoryItem[]>>(
+      `/contracts/${contractId}/renewals`
+    );
+    return res.data || [];
+  } catch (error) {
+    console.warn(`[getContractRenewalHistory] Could not load renewals for contract ${contractId}:`, error);
+    return [];
+  }
+}
