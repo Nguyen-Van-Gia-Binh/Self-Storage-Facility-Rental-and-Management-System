@@ -186,7 +186,7 @@ describe('ContractPrintDocument & Print Contract Flow', () => {
     expect(screen.getByText(/hoàn trả 100% cho Bên B sau khi nghiệm thu trả kho/i)).toBeInTheDocument();
 
     // Tổng tiền thuê và Tổng giá trị hợp đồng
-    expect(screen.getByText(/TỔNG GIÁ TRỊ HỢP ĐỒNG \(TỔNG TIỀN\):/i)).toBeInTheDocument();
+    expect(screen.getByText(/TỔNG GIÁ TRỊ HỢP ĐỒNG/i)).toBeInTheDocument();
     expect(screen.getByText(/Tổng tiền thuê trọn kỳ/i)).toBeInTheDocument();
 
     // 4 tiêu chí nghiệm thu vật lý hiện trường BR-CHK-02

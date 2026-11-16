@@ -150,6 +150,19 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   const effectiveTotalRentalFee = effectiveDetail?.totalRentalFee || contract.totalRentalFee || (effectiveMonthlyRent * effectiveRentalMonths);
   const effectiveTotalContractAmount = effectiveDetail?.totalContractAmount || contract.totalContractAmount || (effectiveTotalRentalFee + effectiveDeposit);
 
+  // Tính số tháng thuê của chu kỳ gốc (Original Rental Months)
+  // Khi hợp đồng đã được gia hạn, contract.rentalMonths ở backend bị cộng dồn tổng tháng,
+  // nhưng Hợp đồng gốc (Điều 2 & Điều 3) chỉ thể hiện số tháng và số tiền của chu kỳ ban đầu.
+  const totalRenewedMonths = renewals.reduce((sum, r) => sum + (r.renewalMonths || 0), 0);
+  const originalRentalMonths = (effectiveMonthlyRent > 0 && effectiveTotalRentalFee > 0)
+    ? Math.max(1, Math.round(effectiveTotalRentalFee / effectiveMonthlyRent))
+    : Math.max(1, effectiveRentalMonths - totalRenewedMonths);
+
+  // Ngày kết thúc ban đầu của hợp đồng gốc (trước khi có các phụ lục gia hạn)
+  const originalEndDate = renewals.length > 0 && renewals[0].previousEndDate
+    ? renewals[0].previousEndDate
+    : contract.endDate;
+
   const isPendingCheckin =
     effectiveStatus === 'PENDING_CHECKIN' ||
     effectiveStatus === 'PENDING_CHECK_IN';
@@ -452,18 +465,29 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
                   <div>
                     <span className="text-slate-400 block text-[11px]">Số hợp đồng:</span>
                     <span className="font-mono font-bold text-slate-800">{effectiveContractNumber}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[11px]">Thời hạn thuê ban đầu:</span>
+                    <span className="font-bold text-slate-800">{originalRentalMonths} tháng</span>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Ngày bắt đầu thuê:</span>
                     <span className="font-bold text-slate-800">{contract.startDate}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[11px]">Ngày kết thúc hợp đồng:</span>
-                    <span className="font-bold text-slate-800">{contract.endDate}</span>
+                    <span className="text-slate-400 block text-[11px]">
+                      {renewals.length > 0 ? 'Hạn kết thúc ban đầu:' : 'Ngày kết thúc hợp đồng:'}
+                    </span>
+                    <span className="font-bold text-slate-800">{originalEndDate}</span>
+                    {renewals.length > 0 && (
+                      <span className="text-[10px] text-emerald-700 font-semibold block mt-0.5">
+                        (Đã gia hạn đến {contract.endDate})
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -485,7 +509,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
                   <div className="flex justify-between items-center py-1 border-t border-slate-100">
                     <span className="text-slate-700 font-semibold">
-                      Tổng tiền thuê ({effectiveRentalMonths} tháng):
+                      Tổng tiền thuê ban đầu ({originalRentalMonths} tháng):
                     </span>
                     <span className="font-bold text-slate-800 text-sm">
                       {formatVND(effectiveTotalRentalFee)}
@@ -504,11 +528,18 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                     </span>
                   </div>
 
-                  {/* Tổng giá trị hợp đồng / Tổng tiền */}
+                  {/* Tổng giá trị hợp đồng ban đầu / Tổng tiền */}
                   <div className="flex justify-between items-center p-3 rounded-xl bg-brand-50 border border-brand-200 mt-2">
-                    <span className="text-brand-900 font-extrabold text-xs uppercase tracking-wider">
-                      Tổng giá trị hợp đồng (Tổng tiền):
-                    </span>
+                    <div>
+                      <span className="text-brand-900 font-extrabold text-xs uppercase tracking-wider block">
+                        Tổng giá trị hợp đồng (Tổng tiền ban đầu):
+                      </span>
+                      {renewals.length > 0 && (
+                        <span className="text-[10.5px] text-emerald-800 font-medium">
+                          (Chưa bao gồm các khoản nộp gia hạn tại Phụ lục Điều 5)
+                        </span>
+                      )}
+                    </div>
                     <span className="font-black text-brand-800 text-base sm:text-lg">
                       {formatVND(effectiveTotalContractAmount)}
                     </span>
