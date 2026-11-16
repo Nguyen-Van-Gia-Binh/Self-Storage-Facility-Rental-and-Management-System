@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { ClipboardCheck, CheckSquare, Square, AlertOctagon, KeyRound, Sparkles, Check } from 'lucide-react';
+import { AlertOctagon, KeyRound, Sparkles, Check } from 'lucide-react';
 import type { CheckInContract, CheckInSubmitRequest } from '../../../types';
 import { SignaturePad } from './SignaturePad';
 import { EvidencePhotoCapture } from './EvidencePhotoCapture';
-import { Button } from '../../../components/ui/Button';
-
 export interface HandoverInspectionFormProps {
   contract: CheckInContract;
   onSubmitHandover: (request: CheckInSubmitRequest) => Promise<void>;
@@ -90,14 +88,9 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
     <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-6">
       {/* Tiêu đề mục */}
       <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
-            <ClipboardCheck className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="font-bold text-base text-slate-900">Biên Bản Nghiệm Thu & Bàn Giao Điện Tử</h3>
-            <p className="text-xs text-slate-500">Tiêu chuẩn kiểm định và bàn giao cơ sở lưu trữ</p>
-          </div>
+        <div>
+          <h3 className="font-bold text-base text-slate-900">Biên Bản Nghiệm Thu & Bàn Giao Điện Tử</h3>
+          <p className="text-xs text-slate-500">Tiêu chuẩn kiểm định và bàn giao cơ sở lưu trữ</p>
         </div>
 
         <button
@@ -112,24 +105,14 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
 
       {/* Cảnh báo sự cố đang chờ FM phân bổ ô mới trên 2D */}
       {isAwaitingRelocation ? (
-        <div className="p-4 bg-amber-50 border border-amber-300 rounded-2xl flex items-start gap-3 text-xs text-amber-900 font-medium shadow-xs animate-in fade-in">
-          <AlertOctagon className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <h4 className="font-bold text-sm text-amber-950">
-              Ô kho phát sinh sự cố — Tạm dừng thủ tục bàn giao
-            </h4>
-            <p className="text-amber-800 leading-relaxed">
-              Khách hàng đã báo sự cố hư hỏng và yêu cầu đổi ô kho mới. Hồ sơ đã được chuyển tiếp đến <strong>Quản lý cơ sở (FM)</strong> để phân bổ ô kho thay thế trên sơ đồ mặt bằng 2D. Sau khi Quản lý cơ sở cấp ô mới xong, màn hình sẽ tự động cập nhật để bạn tiếp tục bàn giao cho khách.
-            </p>
-          </div>
-        </div>
+        <p className="text-sm text-amber-800">
+          <span className="font-semibold text-amber-950">Ô kho phát sinh sự cố — Tạm dừng thủ tục bàn giao. </span>
+          Khách hàng đã báo sự cố hư hỏng và yêu cầu đổi ô kho mới. Hồ sơ đã được chuyển tiếp đến Quản lý cơ sở (FM) để phân bổ ô kho thay thế trên sơ đồ mặt bằng 2D. Sau khi Quản lý cơ sở cấp ô mới xong, màn hình sẽ tự động cập nhật để bạn tiếp tục bàn giao cho khách.
+        </p>
       ) : !hasAllocatedUnit ? (
-        <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-xl flex items-center gap-2.5 text-xs text-amber-900 font-medium shadow-xs">
-          <AlertOctagon className="w-4 h-4 text-amber-600 shrink-0" />
-          <span>
-            Hợp đồng chưa được Quản lý cơ sở phân bổ ô kho cụ thể. Vui lòng liên hệ Quản lý cơ sở gán ô kho trước khi tiến hành nghiệm thu bàn giao theo quy định <strong>BR-CHK-02</strong>.
-          </span>
-        </div>
+        <p className="text-sm text-amber-800">
+          Hợp đồng chưa được Quản lý cơ sở phân bổ ô kho cụ thể. Vui lòng liên hệ Quản lý cơ sở gán ô kho trước khi tiến hành nghiệm thu bàn giao theo quy định BR-CHK-02.
+        </p>
       ) : null}
 
       {/* 4 Tiêu chí kiểm tra hiện trạng */}
@@ -138,86 +121,26 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
           1. Kiểm tra 4 tiêu chí hiện trạng vật lý (Bắt buộc)
         </label>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-          {/* Tiêu chí 1 */}
-          <div
-            onClick={() => setCriteria((prev) => ({ ...prev, cleanAndEmpty: !prev.cleanAndEmpty }))}
-            className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
-              criteria.cleanAndEmpty
-                ? 'border-emerald-500 bg-emerald-50/50 text-emerald-900'
-                : 'border-slate-200 hover:border-slate-300 bg-slate-50/40 text-slate-700'
-            }`}
-          >
-            {criteria.cleanAndEmpty ? (
-              <CheckSquare className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-            ) : (
-              <Square className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
-            )}
-            <div className="text-xs">
-              <span className="font-bold block">Kho sạch sẽ & trống hoàn toàn</span>
-              <span className="text-slate-500">Không có rác thải, bụi bẩn hoặc đồ đạc cũ của khách trước</span>
-            </div>
-          </div>
-
-          {/* Tiêu chí 2 */}
-          <div
-            onClick={() => setCriteria((prev) => ({ ...prev, doorWorking: !prev.doorWorking }))}
-            className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
-              criteria.doorWorking
-                ? 'border-emerald-500 bg-emerald-50/50 text-emerald-900'
-                : 'border-slate-200 hover:border-slate-300 bg-slate-50/40 text-slate-700'
-            }`}
-          >
-            {criteria.doorWorking ? (
-              <CheckSquare className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-            ) : (
-              <Square className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
-            )}
-            <div className="text-xs">
-              <span className="font-bold block">Cửa cuốn kéo êm, không kẹt</span>
-              <span className="text-slate-500">Khóa cơ và thanh ray hoạt động trơn tru, không móp méo</span>
-            </div>
-          </div>
-
-          {/* Tiêu chí 3 */}
-          <div
-            onClick={() => setCriteria((prev) => ({ ...prev, dryWallsFloor: !prev.dryWallsFloor }))}
-            className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
-              criteria.dryWallsFloor
-                ? 'border-emerald-500 bg-emerald-50/50 text-emerald-900'
-                : 'border-slate-200 hover:border-slate-300 bg-slate-50/40 text-slate-700'
-            }`}
-          >
-            {criteria.dryWallsFloor ? (
-              <CheckSquare className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-            ) : (
-              <Square className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
-            )}
-            <div className="text-xs">
-              <span className="font-bold block">Sàn và vách ngăn khô ráo</span>
-              <span className="text-slate-500">Không có vết thấm dột, trần kho nguyên vẹn, đạt chuẩn an toàn</span>
-            </div>
-          </div>
-
-          {/* Tiêu chí 4 */}
-          <div
-            onClick={() => setCriteria((prev) => ({ ...prev, smartLockReady: !prev.smartLockReady }))}
-            className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
-              criteria.smartLockReady
-                ? 'border-emerald-500 bg-emerald-50/50 text-emerald-900'
-                : 'border-slate-200 hover:border-slate-300 bg-slate-50/40 text-slate-700'
-            }`}
-          >
-            {criteria.smartLockReady ? (
-              <CheckSquare className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-            ) : (
-              <Square className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
-            )}
-            <div className="text-xs">
-              <span className="font-bold block">Hệ thống khóa thông minh sẵn sàng</span>
-              <span className="text-slate-500">Đèn hành lang sáng tốt, bàn phím số thông minh hoạt động bình thường</span>
-            </div>
-          </div>
+        <div className="space-y-3">
+          {([
+            ['cleanAndEmpty', 'Kho sạch sẽ & trống hoàn toàn', 'Không có rác thải, bụi bẩn hoặc đồ đạc cũ của khách trước'],
+            ['doorWorking', 'Cửa cuốn kéo êm, không kẹt', 'Khóa cơ và thanh ray hoạt động trơn tru, không móp méo'],
+            ['dryWallsFloor', 'Sàn và vách ngăn khô ráo', 'Không có vết thấm dột, trần kho nguyên vẹn, đạt chuẩn an toàn'],
+            ['smartLockReady', 'Hệ thống khóa thông minh sẵn sàng', 'Đèn hành lang sáng tốt, bàn phím số thông minh hoạt động bình thường'],
+          ] as const).map(([key, title, help]) => (
+            <label key={key} className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={criteria[key]}
+                onChange={() => setCriteria((prev) => ({ ...prev, [key]: !prev[key] }))}
+                className="mt-1 w-4 h-4 accent-brand-500"
+              />
+              <span>
+                <span className="block text-sm font-medium text-slate-900">{title}</span>
+                <span className="block text-sm text-slate-500">{help}</span>
+              </span>
+            </label>
+          ))}
         </div>
       </div>
 
@@ -274,7 +197,7 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
       </div>
 
       {/* Thanh nút thao tác */}
-      <div className="bg-slate-50/80 -mx-5 -mb-5 p-4 rounded-b-2xl border-t border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Nút báo sự cố ngoại lệ */}
         {isAwaitingRelocation ? (
           <span className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-amber-800 bg-amber-100/70 border border-amber-200 rounded-xl">
@@ -294,17 +217,14 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
         )}
 
         {/* Nút xác nhận chính */}
-        <Button
+        <button
           type="submit"
           disabled={!canSubmit}
-          isLoading={isSubmitting}
-          size="md"
-          variant="primary"
-          className="px-5 py-2.5 shadow-xs cursor-pointer font-bold tracking-wide text-xs shrink-0"
+          className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
         >
           <KeyRound className="w-4 h-4 mr-2 shrink-0" />
-          XÁC NHẬN BÀN GIAO & KÍCH HOẠT MÃ PIN
-        </Button>
+          {isSubmitting ? 'Đang tải...' : 'XÁC NHẬN BÀN GIAO & KÍCH HOẠT MÃ PIN'}
+        </button>
       </div>
     </form>
   );

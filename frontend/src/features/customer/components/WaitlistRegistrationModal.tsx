@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/Modal';
+import { DateField } from '@/components/ui/DateField';
 import { Button } from '@/components/ui/Button';
 import { Clock, CheckCircle2, AlertCircle, Building2, Package, Phone, Info } from 'lucide-react';
 import { registerWaitlist } from '@/api/waitlist';
@@ -254,11 +255,10 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Ngày mong muốn bắt đầu thuê <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="date"
+                <DateField
                   min={todayStr}
                   value={targetStartDate}
-                  onChange={(e) => setTargetStartDate(e.target.value)}
+                  onChange={setTargetStartDate}
                   required
                   className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"
                 />

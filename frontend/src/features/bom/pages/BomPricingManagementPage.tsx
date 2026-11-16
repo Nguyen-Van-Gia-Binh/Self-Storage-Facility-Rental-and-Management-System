@@ -7,11 +7,11 @@ import {
   Percent,
   CheckCircle2,
   AlertCircle,
-  Building2,
+  ChevronDown,
   Plus,
 } from 'lucide-react';
 import { fetchFacilities, fetchUnitTypes } from '@/api/facility';
-import { createUnitType } from '@/api/unit';
+import { createUnitType, deleteUnitType } from '@/api/unit';
 import type { UnitTypeFormData } from '@/types/unit';
 import { UnitTypeFormModal } from '../components/UnitTypeFormModal';
 import {
@@ -281,6 +281,22 @@ export const BomPricingManagementPage: React.FC = () => {
     }
   };
 
+  const handleDeleteUnitType = async (unitType: UnitTypeCatalog) => {
+    try {
+      await deleteUnitType(selectedFacilityId, unitType.id);
+      showToast(`Đã gỡ "${unitType.name}" khỏi bảng giá cơ sở này.`);
+      if (priceDrawerUnitType?.id === unitType.id) {
+        setPriceDrawerUnitType(null);
+      }
+      setPriceDrawerBulkTargets((prev) => prev.filter((item) => item.id !== unitType.id));
+      await refreshUnitTypes();
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      showToast(errorObj.message || 'Không thể xóa loại ô kho', 'error');
+      throw err;
+    }
+  };
+
   const handleCreateUnitType = async (data: UnitTypeFormData) => {
     try {
       if (!data.code) {
@@ -296,7 +312,7 @@ export const BomPricingManagementPage: React.FC = () => {
       const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
       const msg = errorObj?.response?.data?.message || errorObj?.message || 'Không thể tạo loại ô kho';
       showToast(msg, 'error');
-      throw new Error(msg);
+      throw new Error(msg, { cause: err });
     }
   };
 
@@ -436,65 +452,64 @@ export const BomPricingManagementPage: React.FC = () => {
       )}
 
       {/* Tầng 1: Header & Tabs Navigation (Điều hướng phân hệ) */}
-      <div className="bg-white p-4 rounded-2xl shadow-xs border border-slate-200/80 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
-        <div className="flex items-center space-x-2.5">
-          <div className="p-2 rounded-xl bg-amber-500 text-white shadow-2xs">
-            <DollarSign className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-slate-900 tracking-tight">
-              Quản lý Bảng giá & Phụ phí
-            </h1>
-            <p className="text-xs text-slate-500">
-              Thiết lập khung giá thuê theo m², biểu phí dịch vụ và chính sách tài chính
-            </p>
-          </div>
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-bold text-slate-900 tracking-tight">
+            Quản lý Bảng giá & Phụ phí
+          </h1>
+          <p className="text-xs text-slate-500">
+            Thiết lập khung giá thuê theo m², biểu phí dịch vụ và chính sách tài chính
+          </p>
         </div>
 
         {/* 4 Tabs Điều hướng phân hệ */}
-        <div className="flex flex-wrap items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+        <div className="flex flex-wrap items-center gap-1 text-sm">
           <button
+            type="button"
             onClick={() => setActiveTab('PRICING')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 ${
               activeTab === 'PRICING'
-                ? 'bg-white text-slate-900 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'font-semibold text-brand-600 border-brand-500'
+                : 'font-medium text-slate-500 border-transparent hover:text-slate-800'
             }`}
           >
-            <DollarSign className="w-3.5 h-3.5 text-amber-500" />
+            <DollarSign className="w-3.5 h-3.5" />
             <span>Khung giá thuê ô kho</span>
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('SURCHARGES')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 ${
               activeTab === 'SURCHARGES'
-                ? 'bg-white text-slate-900 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'font-semibold text-brand-600 border-brand-500'
+                : 'font-medium text-slate-500 border-transparent hover:text-slate-800'
             }`}
           >
-            <Tag className="w-3.5 h-3.5 text-blue-500" />
+            <Tag className="w-3.5 h-3.5" />
             <span>Biểu phí & Phụ thu</span>
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('POLICIES')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 ${
               activeTab === 'POLICIES'
-                ? 'bg-white text-slate-900 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'font-semibold text-brand-600 border-brand-500'
+                : 'font-medium text-slate-500 border-transparent hover:text-slate-800'
             }`}
           >
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            <ShieldCheck className="w-3.5 h-3.5" />
             <span>Chính sách cọc & Quá hạn</span>
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('DISCOUNTS')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 ${
               activeTab === 'DISCOUNTS'
-                ? 'bg-white text-slate-900 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'font-semibold text-brand-600 border-brand-500'
+                : 'font-medium text-slate-500 border-transparent hover:text-slate-800'
             }`}
           >
-            <Percent className="w-3.5 h-3.5 text-purple-500" />
+            <Percent className="w-3.5 h-3.5" />
             <span>Khuyến mãi & Giảm giá</span>
           </button>
         </div>
@@ -504,15 +519,12 @@ export const BomPricingManagementPage: React.FC = () => {
       {activeTab === 'PRICING' && (
         <div className="bg-slate-50/90 border border-slate-200/80 px-4 py-3 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-2xs animate-fade-in">
           <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-lg bg-amber-100/80 text-amber-700">
-              <Building2 className="w-4 h-4 shrink-0" />
-            </div>
             <span className="text-xs font-semibold text-slate-600">Đang xem bảng giá tại:</span>
             <div className="relative">
               <select
                 value={selectedFacilityId}
                 onChange={(e) => selectFacility(Number(e.target.value))}
-                className="text-xs font-bold bg-white border border-slate-300 text-slate-900 rounded-xl px-3 py-1.5 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 cursor-pointer shadow-2xs"
+                className="appearance-none text-xs font-bold bg-white border border-slate-300 text-slate-900 rounded-xl pl-3 pr-9 py-1.5 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 cursor-pointer"
                 title="Chọn cơ sở xem bảng giá"
               >
                 {facilities.map((fac) => (
@@ -521,6 +533,7 @@ export const BomPricingManagementPage: React.FC = () => {
                   </option>
                 ))}
               </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
             </div>
             <button
               type="button"
@@ -535,7 +548,7 @@ export const BomPricingManagementPage: React.FC = () => {
             <div className="text-xs text-slate-500 flex items-center gap-3 font-medium">
               <span>Mã CS: <strong className="text-slate-700 font-mono">{currentFacility.code || `#${currentFacility.id}`}</strong></span>
               <span>·</span>
-              <span>Đang quản lý: <strong className="text-slate-700 font-mono tabular-nums">{unitTypes.length} loại ô kho</strong></span>
+              <span>Đang quản lý: <strong className="text-slate-700 tabular-nums">{unitTypes.length} loại ô kho</strong></span>
               {currentFacility.address && (
                 <>
                   <span>·</span>
@@ -555,6 +568,7 @@ export const BomPricingManagementPage: React.FC = () => {
           selectedFacilityId={selectedFacilityId}
           onOpenPriceModal={handleOpenSinglePriceDrawer}
           onOpenBulkPriceModal={handleOpenBulkPriceDrawer}
+          onDelete={handleDeleteUnitType}
           isLoading={isLoadingFacilities || isLoadingUnitTypes}
         />
       )}

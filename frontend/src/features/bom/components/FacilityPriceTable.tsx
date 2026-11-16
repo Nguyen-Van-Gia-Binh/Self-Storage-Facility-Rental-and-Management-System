@@ -1,5 +1,5 @@
 // frontend/src/features/bom/components/FacilityPriceTable.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import {
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { UnitTypeCatalog } from '@/types';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface FacilityPriceTableProps {
   unitTypes: UnitTypeCatalog[];
@@ -20,6 +21,7 @@ interface FacilityPriceTableProps {
   selectedFacilityId: number;
   onOpenPriceModal: (unitType: UnitTypeCatalog) => void;
   onOpenBulkPriceModal: (selectedUnitTypes: UnitTypeCatalog[]) => void;
+  onDelete: (unitType: UnitTypeCatalog) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -29,9 +31,16 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
   selectedFacilityId,
   onOpenPriceModal,
   onOpenBulkPriceModal,
+  onDelete,
   isLoading = false,
 }) => {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [pendingDelete, setPendingDelete] = useState<UnitTypeCatalog | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [selectedFacilityId]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -54,6 +63,21 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
 
   const selectedTargets = unitTypes.filter((u) => selectedIds.includes(u.id));
 
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
+    const target = pendingDelete;
+    setIsDeleting(true);
+    try {
+      await onDelete(target);
+      setSelectedIds((prev) => prev.filter((id) => id !== target.id));
+    } catch {
+      // Trang cha hiện thông báo từ máy chủ.
+    } finally {
+      setIsDeleting(false);
+      setPendingDelete(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Bảng Dữ liệu Thả nổi */}
@@ -61,7 +85,7 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="bg-slate-100/70 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+              <tr className="bg-slate-100/70 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wide whitespace-nowrap">
                 {/* Checkbox All */}
                 <th className="py-3 px-4 w-10 text-center">
                   <input
@@ -76,13 +100,12 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
                     title="Chọn tất cả để cập nhật giá hàng loạt"
                   />
                 </th>
-                <th className="py-3 px-4">Loại ô kho</th>
-                <th className="py-3 px-4 text-center">Diện tích (m²)</th>
-                {/* Right-aligned for financial comparison */}
-                <th className="py-3 px-4 text-right">Đơn giá (₫/m²)</th>
-                <th className="py-3 px-4 text-right">Giá thuê (₫/tháng)</th>
-                <th className="py-3 px-4 text-center">Tổng ô kho (ô)</th>
-                <th className="py-3 px-4 text-right">Thao tác</th>
+                <th className="py-3 px-4 w-full">Loại ô kho</th>
+                <th className="py-3 px-4 text-right tabular-nums">Diện tích (m²)</th>
+                <th className="py-3 px-4 text-right tabular-nums">Đơn giá (₫/m²)</th>
+                <th className="py-3 px-4 text-right tabular-nums">Giá thuê (₫/tháng)</th>
+                <th className="py-3 px-4 text-right tabular-nums">Tổng ô kho (ô)</th>
+                <th className="py-3 px-4 text-center sticky right-0 bg-slate-100">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -135,7 +158,10 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
                       {/* Loại ô kho + Ngày hiệu lực / Giá hẹn giờ */}
                       <td className="py-3 px-4">
                         <div className="flex flex-col">
-                          <span className="font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
+                          <span className="inline-flex items-center gap-2 font-semibold text-slate-900">
+                            {!(ut.scheduledEffectiveFrom && ut.scheduledPricePerM2 != null) && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            )}
                             {ut.name}
                           </span>
                           {ut.description && (
@@ -144,8 +170,7 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
                             </span>
                           )}
 
-                          {/* Tag giá hẹn giờ / sắp áp dụng */}
-                          {ut.scheduledEffectiveFrom && ut.scheduledPricePerM2 != null ? (
+                          {ut.scheduledEffectiveFrom && ut.scheduledPricePerM2 != null && (
                             <div className="flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/80 mt-1 w-fit">
                               <Calendar className="w-3 h-3 text-amber-600" />
                               <span>
@@ -153,21 +178,17 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
                                 <strong>{ut.scheduledPricePerM2.toLocaleString('vi-VN')} ₫/m²</strong>
                               </span>
                             </div>
-                          ) : (
-                            <span className="text-[10px] text-slate-400 mt-0.5">
-                              Hiệu lực: Đang áp dụng hiện tại
-                            </span>
                           )}
                         </div>
                       </td>
 
                       {/* Diện tích (m²) */}
-                      <td className="py-3 px-4 text-center font-mono font-bold text-xs text-slate-700">
+                      <td className="py-3 px-4 text-right tabular-nums text-sm text-slate-700">
                         {ut.areaM2}
                       </td>
 
-                      {/* Đơn giá (₫/m²) - Căn phải, Tabular nums */}
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-xs font-semibold text-slate-800">
+                      {/* Đơn giá (₫/m²) */}
+                      <td className="py-3 px-4 text-right tabular-nums text-xs font-semibold text-slate-800">
                         {rate != null && rate > 0 ? (
                           rate.toLocaleString('vi-VN')
                         ) : (
@@ -176,34 +197,37 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
                       </td>
 
                       {/* Giá thuê (₫/tháng) - Căn phải, Tabular nums */}
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-sm font-bold text-amber-600">
+                      <td className="py-3 px-4 text-right tabular-nums text-sm font-medium text-slate-900">
                         {ut.monthlyPrice > 0 ? (
                           ut.monthlyPrice.toLocaleString('vi-VN')
                         ) : (
-                          <span className="text-xs text-rose-500 font-medium bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
-                            Chưa niêm yết
-                          </span>
+                          <span className="text-xs text-rose-600 font-medium">Chưa niêm yết</span>
                         )}
                       </td>
 
-                      {/* Tổng ô kho - Badge có cấu trúc */}
-                      <td className="py-3 px-4 text-center">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono tabular-nums bg-slate-100 text-slate-700 border border-slate-200/60 shadow-2xs">
-                          {ut.totalUnits}
-                        </span>
+                      <td className="py-3 px-4 text-right tabular-nums text-sm text-slate-700">
+                        {ut.totalUnits}
                       </td>
 
                       {/* Thao tác */}
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end space-x-1.5">
+                      <td className={`py-3 px-4 text-center sticky right-0 shadow-[-8px_0_8px_-8px_rgba(15,23,42,0.12)] ${isChecked ? 'bg-blue-50' : 'bg-white'}`}>
+                        <div className="flex items-center justify-center space-x-1.5">
                           {/* Nút Đổi giá */}
                           <button
                             type="button"
                             onClick={() => onOpenPriceModal(ut)}
-                            className="inline-flex items-center space-x-1.5 px-2.5 py-1 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 hover:text-blue-800 rounded-lg border border-blue-200 transition-colors shadow-2xs cursor-pointer"
+                            className="inline-flex items-center space-x-1.5 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 rounded-lg border border-slate-200 transition-colors cursor-pointer whitespace-nowrap"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                             <span>Đổi giá</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setPendingDelete(ut)}
+                            className="inline-flex items-center px-2.5 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+                          >
+                            Xóa
                           </button>
 
                           {/* Nút Xem lịch sử thay đổi giá */}
@@ -273,6 +297,21 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
           </div>,
           document.body
         )}
+
+      <ConfirmDialog
+        isOpen={pendingDelete !== null}
+        title={pendingDelete ? `Gỡ ${pendingDelete.name} khỏi cơ sở này?` : 'Gỡ loại kho'}
+        description="Loại kho biến mất khỏi bảng giá của cơ sở đang xem. Các cơ sở khác giữ nguyên. Hệ thống từ chối nếu cơ sở này còn ô kho."
+        confirmLabel="Xóa"
+        cancelLabel="Hủy"
+        variant="danger"
+        icon="alert"
+        isLoading={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          if (!isDeleting) setPendingDelete(null);
+        }}
+      />
     </div>
   );
 };

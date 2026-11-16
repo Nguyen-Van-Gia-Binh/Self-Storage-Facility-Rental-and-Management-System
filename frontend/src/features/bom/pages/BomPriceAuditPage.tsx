@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { DateField } from '@/components/ui/DateField';
 import { createPortal } from 'react-dom';
 import { History, X, ChevronLeft, ChevronRight, Loader2, Eye } from 'lucide-react';
 import { fetchFacilities } from '@/api/facility';
@@ -185,11 +186,10 @@ export const BomPriceAuditPage: React.FC = () => {
         </label>
         <label className="text-xs font-semibold text-slate-500">
           Ghi từ ngày
-          <input
-            type="date"
+          <DateField
             value={from}
-            onChange={(event) => {
-              setFrom(event.target.value);
+            onChange={(next) => {
+              setFrom(next);
               resetPage();
             }}
             className="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5"
@@ -197,11 +197,10 @@ export const BomPriceAuditPage: React.FC = () => {
         </label>
         <label className="text-xs font-semibold text-slate-500">
           Đến ngày
-          <input
-            type="date"
+          <DateField
             value={to}
-            onChange={(event) => {
-              setTo(event.target.value);
+            onChange={(next) => {
+              setTo(next);
               resetPage();
             }}
             className="mt-1 w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5"
@@ -260,7 +259,7 @@ export const BomPriceAuditPage: React.FC = () => {
                     onClick={() => setSelected(entry)}
                     className="border-b border-slate-100 hover:bg-violet-50/40 cursor-pointer transition-colors"
                   >
-                    <td className="py-3 px-4 whitespace-nowrap text-slate-700 font-mono text-xs">{formatWhen(entry.recordedAt)}</td>
+                    <td className="py-3 px-4 whitespace-nowrap text-slate-700 num text-xs">{formatWhen(entry.recordedAt)}</td>
                     <td className="py-3 px-4 whitespace-nowrap font-medium text-slate-800">{entry.actorName}</td>
                     <td className="py-3 px-4 text-center whitespace-nowrap">
                       <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200/60">
@@ -281,7 +280,7 @@ export const BomPriceAuditPage: React.FC = () => {
                         Chi tiết
                       </button>
                     </td>
-                    <td className="py-3 px-4 text-center whitespace-nowrap font-mono text-xs text-slate-600">{formatDay(entry.effectiveFrom)}</td>
+                    <td className="py-3 px-4 text-center whitespace-nowrap num text-xs text-slate-600">{formatDay(entry.effectiveFrom)}</td>
                     <td className="py-3 px-4 text-center whitespace-nowrap min-w-[140px]">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border whitespace-nowrap shadow-sm ${statusClass(entry.status)}`}>
                         {entry.status}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Clock, Minus, Plus, Sparkles } from 'lucide-react';
+import { DateField } from '@/components/ui/DateField';
 
 export interface RentDurationCardProps {
   startDate: string;
@@ -61,12 +62,11 @@ export const RentDurationCard: React.FC<RentDurationCardProps> = ({
           <label className="text-xs font-bold text-slate-700 block mb-1.5">
             Ngày bắt đầu lưu kho
           </label>
-          <input
-            type="date"
+          <DateField
             min={todayStr}
             max={maxBookingDate}
             value={startDate}
-            onChange={(e) => onStartDateChange(e.target.value)}
+            onChange={onStartDateChange}
             className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all shadow-2xs"
           />
           <div className="flex flex-col gap-1.5 mt-2">

@@ -398,7 +398,7 @@ export const HomeHeroSection: React.FC<HomeHeroSectionProps> = ({
                             >
                               <Minus className="w-3 h-3" />
                             </button>
-                            <span className="w-5 text-center font-mono text-xs font-bold">{count}</span>
+                            <span className="w-5 text-center num text-xs font-bold">{count}</span>
                             <button
                               type="button"
                               aria-label={`Tăng ${item.label}`}

@@ -238,7 +238,7 @@ export const ContractDashboardPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-4 text-xs">
           <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-xl">
             <span className="text-slate-300">Tổng:</span>
-            <span className="font-mono font-bold text-white text-sm">
+            <span className="num font-bold text-white text-sm">
               {globalKpis.total} HĐ
             </span>
           </div>
@@ -246,7 +246,7 @@ export const ContractDashboardPage: React.FC = () => {
           <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-3 py-1.5 rounded-xl border border-emerald-500/30">
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Đang hiệu lực:</span>
-            <span className="font-mono font-bold text-white text-sm">
+            <span className="num font-bold text-white text-sm">
               {globalKpis.active}
             </span>
           </div>
@@ -254,7 +254,7 @@ export const ContractDashboardPage: React.FC = () => {
           <div className="flex items-center gap-2 bg-rose-500/20 text-rose-300 px-3 py-1.5 rounded-xl border border-rose-500/30">
             <AlertTriangle className="w-3.5 h-3.5" />
             <span>Quá hạn:</span>
-            <span className="font-mono font-bold text-white text-sm">
+            <span className="num font-bold text-white text-sm">
               {globalKpis.overdue}
             </span>
           </div>

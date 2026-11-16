@@ -2,9 +2,27 @@ import { apiClient } from './client';
 import type { ApiResponse } from './client';
 import type { StaffDailyTaskReport, DailyIncidentTask } from '../types';
 
+const FINISHED_TICKET_STATUSES = ['RESOLVED', 'CLOSED', 'AUTO_CLOSED'];
+const FINISHED_CONTRACT_STATUSES = ['CLOSED', 'TERMINATED', 'CANCELLED', 'RETURNED'];
+
+export function isSupportTaskDone(item: {
+  completed?: boolean;
+  status?: string;
+  contractStatus?: string;
+} | null | undefined): boolean {
+  if (!item) return false;
+  return Boolean(item.completed)
+    || FINISHED_TICKET_STATUSES.includes(item.status ?? '')
+    || FINISHED_CONTRACT_STATUSES.includes(item.contractStatus ?? '');
+}
+
 function mapRawSupportTask(item: any): DailyIncidentTask {
   const isUrgent = item.isUrgent ?? (item.priority === 'URGENT');
   const ticketId = item.ticketId ?? item.supportRequestId ?? item.id;
+  const status = item.status === 'RESOLVED' || item.status === 'IN_PROGRESS' || item.status === 'ASSIGNED'
+    || item.status === 'CLOSED' || item.status === 'AUTO_CLOSED'
+    ? item.status
+    : 'PENDING';
   return {
     ticketId,
     code: item.code,
@@ -20,7 +38,9 @@ function mapRawSupportTask(item: any): DailyIncidentTask {
     customerPhone: item.customerPhone ?? undefined,
     slaDeadline: item.slaDeadline ?? (item.slaDueAt ? new Date(item.slaDueAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''),
     slaDueAt: item.slaDueAt,
-    status: item.status === 'RESOLVED' ? 'RESOLVED' : item.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : item.status === 'ASSIGNED' ? 'ASSIGNED' : item.status === 'CLOSED' ? 'CLOSED' : 'PENDING',
+    status,
+    completed: isSupportTaskDone(item),
+    contractStatus: item.contractStatus,
     isOverlockTask: item.isOverlockTask ?? (item.category === 'OVERLOCK_D4' || item.category === 'OVERLOCK'),
     assignedStaffId: item.assignedStaffId,
     assignedStaffName: item.assignedStaffName,
@@ -185,8 +205,7 @@ export async function getStaffDailyTasks(
         const todaySupport = todayData?.supportTasks || todayData?.openSupportRequests || [];
 
         const carryOverSupport = todaySupport.filter((s: any) => {
-          const isDone = s.status === 'RESOLVED' || s.status === 'CLOSED';
-          return !isDone && !existingSupportIds.has(s.ticketId || s.id);
+          return !isSupportTaskDone(s) && !existingSupportIds.has(s.ticketId || s.id);
         });
 
         if (carryOverSupport.length > 0) {

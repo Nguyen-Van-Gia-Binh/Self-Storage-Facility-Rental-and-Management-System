@@ -1,7 +1,8 @@
 import React from 'react';
-import { AlertTriangle, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import type { OverdueContractItem } from '@/types';
 import { formatCurrency, formatDate } from '@/utils/format';
+import { Tooltip } from '@/components/ui/Tooltip';
 
 export interface OverdueContractsTableProps {
   items: OverdueContractItem[];
@@ -24,26 +25,30 @@ export const OverdueContractsTable: React.FC<OverdueContractsTableProps> = ({
   const getPolicyAction = (days: number) => {
     if (days <= 3) {
       return {
-        stage: `D+${days}: Khóa PIN & Phí lưu kho 5%/ngày`,
+        label: 'Khóa PIN',
         desc: 'Khóa Access Code ngay từ D+1 (No Pay, No PIN). Thu phí lưu kho 5% cọc/ngày.',
-        badge: 'bg-amber-50 text-amber-700 border-amber-200',
+        tone: 'text-slate-700',
+        dot: 'bg-slate-400',
       };
     }
     if (days <= 6) {
       return {
-        stage: `D+${days}: Phạt quá hạn 10%/ngày`,
+        label: 'Phạt quá hạn',
         desc: 'Khóa Access Code & khóa báo trả kho. Phải tất toán phí quá hạn để nhận PIN tạm dọn đồ.',
-        badge: 'bg-orange-50 text-orange-800 border-orange-200 font-semibold',
+        tone: 'text-amber-700',
+        dot: 'bg-amber-500',
       };
     }
     return {
-      stage: 'D+7: Cưỡng chế niêm phong về Kho Tổng',
+      label: 'Cưỡng chế niêm phong',
       desc: 'Khấu trừ 100% cọc (55% phí lưu kho/phạt + 45% phí niêm phong), D+8 mở bán lại ô kho.',
-      badge: 'bg-red-100 text-red-800 border-red-300 font-bold',
+      tone: 'text-rose-600',
+      dot: 'bg-rose-500',
     };
   };
 
   const totalFee = items.reduce((acc, c) => acc + c.accruedOverdueFee, 0);
+  const rows = [...items].sort((a, b) => b.accruedOverdueFee - a.accruedOverdueFee);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden space-y-0">
@@ -62,8 +67,9 @@ export const OverdueContractsTable: React.FC<OverdueContractsTableProps> = ({
           </div>
         </div>
         {items.length > 0 && (
-          <div className="text-xs font-mono font-bold text-rose-600 bg-rose-50 px-3 py-1 rounded-lg border border-rose-200">
-            Tổng phạt tích lũy: {formatCurrency(totalFee)}
+          <div className="text-xs text-slate-500">
+            Tổng phạt tích lũy:{' '}
+            <span className="font-bold text-rose-600 tabular-nums">{formatCurrency(totalFee)}</span>
           </div>
         )}
       </div>
@@ -83,56 +89,56 @@ export const OverdueContractsTable: React.FC<OverdueContractsTableProps> = ({
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
+            <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wide whitespace-nowrap">
               <tr>
                 <th className="py-3 px-4">Mã Hợp Đồng</th>
                 <th className="py-3 px-3">Khách Hàng</th>
                 <th className="py-3 px-3">Cơ Sở & Ô Kho</th>
-                <th className="py-3 px-3 text-center">Hết Hạn Thuê</th>
-                <th className="py-3 px-3 text-center">Số Ngày Trễ</th>
+                <th className="py-3 px-3 text-right">Hết Hạn Thuê</th>
+                <th className="py-3 px-3 text-right">Số Ngày Trễ</th>
                 <th className="py-3 px-3 text-right">Phạt Tích Lũy</th>
                 <th className="py-3 px-4">Biện Pháp Chế Tài</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {items.map((item) => {
+              {rows.map((item) => {
                 const policy = getPolicyAction(item.overdueDays);
                 return (
-                  <tr key={item.contractId} className="hover:bg-rose-50/30 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-slate-900">
+                  <tr key={item.contractId} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
                       {item.contractCode}
                     </td>
                     <td className="py-3 px-3">
                       <div className="font-semibold text-slate-800">{item.customerName}</div>
-                      <div className="text-[11px] text-slate-400 font-mono">{item.customerPhone}</div>
+                      <div className="text-[11px] text-slate-500 font-mono">{item.customerPhone}</div>
                     </td>
                     <td className="py-3 px-3">
-                      <div className="text-slate-800 font-medium">{item.facilityName}</div>
-                      <div className="text-[11px] font-mono text-brand-600 font-semibold">
-                        Ô: {item.unitCode}
-                      </div>
+                      <div className="font-mono font-semibold text-slate-900">{item.unitCode}</div>
+                      <div className="text-[11px] text-slate-500">{item.facilityName}</div>
                     </td>
-                    <td className="py-3 px-3 text-center font-mono text-slate-600">
+                    <td className="py-3 px-3 text-right tabular-nums text-slate-600 whitespace-nowrap">
                       {formatDate(item.endDateExclusive)}
                     </td>
-                    <td className="py-3 px-3 text-center">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full font-mono font-bold text-xs bg-rose-100 text-rose-800">
+                    <td className="py-3 px-3 text-right">
+                      <span className={`inline-flex items-center justify-end gap-1.5 font-bold tabular-nums ${policy.tone}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${policy.dot}`} />
                         D+{item.overdueDays}
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-right font-mono font-bold text-rose-600 text-sm">
-                      {formatCurrency(item.accruedOverdueFee)}
+                    <td className="py-3 px-3 text-right tabular-nums">
+                      {item.accruedOverdueFee > 0 ? (
+                        <span className="font-bold text-rose-600">{formatCurrency(item.accruedOverdueFee)}</span>
+                      ) : (
+                        <span className="text-slate-300">-</span>
+                      )}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="space-y-1">
-                        <span className={`inline-block px-2 py-0.5 rounded text-[11px] border ${policy.badge}`}>
-                          {policy.stage}
-                        </span>
-                        <p className="text-[11px] text-slate-500 flex items-center gap-1">
-                          <ShieldAlert className="w-3 h-3 text-slate-400 shrink-0" />
-                          {policy.desc}
-                        </p>
-                      </div>
+                      <Tooltip content={policy.desc} position="left">
+                        <button type="button" className={`inline-flex items-center gap-1 text-xs font-semibold whitespace-nowrap ${policy.tone}`}>
+                          {policy.label}
+                          <Info className="w-3.5 h-3.5 text-slate-400" />
+                        </button>
+                      </Tooltip>
                     </td>
                   </tr>
                 );

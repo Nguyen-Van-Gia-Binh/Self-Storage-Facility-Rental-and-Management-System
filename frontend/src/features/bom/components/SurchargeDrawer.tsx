@@ -10,6 +10,7 @@ import {
   DollarSign,
   Percent,
 } from 'lucide-react';
+import { DateField } from '@/components/ui/DateField';
 import type { FacilityListItem, CreateSurchargeRequest, SurchargeItem } from '@/types';
 import { FEE_CATEGORIES, type FeeCategory } from '@/features/pricing/feeCategory';
 import { useScrollLock } from '@/hooks/useScrollLock';
@@ -383,7 +384,7 @@ export const SurchargeDrawer: React.FC<SurchargeDrawerProps> = ({
                 value={amountInput}
                 onChange={handleAmountChange}
                 placeholder={type === 'PERCENTAGE' ? 'VD: 10' : 'VD: 150,000'}
-                className={`w-full px-3.5 py-2.5 pr-14 bg-slate-50/50 border rounded-xl font-mono tabular-nums text-sm font-bold text-amber-600 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 transition-all ${
+                className={`w-full px-3.5 py-2.5 pr-14 bg-slate-50/50 border rounded-xl tabular-nums text-sm font-bold text-amber-600 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 transition-all ${
                   errors.amount
                     ? 'border-rose-300 focus:ring-rose-400/20 focus:border-rose-500'
                     : 'border-slate-300 focus:ring-amber-500/20 focus:border-amber-500'
@@ -418,11 +419,10 @@ export const SurchargeDrawer: React.FC<SurchargeDrawerProps> = ({
 
             {!isIndefinite && (
               <div className="relative">
-                <input
-                  type="date"
+                <DateField
                   value={effectiveDate}
                   min={todayStr}
-                  onChange={(e) => setEffectiveDate(e.target.value)}
+                  onChange={setEffectiveDate}
                   className={`w-full px-3.5 py-2.5 bg-slate-50/50 border rounded-xl text-sm font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 transition-all cursor-pointer ${
                     errors.effectiveDate
                       ? 'border-rose-300 focus:ring-rose-400/20 focus:border-rose-500'

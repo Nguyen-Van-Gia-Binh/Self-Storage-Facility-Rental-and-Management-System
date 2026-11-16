@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as contractApi from '@/api/contract';
 import * as pricingApi from '@/api/pricing';
 import { apiClient } from '@/api/client';
-import { getDailyDispatchTasks } from '../api/staffAssignmentApi';
+import { getDailyDispatchTasks, getStaffWorkload } from '../api/staffAssignmentApi';
 
 vi.mock('@/api/client', () => ({
   apiClient: vi.fn(),
@@ -20,6 +20,20 @@ vi.mock('@/api/contract', () => ({
 vi.mock('@/api/pricing', () => ({
   fetchActivePolicy: vi.fn(),
 }));
+
+describe('getStaffWorkload', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('cơ sở không có nhân viên thì trả danh sách rỗng, không gắn nhân viên mẫu', async () => {
+    vi.mocked(apiClient).mockResolvedValue({ data: [] } as any);
+
+    const list = await getStaffWorkload(17);
+
+    expect(list).toEqual([]);
+  });
+});
 
 describe('getDailyDispatchTasks - Kiểm tra nhận diện trạng thái nhiệm vụ thực địa', () => {
   beforeEach(() => {

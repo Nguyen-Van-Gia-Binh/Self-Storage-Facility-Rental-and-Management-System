@@ -393,15 +393,15 @@ export const UnitTypeListPage: React.FC = () => {
                               </span>
                             </div>
                           </td>
-                          <td className="py-3.5 px-4 text-center font-mono font-medium text-slate-700">
+                          <td className="py-3.5 px-4 text-center num font-medium text-slate-700">
                             {type.widthM}m × {type.depthM}m × {type.heightM}m
                           </td>
                           <td className="py-3.5 px-4 text-center">
-                            <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
+                            <span className="num font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
                               {area} m²
                             </span>
                           </td>
-                          <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-700">
+                          <td className="py-3.5 px-4 text-center num font-bold text-slate-700">
                             {type.totalUnits ?? 0} ô
                           </td>
                           <td className="py-3.5 px-4 text-center">

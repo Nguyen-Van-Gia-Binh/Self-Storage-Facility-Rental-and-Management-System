@@ -28,6 +28,30 @@ describe('getStaffDailyTasks (real API mode)', () => {
     );
   });
 
+  it('giữ AUTO_CLOSED là đã xong, không đổi thành PENDING', async () => {
+    vi.spyOn(clientModule, 'apiClient').mockResolvedValue({
+      success: true,
+      data: {
+        staffId: 77,
+        date: '2026-09-26',
+        supportTasks: [{
+          supportRequestId: 42,
+          description: 'cứu cứu cứu',
+          status: 'AUTO_CLOSED',
+          completed: true,
+          storageUnitCode: 'Q1-DRY-103',
+        }],
+        checkInTasks: [],
+        returnTasks: [],
+      },
+    } as any);
+
+    const result = await getStaffDailyTasks(77, '2026-09-26');
+
+    expect(result.openSupportRequests[0].status).toBe('AUTO_CLOSED');
+    expect(result.openSupportRequests[0].completed).toBe(true);
+  });
+
   it('throw lỗi khi backend trả 404 (không silent fallback)', async () => {
     vi.spyOn(clientModule, 'apiClient').mockRejectedValue({ status: 404, message: 'Staff not found' });
 

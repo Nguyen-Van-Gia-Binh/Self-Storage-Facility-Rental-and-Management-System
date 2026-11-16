@@ -64,15 +64,10 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           <div className="flex-1">
             <h3 className="text-base font-bold text-slate-900">{title}</h3>
             {description && (
-              <p className="text-xs text-slate-500 mt-1 font-mono">{description}</p>
+              <p className="mt-1 text-sm text-slate-600">{description}</p>
             )}
           </div>
         </div>
-
-        {/* Description */}
-        {description && (
-          <p className="text-sm text-slate-600">{description}</p>
-        )}
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-2.5 pt-2">

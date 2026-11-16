@@ -87,46 +87,26 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
     );
   }
 
-  // 4. Hàm helper phân định dải màu KPI theo chuẩn Enterprise UX
+  // Đỏ chỉ khi dưới 10%. Từ 10% trở lên dùng brand. Không xác định thì xám.
   const getRateColorMeta = (rate: number, rateUnknown: boolean) => {
     if (rateUnknown) {
       return {
         textColor: 'text-slate-400',
         barColor: 'bg-slate-300',
         isAlarm: false,
-        isExemplary: false,
       };
     }
-    if (rate >= 0.8) {
+    if (rate < 0.1) {
       return {
-        textColor: 'text-emerald-600',
-        barColor: 'bg-emerald-500',
-        isAlarm: false,
-        isExemplary: true,
+        textColor: 'text-rose-600',
+        barColor: 'bg-rose-500',
+        isAlarm: true,
       };
     }
-    if (rate >= 0.7) {
-      return {
-        textColor: 'text-sky-600',
-        barColor: 'bg-sky-500',
-        isAlarm: false,
-        isExemplary: false,
-      };
-    }
-    if (rate >= 0.3) {
-      return {
-        textColor: 'text-amber-600',
-        barColor: 'bg-amber-500',
-        isAlarm: false,
-        isExemplary: false,
-      };
-    }
-    // Dưới 30%: Báo động đỏ
     return {
-      textColor: 'text-rose-600',
-      barColor: 'bg-rose-500',
-      isAlarm: true,
-      isExemplary: false,
+      textColor: 'text-slate-900',
+      barColor: 'bg-brand-500',
+      isAlarm: false,
     };
   };
 
@@ -134,18 +114,11 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
     <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-5">
       {/* 1. Header Khối */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
-            <BarChart3 className="w-4 h-4" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
-              Hiệu Suất Vận Hành & Tỷ Lệ Lấp Đầy Từng Cơ Sở
-            </h3>
-          </div>
-        </div>
+        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+          Hiệu Suất Vận Hành & Tỷ Lệ Lấp Đầy Từng Cơ Sở
+        </h3>
 
-        <div className="text-xs font-mono text-slate-400">
+        <div className="text-xs num text-slate-400">
           Hiển thị: <strong className="text-slate-700">{filteredData.length}</strong> / {data.length} cơ sở
         </div>
       </div>
@@ -258,10 +231,7 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
             const rateUnknown = item.occupancyRate == null || exploitableUnits === 0;
             const rate = item.occupancyRate ?? 0;
             const ratePercent = rateUnknown ? 0 : Math.min(rate * 100, 100);
-            const { textColor, barColor, isAlarm, isExemplary } = getRateColorMeta(
-              rate,
-              rateUnknown
-            );
+            const { textColor, barColor, isAlarm } = getRateColorMeta(rate, rateUnknown);
 
             const handleFacilityClick = () => {
               if (onOpenDetail) {
@@ -282,7 +252,7 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
                     <button
                       type="button"
                       onClick={handleFacilityClick}
-                      className="font-bold text-slate-800 hover:text-emerald-600 hover:underline transition-colors text-sm text-left cursor-pointer inline-flex items-center gap-1.5"
+                      className="font-bold text-slate-800 hover:text-brand-600 hover:underline transition-colors text-sm text-left cursor-pointer inline-flex items-center gap-1.5"
                       title="Bấm để xem chi tiết bóc tách ô kho và doanh thu của cơ sở này"
                     >
                       <span>{item.facilityName}</span>
@@ -295,21 +265,16 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
                   <div className="flex items-center justify-between sm:justify-end gap-3">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs text-slate-500 hidden sm:inline">Tỷ lệ lấp đầy:</span>
-                      <span className={`font-mono font-bold text-base ${textColor}`}>
+                      <span className={`num font-bold text-base ${textColor}`}>
                         {rateUnknown ? 'Không xác định' : formatPercent(item.occupancyRate)}
                       </span>
                       {isAlarm && (
-                        <span title="Tỷ lệ lấp đầy thấp dưới 30% - Cần đẩy mạnh tiếp thị">
+                        <span title="Tỷ lệ lấp đầy dưới 10%">
                           <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 inline" />
                         </span>
                       )}
-                      {isExemplary && (
-                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200/60">
-                          Đạt chuẩn
-                        </span>
-                      )}
                     </div>
-                    <div className="text-xs text-slate-500 font-mono">
+                    <div className="text-xs text-slate-500 num">
                       {rateUnknown ? 'N/A' : `${item.occupiedUnits} / ${exploitableUnits} ô`}
                     </div>
                   </div>
@@ -331,71 +296,52 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
 
                 {/* C. Các Chip Trạng Thái Ô Kho (Bottom Row) */}
                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                  {/* Trống */}
                   <div
-                    className={`px-2 py-1 rounded-md font-medium border bg-emerald-50 border-emerald-200 text-emerald-700 transition-opacity ${
-                      item.availableUnits === 0 ? 'opacity-50' : ''
-                    }`}
+                    className="px-2.5 py-1 rounded-md font-medium border border-slate-200 text-slate-600 bg-white"
                     title={`Có ${item.availableUnits} ô kho đang sẵn sàng cho thuê`}
                   >
                     Trống: {item.availableUnits}
                   </div>
-
-                  {/* Đang thuê */}
                   <div
-                    className={`px-2 py-1 rounded-md font-medium border bg-sky-50 border-sky-200 text-sky-700 transition-opacity ${
-                      item.occupiedUnits === 0 ? 'opacity-50' : ''
-                    }`}
+                    className="px-2.5 py-1 rounded-md font-medium border border-slate-200 text-slate-600 bg-white"
                     title={`Có ${item.occupiedUnits} ô kho đang có khách thuê hoạt động`}
                   >
                     Đang thuê: {item.occupiedUnits}
                   </div>
-
-                  {/* Đặt chỗ */}
                   <div
-                    className={`px-2 py-1 rounded-md font-medium border bg-amber-50 border-amber-200 text-amber-700 transition-opacity ${
-                      item.reservedUnits === 0 ? 'opacity-50' : ''
-                    }`}
+                    className="px-2.5 py-1 rounded-md font-medium border border-sky-200 text-sky-700 bg-white"
                     title={`Có ${item.reservedUnits} ô kho đang được giữ chỗ chờ nhận kho`}
                   >
                     Đặt chỗ: {item.reservedUnits}
                   </div>
-
-                  {/* Bảo trì */}
                   <div
-                    className={`px-2 py-1 rounded-md font-medium border bg-slate-100 border-slate-200 text-slate-600 transition-opacity ${
-                      item.maintenanceUnits === 0 ? 'opacity-50' : ''
-                    }`}
+                    className="px-2.5 py-1 rounded-md font-medium border border-slate-200 text-slate-600 bg-white"
                     title={`Có ${item.maintenanceUnits} ô kho đang bảo dưỡng / sửa chữa`}
                   >
                     Bảo trì: {item.maintenanceUnits}
                   </div>
-
-                  {/* Vệ sinh (nếu có) */}
                   {item.cleaningUnits > 0 && (
                     <div
-                      className="px-2 py-1 rounded-md font-medium border bg-purple-50 border-purple-200 text-purple-700"
+                      className="px-2.5 py-1 rounded-md font-medium border border-slate-200 text-slate-600 bg-white"
                       title={`Có ${item.cleaningUnits} ô kho đang vệ sinh sau trả kho`}
                     >
                       Vệ sinh: {item.cleaningUnits}
                     </div>
                   )}
-
-                  {/* Ngừng dùng (nếu có) */}
                   {item.outOfServiceUnits > 0 && (
                     <div
-                      className="px-2 py-1 rounded-md font-medium border bg-stone-100 border-stone-200 text-stone-600"
+                      className="px-2.5 py-1 rounded-md font-medium border border-slate-200 text-slate-600 bg-white"
                       title={`Có ${item.outOfServiceUnits} ô kho tạm ngừng khai thác kỹ thuật`}
                     >
                       Ngừng dùng: {item.outOfServiceUnits}
                     </div>
                   )}
-
-                  {/* Quá hạn */}
                   <div
-                    className={`px-2 py-1 rounded-md font-semibold border bg-rose-50 border-rose-200 text-rose-700 transition-opacity ${
-                      item.overdueContractsCount === 0 ? 'opacity-50' : ''
-                    }`}
+                    className={
+                      item.overdueContractsCount > 0
+                        ? 'px-2.5 py-1 rounded-md font-medium border border-rose-200 text-rose-600 bg-rose-50'
+                        : 'px-2.5 py-1 rounded-md font-medium border border-slate-200 text-slate-600 bg-white'
+                    }
                     title={`Có ${item.overdueContractsCount} hợp đồng đang trễ hạn thanh toán`}
                   >
                     Quá hạn: {item.overdueContractsCount}

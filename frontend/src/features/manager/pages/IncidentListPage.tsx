@@ -5,13 +5,11 @@ import {
   ArrowLeft,
   Search,
   RefreshCw,
-  Clock,
-  AlertTriangle,
   CheckCircle2,
   Calendar,
-  Sparkles,
 } from 'lucide-react';
 import { fetchFacilityById } from '@/api/facility';
+import { DateField } from '@/components/ui/DateField';
 import { getManagementSupportRequests } from '../api/staffAssignmentApi';
 import type {
   ManagementSupportTicket,
@@ -156,8 +154,8 @@ export const IncidentListPage: React.FC = () => {
 
     // Sort
     result.sort((a, b) => {
-      let valA: any = a[sortField];
-      let valB: any = b[sortField];
+      const valA: any = a[sortField];
+      const valB: any = b[sortField];
 
       if (typeof valA === 'string') {
         return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
@@ -292,20 +290,18 @@ export const IncidentListPage: React.FC = () => {
         {timeFilter === 'CUSTOM' && (
           <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
             <span className="text-slate-500 font-medium">Từ ngày:</span>
-            <input
-              type="date"
+            <DateField
               value={customRange.startDate || ''}
-              onChange={(e) =>
-                setCustomRange((prev) => ({ ...prev, startDate: e.target.value }))
+              onChange={(next) =>
+                setCustomRange((prev) => ({ ...prev, startDate: next }))
               }
               className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
             />
             <span className="text-slate-500 font-medium">Đến ngày:</span>
-            <input
-              type="date"
+            <DateField
               value={customRange.endDate || ''}
-              onChange={(e) =>
-                setCustomRange((prev) => ({ ...prev, endDate: e.target.value }))
+              onChange={(next) =>
+                setCustomRange((prev) => ({ ...prev, endDate: next }))
               }
               className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
             />
@@ -315,93 +311,34 @@ export const IncidentListPage: React.FC = () => {
 
       {/* Interactive KPI Bar: Bấm trực tiếp để lọc trạng thái */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-        {/* Card 1: Tổng số sự cố */}
-        <div
-          onClick={() => setSelectedStatusTab('ALL')}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-2xs flex items-center justify-between ${
-            selectedStatusTab === 'ALL'
-              ? 'bg-slate-900 text-white border-slate-900 shadow-sm ring-2 ring-slate-900/10'
-              : 'bg-white text-slate-900 border-slate-200/90 hover:border-slate-300'
-          }`}
-        >
-          <div>
-            <span className={`text-[11px] font-semibold block ${selectedStatusTab === 'ALL' ? 'text-slate-300' : 'text-slate-500'}`}>
-              Tổng sự cố {timeFilter === 'TODAY' ? 'hôm nay' : ''}
-            </span>
-            <span className="text-2xl font-bold font-mono tracking-tight block mt-0.5">
-              {stats.total}
-            </span>
-          </div>
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${selectedStatusTab === 'ALL' ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-700'}`}>
-            <Sparkles className="w-4 h-4" />
-          </div>
-        </div>
-
-        {/* Card 2: Chờ tiếp nhận */}
-        <div
-          onClick={() => setSelectedStatusTab('NEW')}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-2xs flex items-center justify-between ${
-            selectedStatusTab === 'NEW'
-              ? 'bg-amber-600 text-white border-amber-600 shadow-sm ring-2 ring-amber-500/20'
-              : 'bg-white text-slate-900 border-slate-200/90 hover:border-amber-300'
-          }`}
-        >
-          <div>
-            <span className={`text-[11px] font-semibold block ${selectedStatusTab === 'NEW' ? 'text-amber-100' : 'text-amber-700'}`}>
-              Chờ tiếp nhận
-            </span>
-            <span className="text-2xl font-bold font-mono tracking-tight block mt-0.5">
-              {stats.pending}
-            </span>
-          </div>
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${selectedStatusTab === 'NEW' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-600'}`}>
-            <Clock className="w-4 h-4" />
-          </div>
-        </div>
-
-        {/* Card 3: Đang xử lý */}
-        <div
-          onClick={() => setSelectedStatusTab('IN_PROGRESS')}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-2xs flex items-center justify-between ${
-            selectedStatusTab === 'IN_PROGRESS'
-              ? 'bg-orange-600 text-white border-orange-600 shadow-sm ring-2 ring-orange-500/20'
-              : 'bg-white text-slate-900 border-slate-200/90 hover:border-orange-300'
-          }`}
-        >
-          <div>
-            <span className={`text-[11px] font-semibold block ${selectedStatusTab === 'IN_PROGRESS' ? 'text-orange-100' : 'text-orange-700'}`}>
-              Đang xử lý
-            </span>
-            <span className="text-2xl font-bold font-mono tracking-tight block mt-0.5">
-              {stats.inProgress}
-            </span>
-          </div>
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${selectedStatusTab === 'IN_PROGRESS' ? 'bg-white/20 text-white' : 'bg-orange-50 text-orange-600'}`}>
-            <AlertTriangle className="w-4 h-4" />
-          </div>
-        </div>
-
-        {/* Card 4: Đã giải quyết */}
-        <div
-          onClick={() => setSelectedStatusTab('RESOLVED')}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-2xs flex items-center justify-between ${
-            selectedStatusTab === 'RESOLVED'
-              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm ring-2 ring-emerald-500/20'
-              : 'bg-white text-slate-900 border-slate-200/90 hover:border-emerald-300'
-          }`}
-        >
-          <div>
-            <span className={`text-[11px] font-semibold block ${selectedStatusTab === 'RESOLVED' ? 'text-emerald-100' : 'text-emerald-700'}`}>
-              Đã giải quyết
-            </span>
-            <span className="text-2xl font-bold font-mono tracking-tight block mt-0.5">
-              {stats.resolved}
-            </span>
-          </div>
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${selectedStatusTab === 'RESOLVED' ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-600'}`}>
-            <CheckCircle2 className="w-4 h-4" />
-          </div>
-        </div>
+        {([
+          { key: 'ALL' as const, label: `Tổng sự cố ${timeFilter === 'TODAY' ? 'hôm nay' : ''}`.trim(), value: stats.total, dot: '' },
+          { key: 'NEW' as const, label: 'Chờ tiếp nhận', value: stats.pending, dot: 'bg-rose-500' },
+          { key: 'IN_PROGRESS' as const, label: 'Đang xử lý', value: stats.inProgress, dot: 'bg-amber-500' },
+          { key: 'RESOLVED' as const, label: 'Đã giải quyết', value: stats.resolved, dot: 'bg-emerald-500' },
+        ]).map((card) => {
+          const selected = selectedStatusTab === card.key;
+          return (
+            <button
+              key={card.key}
+              type="button"
+              onClick={() => setSelectedStatusTab(card.key)}
+              className={`p-4 rounded-2xl border bg-white text-left text-slate-900 transition-all cursor-pointer flex items-center justify-between ${
+                selected ? 'border-brand-500 ring-2 ring-brand-500/25' : 'border-slate-200/90 hover:border-slate-300'
+              }`}
+            >
+              <div>
+                <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1.5">
+                  {card.dot && <span className={`w-1.5 h-1.5 rounded-full ${card.dot}`} />}
+                  {card.label}
+                </span>
+                <span className="text-2xl font-bold num tracking-tight block mt-0.5">
+                  {card.value}
+                </span>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {/* Toolbar: Search, Category & Status Tabs */}
@@ -464,10 +401,10 @@ export const IncidentListPage: React.FC = () => {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           {[
             { key: 'ALL', label: 'Tất cả trạng thái', count: stats.total },
-            { key: 'NEW', label: '⏳ Chờ tiếp nhận', count: stats.pending },
-            { key: 'IN_PROGRESS', label: '⚠️ Đang xử lý', count: stats.inProgress },
-            { key: 'RESOLVED', label: '✓ Đã giải quyết', count: stats.resolved },
-            { key: 'CANCELLED', label: '❌ Đã hủy', count: stats.cancelled },
+            { key: 'NEW', label: 'Chờ tiếp nhận', count: stats.pending },
+            { key: 'IN_PROGRESS', label: 'Đang xử lý', count: stats.inProgress },
+            { key: 'RESOLVED', label: 'Đã giải quyết', count: stats.resolved },
+            { key: 'CANCELLED', label: 'Đã hủy', count: stats.cancelled },
           ].map((tab) => {
             const isActive = selectedStatusTab === tab.key;
             return (

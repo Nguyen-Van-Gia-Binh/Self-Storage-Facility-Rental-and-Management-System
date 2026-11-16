@@ -114,7 +114,9 @@ export const AllocationPage: React.FC = () => {
     return Boolean(user?.facilityId);
   });
   const facilitiesRef = React.useRef<FacilityListItem[]>(facilities);
-  facilitiesRef.current = facilities;
+  useEffect(() => {
+    facilitiesRef.current = facilities;
+  }, [facilities]);
   const [filterTab, setFilterTab] = useState<'ALL' | 'UNASSIGNED' | 'ASSIGNED'>('ALL');
   const [queue, setQueue] = useState<AllocationQueueItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -761,7 +763,7 @@ export const AllocationPage: React.FC = () => {
                       {/* Cột 3: Ngày hẹn nhận kho */}
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2">
-                          <span className={`font-mono text-xs font-bold ${urgent ? 'text-rose-600' : 'text-slate-700'}`}>
+                          <span className={`num text-xs font-bold ${urgent ? 'text-rose-600' : 'text-slate-700'}`}>
                             {formatDate(row.startDate)}
                           </span>
                           {urgent && (
@@ -979,7 +981,7 @@ export const AllocationPage: React.FC = () => {
                   <span className="font-bold text-slate-700">
                     {selected.kind === 'CONTRACT_RELOCATION' ? 'Ngày bắt đầu hợp đồng:' : 'Ngày hẹn nhận kho:'}
                   </span>
-                  <span className="font-mono font-bold text-slate-900 text-sm">
+                  <span className="num font-bold text-slate-900 text-sm">
                     {formatDate(selected.startDate)}
                   </span>
                 </div>

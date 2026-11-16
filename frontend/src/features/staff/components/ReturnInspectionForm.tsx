@@ -313,7 +313,7 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
                             <span className="block text-[11px] text-slate-500">{feeCategoryLabel(fee.category)}</span>
                           </span>
                         </span>
-                        <span className="font-mono text-xs font-semibold text-slate-800">
+                        <span className="num text-xs font-semibold text-slate-800">
                           {fee.type === 'PERCENTAGE'
                             ? `${fee.amount}% · ${line.toLocaleString('vi-VN')} đ`
                             : `${line.toLocaleString('vi-VN')} đ`}

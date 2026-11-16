@@ -260,7 +260,7 @@ export const ForgotPasswordPage: React.FC = () => {
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs mt-1 text-slate-600">
                 <Clock className="w-3.5 h-3.5 text-brand-600 animate-pulse" />
                 <span className="text-slate-600">Hiệu lực mã:</span>
-                <span className={`font-mono font-bold ${countdown > 10 ? 'text-brand-700' : 'text-rose-600 animate-pulse'}`}>
+                <span className={`num font-bold ${countdown > 10 ? 'text-brand-700' : 'text-rose-600 animate-pulse'}`}>
                   00:{countdown < 10 ? `0${countdown}` : countdown}
                 </span>
               </div>

@@ -3,6 +3,7 @@ package com.swp391.selfstorage.payment.event;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.time.OffsetDateTime;
@@ -59,7 +60,7 @@ class PaymentEventListenerTest {
     void handleContractSettled_WhenRefundAlreadyExists_ShouldNotDuplicate() {
         PaymentTransaction existingRefund = PaymentTransaction.builder()
                 .contractId(302L)
-                .transactionType("RENT_REFUND")
+                .transactionType("DEPOSIT_REFUND")
                 .amount(7_200_000L)
                 .status("SUCCESS")
                 .build();
@@ -80,6 +81,29 @@ class PaymentEventListenerTest {
 
         org.mockito.Mockito.verify(paymentTransactionRepository, org.mockito.Mockito.never())
                 .save(org.mockito.ArgumentMatchers.any(PaymentTransaction.class));
+    }
+
+    @Test
+    @DisplayName("Trả sớm ghi RENT_REFUND và không tạo dòng hoàn cọc")
+    void handleContractSettled_rentPart_savesRentRefundOnly() {
+        ContractSettledEvent event = ContractSettledEvent.builder()
+                .contractId(9045L)
+                .customerId(15L)
+                .facilityId(1L)
+                .rentRefundAmount(2_250_000L)
+                .depositRefundAmount(0L)
+                .payableAmount(0L)
+                .settledAt(OffsetDateTime.now())
+                .build();
+
+        paymentEventListener.handleContractSettled(event);
+
+        ArgumentCaptor<PaymentTransaction> captor = ArgumentCaptor.forClass(PaymentTransaction.class);
+        verify(paymentTransactionRepository, times(1)).save(captor.capture());
+        PaymentTransaction saved = captor.getValue();
+        assertEquals("RENT_REFUND", saved.getTransactionType());
+        assertEquals(2_250_000L, saved.getAmount());
+        assertEquals("SUCCESS", saved.getStatus());
     }
 
     @Test

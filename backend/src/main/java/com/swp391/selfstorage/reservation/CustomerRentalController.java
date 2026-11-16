@@ -16,7 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/customers/me/rentals")
+@RequestMapping("/customers/me")
 @Tag(name = "Customer Rentals", description = "Quản lý ô kho đang thuê của khách hàng (SC-05 / Task T4.1)")
 public class CustomerRentalController {
 
@@ -26,7 +26,7 @@ public class CustomerRentalController {
         this.customerRentalService = customerRentalService;
     }
 
-    @GetMapping
+    @GetMapping("/rentals")
     @Operation(summary = "Xem danh sách ô kho đang thuê (My Rentals - US-SC-05.1)")
     public ResponseEntity<ApiResponse<PageResponse<CustomerRentalSummaryResponse>>> getMyRentals(
             @RequestParam(required = false, defaultValue = "ALL") String status,
@@ -50,7 +50,7 @@ public class CustomerRentalController {
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy danh sách ô kho đang thuê thành công"));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/rentals/{id}")
     @Operation(summary = "Xem chi tiết một hợp đồng ô kho cụ thể của khách hàng (US-SC-05.2)")
     public ResponseEntity<ApiResponse<CustomerRentalDetailResponse>> getMyRentalDetail(
             @PathVariable Long id,
@@ -60,7 +60,7 @@ public class CustomerRentalController {
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy chi tiết hợp đồng thành công"));
     }
 
-    @PutMapping("/{id}/pin")
+    @PutMapping("/rentals/{id}/pin")
     @Operation(summary = "Đổi mã PIN khóa điện tử cho ô kho (US-SC-05.2, BR-ACC-01)")
     public ResponseEntity<ApiResponse<Void>> changeContractPin(
             @PathVariable Long id,
@@ -71,7 +71,7 @@ public class CustomerRentalController {
         return ResponseEntity.ok(ApiResponse.success(null, "Đổi mã PIN khóa điện tử thành công"));
     }
 
-    @GetMapping("/{id}/access-logs")
+    @GetMapping("/rentals/{id}/access-logs")
     @Operation(summary = "Lấy lịch sử ra vào ô kho của hợp đồng (US-SC-05.2, BR-ACC-02)")
     public ResponseEntity<ApiResponse<java.util.List<com.swp391.selfstorage.reservation.dto.AccessLogResponse>>> getContractAccessLogs(
             @PathVariable Long id,
@@ -80,6 +80,16 @@ public class CustomerRentalController {
         java.util.List<com.swp391.selfstorage.reservation.dto.AccessLogResponse> logs =
                 customerRentalService.getContractAccessLogs(id, currentUser);
         return ResponseEntity.ok(ApiResponse.success(logs, "Lấy danh sách nhật ký ra vào thành công"));
+    }
+
+    @GetMapping("/history")
+    @Operation(summary = "Dòng thời gian giao dịch, hợp đồng và điều chỉnh của khách đang đăng nhập")
+    public ResponseEntity<ApiResponse<java.util.List<com.swp391.selfstorage.reservation.dto.CustomerHistoryItemResponse>>> getMyHistory(
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        java.util.List<com.swp391.selfstorage.reservation.dto.CustomerHistoryItemResponse> items =
+                customerRentalService.getMyHistory(currentUser);
+        return ResponseEntity.ok(ApiResponse.success(items, "Lấy lịch sử thành công"));
     }
 }
 

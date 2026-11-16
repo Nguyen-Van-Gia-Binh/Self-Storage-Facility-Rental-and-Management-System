@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AlertCircle, Filter } from 'lucide-react';
 import type { ReportFilterParams } from '@/types';
 import { Button } from '@/components/ui/Button';
+import { DateField } from '@/components/ui/DateField';
 
 export interface BomFilterBarProps {
   filters: ReportFilterParams;
@@ -70,23 +71,21 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
           {/* Chọn ngày từ - đến */}
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-slate-500 font-medium">Từ:</span>
-            <input
-              type="date"
+            <DateField
               value={localFrom}
-              onChange={(e) => handleFromChange(e.target.value)}
+              onChange={handleFromChange}
               onKeyDown={(e) => e.key === 'Enter' && handleApplyFilter()}
-              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-mono focus:outline-none focus:ring-1 focus:ring-brand-500 focus:bg-white"
+              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 num focus:outline-none focus:ring-1 focus:ring-brand-500 focus:bg-white"
             />
           </div>
 
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-slate-500 font-medium">Đến:</span>
-            <input
-              type="date"
+            <DateField
               value={localTo}
-              onChange={(e) => handleToChange(e.target.value)}
+              onChange={handleToChange}
               onKeyDown={(e) => e.key === 'Enter' && handleApplyFilter()}
-              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-mono focus:outline-none focus:ring-1 focus:ring-brand-500 focus:bg-white"
+              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 num focus:outline-none focus:ring-1 focus:ring-brand-500 focus:bg-white"
             />
           </div>
 

@@ -42,7 +42,7 @@ export const OverdueAlertBanner: React.FC<OverdueAlertBannerProps> = ({
             <h3 className="text-sm font-bold text-amber-950 uppercase tracking-wide">
               Cảnh báo quá hạn
             </h3>
-            <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 border border-amber-300/60">
+            <span className="text-xs num font-bold px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 border border-amber-300/60">
               D+{overdueDays}
             </span>
             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-800 bg-rose-100/90 border border-rose-200 px-2 py-0.5 rounded-md">
@@ -61,20 +61,20 @@ export const OverdueAlertBanner: React.FC<OverdueAlertBannerProps> = ({
               <span className="text-[11px] font-semibold text-slate-500 block uppercase tracking-wider">Thời gian</span>
               <div className="text-base font-extrabold text-slate-900 mt-0.5 flex items-baseline gap-1.5">
                 <span>{overdueDays} ngày</span>
-                <span className="text-xs font-mono font-bold text-amber-700">(D+{overdueDays})</span>
+                <span className="text-xs num font-bold text-amber-700">(D+{overdueDays})</span>
               </div>
             </div>
 
             <div className="bg-white/95 p-3.5 rounded-xl border border-amber-200/90 shadow-2xs">
               <span className="text-[11px] font-semibold text-slate-500 block uppercase tracking-wider">Phí tích lũy</span>
-              <div className="text-base font-mono font-extrabold text-rose-600 mt-0.5">
+              <div className="text-base num font-extrabold text-rose-600 mt-0.5">
                 {fmt(accruedFee)}
               </div>
             </div>
 
             <div className="bg-white/95 p-3.5 rounded-xl border border-amber-200/90 shadow-2xs">
               <span className="text-[11px] font-semibold text-slate-500 block uppercase tracking-wider">Cọc khả dụng</span>
-              <div className="text-base font-mono font-extrabold text-emerald-700 mt-0.5">
+              <div className="text-base num font-extrabold text-emerald-700 mt-0.5">
                 {fmt(remainingDeposit)}
               </div>
             </div>

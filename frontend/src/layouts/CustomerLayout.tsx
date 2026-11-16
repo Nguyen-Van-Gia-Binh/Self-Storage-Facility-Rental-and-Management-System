@@ -7,10 +7,14 @@ import {
   LogIn, 
   UserPlus, 
   LogOut,
-  LayoutDashboard
+  LayoutDashboard,
+  Bell,
+  History
 } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { tokenStorage, normalizeRole, type UserSession } from '@/utils/tokenStorage';
+import { getMyHistory, type CustomerHistoryItem } from '@/api/customerRentals';
+import { markCustomerHistorySeen, readCustomerHistorySeenAt } from '@/features/customer/historySeen';
 
 
 export interface CustomerLayoutProps {
@@ -30,7 +34,11 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
 
   const [user, setUser] = useState<UserSession | null>(() => tokenStorage.getUser());
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [historyItems, setHistoryItems] = useState<CustomerHistoryItem[]>([]);
+  const [seenAt, setSeenAt] = useState(() => readCustomerHistorySeenAt());
+  const [isBellOpen, setIsBellOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const bellRef = useRef<HTMLDivElement>(null);
 
   const normalizedRole = user?.role ? normalizeRole(user.role) : null;
   const isInternalUser = normalizedRole && normalizedRole !== 'CUSTOMER';
@@ -51,13 +59,25 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
 
   useEffect(() => {
     setUser(tokenStorage.getUser());
+    setSeenAt(readCustomerHistorySeenAt());
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!user) {
+      setHistoryItems([]);
+      return;
+    }
+    getMyHistory().then(setHistoryItems).catch(() => setHistoryItems([]));
+  }, [user?.id, location.pathname]);
 
   // Đóng dropdown khi click bên ngoài
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsDropdownOpen(false);
+      }
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+        setIsBellOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -80,7 +100,16 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
 
   const isHomeActive = location.pathname === '/' || location.pathname === '/customer';
   const isRentalsActive = location.pathname === '/customer/my-units' || location.pathname.startsWith('/customer/renew');
+  const isHistoryActive = location.pathname.startsWith('/customer/history');
   const isSupportActive = location.pathname.startsWith('/customer/support');
+  const unreadCount = historyItems.filter((item) => item.at && (!seenAt || item.at > seenAt)).length;
+  const bellItems = historyItems.slice(0, 8);
+
+  const openBell = () => {
+    setIsBellOpen((prev) => !prev);
+    setIsDropdownOpen(false);
+    setSeenAt(markCustomerHistorySeen());
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f2f9f7]">
@@ -112,6 +141,18 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
             >
               Kho của tôi
             </Link>
+            {user && (
+              <Link
+                to="/customer/history"
+                className={`py-6 transition-colors border-b-2 ${
+                  isHistoryActive
+                    ? 'border-brand-500 text-slate-900 font-bold'
+                    : 'border-transparent text-slate-600 hover:text-brand-600'
+                }`}
+              >
+                Lịch sử
+              </Link>
+            )}
             <Link 
               to="/customer/support" 
               className={`py-6 transition-colors border-b-2 ${
@@ -134,7 +175,49 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
 
             {/* Auth Actions: Guest vs Logged In */}
             {user ? (
-              /* Avatar / User pill with dropdown */
+              <>
+              <div className="relative" ref={bellRef}>
+                <button
+                  type="button"
+                  onClick={openBell}
+                  aria-label={`Thông báo, ${unreadCount} chưa đọc`}
+                  className="relative inline-flex items-center justify-center w-9 h-9 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50"
+                >
+                  <Bell className="w-4 h-4" />
+                  {unreadCount > 0 && (
+                    <span className="num absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-brand-500 text-white text-[10px] font-bold leading-4 text-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+                {isBellOpen && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl border border-slate-200 shadow-none py-1.5 z-50">
+                    <p className="px-4 py-2 text-xs font-semibold text-slate-500">Thông báo</p>
+                    {bellItems.length === 0 && (
+                      <p className="px-4 py-3 text-sm text-slate-500">Chưa có thông báo.</p>
+                    )}
+                    <ul>
+                      {bellItems.map((item, index) => (
+                        <li key={`${item.kind}-${item.at}-${index}`} className="px-4 py-2 border-t border-slate-100">
+                          <p className={`text-sm font-semibold text-slate-900 ${item.kind === 'CONTRACT' ? 'font-mono' : ''}`}>
+                            {item.title}
+                          </p>
+                          <p className={`text-xs text-slate-500 ${item.kind === 'PAYMENT' ? 'num' : ''} ${item.kind === 'ADJUSTMENT' ? 'font-mono' : ''}`}>
+                            {item.detail}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      to="/customer/history"
+                      onClick={() => setIsBellOpen(false)}
+                      className="block px-4 py-2.5 text-xs font-semibold text-brand-600 border-t border-slate-100"
+                    >
+                      Xem tất cả lịch sử
+                    </Link>
+                  </div>
+                )}
+              </div>
               <div className="relative" ref={dropdownRef}>
                 <button
                   type="button"
@@ -176,6 +259,14 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
                     )}
 
                     <div className="pt-1">
+                      <Link
+                        to="/customer/history"
+                        onClick={() => setIsDropdownOpen(false)}
+                        className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        <History className="w-4 h-4 text-slate-500" />
+                        <span>Lịch sử</span>
+                      </Link>
                       <button
                         type="button"
                         onClick={handleLogout}
@@ -188,6 +279,7 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
                   </div>
                 )}
               </div>
+              </>
             ) : (
               /* Guest Actions: Đăng nhập & Đăng ký */
               <div className="flex items-center gap-2 pl-1">
@@ -212,7 +304,7 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1">
+      <main key={location.pathname} className="flex-1 page-enter">
         {children}
       </main>
 

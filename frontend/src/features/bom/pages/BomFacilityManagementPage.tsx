@@ -211,7 +211,7 @@ export const BomFacilityManagementPage: React.FC = () => {
         {/* Nút CTA "+ Thêm cơ sở mới" với drop shadow cam và micro-interaction hover */}
         <button
           onClick={handleOpenCreateModal}
-          className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white text-sm font-semibold rounded-lg shadow-sm shadow-amber-500/25 hover:shadow-md hover:shadow-amber-500/35 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-150 cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Thêm cơ sở mới</span>
@@ -228,19 +228,19 @@ export const BomFacilityManagementPage: React.FC = () => {
             placeholder="Tìm tên, mã, hoặc địa chỉ..."
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            className="w-full text-xs sm:text-sm border border-slate-200 rounded-lg pl-9 pr-3 py-1.5 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all bg-slate-50/50 focus:bg-white"
+            className="w-full text-xs sm:text-sm border border-slate-200 rounded-lg pl-9 pr-3 py-1.5 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all bg-slate-50/50 focus:bg-white"
           />
         </div>
 
         {/* Action Group: Tabs, Ghost Button Export CSV, Refresh */}
         <div className="flex items-center space-x-2 w-full md:w-auto justify-between md:justify-end overflow-x-auto pb-1 md:pb-0">
           {/* Tabs Filter */}
-          <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-lg text-xs font-medium text-slate-600 shrink-0">
+          <div className="inline-flex items-center bg-slate-100 p-0.5 rounded-lg text-xs font-medium text-slate-600 shrink-0">
             <button
               onClick={() => setStatusFilter('ALL')}
               className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
                 statusFilter === 'ALL'
-                  ? 'bg-white text-slate-900 shadow-xs font-semibold'
+                  ? 'bg-white text-slate-900 shadow-sm font-semibold'
                   : 'hover:text-slate-900'
               }`}
             >
@@ -250,7 +250,7 @@ export const BomFacilityManagementPage: React.FC = () => {
               onClick={() => setStatusFilter('ACTIVE')}
               className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
                 statusFilter === 'ACTIVE'
-                  ? 'bg-white text-emerald-700 shadow-xs font-semibold'
+                  ? 'bg-white text-slate-900 shadow-sm font-semibold'
                   : 'hover:text-slate-900'
               }`}
             >
@@ -260,7 +260,7 @@ export const BomFacilityManagementPage: React.FC = () => {
               onClick={() => setStatusFilter('INACTIVE')}
               className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
                 statusFilter === 'INACTIVE'
-                  ? 'bg-white text-slate-700 shadow-xs font-semibold'
+                  ? 'bg-white text-slate-900 shadow-sm font-semibold'
                   : 'hover:text-slate-900'
               }`}
             >
@@ -289,7 +289,7 @@ export const BomFacilityManagementPage: React.FC = () => {
             title="Làm mới dữ liệu"
           >
             <RefreshCw
-              className={`w-4 h-4 ${isLoading ? 'animate-spin text-amber-500' : ''}`}
+              className={`w-4 h-4 ${isLoading ? 'animate-spin text-brand-600' : ''}`}
             />
           </button>
         </div>

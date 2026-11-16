@@ -470,4 +470,44 @@ class StaffDailyTaskServiceTest {
         assertThat(returnTask.getScheduledDate()).isEqualTo(today);
         assertThat(returnTask.getReturnDate()).isEqualTo(today);
     }
+
+    @Test
+    @DisplayName("Phiếu ASSIGNED của hợp đồng CLOSED không còn là việc chờ xử lý")
+    void assignedTicketOnClosedContractIsCompleted() {
+        LocalDate today = LocalDate.now(StaffDailyTaskServiceImpl.VN_ZONE);
+
+        when(userRepository.findById(8L)).thenReturn(Optional.of(sampleStaff));
+        when(userFacilityAssignmentRepository.findFacilityIdsByUserId(8L)).thenReturn(List.of(1L));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(sampleFacility));
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDate(8L, today)).thenReturn(Collections.emptyList());
+        when(supportRequestRepository.findAllByAssignedStaffId(8L)).thenReturn(List.of(closedContractTicket(today)));
+        when(rentalContractRepository.findById(9045L)).thenReturn(Optional.of(createContract(
+                9045L, "CTR-CLOSED", null, 15L, 1L, 101L,
+                today.minusMonths(1), today.plusMonths(1), ContractStatus.CLOSED, today.minusMonths(1), null)));
+        when(userRepository.findById(15L)).thenReturn(Optional.of(sampleCustomer));
+        when(storageUnitRepository.findById(101L)).thenReturn(Optional.of(sampleUnit));
+
+        StaffDailyTasksResponse openBoard = staffDailyTaskService.getDailyTasks(8L, today, false, staffPrincipal);
+        assertThat(openBoard.getSupportTasks()).hasSize(1);
+        assertThat(openBoard.getSupportTasks().get(0).isCompleted()).isTrue();
+        assertThat(openBoard.getSummary().getPendingTasks()).isZero();
+
+        StaffDailyTasksResponse pendingOnly = staffDailyTaskService.getDailyTasks(8L, today, true, staffPrincipal);
+        assertThat(pendingOnly.getSupportTasks()).isEmpty();
+    }
+
+    private SupportRequest closedContractTicket(LocalDate today) {
+        return SupportRequest.builder()
+                .id(39L)
+                .code("SUP-202611-0002")
+                .customerId(15L)
+                .contractId(9045L)
+                .storageUnitId(101L)
+                .category(SupportCategory.LOCK_ACCESS)
+                .description("Cứu cứu hihihhih")
+                .status(SupportStatus.ASSIGNED)
+                .assignedStaffId(8L)
+                .createdAt(today.atStartOfDay(StaffDailyTaskServiceImpl.VN_ZONE).toOffsetDateTime())
+                .build();
+    }
 }

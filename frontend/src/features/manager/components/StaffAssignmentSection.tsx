@@ -42,7 +42,7 @@ export const StaffAssignmentSection: React.FC<StaffAssignmentSectionProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5">
+    <div className="py-5 border-b border-slate-200">
       <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
@@ -158,7 +158,7 @@ export const StaffAssignmentSection: React.FC<StaffAssignmentSectionProps> = ({
                 ))
               ) : (
                 <div className="p-3 text-center text-xs text-slate-500 bg-slate-50 rounded-xl col-span-2">
-                  Đang tải danh sách nhân viên cơ sở...
+                  Cơ sở hiện chưa có nhân viên nào được phân bổ.
                 </div>
               )}
             </div>
@@ -194,7 +194,7 @@ export const StaffAssignmentSection: React.FC<StaffAssignmentSectionProps> = ({
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow-2xs transition-colors disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>{isSubmitting ? 'Đang lưu...' : '📋 Xác nhận phân công'}</span>
+              <span>{isSubmitting ? 'Đang lưu...' : 'Xác nhận phân công'}</span>
             </button>
           </div>
         </div>

@@ -69,6 +69,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -355,19 +356,7 @@ public class ContractServiceImpl implements ContractService {
                         contract.setRelocationSupportRequestId(null);
                         contractRepository.save(contract);
 
-                        if (supportRequestRepository != null && contractId != null) {
-                                List<SupportRequest> openTickets = supportRequestRepository.findByContractIdInAndStatusIn(
-                                                List.of(contractId),
-                                                List.of(SupportStatus.NEW, SupportStatus.ASSIGNED, SupportStatus.IN_PROGRESS, SupportStatus.RESOLVED));
-                                if (openTickets != null) {
-                                        for (SupportRequest openTicket : openTickets) {
-                                                openTicket.setRelocationRequired(Boolean.FALSE);
-                                                openTicket.setStatus(SupportStatus.CLOSED);
-                                                openTicket.setUpdatedAt(OffsetDateTime.now());
-                                                supportRequestRepository.save(openTicket);
-                                        }
-                                }
-                        }
+                        closeOpenSupportTickets(contractId);
 
                         if (returnRequestRepository != null) {
                                 returnRequestRepository.save(ReturnRequest.builder()
@@ -1342,8 +1331,12 @@ public class ContractServiceImpl implements ContractService {
                                 : contractRepository.findByIdAndFacilityIdIn(contractId, facilityIds);
                 RentalContract contract = contractOpt
                                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
-                if (contract.getStatus() != ContractStatus.ACTIVE && contract.getStatus() != ContractStatus.OVERDUE) {
-                        throw new CustomException(ErrorCode.CONTRACT_NOT_ACTIVE_OR_OVERDUE);
+                if (contract.getStatus() != ContractStatus.ACTIVE
+                                && contract.getStatus() != ContractStatus.OVERDUE
+                                && contract.getStatus() != ContractStatus.PENDING_CHECK_IN
+                                && contract.getStatus() != ContractStatus.PENDING_RETURN) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Hợp đồng đã đóng nên không ghi thêm phụ phí.");
                 }
                 if (request == null || request.getExtraFeeTypeId() == null) {
                         throw new CustomException(ErrorCode.VALIDATION_FAILED, "Phải chọn khoản phụ phí trong danh mục");
@@ -1370,6 +1363,61 @@ public class ContractServiceImpl implements ContractService {
                                 .category(fee.getCategory())
                                 .amount(amount)
                                 .status(saved.getStatus().name())
+                                .build();
+        }
+
+        @Override
+        @Transactional
+        public CatalogFeeChargeResponse collectCatalogFee(Long contractId, Long chargeId, List<Long> facilityIds) {
+                if (chargeId == null) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Thiếu khoản phụ phí");
+                }
+                Optional<RentalContract> contractOpt = (facilityIds == null || facilityIds.isEmpty())
+                                ? contractRepository.findById(contractId)
+                                : contractRepository.findByIdAndFacilityIdIn(contractId, facilityIds);
+                RentalContract contract = contractOpt
+                                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+                ContractExtraCharge charge = extraChargeRepository.findById(chargeId)
+                                .orElseThrow(() -> new CustomException(ErrorCode.VALIDATION_FAILED, "Không tìm thấy khoản phụ phí"));
+                if (!contract.getId().equals(charge.getContractId())) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Khoản phụ phí không thuộc hợp đồng này");
+                }
+                if (paymentTransactionRepository == null) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Không ghi được giao dịch thu tiền");
+                }
+                String reference = "DESK-CASH-" + charge.getId();
+                List<PaymentTransaction> payments = paymentTransactionRepository.findByContractId(contract.getId());
+                PaymentTransaction existing = payments == null ? null : payments.stream()
+                                .filter(payment -> reference.equals(payment.getProviderReference()))
+                                .findFirst()
+                                .orElse(null);
+                if (existing == null) {
+                        if (charge.getStatus() != ExtraChargeStatus.UNPAID) {
+                                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Khoản phụ phí đã thu");
+                        }
+                        paymentTransactionRepository.save(PaymentTransaction.builder()
+                                        .contractId(contract.getId())
+                                        .transactionType(PaymentTransactionType.EXTRA_FEE_PAYMENT.name())
+                                        .amount(charge.getAmount())
+                                        .status(PaymentStatus.SUCCESS.name())
+                                        .paymentMethod("CASH")
+                                        .providerReference(reference)
+                                        .orderCode(ThreadLocalRandom.current().nextLong(1_000_000_000L, 9_999_999_999L))
+                                        .paidAt(Instant.now())
+                                        .build());
+                        charge.setStatus(ExtraChargeStatus.PAID);
+                        extraChargeRepository.save(charge);
+                } else if (charge.getStatus() != ExtraChargeStatus.PAID) {
+                        charge.setStatus(ExtraChargeStatus.PAID);
+                        extraChargeRepository.save(charge);
+                }
+                return CatalogFeeChargeResponse.builder()
+                                .id(charge.getId())
+                                .contractId(contract.getId())
+                                .extraFeeTypeId(charge.getExtraFeeTypeId())
+                                .name(charge.getReason())
+                                .amount(charge.getAmount())
+                                .status(charge.getStatus().name())
                                 .build();
         }
 
@@ -1594,7 +1642,7 @@ public class ContractServiceImpl implements ContractService {
                                         paymentTransactionRepository.delete(depTxn);
                                 }
                         }
-                        return closeSettledContract(contract, returnReq, managerId, totalRefund, 0L);
+                        return closeSettledContract(contract, returnReq, managerId, 0L, totalRefund, 0L);
                 }
 
                 if (contract.getStatus() == ContractStatus.TERMINATED) {
@@ -1605,7 +1653,7 @@ public class ContractServiceImpl implements ContractService {
                                                 : contract.getMonthlyPrice() * Math.max(1, contract.getRentalMonths());
                                 long depositAmount = contract.getDepositAmount();
                                 long totalRefund = rentAmount + depositAmount;
-                                return closeSettledContract(contract, returnReq, managerId, totalRefund, 0L);
+                                return closeSettledContract(contract, returnReq, managerId, 0L, totalRefund, 0L);
                         } else {
                                 // BR-OVD-07, BR-OVD-11: Chấm dứt cưỡng chế do quá hạn D+7 sau khi đã nhận kho (hàng ở Kho Tổng) -> không hoàn tiền thuê.
                                 // Cho phép FM nhập thêm chi phí phát sinh (Lưu kho tổng / Khác) qua adjustedDamageCost khi khách chuộc đồ trong 30 ngày,
@@ -1648,7 +1696,7 @@ public class ContractServiceImpl implements ContractService {
                                                         .message("Khách còn phải nộp phần thiếu (chi phí lưu Kho Tổng / phát sinh). Hợp đồng đóng sau khi thanh toán thành công")
                                                         .build();
                                 }
-                                return closeSettledContract(contract, returnReq, managerId, refundAmount, payableAmount);
+                                return closeSettledContract(contract, returnReq, managerId, 0L, refundAmount, payableAmount);
                         }
                 }
 
@@ -1718,7 +1766,9 @@ public class ContractServiceImpl implements ContractService {
                                         .build();
                 }
 
-                return closeSettledContract(contract, returnReq, managerId, refundAmount, payableAmount);
+                long rentOut = isEarlyReturn ? refundAmount : 0L;
+                long depositOut = isEarlyReturn ? 0L : refundAmount;
+                return closeSettledContract(contract, returnReq, managerId, rentOut, depositOut, payableAmount);
         }
 
         @Override
@@ -1736,7 +1786,7 @@ public class ContractServiceImpl implements ContractService {
                 }
                 ReturnRequest returnReq = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contractId)
                                 .orElseThrow(() -> new CustomException(ErrorCode.RETURN_REQUEST_NOT_FOUND));
-                closeSettledContract(contract, returnReq, returnReq.getSettledBy(), 0L, 0L);
+                closeSettledContract(contract, returnReq, returnReq.getSettledBy(), 0L, 0L, 0L);
         }
 
         @Override
@@ -1876,8 +1926,28 @@ public class ContractServiceImpl implements ContractService {
                                 .build();
         }
 
+        private void closeOpenSupportTickets(Long contractId) {
+                if (supportRequestRepository == null || contractId == null) {
+                        return;
+                }
+                List<SupportRequest> openTickets = supportRequestRepository.findByContractIdInAndStatusIn(
+                                List.of(contractId),
+                                List.of(SupportStatus.NEW, SupportStatus.ASSIGNED, SupportStatus.IN_PROGRESS, SupportStatus.RESOLVED));
+                if (openTickets == null) {
+                        return;
+                }
+                OffsetDateTime now = OffsetDateTime.now();
+                for (SupportRequest openTicket : openTickets) {
+                        openTicket.setRelocationRequired(Boolean.FALSE);
+                        openTicket.setStatus(SupportStatus.CLOSED);
+                        openTicket.setUpdatedAt(now);
+                        supportRequestRepository.save(openTicket);
+                }
+        }
+
         private SettlementApprovalResponse closeSettledContract(RentalContract contract, ReturnRequest returnReq,
-                        Long managerId, long refundAmount, long payableAmount) {
+                        Long managerId, long rentRefund, long depositRefund, long payableAmount) {
+                long refundAmount = rentRefund + depositRefund;
                 returnReq.setStatus(ReturnRequestStatus.COMPLETED);
                 returnReq.setDepositRefundAmount(refundAmount);
                 returnReq.setSettledBy(managerId);
@@ -1898,6 +1968,7 @@ public class ContractServiceImpl implements ContractService {
                 contract.setOverdueFeeAccrued(0);
                 contract.setStatus(ContractStatus.CLOSED);
                 contract.setClosedAt(OffsetDateTime.now());
+                closeOpenSupportTickets(contract.getId());
                 contract.setAccessCode(null);
                 contractRepository.save(contract);
 
@@ -1915,7 +1986,8 @@ public class ContractServiceImpl implements ContractService {
                                         .contractId(contract.getId())
                                         .customerId(contract.getCustomerId())
                                         .facilityId(contract.getFacilityId())
-                                        .depositRefundAmount(refundAmount)
+                                        .rentRefundAmount(rentRefund)
+                                        .depositRefundAmount(depositRefund)
                                         .payableAmount(payableAmount)
                                         .settledAt(returnReq.getSettledAt())
                                         .build());
@@ -2143,6 +2215,10 @@ public class ContractServiceImpl implements ContractService {
                         return 0L;
                 }
                 long unusedRent = PolicyNumbers.dailyRent(contract.getMonthlyPrice(), policy) * unusedDays;
+                long chargedRent = contract.getTotalRentalFee();
+                if (chargedRent > 0) {
+                        unusedRent = Math.min(unusedRent, chargedRent);
+                }
                 // BR-RET-06: Trả sớm trước hạn dài (> 30 ngày): Hoàn 100% tiền thuê thời gian chưa dùng, phạt 100% cọc.
                 BigDecimal rate = (policy != null && policy.getReturnEarlyRefundRate() != null && policy.getReturnEarlyRefundRate().signum() > 0)
                                 ? policy.getReturnEarlyRefundRate()
@@ -2676,6 +2752,7 @@ public class ContractServiceImpl implements ContractService {
 
                 // Cập nhật trạng thái hợp đồng -> CANCELLED
                 contract.setStatus(ContractStatus.CANCELLED);
+                closeOpenSupportTickets(contract.getId());
                 RentalContract saved = contractRepository.save(contract);
 
                 if (returnRequestRepository != null) {

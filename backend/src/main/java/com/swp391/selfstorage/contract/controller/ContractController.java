@@ -8,6 +8,9 @@ import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.dto.*;
 import com.swp391.selfstorage.contract.service.ContractService;
+import com.swp391.selfstorage.support.entity.AssignmentTaskType;
+import com.swp391.selfstorage.support.entity.StaffDailyAssignment;
+import com.swp391.selfstorage.support.repository.StaffDailyAssignmentRepository;
 import com.swp391.selfstorage.user.entity.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,6 +35,7 @@ public class ContractController {
 
     private final ContractService contractService;
     private final FacilitySecurityService facilitySecurityService;
+    private final StaffDailyAssignmentRepository staffDailyAssignmentRepository;
 
     private Long requireUserId(UserPrincipal currentUser) {
         if (currentUser == null || currentUser.getId() == null) {
@@ -62,6 +66,39 @@ public class ContractController {
         return (requestedFacilityId != null) ? List.of(requestedFacilityId) : List.of();
     }
 
+    /**
+     * Nhân viên được phân công đúng hợp đồng này vẫn đọc được hợp đồng
+     * khi cơ sở mới chưa nằm trong user_facility_assignment.
+     */
+    private List<Long> scopeForContract(UserPrincipal currentUser, Long contractId) {
+        List<Long> facilities = resolveFacilityScope(currentUser, null);
+        boolean staffHasTask = currentUser.getRole() == UserRole.FACILITY_STAFF
+                && isStaffAssignedToContract(currentUser.getId(), contractId);
+        return scopeWhenStaffHasTask(currentUser.getRole(), facilities, staffHasTask);
+    }
+
+    static List<Long> scopeWhenStaffHasTask(UserRole role, List<Long> facilityScope, boolean staffHasTask) {
+        if (role == UserRole.FACILITY_STAFF && staffHasTask) {
+            return List.of();
+        }
+        return facilityScope;
+    }
+
+    private boolean isStaffAssignedToContract(Long staffId, Long contractId) {
+        if (staffId == null || contractId == null) {
+            return false;
+        }
+        for (AssignmentTaskType type : List.of(AssignmentTaskType.HANDOVER, AssignmentTaskType.RETURN)) {
+            StaffDailyAssignment row = staffDailyAssignmentRepository
+                    .findByReferenceTypeAndReferenceIdAndTaskType("CONTRACT", contractId, type)
+                    .orElse(null);
+            if (row != null && staffId.equals(row.getStaffId())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** Tạo hợp đồng trực tiếp tại quầy / chốt khách đặt trước dài hạn (> 30 ngày) / chốt Waitlist */
     @PostMapping("/direct")
     @PreAuthorize("hasAnyRole('FACILITY_MANAGER', 'BUSINESS_OPERATIONS_MANAGER', 'SYSTEM_ADMINISTRATOR', 'FACILITY_STAFF')")
@@ -83,7 +120,7 @@ public class ContractController {
         if (currentUser == null) {
             throw new CustomException(ErrorCode.UNAUTHORIZED);
         }
-        List<Long> facilities = resolveFacilityScope(currentUser, null);
+        List<Long> facilities = scopeForContract(currentUser, id);
         ContractResponse response = contractService.getContractById(id, facilities);
         if (currentUser.getRole() == UserRole.STORAGE_CUSTOMER && !response.getCustomerId().equals(currentUser.getId())) {
             throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không có quyền xem hợp đồng này");
@@ -103,7 +140,7 @@ public class ContractController {
             throw new CustomException(ErrorCode.UNAUTHORIZED);
         }
         Long operatorId = requireUserId(currentUser);
-        List<Long> facilities = resolveFacilityScope(currentUser, null);
+        List<Long> facilities = scopeForContract(currentUser, id);
 
         if (currentUser.getRole() == UserRole.STORAGE_CUSTOMER) {
             ContractResponse contract = contractService.getContractById(id, List.of());
@@ -126,7 +163,7 @@ public class ContractController {
             @Valid @RequestBody HandoverRejectionRequest request,
             @AuthenticationPrincipal UserPrincipal currentUser) {
         Long staffId = requireUserId(currentUser);
-        List<Long> facilities = resolveFacilityScope(currentUser, null);
+        List<Long> facilities = scopeForContract(currentUser, id);
         HandoverRejectionResponse response = contractService.rejectHandover(id, request, staffId, facilities);
         return ResponseEntity.ok(ApiResponse.success(response, "Đã ghi nhận từ chối nhận kho"));
     }
@@ -259,7 +296,7 @@ public class ContractController {
             @Valid @RequestBody ReturnInspectionRequest request,
             @AuthenticationPrincipal UserPrincipal currentUser) {
         Long staffId = requireUserId(currentUser);
-        List<Long> facilities = resolveFacilityScope(currentUser, null);
+        List<Long> facilities = scopeForContract(currentUser, id);
         ReturnInspectionResponse response = contractService.submitReturnInspection(id, request, staffId, facilities);
         return ResponseEntity.ok(ApiResponse.success(response, "Nghiệm thu trả kho thành công"));
     }
@@ -276,6 +313,19 @@ public class ContractController {
         List<Long> facilities = resolveFacilityScope(currentUser, null);
         CatalogFeeChargeResponse response = contractService.applyCatalogFee(id, request, actorId, facilities);
         return ResponseEntity.ok(ApiResponse.success(response, "Đã ghi phụ phí vào hợp đồng"));
+    }
+
+    /** FM thu tiền mặt một khoản phụ phí chưa thu. Tạo EXTRA_FEE_PAYMENT SUCCESS để BOM thấy doanh thu. */
+    @PostMapping("/{id}/catalog-fees/{chargeId}/collect")
+    @PreAuthorize("hasAnyRole('FACILITY_MANAGER', 'MANAGER', 'SYSTEM_ADMINISTRATOR', 'ADMIN', 'BUSINESS_OPERATIONS_MANAGER', 'BOM')")
+    @Operation(summary = "Thu tiền mặt phụ phí tại quầy")
+    public ResponseEntity<ApiResponse<CatalogFeeChargeResponse>> collectCatalogFee(
+            @PathVariable Long id,
+            @PathVariable Long chargeId,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        List<Long> facilities = resolveFacilityScope(currentUser, null);
+        CatalogFeeChargeResponse response = contractService.collectCatalogFee(id, chargeId, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, "Đã ghi nhận tiền mặt phụ phí"));
     }
 
     /** T4.3: Xem trước bảng quyết toán thanh lý và hoàn cọc (FM-04) */

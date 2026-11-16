@@ -44,5 +44,13 @@ public interface CustomerRentalService {
             Long contractId,
             UserPrincipal currentUser
     );
+
+    /**
+     * Dòng thời gian của đúng khách đang đăng nhập: giao dịch, trạng thái hợp đồng hiện tại,
+     * và điều chỉnh REASSIGN_UNIT đã ghi trong audit log.
+     */
+    java.util.List<com.swp391.selfstorage.reservation.dto.CustomerHistoryItemResponse> getMyHistory(
+            UserPrincipal currentUser
+    );
 }
 

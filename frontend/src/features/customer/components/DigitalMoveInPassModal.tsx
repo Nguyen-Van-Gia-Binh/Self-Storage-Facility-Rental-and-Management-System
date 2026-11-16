@@ -75,6 +75,12 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
   const [resolvedOpeningHours, setResolvedOpeningHours] = useState<string>(
     passData?.facilityOpeningHours || ''
   );
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
+  const [showRejectionView, setShowRejectionView] = useState(false);
+  const [rejectionResult, setRejectionResult] = useState<{
+    action: CustomerHandoverAction;
+    reason: string;
+  } | null>(null);
 
   // Synchronize activeTab & fetch live openingHours from facility API when needed
   useEffect(() => {
@@ -117,7 +123,6 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
 
   // E-Handover & Digital Signature states
   const [signatureName, setSignatureName] = useState('');
-  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [agreeSafetyTerms, setAgreeSafetyTerms] = useState(false);
   const [isSigned, setIsSigned] = useState(false);
   const [copiedPin, setCopiedPin] = useState(false);
@@ -126,14 +131,9 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
   const [activatedPin, setActivatedPin] = useState<string | null>(null);
 
   // Báo sự cố & Từ chối nhận bàn giao
-  const [showRejectionView, setShowRejectionView] = useState(false);
   const [selectedReason, setSelectedReason] = useState(REJECTION_REASONS[0]);
   const [customReasonNote, setCustomReasonNote] = useState('');
   const [rejectionAction, setRejectionAction] = useState<CustomerHandoverAction>('RELOCATE');
-  const [rejectionResult, setRejectionResult] = useState<{
-    action: CustomerHandoverAction;
-    reason: string;
-  } | null>(null);
 
   if (!isOpen || !passData) return null;
 

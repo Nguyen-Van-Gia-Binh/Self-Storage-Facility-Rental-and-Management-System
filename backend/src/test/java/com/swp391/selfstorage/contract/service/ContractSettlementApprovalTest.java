@@ -404,6 +404,37 @@ class ContractSettlementApprovalTest {
         }
 
         @Test
+        @DisplayName("Trả cùng ngày nhận kho: hoàn đúng tiền thuê đã thu 2.250.000, không phải 2.300.000")
+        void testSettlement_sameDayReturn_refundsChargedRentNotCalendarDays() {
+                LocalDate start = LocalDate.of(2026, 11, 16);
+                RentalContract contract = RentalContract.builder()
+                                .id(9045L)
+                                .monthlyPrice(750_000L)
+                                .rentalMonths(3)
+                                .totalRentalFee(2_250_000L)
+                                .depositAmount(750_000L)
+                                .depositBalance(750_000L)
+                                .startDate(start)
+                                .endDateExclusive(start.plusDays(92))
+                                .returnDate(start)
+                                .status(ContractStatus.PENDING_RETURN)
+                                .build();
+                ReturnRequest returnReq = ReturnRequest.builder()
+                                .contractId(9045L)
+                                .damageCost(0L)
+                                .requestedReturnDate(start)
+                                .build();
+                when(contractRepository.findByIdAndFacilityIdIn(eq(9045L), anyList())).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(9045L)).thenReturn(Optional.of(returnReq));
+                when(extraChargeRepository.findByContractIdAndStatus(9045L, ExtraChargeStatus.UNPAID)).thenReturn(List.of());
+
+                SettlementPreviewResponse preview = contractService.getSettlementPreview(9045L, List.of(1L));
+
+                assertEquals(2_250_000L, preview.getEarlyRentRefund());
+                assertEquals(2_250_000L, preview.getDepositRefundAmount());
+        }
+
+        @Test
         @DisplayName("BR-RET-04, BR-RET-06: Trả kho trong tháng cuối (<= 30 ngày, vd. còn 3 ngày) -> Hoàn 100% cọc, không phạt cọc")
         void testSettlement_MoveOutLastMonth_LessThanOrEqualTo30Days_PreservesDepositNoRentRefund() {
                 LocalDate returnDate = LocalDate.now();

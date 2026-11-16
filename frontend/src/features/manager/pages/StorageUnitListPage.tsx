@@ -1,6 +1,7 @@
 // frontend/src/features/manager/pages/StorageUnitListPage.tsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { DateField } from '@/components/ui/DateField';
 import {
   Plus,
   Search,
@@ -313,7 +314,7 @@ export const StorageUnitListPage: React.FC = () => {
 
     // 2. Sort
     return filtered.sort((a, b) => {
-      let cmp = 0;
+      let cmp: number;
       switch (sortField) {
         case 'code':
           cmp = a.code.localeCompare(b.code, 'vi', { numeric: true });
@@ -454,19 +455,17 @@ export const StorageUnitListPage: React.FC = () => {
             </span>
             <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1 rounded-xl shadow-2xs">
               <span className="text-slate-500 font-medium text-xs">Từ ngày:</span>
-              <input
-                type="date"
+              <DateField
                 value={startDate}
-                onChange={(e) => handleDateRangeChange(e.target.value, endDate)}
-                className="bg-transparent font-mono font-bold text-slate-800 outline-none cursor-pointer"
+                onChange={(next) => handleDateRangeChange(next, endDate)}
+                className="bg-transparent num font-bold text-slate-800 outline-none cursor-pointer"
               />
               <span className="text-slate-300">|</span>
               <span className="text-slate-500 font-medium text-xs">Đến ngày:</span>
-              <input
-                type="date"
+              <DateField
                 value={endDate}
-                onChange={(e) => handleDateRangeChange(startDate, e.target.value)}
-                className="bg-transparent font-mono font-bold text-slate-800 outline-none cursor-pointer"
+                onChange={(next) => handleDateRangeChange(startDate, next)}
+                className="bg-transparent num font-bold text-slate-800 outline-none cursor-pointer"
               />
             </div>
             {(startDate || endDate) && (
@@ -485,7 +484,7 @@ export const StorageUnitListPage: React.FC = () => {
           <div className="text-xs text-slate-500">
             {startDate && endDate ? (
               <span>
-                Đang kiểm tra từ <strong className="font-mono text-brand-700 font-bold">{formatVnDate(startDate)}</strong> đến <strong className="font-mono text-brand-700 font-bold">{formatVnDate(endDate)}</strong>
+                Đang kiểm tra từ <strong className="num text-brand-700 font-bold">{formatVnDate(startDate)}</strong> đến <strong className="num text-brand-700 font-bold">{formatVnDate(endDate)}</strong>
               </span>
             ) : (
               <span>Hiển thị hiện trạng theo thời gian thực (Hôm nay)</span>
@@ -513,7 +512,7 @@ export const StorageUnitListPage: React.FC = () => {
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-xl font-bold font-mono text-slate-900">{statsOverview.total}</span>
+              <span className="text-xl font-bold num text-slate-900">{statsOverview.total}</span>
               <span className="text-xs text-slate-400">ô</span>
             </div>
             <span className="text-[10px] text-slate-400 mt-1 block">Quy mô hiện tại</span>
@@ -535,7 +534,7 @@ export const StorageUnitListPage: React.FC = () => {
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-xl font-bold font-mono text-emerald-700">{statsOverview.available}</span>
+              <span className="text-xl font-bold num text-emerald-700">{statsOverview.available}</span>
               <span className="text-xs text-emerald-600">ô</span>
             </div>
             <span className="text-[10px] text-emerald-600 font-medium mt-1 block">Sẵn sàng nhận khách</span>
@@ -557,7 +556,7 @@ export const StorageUnitListPage: React.FC = () => {
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-xl font-bold font-mono text-amber-700">{statsOverview.occupied}</span>
+              <span className="text-xl font-bold num text-amber-700">{statsOverview.occupied}</span>
               <span className="text-xs text-amber-600">ô</span>
             </div>
             <span className="text-[10px] text-amber-600 font-medium mt-1 block">Hợp đồng hiệu lực</span>
@@ -579,7 +578,7 @@ export const StorageUnitListPage: React.FC = () => {
               </div>
             </div>
             <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-xl font-bold font-mono text-rose-700">{statsOverview.maintenance}</span>
+              <span className="text-xl font-bold num text-rose-700">{statsOverview.maintenance}</span>
               <span className="text-xs text-rose-600">ô</span>
             </div>
             <span className="text-[10px] text-rose-600 font-medium mt-1 block">Tạm ngưng khai thác</span>
@@ -593,7 +592,7 @@ export const StorageUnitListPage: React.FC = () => {
                 Tỷ lệ lấp đầy
               </span>
               <span
-                className={`text-xs font-mono font-bold ${
+                className={`text-xs num font-bold ${
                   statsOverview.isFull
                     ? 'text-rose-600'
                     : statsOverview.isNearFull

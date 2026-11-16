@@ -20,7 +20,7 @@ export const SlaCountdownBadge: React.FC<SlaCountdownBadgeProps> = ({
   slaHours = 2,
   className = '',
 }) => {
-  const [now, setNow] = useState<number>(Date.now());
+  const [now, setNow] = useState<number>(() => Date.now());
 
   useEffect(() => {
     if (isCompleted) return;
@@ -42,7 +42,7 @@ export const SlaCountdownBadge: React.FC<SlaCountdownBadgeProps> = ({
   }
 
   // Xác định thời điểm hết hạn
-  let deadlineMs = 0;
+  let deadlineMs: number;
   if (slaDeadline) {
     deadlineMs = new Date(slaDeadline).getTime();
   } else if (createdAt) {

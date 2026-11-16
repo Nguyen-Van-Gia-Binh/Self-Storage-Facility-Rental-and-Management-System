@@ -1,42 +1,46 @@
-import { describe, it, expect } from 'vitest';
-import React from 'react';
-import { renderToString } from 'react-dom/server';
-import { FacilityCard } from '../FacilityCard';
+// @vitest-environment jsdom
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { FacilityListPage } from '../../pages/FacilityListPage';
+import * as facilityApi from '@/api/facility';
 import type { FacilityListItem } from '@/types';
 
-describe('FacilityCard component', () => {
-  const mockFacility: FacilityListItem = {
-    id: 1,
-    code: 'FAC-CG',
-    name: 'Cơ sở Cầu Giấy',
-    address: '123 Đường Cầu Giấy, Hà Nội',
-    phone: '0987654321',
-    description: 'Cơ sở hiện đại',
-    openingHours: '08:00 - 20:00',
-    isActive: true,
-    createdAt: '2026-01-01',
-  };
+vi.mock('@/api/facility', () => ({
+  fetchMyAssignedFacilities: vi.fn(),
+}));
 
-  it('Render chính xác tên cơ sở, mã cơ sở, địa chỉ và số điện thoại', () => {
-    const html = renderToString(
-      <FacilityCard
-        facility={mockFacility}
-        stats={{
-          totalUnits: 17,
-          occupiedUnits: 4,
-          availableUnits: 10,
-          maintenanceUnits: 3,
-          occupancyRate: 23.5,
-        }}
-        onClick={() => {}}
-      />
+vi.mock('@/api/unit', () => ({
+  fetchStorageUnits: vi.fn().mockResolvedValue({ content: [] }),
+}));
+
+const facility: FacilityListItem = {
+  id: 1,
+  code: 'FAC-CG',
+  name: 'Cơ sở Cầu Giấy',
+  address: '123 Đường Cầu Giấy, Hà Nội',
+  phone: '0987654321',
+  description: 'Cơ sở hiện đại',
+  openingHours: '08:00 - 20:00',
+  isActive: true,
+  createdAt: '2026-01-01',
+};
+
+describe('Bảng danh sách cơ sở', () => {
+  it('hiện tên, mã, địa chỉ, điện thoại, trạng thái và nút Quản lý', async () => {
+    vi.mocked(facilityApi.fetchMyAssignedFacilities).mockResolvedValue([facility]);
+
+    render(
+      <MemoryRouter>
+        <FacilityListPage />
+      </MemoryRouter>
     );
 
-    expect(html).toContain('Cơ sở Cầu Giấy');
-    expect(html).toContain('FAC-CG');
-    expect(html).toContain('123 Đường Cầu Giấy');
-    expect(html).toContain('0987654321');
-    expect(html).toContain('Hoạt động');
-    expect(html).toContain('Vào quản lý ô kho');
+    expect(await screen.findByText('Cơ sở Cầu Giấy')).toBeTruthy();
+    expect(screen.getByText('FAC-CG')).toBeTruthy();
+    expect(screen.getByText('123 Đường Cầu Giấy, Hà Nội')).toBeTruthy();
+    expect(screen.getByText('0987654321')).toBeTruthy();
+    expect(screen.getByText('Hoạt động')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Quản lý' })).toBeTruthy();
   });
 });

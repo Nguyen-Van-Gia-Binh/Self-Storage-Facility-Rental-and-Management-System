@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Percent, Loader2 } from 'lucide-react';
 import type { FacilityListItem } from '@/types';
+import { DateField } from '@/components/ui/DateField';
 import type {
   DiscountProgramItem,
   CreateDiscountProgramPayload,
@@ -213,31 +214,41 @@ export const DiscountProgramModal: React.FC<DiscountProgramModalProps> = ({
           </div>
 
           {/* Loại giảm giá & Mức giảm */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Loại giảm giá <span className="text-rose-500">*</span>
+          <div>
+            <span className="block text-xs font-semibold text-slate-700 mb-1">
+              Loại giảm giá <span className="text-rose-500">*</span>
+            </span>
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-700">
+                <input
+                  type="radio"
+                  name="discountType"
+                  value="PERCENT"
+                  checked={formData.discountType === 'PERCENT'}
+                  onChange={() => setFormData({ ...formData, discountType: 'PERCENT' })}
+                  className="accent-brand-500"
+                />
+                Phần trăm (%)
               </label>
-              <select
-                value={formData.discountType}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    discountType: e.target.value as 'PERCENT' | 'AMOUNT',
-                  })
-                }
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-500 bg-white"
-              >
-                <option value="PERCENT">Phần trăm (%)</option>
-                <option value="AMOUNT">Số tiền cố định (₫)</option>
-              </select>
+              <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-700">
+                <input
+                  type="radio"
+                  name="discountType"
+                  value="AMOUNT"
+                  checked={formData.discountType === 'AMOUNT'}
+                  onChange={() => setFormData({ ...formData, discountType: 'AMOUNT' })}
+                  className="accent-brand-500"
+                />
+                Số tiền (₫)
+              </label>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Mức giảm {formData.discountType === 'PERCENT' ? '(%)' : '(₫)'}{' '}
-                <span className="text-rose-500">*</span>
-              </label>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Mức giảm <span className="text-rose-500">*</span>
+            </label>
+            <div className="relative">
               <input
                 type="number"
                 min="0"
@@ -245,16 +256,21 @@ export const DiscountProgramModal: React.FC<DiscountProgramModalProps> = ({
                 value={formData.discountValue}
                 onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })}
                 placeholder={formData.discountType === 'PERCENT' ? '5' : '500000'}
-                className={`w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:ring-2 ${
+                className={`w-full pl-3 pr-10 py-2 text-sm border rounded-xl focus:outline-none focus:ring-2 tabular-nums ${
                   errors.discountValue
                     ? 'border-rose-300 focus:ring-rose-200'
                     : 'border-slate-300 focus:ring-amber-200 focus:border-amber-500'
                 }`}
               />
-              {errors.discountValue && (
-                <p className="text-xs text-rose-500 mt-1">{errors.discountValue}</p>
-              )}
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <span className="text-slate-500 text-sm">
+                  {formData.discountType === 'PERCENT' ? '%' : '₫'}
+                </span>
+              </div>
             </div>
+            {errors.discountValue && (
+              <p className="text-xs text-rose-500 mt-1">{errors.discountValue}</p>
+            )}
           </div>
 
           {/* Số tháng thuê tối thiểu */}
@@ -275,8 +291,11 @@ export const DiscountProgramModal: React.FC<DiscountProgramModalProps> = ({
                     : 'border-slate-300 focus:ring-amber-200 focus:border-amber-500'
                 }`}
               />
-              <span className="text-xs text-slate-500">tháng (Khách thuê từ số tháng này trở lên sẽ đủ điều kiện)</span>
+              <span className="text-xs text-slate-500">tháng</span>
             </div>
+            <p className="text-xs text-slate-400 mt-1">
+              Khách thuê từ số tháng này trở lên sẽ đủ điều kiện.
+            </p>
             {errors.minRentalMonths && (
               <p className="text-xs text-rose-500 mt-1">{errors.minRentalMonths}</p>
             )}
@@ -288,11 +307,10 @@ export const DiscountProgramModal: React.FC<DiscountProgramModalProps> = ({
               <label htmlFor="startDateInput" className="block text-xs font-semibold text-slate-700 mb-1">
                 Ngày bắt đầu <span className="text-rose-500">*</span>
               </label>
-              <input
+              <DateField
                 id="startDateInput"
-                type="date"
                 value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                onChange={(next) => setFormData({ ...formData, startDate: next })}
                 className={`w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:ring-2 ${
                   errors.startDate
                     ? 'border-rose-300 focus:ring-rose-200'
@@ -306,11 +324,10 @@ export const DiscountProgramModal: React.FC<DiscountProgramModalProps> = ({
               <label htmlFor="endDateInput" className="block text-xs font-semibold text-slate-700 mb-1">
                 Ngày kết thúc <span className="text-rose-500">*</span>
               </label>
-              <input
+              <DateField
                 id="endDateInput"
-                type="date"
                 value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                onChange={(next) => setFormData({ ...formData, endDate: next })}
                 className={`w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:ring-2 ${
                   errors.endDate
                     ? 'border-rose-300 focus:ring-rose-200'
@@ -413,7 +430,7 @@ export const DiscountProgramModal: React.FC<DiscountProgramModalProps> = ({
             <button
               type="submit"
               disabled={isLoading}
-              className="inline-flex items-center space-x-1.5 px-5 py-2 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-xl shadow-sm transition-colors disabled:opacity-50"
+              className="inline-flex items-center space-x-1.5 px-5 py-2 text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 rounded-xl shadow-sm transition-colors disabled:opacity-50"
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
               <span>{isEditing ? 'Lưu thay đổi' : 'Tạo chương trình'}</span>

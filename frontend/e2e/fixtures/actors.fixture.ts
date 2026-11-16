@@ -7,7 +7,7 @@ type ActorPages = {
 };
 
 export const test = base.extend<ActorPages>({
-  customerPage: async ({ browser }, use) => {
+  customerPage: async ({ browser }, expose) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await page.goto('/auth/login');
@@ -15,11 +15,11 @@ export const test = base.extend<ActorPages>({
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
     await page.waitForURL((url) => url.pathname === '/');
-    await use(page);
+    await expose(page);
     await context.close();
   },
 
-  staffPage: async ({ browser }, use) => {
+  staffPage: async ({ browser }, expose) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await page.goto('/auth/login');
@@ -27,11 +27,11 @@ export const test = base.extend<ActorPages>({
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
     await page.waitForURL(/.*\/staff.*/);
-    await use(page);
+    await expose(page);
     await context.close();
   },
 
-  managerPage: async ({ browser }, use) => {
+  managerPage: async ({ browser }, expose) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await page.goto('/auth/login');
@@ -39,7 +39,7 @@ export const test = base.extend<ActorPages>({
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
     await page.waitForURL(/.*\/manager.*/);
-    await use(page);
+    await expose(page);
     await context.close();
   },
 });

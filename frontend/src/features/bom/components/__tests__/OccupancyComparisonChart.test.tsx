@@ -75,9 +75,7 @@ describe('OccupancyComparisonChart (Enterprise UX List View)', () => {
     expect(screen.getByText('Cơ sở Quận 1 - TP.HCM')).toBeInTheDocument();
     expect(screen.getByText('(ID: #5)')).toBeInTheDocument();
     expect(screen.getByText('Cơ sở Quận 7 - TP.HCM')).toBeInTheDocument();
-
-    // Kiểm tra badge "Đạt chuẩn" cho cơ sở 85%
-    expect(screen.getByText('Đạt chuẩn')).toBeInTheDocument();
+    expect(screen.queryByText('Đạt chuẩn')).not.toBeInTheDocument();
 
     // Kiểm tra chips
     expect(screen.getAllByText(/Trống:/).length).toBe(4);

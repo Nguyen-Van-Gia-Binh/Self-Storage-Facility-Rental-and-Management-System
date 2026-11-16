@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { fetchPolicyForPublish, publishPolicy, type PolicyPublishPayload } from '@/api/pricing';
+import { DateField, toVnDate } from '@/components/ui/DateField';
 
 type FormState = {
   effectiveDate: string;
@@ -122,13 +123,21 @@ function Field({
       <span className="font-medium text-slate-700 leading-snug min-h-[2.5rem] flex items-end pb-1.5">
         <span>{label}</span>
       </span>
-      <input
-        type={type}
-        step={step}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white"
-      />
+      {type === 'date' ? (
+        <DateField
+          value={value}
+          onChange={onChange}
+          className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white"
+        />
+      ) : (
+        <input
+          type={type}
+          step={step}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white"
+        />
+      )}
     </div>
   );
 }
@@ -167,6 +176,9 @@ export const BomPolicyPage: React.FC = () => {
       const day = Number(item);
       if (!Number.isInteger(day) || day <= 0 || seen.has(item)) {
         return 'Các mốc nhắc gia hạn phải lớn hơn 0 và không được trùng nhau';
+      }
+      if (day <= 20) {
+        return 'Mốc nhắc gia hạn phải lớn hơn 20 ngày vì từ mốc đó cổng tự gia hạn đã khóa';
       }
       seen.add(item);
     }
@@ -238,7 +250,7 @@ export const BomPolicyPage: React.FC = () => {
       setMessage(
         form.effectiveDate <= todayInVietnam()
           ? `Đã ban hành phiên bản ${versionLabel}, đang hiệu lực từ hôm nay. ${snapshotNote}`
-          : `Đã ban hành phiên bản ${versionLabel}, chưa áp dụng cho đến ${form.effectiveDate}. ${snapshotNote}`
+          : `Đã ban hành phiên bản ${versionLabel}, chưa áp dụng cho đến ${toVnDate(form.effectiveDate)}. ${snapshotNote}`
       );
       setForm((current) => ({ ...current, confirmed: false }));
     } catch (err) {
@@ -345,7 +357,7 @@ export const BomPolicyPage: React.FC = () => {
         <button
           type="submit"
           disabled={saving}
-          className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
+          className="px-6 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold disabled:opacity-50 transition-colors cursor-pointer"
         >
           {saving ? 'Đang ban hành...' : 'Ban hành chính sách'}
         </button>

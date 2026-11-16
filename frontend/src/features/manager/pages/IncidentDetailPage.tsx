@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   CheckCircle2,
   AlertTriangle,
-  RotateCcw,
   ShieldCheck,
   Printer,
   RefreshCw,
@@ -16,8 +15,8 @@ import {
   getStaffWorkload,
   assignStaffToTask,
 } from '../api/staffAssignmentApi';
-import { getContractById, getManagerContracts, getManagerContractById } from '@/api/contract';
-import type { ManagerContractItem } from '@/types/contractManager';
+import { collectCatalogFee, getContractById, getContractFinancialDetail, getManagerContracts, getManagerContractById } from '@/api/contract';
+import type { ContractFinancialSummary, ManagerContractItem } from '@/types/contractManager';
 import { ReassignUnitModal } from '../components/ReassignUnitModal';
 import type {
   ManagementSupportTicket,
@@ -116,6 +115,8 @@ export const IncidentDetailPage: React.FC = () => {
     floor?: number | string;
     zone?: string;
   } | null>(null);
+  const [ticketCharges, setTicketCharges] = useState<ContractFinancialSummary['extraCharges']>([]);
+  const [collectingChargeId, setCollectingChargeId] = useState<number | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -149,6 +150,18 @@ export const IncidentDetailPage: React.FC = () => {
         } catch (cErr) {
           console.warn('Lỗi tải chi tiết hợp đồng:', cErr);
         }
+        try {
+          const financial = await getContractFinancialDetail(data.contractId);
+          const code = data.code;
+          setTicketCharges(
+            (financial.extraCharges || []).filter((charge) => Boolean(code) && charge.reason?.includes(code)),
+          );
+        } catch (feeErr) {
+          console.warn('Lỗi tải phụ phí hợp đồng:', feeErr);
+          setTicketCharges([]);
+        }
+      } else {
+        setTicketCharges([]);
       }
     } catch (err) {
       console.error('Lỗi tải chi tiết sự cố:', err);
@@ -175,38 +188,37 @@ export const IncidentDetailPage: React.FC = () => {
       });
       showToast(res.message || 'Phân công nhân viên thành công');
       await loadTicket();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Lỗi phân công nhân viên:', err);
-      showToast('Có lỗi xảy ra khi phân công');
+      const message = err instanceof Error ? err.message : 'Có lỗi xảy ra khi phân công';
+      showToast(message);
     } finally {
       setActionLoading(false);
     }
   };
 
-  // 2. Đánh dấu cần di dời ô kho
-  const handleToggleRelocation = async () => {
-    if (!ticket) return;
-    setActionLoading(true);
+  const handleCollectCharge = async (chargeId: number) => {
+    if (!ticket?.contractId) return;
+    setCollectingChargeId(chargeId);
     try {
-      const nextVal = !ticket.relocationRequired;
-      await apiClient<any>(`/support-requests/${ticket.id}/relocation-required`, {
-        method: 'PATCH',
-        body: JSON.stringify({ required: nextVal }),
-      });
-      showToast(
-        nextVal
-          ? 'Đã đánh dấu sự cố cần chuyển đổi ô kho'
-          : 'Đã hủy yêu cầu chuyển đổi ô kho'
-      );
+      await collectCatalogFee(ticket.contractId, chargeId);
+      showToast('Đã ghi nhận tiền mặt. Doanh thu phụ phí đã vào sổ.');
       await loadTicket();
-    } catch (err) {
-      console.error('Lỗi cập nhật di dời kho:', err);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Không ghi được giao dịch thu tiền';
+      showToast(message);
     } finally {
-      setActionLoading(false);
+      setCollectingChargeId(null);
     }
   };
 
-  // 3. Mở modal đổi ô kho khẩn cấp cho sự cố này
+  const unpaidTicketCharges = ticketCharges.filter((charge) => charge.status !== 'PAID');
+  const paidTicketTotal = ticketCharges
+    .filter((charge) => charge.status === 'PAID')
+    .reduce((sum, charge) => sum + charge.amount, 0);
+  const unpaidTicketTotal = unpaidTicketCharges.reduce((sum, charge) => sum + charge.amount, 0);
+
+  // 2. Mở modal đổi ô kho khi nhân viên đã báo cần chuyển
   const handleOpenReassignModal = async () => {
     if (!ticket) return;
     setActionLoading(true);
@@ -282,7 +294,6 @@ export const IncidentDetailPage: React.FC = () => {
     }
     setActionLoading(true);
     try {
-      // Đóng ticket và lưu biên bản
       await apiClient<any>(`/support-requests/${ticket.id}/resolve`, {
         method: 'PATCH',
         body: JSON.stringify({
@@ -294,11 +305,10 @@ export const IncidentDetailPage: React.FC = () => {
       showToast('Đã đóng sự cố và hoàn tất biên bản nghiệm thu');
       setCloseModalOpen(false);
       await loadTicket();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Lỗi đóng sự cố:', err);
-      showToast('Đóng sự cố thành công');
-      setCloseModalOpen(false);
-      await loadTicket();
+      const message = err instanceof Error ? err.message : 'Không đóng được sự cố';
+      showToast(message);
     } finally {
       setActionLoading(false);
     }
@@ -409,46 +419,18 @@ export const IncidentDetailPage: React.FC = () => {
       {/* Main Grid: Cột trái (Chi tiết & Phân công & Nghiệm thu) - Cột phải (Khách & Ô kho & Timeline) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* CỘT TRÁI (2/3) */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4">
           {/* Banner Yêu cầu di dời ô kho khẩn cấp */}
           {ticket.relocationRequired && (
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/90 rounded-2xl p-4 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in duration-200">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-700 flex items-center justify-center shrink-0 border border-amber-300/40">
-                  <ArrowRightLeft className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900">
-                      Yêu cầu di dời ô kho khẩn cấp
-                    </h4>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-900">
-                      Cần xử lý
-                    </span>
-                  </div>
-                  <p className="text-xs text-amber-800/90 mt-0.5">
-                    Sự cố tại ô kho <strong>{ticket.storageUnitCode}</strong> không thể khắc phục tại chỗ. Vui lòng tiến hành đổi ô kho trống tương đương cho hợp đồng{' '}
-                    <strong>{ticket.contractCode || 'liên kết'}</strong>.
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={handleOpenReassignModal}
-                disabled={actionLoading}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all shrink-0 hover:shadow"
-              >
-                <ArrowRightLeft className="w-4 h-4" />
-                <span>Tiến hành đổi ô kho</span>
-              </button>
-            </div>
+            <p className="text-sm text-slate-600">
+              Ô kho <strong className="text-slate-900">{ticket.storageUnitCode}</strong> cần đổi sang ô trống cùng loại cho hợp đồng{' '}
+              <strong className="text-slate-900">{ticket.contractCode || 'liên kết'}</strong>.
+            </p>
           )}
 
+          <div className="bg-white rounded-xl border border-slate-200 px-5">
           {/* Panel thông tin sự cố */}
-          <IncidentDetailPanel
-            ticket={ticket}
-            onRelocateUnit={handleOpenReassignModal}
-          />
+          <IncidentDetailPanel ticket={ticket} />
 
           {/* Phần phân công nhân viên phụ trách */}
           <StaffAssignmentSection
@@ -474,7 +456,7 @@ export const IncidentDetailPage: React.FC = () => {
 
           {/* Ghi chú & Hình ảnh sau xử lý */}
           {(isResolved || isClosed) && (
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 space-y-4">
+            <div className="py-5 border-b border-slate-200 space-y-4">
               <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
@@ -504,7 +486,7 @@ export const IncidentDetailPage: React.FC = () => {
 
           {/* Khi sự cố đã ĐÓNG -> Hiển thị Khung Biên Bản Nghiệm Thu */}
           {isClosed && (
-            <div className="bg-emerald-50/50 rounded-2xl border border-emerald-200 shadow-2xs p-5 space-y-3">
+            <div className="py-5 border-b border-slate-200 space-y-3">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-emerald-600" />
                 <h3 className="font-bold text-sm text-emerald-950">
@@ -515,14 +497,48 @@ export const IncidentDetailPage: React.FC = () => {
               <div className="text-xs text-emerald-900 space-y-1.5 pt-2 border-t border-emerald-200/60">
                 <p>• <strong>Người xác nhận đóng:</strong> Quản lý cơ sở</p>
                 <p>• <strong>Kết quả:</strong> ✓ Đã hoàn tất sửa chữa & kiểm tra hiện trường an toàn</p>
-                <p>• <strong>Trách nhiệm chi phí:</strong> {parsedFaultInfo.faultType === 'CUSTOMER' ? `Khách hàng đã thanh toán tại chỗ ${parsedFaultInfo.cost.toLocaleString('vi-VN')} đ` : 'Cơ sở chịu 100% chi phí'}</p>
+                <p>• <strong>Trách nhiệm chi phí:</strong> {parsedFaultInfo.faultType === 'CUSTOMER'
+                  ? (ticketCharges.length === 0
+                    ? 'Chưa ghi khoản phụ phí trên hợp đồng'
+                    : unpaidTicketCharges.length > 0
+                      ? `Chưa thu ${unpaidTicketTotal.toLocaleString('vi-VN')} đ`
+                      : `Đã thu tại quầy ${paidTicketTotal.toLocaleString('vi-VN')} đ`)
+                  : 'Cơ sở chịu 100% chi phí'}</p>
                 <p>• <strong>Khách hàng xác nhận:</strong> ✓ Đã ký biên bản điện tử</p>
               </div>
             </div>
           )}
 
+          {ticketCharges.length > 0 && (
+            <div className="py-5 border-b border-slate-200 space-y-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                Phụ phí khách phải trả
+              </h3>
+              {ticketCharges.map((charge) => (
+                <div key={charge.id} className="flex items-center justify-between gap-3 py-2 border-b border-slate-100">
+                  <div className="min-w-0">
+                    <p className="text-sm text-slate-800 break-words">{charge.reason}</p>
+                    <p className="num text-sm text-slate-900">{charge.amount.toLocaleString('vi-VN')} đ</p>
+                  </div>
+                  {charge.status === 'PAID' ? (
+                    <span className="text-xs font-semibold text-slate-600 shrink-0">Đã thu</span>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={collectingChargeId != null || actionLoading}
+                      onClick={() => handleCollectCharge(charge.id)}
+                      className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold disabled:opacity-50 shrink-0"
+                    >
+                      {collectingChargeId === charge.id ? 'Đang ghi...' : 'Đã nhận tiền'}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Thanh Hành Động (Action Bar) */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="py-4 flex flex-wrap items-center justify-between gap-3">
             <div className="text-xs text-slate-500">
               Trạng thái hiện tại: <strong className="text-slate-800">{ticket.statusDisplayName}</strong>
             </div>
@@ -534,7 +550,7 @@ export const IncidentDetailPage: React.FC = () => {
                   type="button"
                   disabled={actionLoading}
                   onClick={handleOpenReassignModal}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-rose-700 border border-rose-300 hover:bg-rose-50 rounded-xl text-xs font-semibold"
                   title="Thực hiện đổi ô kho sang ô trống cùng loại"
                 >
                   <ArrowRightLeft className="w-3.5 h-3.5" />
@@ -542,52 +558,35 @@ export const IncidentDetailPage: React.FC = () => {
                 </button>
               )}
 
-              {/* Nút Yêu cầu di dời kho */}
-              {(ticket.status === 'IN_PROGRESS' || ticket.status === 'ASSIGNED' || ticket.status === 'NEW') && (
-                <button
-                  type="button"
-                  disabled={actionLoading}
-                  onClick={handleToggleRelocation}
-                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors border shadow-2xs ${
-                    ticket.relocationRequired
-                      ? 'bg-amber-100 text-amber-900 border-amber-300'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
-                  <span>
-                    {ticket.relocationRequired ? '✓ Đang yêu cầu di dời' : '⚠️ Báo cần chuyển ô kho'}
-                  </span>
-                </button>
-              )}
-
               {/* Nút Đóng sự cố (Chỉ hiển thị khi Staff đã xử lý xong sang RESOLVED) */}
               {ticket.status === 'RESOLVED' && (
                 ticket.relocationRequired ? (
-                  <div className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 text-amber-800 border border-amber-200/90 rounded-xl text-xs font-semibold shadow-2xs">
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                    <span>Cần hoàn tất đổi ô kho trước khi đóng sự cố</span>
-                  </div>
+                  <p className="text-xs text-slate-600">
+                    Cần hoàn tất đổi ô kho trước khi đóng sự cố
+                  </p>
                 ) : (
                   <button
                     type="button"
                     disabled={actionLoading}
                     onClick={() => setCloseModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-colors shadow-2xs"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold transition-colors"
                   >
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>🛡️ Xác nhận đóng sự cố</span>
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Xác nhận đóng sự cố</span>
                   </button>
                 )
               )}
             </div>
           </div>
+          </div>
         </div>
 
         {/* CỘT PHẢI (1/3) */}
-        <div className="space-y-6">
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-slate-200 px-5">
           {/* Panel Thông tin khách hàng */}
           <CustomerInfoPanel
+            plain
             customerName={ticket.customerName}
             customerPhone={ticket.customerPhone}
             customerEmail={`customer${ticket.customerId}@smartstorage.vn`}
@@ -596,6 +595,7 @@ export const IncidentDetailPage: React.FC = () => {
 
           {/* Panel Ô kho */}
           <StorageUnitMiniPanel
+            plain
             unitCode={ticket.storageUnitCode}
             unitType={contractDetail?.unitType}
             floor={contractDetail?.floor}
@@ -607,6 +607,7 @@ export const IncidentDetailPage: React.FC = () => {
 
           {/* Panel Hợp đồng */}
           <ContractMiniPanel
+            plain
             contractCode={ticket.contractCode}
             startDate={contractDetail?.startDate || ticket.contractStartDate}
             endDate={contractDetail?.endDate || ticket.contractEndDate}
@@ -617,9 +618,8 @@ export const IncidentDetailPage: React.FC = () => {
               }
             }}
           />
-
-          {/* Timeline lịch sử hoạt động */}
-          <IncidentTimeline ticket={ticket} />
+          <IncidentTimeline plain ticket={ticket} />
+          </div>
         </div>
       </div>
 

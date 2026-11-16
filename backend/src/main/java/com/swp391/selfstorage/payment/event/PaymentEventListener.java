@@ -1,6 +1,7 @@
 package com.swp391.selfstorage.payment.event;
 
 import java.time.Instant;
+import java.util.List;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -33,36 +34,23 @@ public class PaymentEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleContractSettled(ContractSettledEvent event) {
-        log.info("Xử lý ContractSettledEvent cho contractId={}, refundAmount={}, payableAmount={}",
-                event.getContractId(), event.getDepositRefundAmount(), event.getPayableAmount());
+        log.info("Xử lý ContractSettledEvent cho contractId={}, rentRefund={}, depositRefund={}, payableAmount={}",
+                event.getContractId(), event.getRentRefundAmount(), event.getDepositRefundAmount(), event.getPayableAmount());
 
-        // 1. Dư cọc sau khi đối trừ -> Tạo giao dịch hoàn tiền thành công (FM quyết toán chốt hoàn cọc ngay)
-        if (event.getDepositRefundAmount() > 0) {
-            boolean alreadyRefunded = paymentTransactionRepository != null
-                    && paymentTransactionRepository.findByContractId(event.getContractId()) != null
-                    && paymentTransactionRepository.findByContractId(event.getContractId()).stream()
-                            .anyMatch(t -> "DEPOSIT_REFUND".equalsIgnoreCase(t.getTransactionType())
-                                    || "RENT_REFUND".equalsIgnoreCase(t.getTransactionType()));
-
-            if (!alreadyRefunded) {
-                Instant paidAt = event.getSettledAt() != null ? event.getSettledAt().toInstant() : Instant.now();
-                PaymentTransaction refundTxn = PaymentTransaction.builder()
-                        .contractId(event.getContractId())
-                        .amount(event.getDepositRefundAmount())
-                        .transactionType("DEPOSIT_REFUND")
-                        .paymentMethod("BANK_TRANSFER")
-                        .status("SUCCESS")
-                        .paidAt(paidAt)
-                        .providerReference("Hoàn cọc quyết toán hợp đồng #" + event.getContractId())
-                        .orderCode(System.currentTimeMillis())
-                        .build();
-
-                paymentTransactionRepository.save(refundTxn);
-                log.info("Đã tạo bản ghi DEPOSIT_REFUND SUCCESS cho contractId={}", event.getContractId());
-            } else {
-                log.info("Hợp đồng contractId={} đã có sẵn giao dịch hoàn tiền, bỏ qua tạo trùng lặp", event.getContractId());
+        List<PaymentTransaction> existing = List.of();
+        if (paymentTransactionRepository != null) {
+            List<PaymentTransaction> found = paymentTransactionRepository.findByContractId(event.getContractId());
+            if (found != null) {
+                existing = found;
             }
         }
+        long orderCode = System.currentTimeMillis();
+        if (saveRefundPart(existing, event, event.getRentRefundAmount(), "RENT_REFUND",
+                "Hoàn tiền thuê quyết toán hợp đồng #", orderCode)) {
+            orderCode++;
+        }
+        saveRefundPart(existing, event, event.getDepositRefundAmount(), "DEPOSIT_REFUND",
+                "Hoàn cọc quyết toán hợp đồng #", orderCode);
 
         // 2. Nợ thêm do hư hại/quá hạn vượt tiền cọc -> Tạo giao dịch thu nợ
         if (event.getPayableAmount() > 0) {
@@ -79,5 +67,31 @@ public class PaymentEventListener {
             paymentTransactionRepository.save(payableTxn);
             log.info("Đã tạo bản ghi SETTLEMENT PENDING cho contractId={}", event.getContractId());
         }
+    }
+
+    /** Ghi một phần hoàn nếu chưa có dòng cùng loại. Trả về true khi vừa ghi. */
+    private boolean saveRefundPart(List<PaymentTransaction> existing, ContractSettledEvent event,
+            long amount, String type, String referencePrefix, long orderCode) {
+        if (amount <= 0 || paymentTransactionRepository == null) {
+            return false;
+        }
+        boolean already = existing.stream().anyMatch(t -> type.equalsIgnoreCase(t.getTransactionType()));
+        if (already) {
+            log.info("Hợp đồng contractId={} đã có {}, bỏ qua tạo trùng", event.getContractId(), type);
+            return false;
+        }
+        Instant paidAt = event.getSettledAt() != null ? event.getSettledAt().toInstant() : Instant.now();
+        paymentTransactionRepository.save(PaymentTransaction.builder()
+                .contractId(event.getContractId())
+                .amount(amount)
+                .transactionType(type)
+                .paymentMethod("BANK_TRANSFER")
+                .status("SUCCESS")
+                .paidAt(paidAt)
+                .providerReference(referencePrefix + event.getContractId())
+                .orderCode(orderCode)
+                .build());
+        log.info("Đã tạo bản ghi {} SUCCESS cho contractId={}", type, event.getContractId());
+        return true;
     }
 }

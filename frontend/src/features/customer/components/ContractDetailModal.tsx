@@ -286,7 +286,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                         <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
                         <span>Từ chối nhận kho do lỗi cơ sở (BR-CHK-06)</span>
                       </div>
-                      <span className="text-[10.5px] font-mono font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded">
+                      <span className="text-[11px] num font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded">
                         Hoàn tiền 100%
                       </span>
                     </div>
@@ -302,7 +302,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                         <AlertTriangle className="w-4 h-4 text-orange-600 flex-shrink-0" />
                         <span>Hủy đặt chỗ trước khi nhận ô kho</span>
                       </div>
-                      <span className="text-[10.5px] font-mono font-bold bg-orange-200 text-orange-950 px-2 py-0.5 rounded">
+                      <span className="text-[11px] num font-bold bg-orange-200 text-orange-950 px-2 py-0.5 rounded">
                         Hoàn cọc 100%
                       </span>
                     </div>

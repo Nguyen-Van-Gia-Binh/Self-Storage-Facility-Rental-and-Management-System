@@ -8,6 +8,7 @@ interface CustomerInfoPanelProps {
   customerPhone?: string;
   customerEmail?: string;
   customerId?: number | string;
+  plain?: boolean;
 }
 
 export const CustomerInfoPanel: React.FC<CustomerInfoPanelProps> = ({
@@ -16,6 +17,7 @@ export const CustomerInfoPanel: React.FC<CustomerInfoPanelProps> = ({
   customerPhone,
   customerEmail,
   customerId,
+  plain = false,
 }) => {
   const name = customerName || contract?.customerName || 'Khách hàng';
   const phone = customerPhone || contract?.customerPhone || 'Chưa cập nhật';
@@ -23,7 +25,7 @@ export const CustomerInfoPanel: React.FC<CustomerInfoPanelProps> = ({
   const id = customerId || contract?.customerId;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5">
+    <div className={plain ? 'py-4 border-b border-slate-200 last:border-b-0' : 'bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5'}>
       <div className="border-b border-slate-100 pb-3 mb-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
           Thông tin khách hàng

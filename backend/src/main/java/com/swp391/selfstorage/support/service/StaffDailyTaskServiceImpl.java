@@ -511,9 +511,7 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
             if (sr.getDescription() != null && sr.getDescription().startsWith("Sự cố bàn giao tiếp đón")) {
                 continue;
             }
-            boolean isCompleted = sr.getStatus() == SupportStatus.RESOLVED
-                    || sr.getStatus() == SupportStatus.CLOSED
-                    || sr.getStatus() == SupportStatus.AUTO_CLOSED;
+            boolean isCompleted = isSupportWorkDone(sr, cache);
             boolean include = true;
             if (sr.getCreatedAt() != null) {
                 LocalDate createdDate = sr.getCreatedAt().atZoneSameInstant(VN_ZONE).toLocalDate();
@@ -545,9 +543,7 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                         if (sr.getDescription() != null && sr.getDescription().startsWith("Sự cố bàn giao tiếp đón")) {
                             return;
                         }
-                        boolean isCompleted = sr.getStatus() == SupportStatus.RESOLVED
-                                || sr.getStatus() == SupportStatus.CLOSED
-                                || sr.getStatus() == SupportStatus.AUTO_CLOSED;
+                        boolean isCompleted = isSupportWorkDone(sr, cache);
                         if (!onlyPending || !isCompleted) {
                             result.add(toSupportDto(sr, cache));
                         }
@@ -694,14 +690,29 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                 .build();
     }
 
+    private boolean isSupportWorkDone(SupportRequest sr, RequestCache cache) {
+        if (sr.getStatus() == SupportStatus.RESOLVED
+                || sr.getStatus() == SupportStatus.CLOSED
+                || sr.getStatus() == SupportStatus.AUTO_CLOSED) {
+            return true;
+        }
+        if (sr.getContractId() == null) {
+            return false;
+        }
+        return getContractCached(sr.getContractId(), cache)
+                .map(c -> c.getStatus() == ContractStatus.CLOSED
+                        || c.getStatus() == ContractStatus.TERMINATED
+                        || c.getStatus() == ContractStatus.CANCELLED
+                        || c.getStatus() == ContractStatus.RETURNED)
+                .orElse(false);
+    }
+
     private DailySupportTaskDto toSupportDto(SupportRequest sr) {
         return toSupportDto(sr, null);
     }
 
     private DailySupportTaskDto toSupportDto(SupportRequest sr, RequestCache cache) {
-        boolean completed = sr.getStatus() == SupportStatus.RESOLVED
-                || sr.getStatus() == SupportStatus.CLOSED
-                || sr.getStatus() == SupportStatus.AUTO_CLOSED;
+        boolean completed = isSupportWorkDone(sr, cache);
 
         String unitCode = null;
         Long facilityId = null;

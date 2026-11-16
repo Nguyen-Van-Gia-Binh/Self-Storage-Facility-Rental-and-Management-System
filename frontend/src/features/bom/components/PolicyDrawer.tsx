@@ -16,6 +16,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { publishPolicy, type PolicyPublishPayload, type PolicyVersionListItem } from '@/api/pricing';
+import { DateField } from '@/components/ui/DateField';
 import type { ActivePolicyInfo } from '@/types';
 import { useScrollLock } from '@/hooks/useScrollLock';
 
@@ -250,6 +251,9 @@ export const PolicyDrawer: React.FC<PolicyDrawerProps> = ({
       if (!Number.isInteger(day) || day <= 0 || seen.has(item)) {
         return 'Các mốc nhắc gia hạn phải lớn hơn 0 và không được trùng nhau';
       }
+      if (day <= 20) {
+        return 'Mốc nhắc gia hạn phải lớn hơn 20 ngày vì từ mốc đó cổng tự gia hạn đã khóa';
+      }
       seen.add(item);
     }
     const rates: Array<[string, string]> = [
@@ -365,7 +369,7 @@ export const PolicyDrawer: React.FC<PolicyDrawerProps> = ({
                     Tạo phiên bản chính sách mới
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Kế thừa từ phiên bản v{activePolicy?.version ?? '1'} (Đang hiệu lực)
+                    Kế thừa từ phiên bản {activePolicy?.version ?? 'v1'} (Đang hiệu lực)
                   </p>
                 </div>
               )}
@@ -396,8 +400,8 @@ export const PolicyDrawer: React.FC<PolicyDrawerProps> = ({
               </div>
             </div>
           ) : (
-            <div className="p-4 bg-amber-50/70 border border-amber-200/80 rounded-xl flex items-start gap-3 text-xs text-amber-900 shadow-2xs">
-              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-3 text-xs text-slate-600">
+              <AlertTriangle className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
               <p>
                 <strong>Lưu ý:</strong> Thay đổi chính sách sẽ sinh ra một phiên bản mới. Hợp đồng đã tạo trước ngày hiệu lực vẫn giữ nguyên thông số theo snapshot ban đầu.
               </p>
@@ -410,12 +414,11 @@ export const PolicyDrawer: React.FC<PolicyDrawerProps> = ({
               <label htmlFor="policy-effective-date" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Ngày bắt đầu hiệu lực phiên bản mới <span className="text-rose-500">*</span>
               </label>
-              <input
+              <DateField
                 id="policy-effective-date"
-                type="date"
                 min={todayInVietnam()}
                 value={form.effectiveDate}
-                onChange={(e) => setField('effectiveDate')(e.target.value)}
+                onChange={setField('effectiveDate')}
                 className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer"
               />
               <p className="text-xs text-slate-500 mt-1">
@@ -564,15 +567,15 @@ export const PolicyDrawer: React.FC<PolicyDrawerProps> = ({
                     disabled={isReadOnly}
                     value={form.renewalReminderDays}
                     onChange={(e) => setField('renewalReminderDays')(e.target.value)}
-                    placeholder="VD: 60,7,3,1"
-                    className={`w-full px-3 py-2 border rounded-lg text-sm font-medium font-mono ${
+                    placeholder="VD: 60,30,25,21"
+                    className={`w-full px-3 py-2 border rounded-lg text-sm font-medium num ${
                       isReadOnly
                         ? 'bg-slate-50 text-slate-700 border-slate-200 cursor-default'
                         : 'bg-white text-slate-900 border-slate-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500'
                     }`}
                   />
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Các ngày trước khi hết hạn (ngăn cách bằng dấu phẩy). VD: 60,7,3,1
+                    Các ngày trước khi hết hạn (ngăn cách bằng dấu phẩy). VD: 60,30,25,21
                   </p>
                 </div>
 
@@ -956,7 +959,7 @@ export const PolicyDrawer: React.FC<PolicyDrawerProps> = ({
                 {diffs.map((d) => (
                   <div key={d.key} className="bg-white/80 p-2 rounded-lg border border-indigo-100 flex items-center justify-between">
                     <span className="text-slate-600 font-medium">{d.label}:</span>
-                    <span className="font-mono font-bold text-slate-900">
+                    <span className="num font-bold text-slate-900">
                       <span className="text-slate-400 line-through mr-1.5">{d.oldVal}</span>
                       <span className="text-indigo-600">{d.newVal} {d.unit}</span>
                     </span>
@@ -1028,7 +1031,7 @@ export const PolicyDrawer: React.FC<PolicyDrawerProps> = ({
                 type="button"
                 onClick={handleSubmit}
                 disabled={saving}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-brand-500 hover:bg-brand-600 disabled:bg-slate-300 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
               >
                 {saving ? (
                   <>

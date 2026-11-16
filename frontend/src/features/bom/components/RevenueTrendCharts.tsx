@@ -10,7 +10,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts';
-import { BarChart3, LineChart as LineChartIcon } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 import type { MonthlyRevenueTrend } from '@/types';
 import { formatCurrency } from '@/utils/format';
 
@@ -47,7 +47,7 @@ const StackedBarTooltip: React.FC<CustomTooltipProps> = ({ active, payload, labe
     <div className="bg-white/95 backdrop-blur-xs border border-slate-200 rounded-lg shadow-lg p-3 text-xs min-w-[200px]">
       <div className="font-semibold text-slate-800 pb-1.5 border-b border-slate-100 flex items-center justify-between">
         <span>Tháng {label}</span>
-        <span className="font-mono tabular-nums text-brand-700 font-bold">
+        <span className="tabular-nums text-brand-700 font-bold">
           {formatCurrency(total)}
         </span>
       </div>
@@ -61,7 +61,7 @@ const StackedBarTooltip: React.FC<CustomTooltipProps> = ({ active, payload, labe
               />
               <span className="truncate">{entry.name}</span>
             </div>
-            <span className="font-mono tabular-nums text-slate-900 font-medium shrink-0">
+            <span className="tabular-nums text-slate-900 font-medium shrink-0">
               {formatCurrency(Number(entry.value) || 0)}
             </span>
           </div>
@@ -89,7 +89,7 @@ const LineChartTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label
               />
               <span className="text-slate-600">{entry.name}</span>
             </div>
-            <span className="font-mono tabular-nums text-slate-900 font-bold">
+            <span className="tabular-nums text-slate-900 font-bold">
               {formatCurrency(Number(entry.value) || 0)}
             </span>
           </div>
@@ -144,12 +144,9 @@ export const RevenueTrendCharts: React.FC<RevenueTrendChartsProps> = ({
       <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-slate-300 transition-colors flex flex-col justify-between">
         <div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-brand-600 stroke-[2]" />
-              <h3 className="text-sm font-bold text-slate-900">
-                Xu Hướng Dòng Tiền Thực Thu (12 Tháng)
-              </h3>
-            </div>
+            <h3 className="text-sm font-bold text-slate-900">
+              Xu Hướng Dòng Tiền Thực Thu (12 Tháng)
+            </h3>
             {/* Custom Legend */}
             <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-600">
               <div className="flex items-center gap-1.5">
@@ -213,20 +210,16 @@ export const RevenueTrendCharts: React.FC<RevenueTrendChartsProps> = ({
       <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-slate-300 transition-colors flex flex-col justify-between">
         <div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <LineChartIcon className="w-4 h-4 text-sky-600 stroke-[2]" />
-              <h3 className="text-sm font-bold text-slate-900">
-                Thực Thu (Cash) vs Định Kỳ (MRR)
-              </h3>
-            </div>
-            {/* Custom Legend */}
+            <h3 className="text-sm font-bold text-slate-900">
+              Thực Thu (Cash) vs Định Kỳ (MRR)
+            </h3>
             <div className="flex items-center gap-3 text-[11px] text-slate-600">
               <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-0.5 bg-[#0d9488] rounded-full inline-block" />
+                <span className="w-2.5 h-0.5 bg-[#57b29a] rounded-full inline-block" />
                 <span>Thực thu (Cash)</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-0.5 border-t border-dashed border-[#0284c7] inline-block" />
+                <span className="w-2.5 h-0.5 border-t border-dashed border-slate-400 inline-block" />
                 <span>MRR</span>
               </div>
             </div>
@@ -253,20 +246,20 @@ export const RevenueTrendCharts: React.FC<RevenueTrendChartsProps> = ({
                   type="monotone"
                   dataKey="cashFlow"
                   name="Dòng tiền thực thu"
-                  stroke="#0d9488"
+                  stroke="#57b29a"
                   strokeWidth={2}
-                  dot={{ r: 2.5, fill: '#0d9488' }}
+                  dot={false}
                   activeDot={{ r: 4 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="mrr"
                   name="Doanh thu định kỳ (MRR)"
-                  stroke="#0284c7"
+                  stroke="#94a3b8"
                   strokeWidth={2}
                   strokeDasharray="4 4"
-                  dot={{ r: 2.5, fill: '#0284c7' }}
-                  activeDot={{ r: 4 }}
+                  dot={false}
+                  activeDot={{ r: 4, fill: '#94a3b8' }}
                 />
               </LineChart>
             </ResponsiveContainer>

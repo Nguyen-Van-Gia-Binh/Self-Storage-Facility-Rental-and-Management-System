@@ -150,10 +150,6 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
     return availableFloors[currentIndex + 1];
   }, [availableFloors, currentFloor]);
 
-  if (!isOpen) return null;
-
-  const isPickerMode = Boolean(onSelectUnit);
-
   // Đếm số ô khả dụng cùng loại ban đầu của hợp đồng/đơn đặt chỗ
   const sameTypeAvailableCount = useMemo(() => {
     if (!allowedUnitTypeId) return 0;
@@ -189,6 +185,10 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
     if (name.includes(' L') || name.endsWith('L') || name.includes('-L')) return 10;
     return 0;
   }, [targetUnitType, targetUnitTypeName]);
+
+  if (!isOpen) return null;
+
+  const isPickerMode = Boolean(onSelectUnit);
 
   // Kích hoạt Chế độ Đền bù Nâng hạng khi đã tải xong dữ liệu (!loading), ở chế độ Picker, có yêu cầu loại ô và cơ sở đã hết sạch ô cùng loại
   const isUpgradeCompensationMode = Boolean(

@@ -142,7 +142,7 @@ export const SupportTicketTable: React.FC<SupportTicketTableProps> = ({
                             e.stopPropagation();
                             onCancel(ticket);
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1 text-sm font-medium text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                           title="Hủy yêu cầu"
                         >
                           <XCircle className="w-3.5 h-3.5" />
@@ -152,7 +152,7 @@ export const SupportTicketTable: React.FC<SupportTicketTableProps> = ({
                       <button
                         type="button"
                         onClick={() => onViewDetail(ticket)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-brand-600 hover:text-brand-700 hover:bg-brand-50/60 transition-all cursor-pointer"
+                        className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline cursor-pointer"
                       >
                         <span>Chi tiết</span>
                         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />

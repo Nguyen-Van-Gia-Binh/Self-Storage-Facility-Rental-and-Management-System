@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, TrendingUp, ShieldCheck, AlertTriangle, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import type { SystemRevenueReport, SystemOccupancyReport, OverdueReportResponse } from '@/types';
 import { formatCurrency } from '@/utils/format';
 
@@ -43,23 +43,20 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* 1. Dòng tiền thực thu (Cash Flow) */}
-      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-emerald-300 transition-colors flex flex-col justify-between">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Dòng Tiền Thực Thu (Cash)
-          </span>
-          <DollarSign className="w-4 h-4 text-emerald-600 stroke-[2]" />
-        </div>
+      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-none flex flex-col justify-between">
+        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          Dòng Tiền Thực Thu (Cash)
+        </span>
         <div className="mt-3">
-          <div className="text-2xl lg:text-3xl font-bold font-mono tabular-nums tracking-tight text-slate-900">
+          <div className="text-2xl lg:text-3xl font-bold tabular-nums tracking-tight text-slate-900">
             {formatCurrency(totalRev)}
           </div>
           <div className="mt-2 text-xs flex items-center gap-2 text-slate-500">
-            <span className="text-emerald-700 font-bold font-mono">
+            <span className="text-emerald-700 font-bold num">
               Ròng: {formatCurrency(Math.max(0, totalRev - refundAmount))}
             </span>
             {refundAmount > 0 && (
-              <span className="text-rose-500 font-mono text-[11px]">
+              <span className="text-rose-500 num text-[11px]">
                 (Tiền ra: -{formatCurrency(refundAmount)})
               </span>
             )}
@@ -68,15 +65,12 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
       </div>
 
       {/* 2. Doanh thu định kỳ (Net MRR) */}
-      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-sky-300 transition-colors flex flex-col justify-between">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Doanh Thu Định Kỳ (MRR)
-          </span>
-          <TrendingUp className="w-4 h-4 text-sky-600 stroke-[2]" />
-        </div>
+      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-none flex flex-col justify-between">
+        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          Doanh Thu Định Kỳ (MRR)
+        </span>
         <div className="mt-3">
-          <div className="text-2xl lg:text-3xl font-bold font-mono tabular-nums tracking-tight text-slate-900">
+          <div className="text-2xl lg:text-3xl font-bold tabular-nums tracking-tight text-slate-900">
             {formatCurrency(netMrr)}
           </div>
           <div className="mt-2 text-xs text-slate-500">
@@ -86,12 +80,11 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
       </div>
 
       {/* 3. Tiền cọc đang giữ (Deposit Liability) - Nợ Phải Trả */}
-      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-slate-300 transition-colors flex flex-col justify-between">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Tiền Cọc Đang Giữ
-            </span>
+      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-none flex flex-col justify-between">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            Tiền Cọc Đang Giữ
+          </span>
             <div className="relative group/tip inline-flex items-center">
               <Info
                 className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 cursor-help transition-colors"
@@ -103,10 +96,8 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
               </div>
             </div>
           </div>
-          <ShieldCheck className="w-4 h-4 text-slate-400 stroke-[2]" />
-        </div>
         <div className="mt-3">
-          <div className="text-2xl lg:text-3xl font-bold font-mono tabular-nums tracking-tight text-slate-700">
+          <div className="text-2xl lg:text-3xl font-bold tabular-nums tracking-tight text-slate-700">
             {formatCurrency(depositLiability)}
           </div>
           <div className="mt-2 text-xs text-slate-400 flex items-center gap-1">
@@ -117,15 +108,12 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
       </div>
 
       {/* 4. Nợ quá hạn (Overdue Bad Debt Risk) */}
-      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-rose-300 transition-colors flex flex-col justify-between">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Nợ Quá Hạn & Rủi Ro
-          </span>
-          <AlertTriangle className="w-4 h-4 text-rose-500 stroke-[2]" />
-        </div>
+      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-none flex flex-col justify-between">
+        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          Nợ Quá Hạn & Rủi Ro
+        </span>
         <div className="mt-3">
-          <div className={`text-2xl lg:text-3xl font-bold font-mono tabular-nums tracking-tight ${
+          <div className={`text-2xl lg:text-3xl font-bold tabular-nums tracking-tight ${
             overdueFee > 0 ? 'text-rose-600' : 'text-slate-900'
           }`}>
             {formatCurrency(overdueFee)}

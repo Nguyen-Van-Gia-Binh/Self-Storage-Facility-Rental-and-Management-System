@@ -246,7 +246,7 @@ export const StaffReturnDetailView: React.FC<StaffReturnDetailViewProps> = ({
                 <span className="flex items-center gap-1.5 text-slate-500">
                   <CreditCard className="w-3.5 h-3.5 text-emerald-600" /> Tiền cọc gốc:
                 </span>
-                <strong className="font-mono text-sm text-emerald-700 font-bold">
+                <strong className="num text-sm text-emerald-700 font-bold">
                   {(task.depositAmount || contract?.depositAmount || 0).toLocaleString('vi-VN')} đ
                 </strong>
               </div>

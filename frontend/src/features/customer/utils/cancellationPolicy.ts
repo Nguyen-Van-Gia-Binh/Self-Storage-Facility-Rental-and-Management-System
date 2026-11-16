@@ -61,13 +61,13 @@ export function calculateCancellationRefund(params: CancellationParams): Cancell
   const totalRentalFee = monthlyRent * rentalMonths;
 
   let tier: CancellationTierType;
-  let tierName = '';
-  let tierBadge = '';
-  let depositRefund = 0;
-  let depositPenalty = 0;
+  let tierName: string;
+  let tierBadge: string;
+  let depositRefund: number;
+  let depositPenalty: number;
   const rentCharged = 0;
   const refundableRentalFee = totalRentalFee;
-  let explanation = '';
+  let explanation: string;
 
   // 1. Hủy sớm (trước >= 7 ngày) — BR-CAN-01
   if (daysUntilStart >= 7) {

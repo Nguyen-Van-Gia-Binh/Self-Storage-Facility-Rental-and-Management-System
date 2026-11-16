@@ -70,7 +70,7 @@ export const UnitTypeAccordionList: React.FC<UnitTypeAccordionListProps> = ({
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 font-medium">
-                  {type.dimensions} • Thể tích: <strong className="text-slate-700 font-mono">{type.volumeM3} m³</strong> ({type.areaM2} m²)
+                  {type.dimensions} • Thể tích: <strong className="text-slate-700 num">{type.volumeM3} m³</strong> ({type.areaM2} m²)
                 </p>
               </div>
 
@@ -82,7 +82,7 @@ export const UnitTypeAccordionList: React.FC<UnitTypeAccordionListProps> = ({
                       Chưa niêm yết giá — Tạm chưa mở đặt
                     </span>
                   ) : (
-                    <div className="text-base sm:text-lg font-black font-mono text-emerald-700">
+                    <div className="text-base sm:text-lg font-black num text-emerald-700">
                       {formatVND(type.baseMonthlyPrice)}
                       <span className="text-xs font-normal text-slate-500 font-sans">/tháng</span>
                     </div>

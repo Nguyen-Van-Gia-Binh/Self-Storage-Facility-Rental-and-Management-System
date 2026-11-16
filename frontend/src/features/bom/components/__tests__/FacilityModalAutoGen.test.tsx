@@ -124,7 +124,7 @@ describe('FacilityModal: Auto-generate Facility Code', () => {
     );
 
     expect(screen.getByText('FAC-CG')).toBeInTheDocument();
-    expect(screen.getByText('(Mã cố định không thể sửa)')).toBeInTheDocument();
+    expect(screen.getByText('Không thể thay đổi')).toBeInTheDocument();
     expect(screen.queryByPlaceholderText(/VD: FAC-Q7, FAC-CG/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Tự tạo/i })).not.toBeInTheDocument();
   });

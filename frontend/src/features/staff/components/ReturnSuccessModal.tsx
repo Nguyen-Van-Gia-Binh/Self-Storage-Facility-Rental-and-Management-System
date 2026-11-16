@@ -80,7 +80,7 @@ export const ReturnSuccessModal: React.FC<ReturnSuccessModalProps> = ({
           </div>
           <div className="flex justify-between pt-2 border-t border-slate-200">
             <span className="font-medium text-slate-700">Dự kiến hoàn cọc:</span>
-            <span className="font-mono font-bold text-teal-600 text-base">
+            <span className="num font-bold text-teal-600 text-base">
               {refundAmount.toLocaleString('vi-VN')} đ
             </span>
           </div>

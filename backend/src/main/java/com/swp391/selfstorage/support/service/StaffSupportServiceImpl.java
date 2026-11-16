@@ -4,6 +4,7 @@ import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
@@ -66,6 +67,7 @@ public class StaffSupportServiceImpl implements StaffSupportService {
             throw new CustomException(ErrorCode.VALIDATION_FAILED,
                     "Không thể phân công phiếu hỗ trợ đã xử lý hoặc đã đóng");
         }
+        assertContractStillOpen(ticket);
 
         Long facilityId = resolveFacilityId(ticket);
         validateTicketAccess(ticket, facilityId, currentUser, false);
@@ -124,6 +126,7 @@ public class StaffSupportServiceImpl implements StaffSupportService {
             throw new CustomException(ErrorCode.VALIDATION_FAILED,
                     "Chỉ có thể bắt đầu xử lý phiếu đang ở trạng thái Đã phân công");
         }
+        assertContractStillOpen(ticket);
 
         validateTicketAccess(ticket, resolveFacilityId(ticket), currentUser, true);
 
@@ -139,13 +142,17 @@ public class StaffSupportServiceImpl implements StaffSupportService {
         SupportRequest ticket = supportRequestRepository.findById(requestId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
 
-        if (ticket.getStatus() != SupportStatus.NEW
-                && ticket.getStatus() != SupportStatus.ASSIGNED
-                && ticket.getStatus() != SupportStatus.IN_PROGRESS) {
-            throw new CustomException(ErrorCode.VALIDATION_FAILED, "Phiếu sự cố không còn mở nên không đổi được cờ di dời.");
+        if (ticket.getStatus() != SupportStatus.ASSIGNED && ticket.getStatus() != SupportStatus.IN_PROGRESS) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "Chỉ nhân viên đang xử lý hiện trường mới báo cần chuyển ô kho.");
         }
 
         validateTicketAccess(ticket, resolveFacilityId(ticket), currentUser, true);
+
+        if (currentUser != null && currentUser.getRole() == UserRole.FACILITY_MANAGER) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "Nhân viên hiện trường phải báo cần chuyển ô kho trước. Quản lý chỉ đổi ô khi đã có báo cáo.");
+        }
 
         ticket.setRelocationRequired(required);
         ticket.setUpdatedAt(OffsetDateTime.now());
@@ -164,6 +171,7 @@ public class StaffSupportServiceImpl implements StaffSupportService {
                 && ticket.getStatus() != SupportStatus.RESOLVED) {
             throw new CustomException(ErrorCode.SUPPORT_REQUEST_CANNOT_BE_RESOLVED);
         }
+        assertContractStillOpen(ticket);
 
         validateTicketAccess(ticket, resolveFacilityId(ticket), currentUser, true);
 
@@ -353,6 +361,24 @@ public class StaffSupportServiceImpl implements StaffSupportService {
                     && !currentUser.getFacilityIds().contains(facilityId)) {
                 throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không thuộc cơ sở của yêu cầu hỗ trợ này");
             }
+        }
+    }
+
+    private void assertContractStillOpen(SupportRequest ticket) {
+        if (ticket.getContractId() == null) {
+            return;
+        }
+        RentalContract contract = rentalContractRepository.findById(ticket.getContractId()).orElse(null);
+        if (contract == null || contract.getStatus() == null) {
+            return;
+        }
+        ContractStatus status = contract.getStatus();
+        if (status == ContractStatus.CLOSED
+                || status == ContractStatus.TERMINATED
+                || status == ContractStatus.CANCELLED
+                || status == ContractStatus.RETURNED) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "Hợp đồng đã kết thúc nên không xử lý thêm sự cố này.");
         }
     }
 

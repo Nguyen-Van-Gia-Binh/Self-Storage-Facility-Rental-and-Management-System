@@ -53,6 +53,8 @@ import com.swp391.selfstorage.auth.service.UserPrincipal;
 public class RenewalServiceImpl implements RenewalService {
 
     private static final long LATE_ADMIN_FEE = 200_000L; // BR-REN-10 renewal.late_admin_fee
+    /** BR-REN-09: đúng ngày còn 20 ngày thì khóa tự gia hạn. Không lấy số này từ mốc nhắc. */
+    private static final int ONLINE_RENEWAL_LOCK_DAYS = 20;
 
     private final RentalContractRepository rentalContractRepository;
     private final ContractRenewalRepository contractRenewalRepository;
@@ -80,47 +82,13 @@ public class RenewalServiceImpl implements RenewalService {
         RentalContract contract = getValidContractForRenewal(contractId);
         int months = request.getRenewalMonths();
 
-        // BR-REN-01: Khóa tự gia hạn khi đã qua mốc T-20 (< 20 ngày trước ngày hết hạn)
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
-        if (contract.getEndDateExclusive() != null && contract.getStatus() == ContractStatus.ACTIVE) {
-            long daysUntilEnd = ChronoUnit.DAYS.between(today, contract.getEndDateExclusive());
-            if (daysUntilEnd < 20) {
-                throw new CustomException(ErrorCode.RENEWAL_DEADLINE_PASSED);
-            }
-        }
+        assertSelfServiceOpen(contract);
 
-        // 1. Kiểm tra chính sách hiện hành
         PolicyResponse activePolicy = policyService.getActivePolicy();
-        if (months < activePolicy.getRenewalMinMonths() || months > activePolicy.getRenewalMaxMonths()) {
-            throw new CustomException(ErrorCode.RENEWAL_MONTHS_INVALID);
-        }
+        assertMonthsWithinPolicy(months, activePolicy);
 
-        // 2. Tính toán ngày kết thúc mới
         LocalDate newEndDate = contract.getEndDateExclusive().plusMonths(months);
-
-        int bufferDays = activePolicy.getRentalBufferDays() == null ? -1 : activePolicy.getRentalBufferDays();
-        if (bufferDays < 0) {
-            throw new CustomException(ErrorCode.POLICY_NOT_FOUND, "Chinh sach hieu luc thieu rental_buffer_days");
-        }
-
-        if (contract.getStorageUnitId() != null) {
-            boolean hasUpcomingReservation = reservationRepository.existsOverlappingReservationForUnit(
-                    contract.getStorageUnitId(),
-                    contract.getEndDateExclusive(),
-                    newEndDate,
-                    OffsetDateTime.now(),
-                    bufferDays);
-            boolean hasOtherContract = rentalContractRepository.existsOverlappingContractForUnit(
-                    contract.getStorageUnitId(),
-                    contract.getEndDateExclusive(),
-                    newEndDate,
-                    bufferDays,
-                    contract.getId());
-            if (hasUpcomingReservation || hasOtherContract) {
-                throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE,
-                        "Ô kho này đã có khách hàng khác đặt trước cho chu kỳ tiếp theo. Quý khách vui lòng chọn thuê ô kho mới hoặc lên lịch trả kho.");
-            }
-        }
+        assertUnitFree(contract, newEndDate, bufferDays(activePolicy));
 
         // 4. Lấy đơn giá thuê tháng hiện tại (Snapshot giá theo BR-REN-05)
         long monthlyPrice = getLatestMonthlyPrice(contract);
@@ -148,7 +116,6 @@ public class RenewalServiceImpl implements RenewalService {
             }
         }
 
-        // shortcut: callback không kiểm tra trùng chỗ lại, checkout đã chặn; kiểm tra lại khi gia hạn có thể mất chỗ sau khi đã trả tiền
         if (paymentTransactionId == null) {
             throw new CustomException(ErrorCode.VALIDATION_FAILED, "Thiếu giao dịch thanh toán gia hạn");
         }
@@ -158,20 +125,27 @@ public class RenewalServiceImpl implements RenewalService {
         int months = payment.getRenewalMonths() != null && payment.getRenewalMonths() > 0
                 ? payment.getRenewalMonths()
                 : request.getRenewalMonths();
-        long paid = payment.getAmount() == null ? 0L : payment.getAmount();
-
-        boolean isForce = (payment.getProviderReference() != null && payment.getProviderReference().startsWith("FORCE_"));
-        long lateAdminFee = 0L;
-        long rentalFeeAmount = paid;
-        if (isForce || (paid > getLatestMonthlyPrice(contract) * months)) {
-            lateAdminFee = LATE_ADMIN_FEE;
-            rentalFeeAmount = Math.max(0L, paid - lateAdminFee);
-            isForce = true;
+        boolean isForce = payment.getProviderReference() != null
+                && payment.getProviderReference().startsWith("FORCE_");
+        if (!isForce) {
+            assertSelfServiceOpen(contract);
         }
-        long monthly = months > 0 ? rentalFeeAmount / months : rentalFeeAmount;
+        PolicyResponse activePolicy = policyService.getActivePolicy();
+        assertMonthsWithinPolicy(months, activePolicy);
 
         LocalDate previousEnd = contract.getEndDateExclusive();
         LocalDate newEnd = previousEnd.plusMonths(months);
+        assertUnitFree(contract, newEnd, bufferDays(activePolicy));
+
+        long paid = payment.getAmount() == null ? 0L : payment.getAmount();
+        long lateAdminFee = 0L;
+        long rentalFeeAmount = paid;
+        if (isForce) {
+            lateAdminFee = LATE_ADMIN_FEE;
+            rentalFeeAmount = Math.max(0L, paid - lateAdminFee);
+        }
+        long monthly = months > 0 ? rentalFeeAmount / months : rentalFeeAmount;
+
         contract.setEndDateExclusive(newEnd);
         contract.setRentalMonths(contract.getRentalMonths() + months);
 
@@ -228,17 +202,7 @@ public class RenewalServiceImpl implements RenewalService {
                     "Chỉ hợp đồng đang hoạt động (ACTIVE) mới được phép gia hạn ngoại lệ.");
         }
 
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
-        if (contract.getEndDateExclusive() != null) {
-            long daysUntilEnd = ChronoUnit.DAYS.between(today, contract.getEndDateExclusive());
-            if (daysUntilEnd < 0) {
-                throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED,
-                        "Hợp đồng đã quá hạn không thể gia hạn.");
-            } else if (daysUntilEnd >= 20) {
-                throw new CustomException(ErrorCode.VALIDATION_FAILED,
-                        "Hợp đồng còn trên 20 ngày, khách hàng có thể tự gia hạn trực tuyến trên cổng khách hàng.");
-            }
-        }
+        assertForceWindow(contract);
 
         int months = request.getRenewalMonths();
         PolicyResponse activePolicy = policyService.getActivePolicy();
@@ -352,6 +316,10 @@ public class RenewalServiceImpl implements RenewalService {
     @Transactional
     public RenewalResponse processForceRenewal(Long contractId, ForceRenewalRequest request) {
         RenewalQuoteResponse quote = getForceRenewalQuote(contractId, request);
+        if (Boolean.TRUE.equals(quote.getHasCapacityConflict())) {
+            throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE,
+                    "Ô kho đang có đơn khác. Hãy chuyển đơn đó sang ô trống trước khi gia hạn.");
+        }
         RentalContract contract = rentalContractRepository.findById(contractId)
                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
 
@@ -428,6 +396,68 @@ public class RenewalServiceImpl implements RenewalService {
 
         ContractRenewal savedRenewal = contractRenewalRepository.save(renewal);
         return renewalMapper.toResponse(savedRenewal);
+    }
+
+    private long daysUntilEnd(RentalContract contract) {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        return ChronoUnit.DAYS.between(today, contract.getEndDateExclusive());
+    }
+
+    private void assertSelfServiceOpen(RentalContract contract) {
+        if (contract.getEndDateExclusive() != null && daysUntilEnd(contract) <= ONLINE_RENEWAL_LOCK_DAYS) {
+            throw new CustomException(ErrorCode.RENEWAL_DEADLINE_PASSED);
+        }
+    }
+
+    private void assertForceWindow(RentalContract contract) {
+        if (contract.getEndDateExclusive() == null) {
+            return;
+        }
+        long daysUntilEnd = daysUntilEnd(contract);
+        if (daysUntilEnd < 0) {
+            throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED,
+                    "Hợp đồng đã quá hạn không thể gia hạn.");
+        }
+        if (daysUntilEnd > ONLINE_RENEWAL_LOCK_DAYS) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "Hợp đồng còn trên 20 ngày, khách hàng có thể tự gia hạn trực tuyến trên cổng khách hàng.");
+        }
+    }
+
+    private void assertMonthsWithinPolicy(int months, PolicyResponse activePolicy) {
+        if (months < activePolicy.getRenewalMinMonths() || months > activePolicy.getRenewalMaxMonths()) {
+            throw new CustomException(ErrorCode.RENEWAL_MONTHS_INVALID);
+        }
+    }
+
+    private int bufferDays(PolicyResponse activePolicy) {
+        int bufferDays = activePolicy.getRentalBufferDays() == null ? -1 : activePolicy.getRentalBufferDays();
+        if (bufferDays < 0) {
+            throw new CustomException(ErrorCode.POLICY_NOT_FOUND, "Chinh sach hieu luc thieu rental_buffer_days");
+        }
+        return bufferDays;
+    }
+
+    private void assertUnitFree(RentalContract contract, LocalDate newEndDate, int bufferDays) {
+        if (contract.getStorageUnitId() == null) {
+            return;
+        }
+        boolean hasUpcomingReservation = reservationRepository.existsOverlappingReservationForUnit(
+                contract.getStorageUnitId(),
+                contract.getEndDateExclusive(),
+                newEndDate,
+                OffsetDateTime.now(),
+                bufferDays);
+        boolean hasOtherContract = rentalContractRepository.existsOverlappingContractForUnit(
+                contract.getStorageUnitId(),
+                contract.getEndDateExclusive(),
+                newEndDate,
+                bufferDays,
+                contract.getId());
+        if (hasUpcomingReservation || hasOtherContract) {
+            throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE,
+                    "Ô kho này đã có khách hàng khác đặt trước cho chu kỳ tiếp theo. Quý khách vui lòng chọn thuê ô kho mới hoặc lên lịch trả kho.");
+        }
     }
 
     private RentalContract getValidContractForRenewal(Long contractId) {

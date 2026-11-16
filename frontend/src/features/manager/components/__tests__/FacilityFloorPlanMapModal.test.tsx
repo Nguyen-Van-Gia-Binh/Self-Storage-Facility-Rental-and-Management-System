@@ -1,8 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { FacilityFloorPlanMapModal } from '../FacilityFloorPlanMapModal';
 import type { StorageUnitResponse } from '@/types/unit';
+
+vi.mock('@/api/unit', () => ({
+  fetchUnitTypes: vi.fn(async () => ({ content: [] })),
+  fetchStorageUnits: vi.fn(async () => ({ content: [] })),
+}));
 
 const cleanHtml = (html: string) => html.replace(/<!-- -->/g, '');
 

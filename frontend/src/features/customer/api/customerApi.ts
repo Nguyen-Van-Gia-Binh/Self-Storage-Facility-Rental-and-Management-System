@@ -127,7 +127,7 @@ export const customerApi = {
       });
       return (res as any)?.data || res;
     } catch (err: any) {
-      throw new Error(err?.message || 'Không thể tạo link thanh toán VNPay Sandbox');
+      throw new Error(err?.message || 'Không thể tạo link thanh toán VNPay Sandbox', { cause: err });
     }
   },
 

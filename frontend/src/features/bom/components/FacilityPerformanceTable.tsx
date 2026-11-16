@@ -369,7 +369,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
 
                     {/* Cột 2: Tiền thuê kho */}
                     <td
-                      className={`py-3 px-3 text-right font-mono tabular-nums font-medium text-slate-800 ${
+                      className={`py-3 px-3 text-right tabular-nums font-medium text-slate-800 ${
                         isRentalHighlighted ? 'bg-emerald-50/60 font-bold text-emerald-950' : ''
                       }`}
                     >
@@ -378,7 +378,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
 
                     {/* Cột 3: Phụ phí & Gia hạn */}
                     <td
-                      className={`py-3 px-3 text-right font-mono tabular-nums text-slate-700 ${
+                      className={`py-3 px-3 text-right tabular-nums text-slate-700 ${
                         isSurchargeHighlighted ? 'bg-indigo-50/60 font-bold text-indigo-950' : ''
                       }`}
                     >
@@ -387,7 +387,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
 
                     {/* Cột 4: Phí quá hạn */}
                     <td
-                      className={`py-3 px-3 text-right font-mono tabular-nums ${
+                      className={`py-3 px-3 text-right tabular-nums ${
                         isOverdueHighlighted ? 'bg-rose-50/60 font-bold' : ''
                       }`}
                     >
@@ -401,12 +401,12 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
                     </td>
 
                     {/* Cột 5: Tổng thực thu */}
-                    <td className="py-3 px-3 text-right font-mono tabular-nums font-bold text-slate-900 text-sm bg-slate-50/30">
-                      {formatCurrency(row.totalRevenue)}
+                    <td className="py-3 px-3 text-right tabular-nums font-bold text-slate-900 text-sm bg-slate-50/30">
+                      {formatMoneyOrDash(row.totalRevenue)}
                     </td>
 
                     {/* Cột 6: Tỷ lệ lấp đầy (Semantic text colors) */}
-                    <td className="py-3 px-3 text-center font-mono tabular-nums text-xs">
+                    <td className="py-3 px-3 text-center tabular-nums text-xs">
                       {rateUnknown ? (
                         <span className="text-slate-400 font-normal">Không xác định</span>
                       ) : (
@@ -425,7 +425,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
                     </td>
 
                     {/* Cột 7: Ô trống / Khai thác */}
-                    <td className="py-3 px-3 text-center font-mono tabular-nums text-xs text-slate-700">
+                    <td className="py-3 px-3 text-center tabular-nums text-xs text-slate-700">
                       {exploitableUnits === 0 ? (
                         <span className="text-slate-400">N/A</span>
                       ) : (
@@ -441,10 +441,10 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
                         type="button"
                         onClick={() => onOpenDetail && onOpenDetail(row)}
                         aria-label="Chi tiết"
-                        className="inline-flex items-center gap-0.5 text-xs font-semibold text-slate-500 hover:text-brand-600 transition-colors p-1 cursor-pointer"
+                        className="inline-flex items-center gap-0.5 text-xs font-semibold text-brand-600 hover:text-brand-700 transition-colors p-1 cursor-pointer"
                         title="Chi tiết"
                       >
-                        <span>[Xem]</span>
+                        <span>Chi tiết</span>
                         <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     </td>
@@ -460,19 +460,19 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
               <td className="bg-slate-100 py-3 px-4 text-xs uppercase tracking-wide">
                 <span>TỔNG CỘNG TOÀN HỆ THỐNG</span>
               </td>
-              <td className="bg-slate-100 py-3 px-3 text-right font-mono tabular-nums text-slate-900">
+              <td className="bg-slate-100 py-3 px-3 text-right tabular-nums text-slate-900">
                 {formatCurrency(totalRental)}
               </td>
-              <td className="bg-slate-100 py-3 px-3 text-right font-mono tabular-nums text-slate-900">
+              <td className="bg-slate-100 py-3 px-3 text-right tabular-nums text-slate-900">
                 {formatCurrency(totalSurchargesAndRenewals)}
               </td>
-              <td className="bg-slate-100 py-3 px-3 text-right font-mono tabular-nums text-rose-600">
+              <td className="bg-slate-100 py-3 px-3 text-right tabular-nums text-rose-600">
                 {formatCurrency(totalOverdueFees)}
               </td>
-              <td className="bg-slate-100 py-3 px-3 text-right font-mono tabular-nums text-brand-600 text-sm">
+              <td className="bg-slate-100 py-3 px-3 text-right tabular-nums text-brand-600 text-sm">
                 {formatCurrency(grandTotalRevenue)}
               </td>
-              <td className="bg-slate-100 py-3 px-3 text-center font-mono tabular-nums text-xs">
+              <td className="bg-slate-100 py-3 px-3 text-center tabular-nums text-xs">
                 {averageOccupancy == null ? (
                   <span className="text-slate-400 font-normal">N/A</span>
                 ) : (
@@ -489,7 +489,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
                   </span>
                 )}
               </td>
-              <td className="bg-slate-100 py-3 px-3 text-center font-mono tabular-nums text-xs text-slate-700">
+              <td className="bg-slate-100 py-3 px-3 text-center tabular-nums text-xs text-slate-700">
                 {totalExploitable === 0
                   ? 'N/A'
                   : `${totalAvailable}/${totalExploitable}`}

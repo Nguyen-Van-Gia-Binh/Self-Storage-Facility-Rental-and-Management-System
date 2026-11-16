@@ -6,9 +6,6 @@ import {
   Search,
   RefreshCw,
   AlertCircle,
-  LayoutGrid,
-  Table2,
-  ArrowRight,
   Compass,
   CheckCircle2,
   Layers,
@@ -16,9 +13,8 @@ import {
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import type { FacilityListItem } from '@/types';
-import { IncidentSummaryCard } from '../components/IncidentSummaryCard';
 import { Pagination } from '../components/Pagination';
-import { getFacilityTheme, extractProvinceName } from '../utils/facilityTheme';
+import { extractProvinceName } from '../utils/facilityTheme';
 import { getFacilityRegion, type RegionFilter } from './FacilityListPage';
 
 const REGION_TABS: { label: string; value: RegionFilter }[] = [
@@ -47,7 +43,6 @@ export const IncidentDashboardPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<SortOption>('name-asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -183,7 +178,7 @@ export const IncidentDashboardPage: React.FC = () => {
           <div>
             <span className="text-[11px] font-semibold text-slate-500 block">Cơ sở phân công</span>
             <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-xl font-bold font-mono text-slate-900">{networkOverview.total}</span>
+              <span className="text-xl font-bold num text-slate-900">{networkOverview.total}</span>
               <span className="text-xs text-slate-400">điểm lưu trữ</span>
             </div>
           </div>
@@ -196,7 +191,7 @@ export const IncidentDashboardPage: React.FC = () => {
           <div>
             <span className="text-[11px] font-semibold text-emerald-700 block">Vận hành mạng lưới</span>
             <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-xl font-bold font-mono text-emerald-700">
+              <span className="text-xl font-bold num text-emerald-700">
                 {networkOverview.active} / {networkOverview.total}
               </span>
               <span className="text-xs text-emerald-600 font-medium">sẵn sàng</span>
@@ -211,7 +206,7 @@ export const IncidentDashboardPage: React.FC = () => {
           <div>
             <span className="text-[11px] font-semibold text-blue-700 block">Độ phủ địa bàn</span>
             <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-xl font-bold font-mono text-blue-700">
+              <span className="text-xl font-bold num text-blue-700">
                 {networkOverview.provinceCount}
               </span>
               <span className="text-xs text-blue-600 font-medium">tỉnh / thành phố</span>
@@ -267,36 +262,6 @@ export const IncidentDashboardPage: React.FC = () => {
               ))}
             </select>
           </div>
-
-          {/* Layout Switcher: Lưới Thẻ vs Bảng Danh Mục */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
-            <button
-              type="button"
-              onClick={() => setViewMode('grid')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                viewMode === 'grid'
-                  ? 'bg-white text-brand-700 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-              title="Xem dạng Lưới Thẻ Trực Quan"
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Lưới Thẻ</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('table')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                viewMode === 'table'
-                  ? 'bg-white text-brand-700 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-              title="Xem dạng Bảng Danh Mục Mạng Lưới"
-            >
-              <Table2 className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Bảng Danh Mục</span>
-            </button>
-          </div>
         </div>
       </div>
 
@@ -314,11 +279,7 @@ export const IncidentDashboardPage: React.FC = () => {
 
       {/* Danh sách Cơ sở: Lưới Thẻ hoặc Bảng Danh Mục */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-64 rounded-2xl bg-slate-100 animate-pulse border border-slate-200/80" />
-          ))}
-        </div>
+        <div className="h-32 rounded-xl bg-slate-100 animate-pulse border border-slate-200" />
       ) : processedFacilities.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-2xs">
           <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
@@ -333,102 +294,59 @@ export const IncidentDashboardPage: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          {viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {paginatedFacilities.map((facility) => (
-                <IncidentSummaryCard
-                  key={facility.id}
-                  facility={facility}
-                  onSelect={() => navigate(`/manager/incidents/facilities/${facility.id}`)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-2xs">
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-none">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
-                      <th className="py-3.5 px-4">Cơ sở lưu trữ</th>
-                      <th className="py-3.5 px-4">Khu vực / Tỉnh thành</th>
-                      <th className="py-3.5 px-4">Địa chỉ hoạt động</th>
-                      <th className="py-3.5 px-4">Hotline</th>
-                      <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                      <th className="py-3.5 px-4 text-right">Thao tác</th>
+                      <th className="py-3 px-4">Tên cơ sở</th>
+                      <th className="py-3 px-4">Địa chỉ</th>
+                      <th className="py-3 px-4">Số điện thoại</th>
+                      <th className="py-3 px-4">Trạng thái</th>
+                      <th className="py-3 px-4 text-right">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {paginatedFacilities.map((facility) => {
-                      const theme = getFacilityTheme(facility);
-                      return (
+                    {paginatedFacilities.map((facility) => (
                         <tr
                           key={facility.id}
                           onClick={() => navigate(`/manager/incidents/facilities/${facility.id}`)}
-                          className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                          className="hover:bg-slate-50 transition-colors cursor-pointer"
                         >
-                          <td className="py-3.5 px-4">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={`w-8 h-8 rounded-xl flex items-center justify-center border shadow-2xs shrink-0 ${theme.iconBg}`}
-                              >
-                                <Building2 className={`w-4 h-4 ${theme.iconColor}`} />
-                              </div>
-                              <div>
-                                <div className="font-bold text-slate-900 group-hover:text-brand-600 transition-colors">
-                                  {facility.name}
-                                </div>
-                                <span className="text-[10px] font-mono text-slate-500">
-                                  {facility.code}
-                                </span>
-                              </div>
-                            </div>
+                          <td className="py-3 px-4">
+                            <div className="font-semibold text-slate-900">{facility.name}</div>
+                            <div className="font-mono text-[11px] text-slate-500">{facility.code}</div>
                           </td>
-                          <td className="py-3.5 px-4">
-                            <span
-                              className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${theme.badgeBg} ${theme.badgeTextCol} ${theme.badgeBorder}`}
-                            >
-                              <Compass className="w-2.5 h-2.5" />
-                              {theme.regionLabel}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-4 text-slate-600 max-w-xs truncate">
+                          <td className="py-3 px-4 text-slate-600 max-w-xs truncate">
                             {facility.address || 'Chưa cập nhật địa chỉ'}
                           </td>
-                          <td className="py-3.5 px-4 text-slate-600 font-mono text-[11px]">
+                          <td className="py-3 px-4 font-mono text-slate-700">
                             {facility.phone || '—'}
                           </td>
-                          <td className="py-3.5 px-4 text-center">
-                            <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-2xs ${
-                                facility.isActive
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  : 'bg-slate-100 text-slate-600 border-slate-200'
-                              }`}
-                            >
+                          <td className="py-3 px-4">
+                            <span className="inline-flex items-center gap-1.5 text-slate-700">
+                              <span className={`w-1.5 h-1.5 rounded-full ${facility.isActive ? 'bg-brand-500' : 'bg-slate-300'}`} />
                               {facility.isActive ? 'Hoạt động' : 'Tạm dừng'}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4 text-right">
+                          <td className="py-3 px-4 text-right">
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigate(`/manager/incidents/facilities/${facility.id}`);
                               }}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-brand-600 hover:text-white hover:bg-brand-600 transition-colors border border-brand-200 hover:border-brand-600 shadow-2xs cursor-pointer"
+                              className="text-xs font-semibold text-brand-600 hover:text-brand-700"
                             >
-                              <span>Điều phối sự cố</span>
-                              <ArrowRight className="w-3.5 h-3.5" />
+                              Sự cố
                             </button>
                           </td>
                         </tr>
-                      );
-                    })}
+                    ))}
                   </tbody>
                 </table>
               </div>
             </div>
-          )}
 
           {/* Phân trang */}
           <div className="pt-2">

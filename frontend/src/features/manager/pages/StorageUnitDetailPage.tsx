@@ -1,6 +1,7 @@
 // frontend/src/features/manager/pages/StorageUnitDetailPage.tsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { DateField } from '@/components/ui/DateField';
 import {
   Box,
   Building2,
@@ -383,7 +384,7 @@ export const StorageUnitDetailPage: React.FC = () => {
             <CalendarClock className="w-3.5 h-3.5 text-purple-600" />
             <span>Kế hoạch & Lịch vận hành tương lai</span>
             {daysUntilExpiry !== null && daysUntilExpiry <= 14 && (
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 font-mono font-bold">
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 num font-bold">
                 Trả sau {daysUntilExpiry}d
               </span>
             )}
@@ -454,19 +455,19 @@ export const StorageUnitDetailPage: React.FC = () => {
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                   <span className="text-slate-400 block text-[11px]">Diện tích sàn</span>
-                  <span className="font-mono font-bold text-slate-900 text-sm mt-0.5 block">
+                  <span className="num font-bold text-slate-900 text-sm mt-0.5 block">
                     {unitType?.areaM2 || 0} m²
                   </span>
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                   <span className="text-slate-400 block text-[11px]">Thể tích lưu trữ</span>
-                  <span className="font-mono font-bold text-slate-900 text-sm mt-0.5 block">
+                  <span className="num font-bold text-slate-900 text-sm mt-0.5 block">
                     {unitType?.volumeM3 ? `${unitType.volumeM3} m³` : `${((unitType?.areaM2 || 0) * (unitType?.heightM || 2.5)).toFixed(1)} m³`}
                   </span>
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                   <span className="text-slate-400 block text-[11px]">Quy cách (R × D × C)</span>
-                  <span className="font-mono font-bold text-slate-900 text-sm mt-0.5 block">
+                  <span className="num font-bold text-slate-900 text-sm mt-0.5 block">
                     {unitType?.widthM || 0}m × {unitType?.depthM || 0}m × {unitType?.heightM || 0}m
                   </span>
                 </div>
@@ -478,7 +479,7 @@ export const StorageUnitDetailPage: React.FC = () => {
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                   <span className="text-slate-400 block text-[11px]">Đơn giá niêm yết</span>
-                  <span className="font-mono font-bold text-brand-600 text-sm mt-0.5 block">
+                  <span className="num font-bold text-brand-600 text-sm mt-0.5 block">
                     {unitType?.monthlyPrice ? fmt(unitType.monthlyPrice) : 'Chưa niêm yết'}
                   </span>
                 </div>
@@ -594,13 +595,13 @@ export const StorageUnitDetailPage: React.FC = () => {
                   <div className="grid grid-cols-2 gap-2 text-center">
                     <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
                       <span className="text-[10px] text-slate-400 block font-medium">Bắt đầu</span>
-                      <span className="font-mono font-semibold text-slate-800 mt-0.5 block">
+                      <span className="num font-semibold text-slate-800 mt-0.5 block">
                         {formatVnDate(currentContract.startDate)}
                       </span>
                     </div>
                     <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
                       <span className="text-[10px] text-slate-400 block font-medium">Hạn thuê</span>
-                      <span className="font-mono font-semibold text-slate-800 mt-0.5 block">
+                      <span className="num font-semibold text-slate-800 mt-0.5 block">
                         {formatVnDate(currentContract.endDateExclusive)}
                       </span>
                     </div>
@@ -611,7 +612,7 @@ export const StorageUnitDetailPage: React.FC = () => {
                       <CreditCard className="w-3.5 h-3.5 text-emerald-600" />
                       Tiền cọc bảo chứng:
                     </span>
-                    <span className="font-mono font-bold text-emerald-900">
+                    <span className="num font-bold text-emerald-900">
                       {fmt(currentContract.depositBalance || currentContract.depositAmount || 0)}
                     </span>
                   </div>
@@ -696,11 +697,10 @@ export const StorageUnitDetailPage: React.FC = () => {
 
               {/* Date Input */}
               <div className="flex items-center gap-2">
-                <input
-                  type="date"
+                <DateField
                   value={simulatedDate}
-                  onChange={(e) => setSimulatedDate(e.target.value)}
-                  className="px-3 py-1.5 bg-white border border-purple-300 rounded-xl text-xs font-mono font-bold text-purple-950 outline-none shadow-2xs cursor-pointer focus:ring-2 focus:ring-purple-400"
+                  onChange={setSimulatedDate}
+                  className="px-3 py-1.5 bg-white border border-purple-300 rounded-xl text-xs num font-bold text-purple-950 outline-none shadow-2xs cursor-pointer focus:ring-2 focus:ring-purple-400"
                 />
                 {simulatedDate !== todayStr && (
                   <button
@@ -767,7 +767,7 @@ export const StorageUnitDetailPage: React.FC = () => {
                       Mốc 1 — Hạn kết thúc hợp đồng & Nghiệm thu phòng
                     </span>
                     {currentContract && (
-                      <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
+                      <span className="num text-xs font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
                         Hạn: {formatVnDate(currentContract.endDateExclusive)} ({daysUntilExpiry !== null ? `còn ${daysUntilExpiry} ngày` : ''})
                       </span>
                     )}
@@ -795,7 +795,7 @@ export const StorageUnitDetailPage: React.FC = () => {
                     <span className="font-bold text-slate-900 text-xs">
                       Mốc 2 — Cửa sổ sẵn sàng đón khách thuê mới
                     </span>
-                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-sky-100 text-sky-900 border border-sky-300">
+                    <span className="num text-xs font-bold px-2 py-0.5 rounded bg-sky-100 text-sky-900 border border-sky-300">
                       {currentContract
                         ? `Từ ngày: ${formatVnDate(addDaysToStr(currentContract.endDateExclusive, 1))}`
                         : 'Sẵn sàng ngay hôm nay'}
@@ -817,7 +817,7 @@ export const StorageUnitDetailPage: React.FC = () => {
                     <span className="font-bold text-slate-900 text-xs">
                       Mốc 3 — Lịch kiểm định an toàn cơ sở định kỳ
                     </span>
-                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-900 border border-purple-300">
+                    <span className="num text-xs font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-900 border border-purple-300">
                       Định kỳ mỗi 30 ngày
                     </span>
                   </div>
@@ -877,10 +877,10 @@ export const StorageUnitDetailPage: React.FC = () => {
                         <td className="px-4 py-3 font-mono font-bold text-slate-900">{c.code}</td>
                         <td className="px-4 py-3 font-medium text-slate-800">{c.customerName}</td>
                         <td className="px-4 py-3 text-slate-600">{c.customerPhone}</td>
-                        <td className="px-4 py-3 text-slate-600 font-mono">
+                        <td className="px-4 py-3 text-slate-600 num">
                           {formatVnDate(c.startDate)} → {formatVnDate(c.endDateExclusive)}
                         </td>
-                        <td className="px-4 py-3 font-mono font-semibold text-slate-700">
+                        <td className="px-4 py-3 num font-semibold text-slate-700">
                           {fmt(c.depositBalance || c.depositAmount || 0)}
                         </td>
                         <td className="px-4 py-3">

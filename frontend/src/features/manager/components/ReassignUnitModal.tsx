@@ -113,19 +113,16 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <RefreshCw className="w-5 h-5 text-white/90" />
-            <div>
-              <h3 className="font-bold text-base">Đổi ô kho vì sự cố</h3>
-              <p className="text-xs text-white/80">
-                Chỉ ô cùng loại. Giá thuê và tiền cọc trên hợp đồng giữ nguyên.
-              </p>
-            </div>
+        <div className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
+          <div>
+            <h3 className="font-bold text-base text-slate-900">Đổi ô kho vì sự cố</h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Chỉ ô cùng loại. Giá thuê và tiền cọc trên hợp đồng giữ nguyên.
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
+            className="text-slate-400 hover:text-slate-600 p-1 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -133,33 +130,20 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
 
         <div className="p-6 space-y-5 flex-1 overflow-y-auto">
           {/* Thông tin đơn hiện tại */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2">
-            <div className="flex justify-between items-center text-slate-700">
-              <span>Mã hợp đồng / Đơn:</span>
-              <span className="font-semibold text-slate-900">{contract.code}</span>
+          <div className="text-sm space-y-3">
+            <div className="grid grid-cols-2 gap-3 text-slate-600">
+              <p><span className="text-slate-500">Mã hợp đồng:</span> <span className="font-medium text-slate-900">{contract.code}</span></p>
+              <p><span className="text-slate-500">Khách hàng:</span> <span className="font-medium text-slate-900">{contract.customerName}</span></p>
+              <p className="col-span-2"><span className="text-slate-500">Loại ô kho:</span> <span className="font-medium text-slate-900">{contract.unitTypeName}</span></p>
             </div>
-            <div className="flex justify-between items-center text-slate-700">
-              <span>Khách hàng:</span>
-              <span className="font-medium text-slate-900">{contract.customerName} ({contract.customerPhone})</span>
-            </div>
-            <div className="flex justify-between items-center text-slate-700">
-              <span>Loại ô kho:</span>
-              <span className="font-medium text-amber-700">{contract.unitTypeName}</span>
-            </div>
-            <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-sm">
-              <div className="text-rose-600 font-semibold flex items-center gap-1.5">
-                <span>Ô kho hiện tại:</span>
-                <span className="px-2 py-0.5 rounded bg-rose-100 border border-rose-200 text-rose-700 font-mono">
-                  {contract.storageUnitCode}
-                </span>
-              </div>
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1 bg-slate-100 border border-slate-200 rounded text-sm font-medium text-slate-600 font-mono">
+                {contract.storageUnitCode}
+              </span>
               <ArrowRight className="w-4 h-4 text-slate-400" />
-              <div className="text-emerald-700 font-semibold flex items-center gap-1.5">
-                <span>Ô kho mới:</span>
-                <span className="px-2 py-0.5 rounded bg-emerald-100 border border-emerald-200 text-emerald-800 font-mono">
-                  {availableUnits.find((u) => u.id === selectedUnitId)?.code || '---'}
-                </span>
-              </div>
+              <span className="px-3 py-1 bg-brand-50 border border-brand-200 rounded text-sm font-bold text-brand-700 font-mono">
+                {availableUnits.find((u) => u.id === selectedUnitId)?.code || '---'}
+              </span>
             </div>
           </div>
 
@@ -172,14 +156,17 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
 
           {/* Chọn ô kho trống cùng loại */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600">
-                1. Chọn ô kho trống thay thế cùng loại ({availableUnits.length} ô khả dụng)
-              </label>
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <p className="text-sm font-semibold text-slate-800 leading-snug">
+                1. Chọn ô trống cùng loại
+                <span className="block mt-0.5 text-xs font-normal text-slate-500">
+                  {availableUnits.length} ô khả dụng
+                </span>
+              </p>
               <button
                 type="button"
                 onClick={() => setFloorPlanOpen(true)}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-2.5 py-1 rounded-lg border border-brand-200 transition-colors cursor-pointer"
+                className="shrink-0 inline-flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-2.5 py-1 rounded-lg border border-brand-200 transition-colors cursor-pointer"
               >
                 <MapPin className="w-3.5 h-3.5" />
                 <span>Chọn trên Sơ đồ 2D</span>
@@ -191,33 +178,37 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
                 Đang tìm ô kho trống khả dụng...
               </div>
             ) : availableUnits.length === 0 ? (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-                {contract.status === 'PENDING_CHECK_IN'
-                  ? `Không còn ô cùng loại (${contract.unitTypeName}). Khách có thể hủy đặt chỗ để được hoàn 100% tiền thuê và tiền cọc.`
-                  : `Không còn ô cùng loại (${contract.unitTypeName}). Khách cần trả kho rồi đặt hợp đồng mới. Không nâng loại kho trên hợp đồng này.`}
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm leading-relaxed text-amber-900 space-y-1">
+                <p>Không còn ô cùng loại ({contract.unitTypeName}).</p>
+                <p>
+                  {contract.status === 'PENDING_CHECK_IN'
+                    ? 'Khách có thể hủy đặt chỗ để được hoàn 100% tiền thuê và tiền cọc.'
+                    : 'Khách cần trả kho rồi đặt hợp đồng mới. Hợp đồng này không được nâng loại kho.'}
+                </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-48 overflow-y-auto p-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-64 overflow-y-auto scrollbar-none pr-1">
                 {availableUnits.map((unit) => {
                   const isSelected = selectedUnitId === unit.id;
                   return (
-                    <div
+                    <button
                       key={unit.id}
+                      type="button"
                       onClick={() => setSelectedUnitId(unit.id)}
-                      className={`p-3 rounded-xl border text-xs cursor-pointer transition-all duration-150 flex flex-col justify-between ${
+                      className={`h-20 p-3 rounded-lg border text-left text-xs cursor-pointer transition-colors flex flex-col justify-between ${
                         isSelected
-                          ? 'bg-emerald-50 border-emerald-500 ring-2 ring-emerald-400/30 text-emerald-900 font-medium'
-                          : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
+                          ? 'bg-brand-50/40 border-2 border-brand-500 text-slate-900'
+                          : 'bg-white border-slate-200 hover:border-brand-300 text-slate-700'
                       }`}
                     >
-                      <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center justify-between">
                         <span className="font-mono font-bold text-sm text-slate-900">
                           {unit.code}
                         </span>
-                        {isSelected && <CheckCircle className="w-4 h-4 text-emerald-600" />}
+                        {isSelected && <CheckCircle className="w-4 h-4 text-brand-600" />}
                       </div>
                       <span className="text-[11px] text-slate-500">Tầng {unit.floor} • {unit.position}</span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -240,7 +231,7 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
                     name="reassign_reason"
                     checked={reason === r}
                     onChange={() => setReason(r)}
-                    className="mt-0.5 text-amber-600 focus:ring-amber-500"
+                    className="mt-0.5 accent-brand-600"
                   />
                   <span>{r}</span>
                 </label>
@@ -251,9 +242,9 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
                   name="reassign_reason"
                   checked={reason === 'Khác'}
                   onChange={() => setReason('Khác')}
-                  className="mt-0.5 text-amber-600 focus:ring-amber-500"
-                />
-                <span>Lý do khác...</span>
+                    className="mt-0.5 accent-brand-600"
+                  />
+                  <span>Lý do khác...</span>
               </label>
             </div>
 
@@ -263,7 +254,7 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
                 onChange={(e) => setCustomReason(e.target.value)}
                 placeholder="Nhập chi tiết lý do đổi ô kho cho hợp đồng này..."
                 rows={2}
-                className="mt-2 w-full p-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+                className="mt-2 w-full p-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 outline-none"
               />
             )}
           </div>
@@ -274,7 +265,7 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
                 type="checkbox"
                 checked={customerConsent}
                 onChange={(e) => setCustomerConsent(e.target.checked)}
-                className="mt-0.5 text-amber-600 focus:ring-amber-500"
+                className="mt-0.5 accent-brand-600"
               />
               <span>Khách đã đồng ý đổi sang ô kho này (hoặc nhận nâng hạng đền bù). Không đồng ý thì khách có thể hủy để được hoàn tiền 100%.</span>
             </label>
@@ -295,7 +286,7 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
             type="button"
             onClick={handleConfirm}
             disabled={loading || availableUnits.length === 0 || (needsConsent && !customerConsent)}
-            className="px-5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+            className="px-5 py-2 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
           >
             {loading ? (
               <>

@@ -9,6 +9,12 @@
   }
 }
 
+/* Số tiền, %, số đếm: Inter (kế thừa), chữ số cùng độ rộng, khít nhẹ. */
+.num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.025em;
+}
+
 /* ========== Page Transition Animation ========== */
 @keyframes fadeInUp {
   from {
@@ -415,25 +421,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-ken-burns,
-  .hero-light-sheen,
-  .hero-qr-laser,
-  .hero-neon-pulse,
-  .hero-unit-glow,
-  .hero-particle-1,
-  .hero-particle-2,
-  .hero-particle-3,
-  .pixel-drop-in,
-  .pixel-cool-float-1,
-  .pixel-cool-float-2,
-  .pixel-cool-float-3,
-  .pixel-beacon,
-  .hero-scene-breathe,
-  .hero-cloud-drift,
-  .hero-sunbeam-sway,
-  .hero-leaf-float,
-  .hero-water-sparkle {
-    animation: none !important;
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

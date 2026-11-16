@@ -1,9 +1,12 @@
-import { describe, it, expect } from 'vitest';
+// @vitest-environment jsdom
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
+import { render, screen } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
 import { Breadcrumb } from '../components/Breadcrumb';
-import { FacilityCard } from '../components/FacilityCard';
+import { FacilityListPage } from '../pages/FacilityListPage';
+import * as facilityApi from '@/api/facility';
 import { UnitTypeCard } from '../components/UnitTypeCard';
 import { StorageUnitTable } from '../components/StorageUnitTable';
 import { StorageUnitFloorPlanView } from '../components/StorageUnitFloorPlanView';
@@ -12,6 +15,14 @@ import { getFacilityRegion } from '../pages/FacilityListPage';
 import type { FacilityListItem } from '@/types';
 import type { UnitTypeResponse, StorageUnitResponse } from '@/types/unit';
 import type { ManagerContractItem } from '@/types/contractManager';
+
+vi.mock('@/api/facility', () => ({
+  fetchMyAssignedFacilities: vi.fn(),
+}));
+
+vi.mock('@/api/unit', () => ({
+  fetchStorageUnits: vi.fn().mockResolvedValue({ content: [] }),
+}));
 
 const cleanHtml = (html: string) => html.replace(/<!-- -->/g, '');
 
@@ -74,20 +85,21 @@ describe('Quản lý ô kho — Kiến trúc Drill-down 4 Cấp độ (FM-01)', 
     status: 'ACTIVE',
   };
 
-  it('1. FacilityCard: Hiển thị thông tin cơ sở, địa chỉ và nút vào quản lý theo Less is More', () => {
-    const html = cleanHtml(
-      renderToString(
-        <FacilityCard
-          facility={mockFacility}
-          onClick={() => {}}
-        />
-      )
+  it('1. Bảng cơ sở: tên, mã, địa chỉ, điện thoại, trạng thái và nút Quản lý', async () => {
+    vi.mocked(facilityApi.fetchMyAssignedFacilities).mockResolvedValue([mockFacility]);
+
+    render(
+      <MemoryRouter>
+        <FacilityListPage />
+      </MemoryRouter>
     );
 
-    expect(html).toContain('Cơ sở Cầu Giấy - Hà Nội');
-    expect(html).toContain('FAC-CG');
-    expect(html).toContain('Hoạt động');
-    expect(html).toContain('Vào quản lý ô kho');
+    expect(await screen.findByText('Cơ sở Cầu Giấy - Hà Nội')).toBeTruthy();
+    expect(screen.getByText('FAC-CG')).toBeTruthy();
+    expect(screen.getByText('123 Cầu Giấy, Hà Nội')).toBeTruthy();
+    expect(screen.getByText('0901234567')).toBeTruthy();
+    expect(screen.getByText('Hoạt động')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Quản lý' })).toBeTruthy();
   });
 
   it('2. UnitTypeCard: Hiển thị thông số quy chuẩn, diện tích, quy mô và theme thông minh', () => {

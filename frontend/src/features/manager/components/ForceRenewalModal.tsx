@@ -166,7 +166,7 @@ export const ForceRenewalModal: React.FC<ForceRenewalModalProps> = ({
             </div>
             <div>
               <span className="text-slate-400 block text-[11px]">Ngày hết hạn cũ:</span>
-              <span className="font-mono font-bold text-slate-800">{contract.endDateExclusive}</span>
+              <span className="num font-bold text-slate-800">{contract.endDateExclusive}</span>
             </div>
           </div>
 
@@ -177,7 +177,7 @@ export const ForceRenewalModal: React.FC<ForceRenewalModalProps> = ({
               <p className="font-bold text-amber-950">Quy chế Chốt chặn T-20 ngày (BR-REN-10):</p>
               <p className="leading-relaxed">
                 Hợp đồng đã bước vào khung thời gian &lt; 20 ngày. Cổng tự gia hạn của khách đã đóng để nhả chỗ cho thị trường. Hệ thống tự động thu thêm{' '}
-                <strong className="text-rose-700 underline font-mono">200.000 đ</strong> phụ phí hành chính trễ hạn. Chỉ được duyệt khi ô kho{' '}
+                <strong className="text-rose-700 underline num">200.000 đ</strong> phụ phí hành chính trễ hạn. Chỉ được duyệt khi ô kho{' '}
                 <strong>chưa có khách hàng khác đặt cọc trước</strong>.
               </p>
             </div>
@@ -217,7 +217,7 @@ export const ForceRenewalModal: React.FC<ForceRenewalModalProps> = ({
                   <p className="text-xs text-amber-800 leading-relaxed">
                     Ô kho <strong className="font-mono text-slate-900">{contract.storageUnitCode}</strong> đang được phân bổ trước cho khách mới. Cơ sở hiện vẫn còn{' '}
                     <strong>{quote.alternativeAvailableUnits?.length ?? 1}</strong> ô kho trống cùng loại (
-                    <span className="font-mono font-bold text-amber-950">{quote.alternativeAvailableUnits?.join(', ')}</span>).
+                    <span className="num font-bold text-amber-950">{quote.alternativeAvailableUnits?.join(', ')}</span>).
                   </p>
                 </div>
               </div>
@@ -237,7 +237,7 @@ export const ForceRenewalModal: React.FC<ForceRenewalModalProps> = ({
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[11px]">Ngày bắt đầu thuê:</span>
-                  <span className="font-mono text-slate-700">{quote.conflictingStartDate || 'N/A'}</span>
+                  <span className="num text-slate-700">{quote.conflictingStartDate || 'N/A'}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[11px]">Ô kho đề xuất chuyển sang:</span>
@@ -312,25 +312,25 @@ export const ForceRenewalModal: React.FC<ForceRenewalModalProps> = ({
                 <div className="border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-2">
                   <div className="flex justify-between items-center text-slate-600">
                     <span>Hạn kết thúc mới sau gia hạn:</span>
-                    <span className="font-mono font-bold text-brand-700 text-sm">
+                    <span className="num font-bold text-brand-700 text-sm">
                       {quote.newEndDate}
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-slate-600">
                     <span>Đơn giá niêm yết (BOM):</span>
-                    <span className="font-mono">{fmt(quote.monthlyPriceSnapshot)} / tháng</span>
+                    <span className="num">{fmt(quote.monthlyPriceSnapshot)} / tháng</span>
                   </div>
                   <div className="flex justify-between items-center text-slate-600">
                     <span>Tiền thuê ({quote.renewalMonths} tháng):</span>
-                    <span className="font-mono font-bold">{fmt(quote.rentalFeeAmount)}</span>
+                    <span className="num font-bold">{fmt(quote.rentalFeeAmount)}</span>
                   </div>
                   <div className="flex justify-between items-center text-rose-700 font-semibold">
                     <span>Phụ phí hành chính trễ hạn (BR-REN-10):</span>
-                    <span className="font-mono">+{fmt(quote.lateAdminFee ?? 200000)}</span>
+                    <span className="num">+{fmt(quote.lateAdminFee ?? 200000)}</span>
                   </div>
                   <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-slate-900 font-bold text-sm">
                     <span>Tổng tiền FM cần thu tại quầy:</span>
-                    <span className="font-mono text-emerald-600 text-base">
+                    <span className="num text-emerald-600 text-base">
                       {fmt(quote.totalAmount)}
                     </span>
                   </div>

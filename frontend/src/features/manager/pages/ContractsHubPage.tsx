@@ -481,7 +481,7 @@ export const ContractsHubPage: React.FC = () => {
                       </td>
 
                       {/* Giá & Cọc */}
-                      <td className="py-3 px-4 font-mono">
+                      <td className="py-3 px-4 num">
                         <span className="text-slate-900 font-medium block">
                           {contract.monthlyPrice.toLocaleString('vi-VN')} đ/th
                         </span>
@@ -676,7 +676,7 @@ export const ContractsHubPage: React.FC = () => {
                                       : 'Đã chấm dứt • Chờ hoàn tiền 100%'}
                                   </span>
                                   <span className="block text-[10px] text-slate-500">
-                                    Ngày kết thúc: <strong className="font-mono text-slate-700">{contract.endDateExclusive || contract.startDate}</strong>
+                                    Ngày kết thúc: <strong className="num text-slate-700">{contract.endDateExclusive || contract.startDate}</strong>
                                   </span>
                                 </>
                               );

@@ -360,7 +360,7 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
                   {resInfo.totalCollected && (
                     <div className="flex items-center justify-between pt-1 border-t border-amber-200/70">
                       <span className="text-slate-700">Tổng thu:</span>
-                      <strong className="font-mono font-black text-slate-900">{resInfo.totalCollected}</strong>
+                      <strong className="num font-black text-slate-900">{resInfo.totalCollected}</strong>
                     </div>
                   )}
                 </div>

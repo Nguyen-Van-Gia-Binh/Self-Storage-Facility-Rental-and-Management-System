@@ -84,7 +84,7 @@ public class UnitTypeController {
             @PathVariable Long facilityId,
             @PathVariable Long unitTypeId) {
         unitTypeService.deactivateUnitType(facilityId, unitTypeId);
-        return ResponseEntity.ok(ApiResponse.success(null, "Vô hiệu hóa loại ô kho thành công"));
+        return ResponseEntity.ok(ApiResponse.success(null, "Đã gỡ loại ô kho khỏi cơ sở"));
     }
 
     @PatchMapping("/{unitTypeId}/status")
