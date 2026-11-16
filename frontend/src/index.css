@@ -492,11 +492,25 @@
   }
 
   .ss-report,
-  .ss-report *,
-  .contract-print-document,
-  .contract-print-document * {
+  .ss-report * {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  .contract-print-document,
+  .contract-print-document *,
+  .contract-addendum-page,
+  .contract-addendum-page * {
+    font-family: 'Times New Roman', 'Arial', 'Be Vietnam Pro', serif !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    text-rendering: optimizeLegibility !important;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .contract-print-document .font-mono,
+  .contract-addendum-page .font-mono {
+    font-family: 'Courier New', Courier, monospace !important;
   }
 
   .ss-page-break {

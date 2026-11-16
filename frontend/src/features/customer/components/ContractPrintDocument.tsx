@@ -41,6 +41,16 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
   const effectiveDeposit = detail?.depositAmount ?? contract.depositHeld ?? effectiveMonthlyRent;
   const effectiveTotalRentalFee = detail?.totalRentalFee || contract.totalRentalFee || (effectiveMonthlyRent * effectiveRentalMonths);
   const effectiveTotalContractAmount = detail?.totalContractAmount || contract.totalContractAmount || (effectiveTotalRentalFee + effectiveDeposit);
+
+  // Tính toán thời hạn thuê gốc ban đầu (Original Term)
+  // Khi hợp đồng đã gia hạn, rentalMonths bị cộng dồn, nhưng hợp đồng gốc chỉ thể hiện thời hạn ban đầu
+  const totalRenewedMonths = renewals.reduce((sum, r) => sum + (r.renewalMonths || 0), 0);
+  const originalRentalMonths = (effectiveMonthlyRent > 0 && effectiveTotalRentalFee > 0)
+    ? Math.max(1, Math.round(effectiveTotalRentalFee / effectiveMonthlyRent))
+    : Math.max(1, effectiveRentalMonths - totalRenewedMonths);
+  const originalEndDate = renewals.length > 0 && renewals[0].previousEndDate
+    ? renewals[0].previousEndDate
+    : effectiveEndDate;
   const isPendingCheckin =
     contract.status === 'PENDING_CHECKIN' ||
     (contract.status as string) === 'PENDING_CHECK_IN';
@@ -133,8 +143,8 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
   return (
     <article
       data-testid="contract-print-document"
-      className="contract-print-document font-serif text-[12.5px] leading-relaxed text-slate-900 bg-white p-6 max-w-[210mm] mx-auto print:p-0 print:m-0 relative overflow-hidden"
-      style={{ fontFamily: "'Times New Roman', Times, serif" }}
+      className="contract-print-document text-[12.5px] leading-relaxed text-slate-900 bg-white p-6 max-w-[210mm] mx-auto print:p-0 print:m-0 relative overflow-hidden"
+      style={{ fontFamily: "'Times New Roman', Times, 'Arial', 'Be Vietnam Pro', serif" }}
     >
       {/* 1. Quốc hiệu & Tiêu ngữ chuẩn văn bản pháp lý Việt Nam đặt trên cùng chính giữa */}
       <div className="text-center mb-3">
@@ -243,7 +253,14 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
         </table>
 
         <div className="text-[11.5px] my-2 leading-relaxed">
-          <p>• <strong>Thời hạn thuê ô kho:</strong> Bắt đầu từ ngày <strong>{effectiveStartDate}</strong> đến ngày <strong>{effectiveEndDate}</strong>.</p>
+          <p>
+            • <strong>Thời hạn thuê ban đầu:</strong> {originalRentalMonths} tháng (Bắt đầu từ ngày <strong>{effectiveStartDate}</strong> đến ngày <strong>{originalEndDate}</strong>).
+            {renewals.length > 0 && (
+              <span className="italic text-slate-700 block mt-0.5">
+                * Lưu ý: Hợp đồng đã xác lập Phụ lục gia hạn thêm {totalRenewedMonths} tháng, thời hạn hiệu lực mới đến ngày <strong>{effectiveEndDate}</strong> (Chi tiết tại Phụ lục đính kèm).
+              </span>
+            )}
+          </p>
         </div>
 
         {relocationCode && (
@@ -265,17 +282,22 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
             <span className="font-bold">{formatCurrencyVND(effectiveMonthlyRent)} / tháng</span> (Đã bao gồm chi phí bảo quản tiêu chuẩn, giám sát an ninh 24/7 và điện chiếu sáng công cộng).
           </p>
           <p>
-            <strong>2. Tổng tiền thuê trọn kỳ ({effectiveRentalMonths} tháng):</strong>{' '}
-            <span className="font-bold">{formatCurrencyVND(effectiveTotalRentalFee)}</span> (Đơn giá x Thời hạn thuê trọn kỳ).
+            <strong>2. Tổng tiền thuê trọn kỳ ban đầu ({originalRentalMonths} tháng):</strong>{' '}
+            <span className="font-bold">{formatCurrencyVND(effectiveTotalRentalFee)}</span> (Đơn giá x Thời hạn thuê gốc).
           </p>
           <p>
             <strong>3. Tiền cọc bảo đảm:</strong>{' '}
             <span className="font-bold">{formatCurrencyVND(effectiveDeposit)}</span>. Khoản tiền cọc được bảo lưu tại tài khoản ngân hàng của Bên A để bảo đảm thực hiện nghĩa vụ hợp đồng và sẽ được hoàn trả 100% cho Bên B sau khi nghiệm thu trả kho đúng quy định.
           </p>
           <div className="p-2 bg-slate-100 border border-slate-300 rounded font-bold text-slate-900 flex justify-between items-center text-[12px] my-1">
-            <span>TỔNG GIÁ TRỊ HỢP ĐỒNG (TỔNG TIỀN):</span>
+            <span>TỔNG GIÁ TRỊ HỢP ĐỒNG BAN ĐẦU:</span>
             <span className="text-[13px] text-brand-900 font-extrabold">{formatCurrencyVND(effectiveTotalContractAmount)}</span>
           </div>
+          {renewals.length > 0 && (
+            <p className="text-[10.5px] text-slate-600 italic">
+              * Giá trị trên chưa bao gồm các khoản tiền thuê nộp theo các Phụ lục gia hạn thời hạn hợp đồng đính kèm.
+            </p>
+          )}
           <p>
             <strong>4. Xử lý chậm nộp & quá hạn:</strong>
           </p>
@@ -545,7 +567,8 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
           <section
             key={renewal.id || idx}
             data-testid={`contract-addendum-${idx + 1}`}
-            className="contract-addendum-page ss-page-break print:break-before-page pt-8 border-t-2 border-dashed border-slate-300 print:border-none font-serif text-[12.5px] leading-relaxed text-slate-900"
+            className="contract-addendum-page ss-page-break print:break-before-page pt-8 border-t-2 border-dashed border-slate-300 print:border-none text-[12.5px] leading-relaxed text-slate-900"
+            style={{ fontFamily: "'Times New Roman', Times, 'Arial', 'Be Vietnam Pro', serif" }}
           >
             {/* Quốc hiệu & Tiêu ngữ */}
             <div className="text-center mb-3">
@@ -710,7 +733,8 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
       {relocationCode && (
         <section
           data-testid="contract-addendum-relocation"
-          className="contract-addendum-page ss-page-break print:break-before-page pt-8 border-t-2 border-dashed border-slate-300 print:border-none font-serif text-[12.5px] leading-relaxed text-slate-900"
+          className="contract-addendum-page ss-page-break print:break-before-page pt-8 border-t-2 border-dashed border-slate-300 print:border-none text-[12.5px] leading-relaxed text-slate-900"
+          style={{ fontFamily: "'Times New Roman', Times, 'Arial', 'Be Vietnam Pro', serif" }}
         >
           {/* Quốc hiệu & Tiêu ngữ */}
           <div className="text-center mb-3">
@@ -867,7 +891,8 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
       {hasSettlement && (
         <section
           data-testid="contract-addendum-settlement"
-          className="contract-addendum-page ss-page-break print:break-before-page pt-8 border-t-2 border-dashed border-slate-300 print:border-none font-serif text-[12.5px] leading-relaxed text-slate-900"
+          className="contract-addendum-page ss-page-break print:break-before-page pt-8 border-t-2 border-dashed border-slate-300 print:border-none text-[12.5px] leading-relaxed text-slate-900"
+          style={{ fontFamily: "'Times New Roman', Times, 'Arial', 'Be Vietnam Pro', serif" }}
         >
           {/* Quốc hiệu & Tiêu ngữ */}
           <div className="text-center mb-3">
