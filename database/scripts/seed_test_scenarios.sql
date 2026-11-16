@@ -9,6 +9,7 @@
 --           - Flow 6.1: Vòng đời Gia hạn hợp đồng (T-60, T-30, T-25, T-21, T-20, T-7, T-3, Force Renewal & Hard Lock Xung đột)
 --           - Flow 6.2: Vòng đời Quá hạn 8 ngày (No Pay No PIN, Đóng phạt nhận PIN tạm, Niêm phong Kho Tổng & HĐ quá 37 ngày chờ FM duyệt)
 --           - Flow 2: Khách chờ nhận kho (Check-in & Handover tại quầy)
+--           - Flow 1 & Waitlist / Bumping: Chuẩn hóa 4 ô Tiêu chuẩn S + 1 ô Bumping M tại Quận 7 (FAC-Q7)
 --           - Sơ đồ kho: Đầy đủ các trạng thái OCCUPIED, CLEANING, RESERVED, MAINTENANCE, AVAILABLE.
 --
 -- Đặc điểm: IDEMPOTENT (Chạy lại nhiều lần an toàn, tự động dọn dẹp data test cũ).
@@ -17,7 +18,7 @@
 --   - Khách thuê (Customer): nhi.customer@gmail.com / password123 (ID: 10)
 --   - Quản lý cơ sở (FM)   : fm.q1@smartstorage.vn / password123 (ID: 8 - Gia Bình)
 --   - Nhân viên cơ sở (FS) : staff.q1@smartstorage.vn / password123 (ID: 9)
---   - Cơ sở áp dụng        : Cơ sở Quận 1 - TP.HCM (ID: 5, Mã: FAC-Q1)
+--   - Cơ sở áp dụng        : Cơ sở Quận 1 (ID: 5, Mã: FAC-Q1) & Cơ sở Quận 7 (ID: 2, Mã: FAC-Q7)
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
@@ -50,8 +51,9 @@ BEGIN
     -- 1.6 Xóa biên bản bàn giao (handover_record)
     DELETE FROM handover_record;
 
-    -- 1.7 Xóa file đính kèm & yêu cầu hỗ trợ (attachment & support_request)
+    -- 1.7 Xóa file đính kèm, phân công nhân sự & yêu cầu hỗ trợ (attachment, staff_daily_assignment & support_request)
     DELETE FROM attachment;
+    DELETE FROM staff_daily_assignment;
     DELETE FROM support_request;
 
     -- 1.8 Xóa sổ cái kế toán & lịch sử giao dịch thanh toán (ledger_entry & payment_transaction)
@@ -597,6 +599,38 @@ WHERE facility_id = 5
     'Q1-A201', 'Q1-A202', 'Q1-B202', 'Q1-C201', 'Q1-AC-M201', 'Q1-AC-L201', 'Q1-B301',
     'Q1-B201', 'Q1-B101', 'Q1-A104', 'Q1-XL101', 'Q1-XS201', 'Q1-XL301'
   );
+
+-- 5.7 Chuẩn hóa đúng 4 ô kho trống Tiêu Chuẩn S + 1 ô dự phòng Tiêu Chuẩn M tại Cơ sở Quận 7 (FAC-Q7, facility_id = 2)
+--     phục vụ kịch bản Demo Flow 1, Bumping sự cố & Đăng ký danh sách chờ (Waitlist) khi hết kho:
+--     - Q7-S101: Sẵn sàng cho Đơn 1 (Happy Case)
+--     - Q7-S102: Sẵn sàng cho Đơn 2 (Sự cố Bumping đền bù lên Q7-M101)
+--     - Q7-S103: Sẵn sàng cho Đơn 3 (Sự cố Hủy & Hoàn tiền 100%)
+--     - Q7-S104: Sẵn sàng cho Đơn 4 (Check-in Online 24/7)
+--     - Q7-M101: Kho Tiêu Chuẩn M (6m²) dự phòng nâng hạng Bumping
+--     Khi 4 đơn trên được đặt, hạng kho Tiêu Chuẩn S sẽ hết sạch chỗ (Capacity = 0), tự động kích hoạt nút [Đăng ký danh sách chờ (Waitlist)] cho khách hàng thứ 5!
+INSERT INTO storage_unit (facility_id, unit_type_id, code, floor, position, location_note, status)
+VALUES
+  (2, 1, 'Q7-S101', 1, 'Khu A', 'Tầng 1 - Khu A - Kho tiêu chuẩn 3m² cửa chính', 'AVAILABLE'),
+  (2, 1, 'Q7-S102', 1, 'Khu A', 'Tầng 1 - Khu A - Kho tiêu chuẩn 3m² cạnh thang bộ', 'AVAILABLE'),
+  (2, 1, 'Q7-S103', 1, 'Khu A', 'Tầng 1 - Khu A - Kho tiêu chuẩn 3m² dãy trong', 'AVAILABLE'),
+  (2, 1, 'Q7-S104', 1, 'Khu A', 'Tầng 1 - Khu A - Kho tiêu chuẩn 3m² góc hành lang', 'AVAILABLE'),
+  (2, 2, 'Q7-M101', 1, 'Khu B', 'Tầng 1 - Khu B - Kho tiêu chuẩn lớn 6m² (Ô đền bù nâng hạng Bumping)', 'AVAILABLE')
+ON CONFLICT (facility_id, code) DO UPDATE
+SET status = 'AVAILABLE',
+    unit_type_id = EXCLUDED.unit_type_id,
+    floor = EXCLUDED.floor,
+    position = EXCLUDED.position,
+    location_note = EXCLUDED.location_note;
+
+-- Khóa các ô size S dôi dư khác tại Quận 7 về MAINTENANCE để đảm bảo chỉ có đúng 4 ô trống size S
+UPDATE storage_unit
+SET status = 'MAINTENANCE'
+WHERE facility_id = 2
+  AND unit_type_id = 1
+  AND code NOT IN ('Q7-S101', 'Q7-S102', 'Q7-S103', 'Q7-S104');
+
+-- Đồng bộ sequence id cho bảng storage_unit
+SELECT setval(pg_get_serial_sequence('storage_unit', 'id'), COALESCE((SELECT MAX(id) FROM storage_unit), 1));
 
 -- -----------------------------------------------------------------------------
 -- BƯỚC 6: BẢNG KIỂM TRA ĐỐI SOÁT KẾT QUẢ SAU SEED (VERIFICATION TABLE)
