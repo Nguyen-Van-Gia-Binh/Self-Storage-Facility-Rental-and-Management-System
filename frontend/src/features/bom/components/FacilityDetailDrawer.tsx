@@ -114,8 +114,20 @@ export const FacilityDetailDrawer: React.FC<FacilityDetailDrawerProps> = ({
                 <div className="p-3 rounded-lg border border-slate-100 bg-white flex items-start gap-2.5">
                   <Clock className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                   <div>
-                    <div className="text-slate-400 font-medium">Giờ mở cửa:</div>
-                    <div className="text-slate-800 font-medium mt-0.5">{facility.openingHours}</div>
+                    <div className="text-slate-400 font-medium">Thời gian hoạt động:</div>
+                    <div className="mt-0.5">
+                      {!facility.isActive ? (
+                        <span className="text-rose-600 font-semibold bg-rose-50 px-2 py-0.5 rounded text-[11px] border border-rose-200">
+                          Tạm ngưng truy cập (Cơ sở ngừng HĐ)
+                        </span>
+                      ) : (facility.openingHours && (facility.openingHours.includes('24/7') || facility.openingHours.includes('24h') || facility.openingHours.includes('24/24'))) ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
+                          24/7 (Truy cập không giới hạn)
+                        </span>
+                      ) : (
+                        <span className="text-slate-800 font-mono font-medium">{facility.openingHours || '06:00 - 22:00'}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

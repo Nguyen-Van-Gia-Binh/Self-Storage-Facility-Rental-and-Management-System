@@ -49,6 +49,16 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
 }) => {
   const isEdit = Boolean(initialData);
 
+  const isInitial247 = Boolean(
+    initialData?.openingHours &&
+      (initialData.openingHours.includes('24/7') ||
+        initialData.openingHours.includes('24h') ||
+        initialData.openingHours.includes('24/24') ||
+        initialData.openingHours.includes('00:00–24:00') ||
+        initialData.openingHours.includes('00:00-24:00'))
+  );
+  const [is247, setIs247] = useState<boolean>(isInitial247);
+
   const [formData, setFormData] = useState(() => {
     const hours = parseOpeningHours(initialData?.openingHours);
     return {
@@ -137,8 +147,12 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
       newErrors.phone = 'Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng 0';
     }
 
-    if (!TIME_PATTERN.test(formData.openTime) || !TIME_PATTERN.test(formData.closeTime)) {
-      newErrors.openingHours = 'Chọn giờ mở cửa và giờ đóng cửa';
+    if (!is247) {
+      if (!TIME_PATTERN.test(formData.openTime) || !TIME_PATTERN.test(formData.closeTime)) {
+        newErrors.openingHours = 'Chọn giờ mở cửa và giờ đóng cửa';
+      } else if (formData.openTime === formData.closeTime) {
+        newErrors.openingHours = 'Giờ mở và đóng cửa trùng nhau. Nếu cơ sở mở liên tục 24h, vui lòng tích chọn "Truy cập 24/7"';
+      }
     }
 
     setErrors(newErrors);
@@ -149,7 +163,7 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
     e.preventDefault();
     if (!validate()) return;
 
-    const openingHours = `${formData.openTime}–${formData.closeTime}`;
+    const openingHours = is247 ? '00:00–24:00 (24/7)' : `${formData.openTime}–${formData.closeTime}`;
 
     try {
       if (isEdit) {
@@ -352,27 +366,73 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
             )}
           </div>
 
-          {/* Giờ hoạt động */}
-          <div className="min-w-0">
-            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
-              Giờ hoạt động
-            </label>
-            <div className="flex items-end gap-2 min-w-0">
-              <div className="min-w-0 flex-1">
-                <span className="block text-[11px] font-medium text-slate-500 mb-1">Mở cửa</span>
-                <div className="relative">
-                  <Clock className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+          {/* Thời gian hoạt động */}
+          <div className="min-w-0 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold text-slate-700 uppercase">
+                Thời gian hoạt động
+              </label>
+              <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700 select-none">
+                <input
+                  type="checkbox"
+                  checked={is247}
+                  onChange={(e) => {
+                    setIs247(e.target.checked);
+                    if (errors.openingHours) {
+                      setErrors((current) => ({ ...current, openingHours: '' }));
+                    }
+                  }}
+                  className="rounded text-amber-600 focus:ring-amber-500 w-4 h-4"
+                />
+                <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-[11px] font-bold">
+                  Truy cập 24/7
+                </span>
+              </label>
+            </div>
+
+            {is247 ? (
+              <div className="p-3 bg-teal-50/70 border border-teal-200 rounded-xl text-xs text-teal-800 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-teal-600 shrink-0" />
+                <span>Cơ sở mở cửa 24/7 không giới hạn. Khách hàng có thể quét mã PIN vào kho bất kỳ lúc nào.</span>
+              </div>
+            ) : (
+              <div className="flex items-end gap-2 min-w-0">
+                <div className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-medium text-slate-500 mb-1">Mở cửa</span>
+                  <div className="relative">
+                    <Clock className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                    <input
+                      type="time"
+                      aria-label="Giờ mở cửa"
+                      value={formData.openTime}
+                      onChange={(e) => {
+                        setFormData({ ...formData, openTime: e.target.value });
+                        if (errors.openingHours) {
+                          setErrors((current) => ({ ...current, openingHours: '' }));
+                        }
+                      }}
+                      className={`w-full min-w-0 text-sm border rounded-xl pl-9 pr-2 py-2.5 outline-none transition-all ${
+                        errors.openingHours
+                          ? 'border-rose-300 focus:ring-2 focus:ring-rose-200'
+                          : 'border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-100'
+                      }`}
+                    />
+                  </div>
+                </div>
+                <span className="pb-2.5 text-slate-400 text-sm shrink-0">–</span>
+                <div className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-medium text-slate-500 mb-1">Đóng cửa</span>
                   <input
                     type="time"
-                    aria-label="Giờ mở cửa"
-                    value={formData.openTime}
+                    aria-label="Giờ đóng cửa"
+                    value={formData.closeTime}
                     onChange={(e) => {
-                      setFormData({ ...formData, openTime: e.target.value });
+                      setFormData({ ...formData, closeTime: e.target.value });
                       if (errors.openingHours) {
                         setErrors((current) => ({ ...current, openingHours: '' }));
                       }
                     }}
-                    className={`w-full min-w-0 text-sm border rounded-xl pl-9 pr-2 py-2.5 outline-none transition-all ${
+                    className={`w-full min-w-0 text-sm border rounded-xl px-3 py-2.5 outline-none transition-all ${
                       errors.openingHours
                         ? 'border-rose-300 focus:ring-2 focus:ring-rose-200'
                         : 'border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-100'
@@ -380,27 +440,7 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
                   />
                 </div>
               </div>
-              <span className="pb-2.5 text-slate-400 text-sm shrink-0">–</span>
-              <div className="min-w-0 flex-1">
-                <span className="block text-[11px] font-medium text-slate-500 mb-1">Đóng cửa</span>
-                <input
-                  type="time"
-                  aria-label="Giờ đóng cửa"
-                  value={formData.closeTime}
-                  onChange={(e) => {
-                    setFormData({ ...formData, closeTime: e.target.value });
-                    if (errors.openingHours) {
-                      setErrors((current) => ({ ...current, openingHours: '' }));
-                    }
-                  }}
-                  className={`w-full min-w-0 text-sm border rounded-xl px-3 py-2.5 outline-none transition-all ${
-                    errors.openingHours
-                      ? 'border-rose-300 focus:ring-2 focus:ring-rose-200'
-                      : 'border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-100'
-                  }`}
-                />
-              </div>
-            </div>
+            )}
             {errors.openingHours && (
               <p className="mt-1 text-xs text-rose-500 flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5" /> {errors.openingHours}
