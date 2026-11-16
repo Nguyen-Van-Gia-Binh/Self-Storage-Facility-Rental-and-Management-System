@@ -3,7 +3,7 @@
 -- Đường dẫn: database/scripts/seed_test_scenarios.sql
 -- Tác giả: Nguyễn Văn Gia Bình (WS2 Lead - SWP391)
 --
--- Mục tiêu: Cung cấp 21 Kịch bản Thử nghiệm Vàng (Golden Test Scenarios)
+-- Mục tiêu: Cung cấp 26 Kịch bản Thử nghiệm Vàng (Golden Test Scenarios)
 --           bao phủ 100% các Flow nghiệp vụ trọng yếu:
 --           - Flow 3: Trả sớm Win-Win, Quyết toán hoàn cọc & Quyết toán âm
 --           - Flow 6.1: Vòng đời Gia hạn hợp đồng (T-60, T-30, T-25, T-21, T-20, T-7, T-3, Force Renewal & Hard Lock Xung đột)
@@ -214,6 +214,11 @@ VALUES
 -- RES 9026: Cho HĐ CTR-TEST-025 (Kho Q1-AC-M301, UT 5: UT-AC-M) -> Nhóm 2: Từ chối bàn giao ở khâu Check-in do cơ sở vi phạm (BR-CHK-06)
 (9026, 'RES-TEST-025', 10, 5, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-AC-M301'),
  CURRENT_DATE, 3, CURRENT_DATE + INTERVAL '90 day', 2400000,
+ 1, 2400000, 7200000, 9600000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- RES 9027: Cho HĐ CTR-TEST-026 (Kho Q1-AC-M101, UT 5: UT-AC-M) -> Trả sớm Win-Win trước hạn 60 ngày, có hư hỏng và vệ sinh (BR-RET-06, BR-RET-08, UC-F3-07)
+(9027, 'RES-TEST-026', 10, 5, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-AC-M101'),
+ CURRENT_DATE - INTERVAL '30 day', 3, CURRENT_DATE + INTERVAL '60 day', 2400000,
  1, 2400000, 7200000, 9600000, 'FULFILLED', CURRENT_TIMESTAMP + INTERVAL '48 hour', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO NOTHING;
 
@@ -375,7 +380,13 @@ VALUES
 (9025, 'CTR-TEST-025', 9026, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-AC-M301'), 5,
  CURRENT_DATE, CURRENT_DATE + INTERVAL '90 day', 3, 2400000, 7200000,
  2400000, 2400000, NULL, 'TERMINATED', NULL, 1,
- 0, NULL, CURRENT_TIMESTAMP, NULL)
+ 0, NULL, CURRENT_TIMESTAMP, NULL),
+
+-- Case 26: CTR-TEST-026 (PENDING_RETURN - Trả sớm Win-Win trước hạn 60 ngày, CÓ HƯ HỎNG & PHỤ PHÍ BOM 700k, chờ FM duyệt - BR-RET-06, BR-RET-08, UC-F3-07)
+(9026, 'CTR-TEST-026', 9027, 10, 5, (SELECT id FROM storage_unit WHERE facility_id = 5 AND code = 'Q1-AC-M101'), 5,
+ CURRENT_DATE - INTERVAL '30 day', CURRENT_DATE + INTERVAL '60 day', 3, 2400000, 7200000,
+ 2400000, 2400000, NULL, 'PENDING_RETURN', CURRENT_DATE - INTERVAL '30 day', 1,
+ 0, CURRENT_TIMESTAMP - INTERVAL '30 day', NULL, NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
@@ -463,6 +474,26 @@ VALUES (
 -- Cập nhật ngày trả kho thực tế cho HĐ 9020 để kích hoạt công thức Trả sớm Win-Win (BR-RET-06)
 UPDATE rental_contract SET return_date = CURRENT_DATE WHERE id = 9020;
 
+-- 4.7 Case 26 (CTR-TEST-026): Yêu cầu trả sớm Win-Win ĐÃ NGHIỆM THU CÓ HƯ HẠI & VỆ SINH (500k + 200k = 700k), chờ FM duyệt quyết toán (BR-RET-06, BR-RET-08, UC-F3-07)
+INSERT INTO return_request (
+    contract_id, requested_at, requested_return_date, appointment_slot,
+    status, inspected_by, inspected_at, is_intact, damage_cost, deposit_refund_amount, condition_note, customer_confirmed
+)
+VALUES (
+    9026, CURRENT_TIMESTAMP - INTERVAL '1 day', CURRENT_DATE, '14:00 - 15:30',
+    'PENDING', 9, CURRENT_TIMESTAMP - INTERVAL '2 hour', FALSE, 0, 0,
+    'Khách trả sớm 60 ngày. Nghiệm thu phát hiện chốt khóa cửa kho máy lạnh bị biến dạng và sàn kho dính dầu mỡ nặng.', TRUE
+);
+
+-- Phụ phí BOM hư hại và vệ sinh cho Case 26 (500k + 200k = 700k)
+INSERT INTO contract_extra_charge (contract_id, extra_fee_type_id, amount, reason, recorded_by, status)
+VALUES
+(9026, 3, 500000, 'DAMAGE: Phí sửa chữa then gài chốt cửa kho máy lạnh (Mã BOM: DAMAGE_MINOR)', 9, 'UNPAID'),
+(9026, 2, 200000, 'CLEANING: Phí vệ sinh chuyên sâu tẩy rửa sàn kho máy lạnh (Mã BOM: CLEANING_FEE)', 9, 'UNPAID');
+
+-- Cập nhật ngày trả kho thực tế cho HĐ 9026 để kích hoạt công thức Trả sớm Win-Win (BR-RET-06)
+UPDATE rental_contract SET return_date = CURRENT_DATE WHERE id = 9026;
+
 -- 4.7 Biên bản bàn giao nhận kho chuẩn (Handover Record) cho các hợp đồng đã check-in thành công
 -- Lưu ý: CTR-TEST-010 KHÔNG tạo handover_record vì đang ở trạng thái PENDING_CHECK_IN chờ Staff thực hiện
 INSERT INTO handover_record (
@@ -489,7 +520,8 @@ VALUES
 (9018, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '87 day', CURRENT_TIMESTAMP - INTERVAL '87 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '87 day', FALSE),
 (9019, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao lúc nhận kho ban đầu. Hợp đồng sau đó phát sinh quá hạn D+7 cưỡng chế.', CURRENT_TIMESTAMP - INTERVAL '135 day', CURRENT_TIMESTAMP - INTERVAL '135 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '135 day', FALSE),
 (9020, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao lúc nhận kho ban đầu. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '30 day', CURRENT_TIMESTAMP - INTERVAL '30 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '30 day', FALSE),
-(9021, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao lúc nhận kho ban đầu. Hợp đồng sau đó phát sinh quá hạn D+7 cưỡng chế.', CURRENT_TIMESTAMP - INTERVAL '130 day', CURRENT_TIMESTAMP - INTERVAL '130 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '130 day', FALSE)
+(9021, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao lúc nhận kho ban đầu. Hợp đồng sau đó phát sinh quá hạn D+7 cưỡng chế.', CURRENT_TIMESTAMP - INTERVAL '130 day', CURRENT_TIMESTAMP - INTERVAL '130 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '130 day', FALSE),
+(9026, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao lúc nhận kho ban đầu. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '30 day', CURRENT_TIMESTAMP - INTERVAL '30 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '30 day', FALSE)
 ON CONFLICT (contract_id) DO UPDATE SET
     rejected = EXCLUDED.rejected,
     condition_note = EXCLUDED.condition_note,
@@ -570,7 +602,7 @@ WHERE facility_id = 5
 UPDATE storage_unit 
 SET status = 'CLEANING'
 WHERE facility_id = 5 
-  AND code IN ('Q1-B201', 'Q1-B101');
+  AND code IN ('Q1-B201', 'Q1-B101', 'Q1-AC-M101');
 
 -- 5.3 Ô kho đã được khách giữ chỗ & thanh toán cọc thành công, khóa chờ Check-in (RESERVED)
 UPDATE storage_unit 
@@ -597,7 +629,7 @@ WHERE facility_id = 5
   AND code NOT IN (
     'Q1-A101', 'Q1-A102', 'Q1-A103', 'Q1-C101', 'Q1-XS101', 'Q1-A105', 'Q1-C102',
     'Q1-A201', 'Q1-A202', 'Q1-B202', 'Q1-C201', 'Q1-AC-M201', 'Q1-AC-L201', 'Q1-B301',
-    'Q1-B201', 'Q1-B101', 'Q1-A104', 'Q1-XL101', 'Q1-XS201', 'Q1-XL301'
+    'Q1-B201', 'Q1-B101', 'Q1-A104', 'Q1-XL101', 'Q1-XS201', 'Q1-XL301', 'Q1-AC-M101'
   );
 
 -- 5.7 Chuẩn hóa đúng 4 ô kho trống Tiêu Chuẩn S + 1 ô dự phòng Tiêu Chuẩn M tại Cơ sở Quận 7 (FAC-Q7, facility_id = 2)
