@@ -41,6 +41,10 @@ public class FacilityServiceImpl implements FacilityService {
     @Autowired(required = false)
     private AppliedPriceLookup appliedPriceLookup;
 
+    public FacilityServiceImpl(FacilityRepository facilityRepository, FacilityMapper facilityMapper) {
+        this(facilityRepository, facilityMapper, null);
+    }
+
     @Autowired
     public FacilityServiceImpl(FacilityRepository facilityRepository, FacilityMapper facilityMapper, UserFacilityAssignmentRepository userFacilityAssignmentRepository) {
         this.facilityRepository = facilityRepository;

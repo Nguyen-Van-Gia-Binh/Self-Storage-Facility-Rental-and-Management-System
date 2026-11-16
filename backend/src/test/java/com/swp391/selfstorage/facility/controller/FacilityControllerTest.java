@@ -61,11 +61,13 @@ class FacilityControllerTest {
         req.setCode("FAC-NEW");
         req.setName("Kho Mới");
         req.setAddress("123 Duy Tân");
+        req.setOpeningHours("00:00–24:00 (24/7)");
 
         FacilityResponse res = new FacilityResponse();
         res.setId(2L);
         res.setCode("FAC-NEW");
         res.setName("Kho Mới");
+        res.setOpeningHours("00:00–24:00 (24/7)");
 
         when(facilityService.createFacility(any(CreateFacilityRequest.class))).thenReturn(res);
 
@@ -74,7 +76,32 @@ class FacilityControllerTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(2))
-                .andExpect(jsonPath("$.code").value("FAC-NEW"));
+                .andExpect(jsonPath("$.code").value("FAC-NEW"))
+                .andExpect(jsonPath("$.openingHours").value("00:00–24:00 (24/7)"));
+    }
+
+    @Test
+    @DisplayName("PUT /facilities/{id} cập nhật thành công với giờ 24/7 200 OK")
+    void testUpdateFacilityWith247() throws Exception {
+        com.swp391.selfstorage.facility.dto.UpdateFacilityRequest req = new com.swp391.selfstorage.facility.dto.UpdateFacilityRequest();
+        req.setName("Cơ sở KCN Yên Phong - Bắc Ninh");
+        req.setAddress("KCN Yên Phong 1");
+        req.setOpeningHours("00:00–24:00 (24/7)");
+
+        FacilityResponse res = new FacilityResponse();
+        res.setId(1L);
+        res.setCode("FAC-BN");
+        res.setName("Cơ sở KCN Yên Phong - Bắc Ninh");
+        res.setOpeningHours("00:00–24:00 (24/7)");
+
+        when(facilityService.updateFacility(eq(1L), any(com.swp391.selfstorage.facility.dto.UpdateFacilityRequest.class))).thenReturn(res);
+
+        mockMvc.perform(put("/facilities/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.openingHours").value("00:00–24:00 (24/7)"));
     }
 
     @Test

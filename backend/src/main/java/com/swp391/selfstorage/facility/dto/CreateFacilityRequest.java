@@ -25,7 +25,10 @@ public class CreateFacilityRequest {
     @Size(max = 2000, message = "Mô tả tối đa 2000 ký tự")
     private String description;
 
-    @Pattern(regexp = "^(?:[01]\\d|2[0-3]):[0-5]\\d[–-](?:[01]\\d|2[0-3]):[0-5]\\d$", message = "Giờ hoạt động phải có dạng HH:mm–HH:mm")
+    @Pattern(
+        regexp = "^(24/7|00:00[–-]24:00(?: \\(24/7\\))?|(?:[01]\\d|2[0-3]):[0-5]\\d[–-](?:[01]\\d|2[0-4]):[0-5]\\d(?: \\(24/7\\))?)$",
+        message = "Giờ hoạt động phải có dạng HH:mm–HH:mm hoặc 24/7"
+    )
     private String openingHours;
 
     public CreateFacilityRequest() {}
