@@ -41,10 +41,6 @@ public class FacilityServiceImpl implements FacilityService {
     @Autowired(required = false)
     private AppliedPriceLookup appliedPriceLookup;
 
-    public FacilityServiceImpl(FacilityRepository facilityRepository, FacilityMapper facilityMapper) {
-        this(facilityRepository, facilityMapper, null);
-    }
-
     @Autowired
     public FacilityServiceImpl(FacilityRepository facilityRepository, FacilityMapper facilityMapper, UserFacilityAssignmentRepository userFacilityAssignmentRepository) {
         this.facilityRepository = facilityRepository;
@@ -82,12 +78,7 @@ public class FacilityServiceImpl implements FacilityService {
     }
 
     private boolean isAssignableFacility(Facility facility) {
-        if (facility == null || facility.getStatus() != FacilityStatus.ACTIVE) {
-            return false;
-        }
-        String name = facility.getName() == null ? "" : facility.getName().toLowerCase();
-        String code = facility.getCode() == null ? "" : facility.getCode().toLowerCase();
-        return !name.contains("sadas") && !code.contains("sadas");
+        return facility != null && facility.getStatus() == FacilityStatus.ACTIVE;
     }
 
     private void enrichFacilityMetrics(FacilityResponse resp) {

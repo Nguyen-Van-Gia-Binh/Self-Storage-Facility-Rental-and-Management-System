@@ -37,8 +37,31 @@ function formatShortAddress(address?: string | null): string {
 
 function is24_7Hours(hours?: string | null): boolean {
   if (!hours) return false;
-  const lower = hours.toLowerCase();
-  return lower.includes('24/7') || lower.includes('24h') || lower.includes('24/24');
+  const lower = hours.toLowerCase().trim();
+  if (
+    lower.includes('24/7') ||
+    lower.includes('24h') ||
+    lower.includes('24/24') ||
+    lower.includes('00:00-24:00') ||
+    lower.includes('00:00–24:00')
+  ) {
+    return true;
+  }
+  // Xử lý các định dạng đặc biệt như 06:00-06:00 hoặc 00:00-00:00 (mở liên tục 24h)
+  const match = hours.trim().match(/^(\d{2}:\d{2})\s*[–-]\s*(\d{2}:\d{2})/);
+  if (match && match[1] === match[2]) {
+    return true;
+  }
+  return false;
+}
+
+function formatAccessHours(hours?: string | null): string {
+  if (!hours) return '06:00 - 22:00';
+  const match = hours.trim().match(/^(\d{2}:\d{2})\s*[–-]\s*(\d{2}:\d{2})/);
+  if (match) {
+    return `${match[1]} - ${match[2]}`;
+  }
+  return hours;
 }
 
 export const BomFacilityTable: React.FC<BomFacilityTableProps> = ({
@@ -78,7 +101,7 @@ export const BomFacilityTable: React.FC<BomFacilityTableProps> = ({
               <th className="py-3 px-4 w-28">Mã cơ sở</th>
               <th className="py-3 px-4">Tên cơ sở</th>
               <th className="py-3 px-4">Địa chỉ (Rút gọn)</th>
-              <th className="py-3 px-4">Thời gian h.động</th>
+              <th className="py-3 px-4 text-center">Thời gian hoạt động</th>
               <th className="py-3 px-4 text-center">Trạng thái</th>
               <th className="py-3 px-4 text-right">Thao tác</th>
             </tr>
@@ -119,15 +142,25 @@ export const BomFacilityTable: React.FC<BomFacilityTableProps> = ({
                   </div>
                 </td>
 
-                {/* Cột 4: Thời gian hoạt động */}
-                <td className="py-2.5 px-4 text-xs text-slate-600">
+                {/* Cột 4: Thời gian hoạt động (Căn giữa, không gạch ngang) */}
+                <td className="py-2.5 px-4 text-xs text-center whitespace-nowrap">
                   {is24_7Hours(fac.openingHours) ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold ${
+                        fac.isActive
+                          ? 'bg-teal-50 text-teal-700 border border-teal-200'
+                          : 'bg-slate-100 text-slate-500 border border-slate-200'
+                      }`}
+                    >
                       24/7
                     </span>
                   ) : (
-                    <span className="font-mono text-slate-700">
-                      {fac.openingHours || '06:00 - 22:00'}
+                    <span
+                      className={`font-mono font-medium ${
+                        fac.isActive ? 'text-slate-700' : 'text-slate-400'
+                      }`}
+                    >
+                      {formatAccessHours(fac.openingHours)}
                     </span>
                   )}
                 </td>
