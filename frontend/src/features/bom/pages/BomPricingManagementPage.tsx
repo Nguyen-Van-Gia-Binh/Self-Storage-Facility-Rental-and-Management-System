@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   CheckCircle2,
   AlertCircle,
-  ChevronDown,
+  Building2,
   Plus,
 } from 'lucide-react';
 import { fetchFacilities, fetchUnitTypes } from '@/api/facility';
@@ -504,48 +504,51 @@ export const BomPricingManagementPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Tầng 2: Context Bar (Bộ lọc không gian - Cơ sở) - Chỉ hiển thị khi ở tab Khung giá thuê */}
+      {/* Tầng 2: Toolbar Bộ lọc Cơ sở (trái) & Hành động chính (phải) - Tab Bảng giá thuê */}
       {activeTab === 'PRICING' && (
-        <div className="bg-slate-50/90 border border-slate-200/80 px-4 py-3 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-2xs animate-fade-in">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs font-semibold text-slate-600">Đang xem bảng giá tại:</span>
-            <div className="relative">
-              <select
-                value={selectedFacilityId}
-                onChange={(e) => selectFacility(Number(e.target.value))}
-                className="appearance-none text-xs font-bold bg-white border border-slate-300 text-slate-900 rounded-xl pl-3 pr-9 py-1.5 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 cursor-pointer"
-                title="Chọn cơ sở xem bảng giá"
-              >
-                {facilities.map((fac) => (
-                  <option key={fac.id} value={fac.id}>
-                    {fac.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+        <div className="bg-white border border-gray-200 px-3.5 py-2.5 rounded-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+          <div className="flex flex-wrap items-center gap-3 min-w-0">
+            <div className="inline-flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-500 whitespace-nowrap">Cơ sở:</span>
+              <div className="inline-flex items-center gap-1.5 bg-white border border-gray-300 hover:border-gray-400 rounded-md pl-2.5 pr-1.5 py-1 transition-colors shadow-2xs">
+                <Building2 className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                <select
+                  aria-label="Chọn cơ sở xem bảng giá"
+                  value={selectedFacilityId}
+                  onChange={(e) => selectFacility(Number(e.target.value))}
+                  className="text-xs font-semibold bg-transparent text-gray-900 border-0 outline-none cursor-pointer py-0.5 pr-6"
+                  title="Chọn cơ sở xem bảng giá"
+                >
+                  {facilities.map((fac) => (
+                    <option key={fac.id} value={fac.id}>
+                      {fac.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsUnitTypeModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer shrink-0 ml-1"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Thêm loại kho mới</span>
-            </button>
+
+            {currentFacility && (
+              <div className="text-xs text-gray-500 flex flex-wrap items-center gap-2">
+                <span className="font-medium text-gray-600 tabular-nums">
+                  {currentFacility.code || `#${currentFacility.id}`}
+                </span>
+                <span className="text-gray-300">·</span>
+                <span className="tabular-nums">
+                  <strong className="font-semibold text-gray-700">{unitTypes.length}</strong> loại ô kho
+                </span>
+              </div>
+            )}
           </div>
-          {currentFacility && (
-            <div className="text-xs text-slate-500 flex items-center gap-3 font-medium">
-              <span>Mã CS: <strong className="text-slate-700 font-mono">{currentFacility.code || `#${currentFacility.id}`}</strong></span>
-              <span>·</span>
-              <span>Đang quản lý: <strong className="text-slate-700 tabular-nums">{unitTypes.length} loại ô kho</strong></span>
-              {currentFacility.address && (
-                <>
-                  <span>·</span>
-                  <span className="text-slate-400 line-clamp-1 max-w-sm">{currentFacility.address}</span>
-                </>
-              )}
-            </div>
-          )}
+
+          <button
+            type="button"
+            onClick={() => setIsUnitTypeModalOpen(true)}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-md text-xs font-semibold transition-colors cursor-pointer shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Thêm loại kho mới</span>
+          </button>
         </div>
       )}
 
