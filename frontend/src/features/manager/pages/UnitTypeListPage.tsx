@@ -162,102 +162,109 @@ export const UnitTypeListPage: React.FC = () => {
         ]}
       />
 
-      {/* Page Header phẳng chuẩn Enterprise SaaS */}
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-5 border-b border-gray-200">
-        <div>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-              Danh sách Loại ô kho
-            </h1>
-            <span className="text-sm text-gray-500 tabular-nums">
-              · {processedTypes.length} loại
-            </span>
+      {/* Page Header phẳng chuẩn Enterprise SaaS: tách rõ Header & Toolbar để nút không bị rớt dòng */}
+      <div className="space-y-3.5 pb-4 border-b border-gray-200">
+        {/* Tầng 1: Tiêu đề + Chuyển chế độ xem & Làm mới */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                Danh sách Loại ô kho
+              </h1>
+              <span className="text-sm text-gray-500 tabular-nums">
+                · {processedTypes.length} loại
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 mt-1">
+              {facility ? `${facility.name} (${facility.code})` : `Cơ sở #${facilityIdNum}`} · Danh mục chuẩn (chỉ đọc) — chọn một loại kho để quản lý các ô vật lý.
+            </p>
           </div>
-          <p className="text-sm text-gray-500 mt-1">
-            {facility ? `${facility.name} (${facility.code})` : `Cơ sở #${facilityIdNum}`} · Danh mục chuẩn (chỉ đọc) — chọn một loại kho để quản lý các ô vật lý.
-          </p>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Layout Mode Switcher: Bảng | Lưới */}
+            <div className="inline-flex h-9 items-center bg-gray-100 p-0.5 rounded-lg border border-gray-200">
+              <button
+                type="button"
+                onClick={() => setViewMode('table')}
+                className={`h-full px-2.5 rounded-md text-xs font-semibold transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+                  viewMode === 'table'
+                    ? 'bg-white text-gray-900 shadow-2xs'
+                    : 'text-gray-500 hover:text-gray-800'
+                }`}
+                title="Xem dạng Bảng"
+              >
+                <Table2 className="w-3.5 h-3.5" />
+                <span>Bảng</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={`h-full px-2.5 rounded-md text-xs font-semibold transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+                  viewMode === 'grid'
+                    ? 'bg-white text-gray-900 shadow-2xs'
+                    : 'text-gray-500 hover:text-gray-800'
+                }`}
+                title="Xem dạng Lưới"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Lưới</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => loadData(true)}
+              disabled={refreshing}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition-colors cursor-pointer shrink-0"
+              title="Làm mới"
+              aria-label="Làm mới"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
         </div>
 
-        {/* Actions & View Controls */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          <div className="relative min-w-[220px]">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        {/* Tầng 2: Thanh tìm kiếm & Bộ lọc đồng bộ chiều cao h-9 */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
+          <div className="relative w-full sm:w-72">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               placeholder="Tìm tên, mã loại kho..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+              className="w-full h-9 pl-9 pr-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
             />
           </div>
 
-          <label className="inline-flex items-center gap-2 text-xs font-medium text-gray-600 cursor-pointer select-none px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
-            <input
-              type="checkbox"
-              checked={showInactive}
-              onChange={(e) => setShowInactive(e.target.checked)}
-              className="w-3.5 h-3.5 accent-brand-600 rounded cursor-pointer"
-            />
-            <span>Hiện loại vô hiệu</span>
-          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="inline-flex h-9 items-center gap-2 text-xs font-medium text-gray-600 cursor-pointer select-none px-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
+              <input
+                type="checkbox"
+                checked={showInactive}
+                onChange={(e) => setShowInactive(e.target.checked)}
+                className="w-3.5 h-3.5 accent-brand-600 rounded cursor-pointer"
+              />
+              <span>Hiện loại vô hiệu</span>
+            </label>
 
-          {/* Sort Dropdown */}
-          <div className="inline-flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5">
-            <ArrowUpDown className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as UnitTypeSortOption)}
-              aria-label="Sắp xếp loại ô kho"
-              className="bg-transparent text-xs font-medium text-gray-700 focus:outline-none cursor-pointer"
-            >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            {/* Sort Dropdown */}
+            <div className="inline-flex h-9 items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5">
+              <ArrowUpDown className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as UnitTypeSortOption)}
+                aria-label="Sắp xếp loại ô kho"
+                className="bg-transparent text-xs font-medium text-gray-700 focus:outline-none cursor-pointer"
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-
-          {/* Layout Mode Switcher: Bảng | Lưới */}
-          <div className="inline-flex items-center bg-gray-100 p-0.5 rounded-lg border border-gray-200">
-            <button
-              type="button"
-              onClick={() => setViewMode('table')}
-              className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
-                viewMode === 'table'
-                  ? 'bg-white text-gray-900 shadow-2xs'
-                  : 'text-gray-500 hover:text-gray-800'
-              }`}
-              title="Xem dạng Bảng"
-            >
-              <Table2 className="w-3.5 h-3.5" />
-              <span>Bảng</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('grid')}
-              className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
-                viewMode === 'grid'
-                  ? 'bg-white text-gray-900 shadow-2xs'
-                  : 'text-gray-500 hover:text-gray-800'
-              }`}
-              title="Xem dạng Lưới"
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Lưới</span>
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => loadData(true)}
-            disabled={refreshing}
-            className="p-2 rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition-colors cursor-pointer shrink-0"
-            title="Làm mới"
-            aria-label="Làm mới"
-          >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-          </button>
         </div>
       </div>
 
