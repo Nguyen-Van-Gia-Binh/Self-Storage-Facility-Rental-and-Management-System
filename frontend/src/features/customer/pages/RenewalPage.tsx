@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import {
   ArrowLeft,
-  Sparkles,
   ArrowRight,
   ShieldCheck,
+  Minus,
+  Plus,
   Tag,
   Check,
   Building2,
@@ -32,7 +33,7 @@ import { tokenStorage } from '@/utils/tokenStorage';
 import { useActivePolicy } from '@/hooks/useActivePolicy';
 import { customerApi } from '../api/customerApi';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
-import { discountTag, termMonthChoices } from '../utils/policyTerms';
+import { clampRenewalMonths, discountTag, termMonthChoices } from '../utils/policyTerms';
 import { useRenewalPricing } from '../hooks/useRenewalPricing';
 import { useRenewalPayment } from '../hooks/useRenewalPayment';
 
@@ -64,6 +65,13 @@ export const RenewalPage: React.FC = () => {
   });
   const [renewalMonths, setRenewalMonths] = useState<number>(3);
   const [showReturnModal, setShowReturnModal] = useState(false);
+
+  useEffect(() => {
+    if (!policy) return;
+    setRenewalMonths((current) =>
+      clampRenewalMonths(current, policy.renewalMinMonths, policy.renewalMaxMonths)
+    );
+  }, [policy]);
 
   // Tải thông tin hợp đồng thực tế từ customerRentals API (gồm cả localStorage overrides)
   useEffect(() => {
@@ -467,7 +475,7 @@ export const RenewalPage: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
                   {termMonths.map((months) => {
                     const pkg = {
                       months,
@@ -485,46 +493,80 @@ export const RenewalPage: React.FC = () => {
                           isRenewalBlocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
                         } ${
                           isSelected
-                            ? 'border-brand-600 bg-brand-50/60 shadow-sm ring-2 ring-brand-500/20'
+                            ? 'border-brand-600 bg-brand-50/60'
                             : 'border-slate-200 bg-white hover:border-slate-300'
                         }`}
                       >
                         {pkg.discountTag && (
-                          <span className={`absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] font-extrabold px-2 py-0.5 rounded-full whitespace-nowrap shadow-xs ${
-                            pkg.months >= 12
-                              ? 'bg-rose-600 text-white'
-                              : pkg.months >= 6
-                                ? 'bg-amber-600 text-white'
-                                : 'bg-brand-600 text-white'
-                          }`}>
+                          <span className="absolute -top-2.5 -right-2 px-2 py-0.5 bg-brand-50 text-brand-700 text-[10px] font-semibold rounded-full whitespace-nowrap">
                             {pkg.discountTag}
                           </span>
                         )}
-                        <span className={`block font-black text-sm ${isSelected ? 'text-brand-700' : 'text-[#0a1614]'}`}>
+                        <span className={`block font-semibold text-sm ${isSelected ? 'text-brand-700' : 'text-slate-900'}`}>
                           {pkg.label}
                         </span>
                       </button>
                     );
                   })}
                 </div>
+
+                <div className="pt-1">
+                  <label className="text-sm font-medium text-slate-700 mb-2 block">
+                    Hoặc nhập số tháng tùy chỉnh
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      disabled={isRenewalBlocked || renewalMonths <= (policy?.renewalMinMonths ?? 1)}
+                      onClick={() =>
+                        setRenewalMonths((current) =>
+                          clampRenewalMonths(current - 1, policy?.renewalMinMonths, policy?.renewalMaxMonths)
+                        )
+                      }
+                      className="w-8 h-8 flex items-center justify-center border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                      aria-label="Giảm 1 tháng"
+                    >
+                      <Minus className="w-3.5 h-3.5" />
+                    </button>
+                    <input
+                      type="number"
+                      min={policy?.renewalMinMonths ?? 1}
+                      max={policy?.renewalMaxMonths ?? 12}
+                      value={renewalMonths}
+                      disabled={isRenewalBlocked}
+                      onChange={(event) =>
+                        setRenewalMonths(
+                          clampRenewalMonths(
+                            Number(event.target.value),
+                            policy?.renewalMinMonths,
+                            policy?.renewalMaxMonths
+                          )
+                        )
+                      }
+                      className="w-20 h-8 text-center border border-slate-300 rounded-md font-semibold text-slate-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 disabled:opacity-40"
+                      aria-label="Số tháng gia hạn"
+                    />
+                    <button
+                      type="button"
+                      disabled={isRenewalBlocked || renewalMonths >= (policy?.renewalMaxMonths ?? 12)}
+                      onClick={() =>
+                        setRenewalMonths((current) =>
+                          clampRenewalMonths(current + 1, policy?.renewalMinMonths, policy?.renewalMaxMonths)
+                        )
+                      }
+                      className="w-8 h-8 flex items-center justify-center border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                      aria-label="Tăng 1 tháng"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-sm text-slate-600">Tháng</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Preservation guarantees */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                <div className="p-3 rounded-lg bg-emerald-50/60 border border-emerald-200 flex items-start gap-2.5 text-xs text-slate-700">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                  <p className="leading-relaxed">
-                    <strong className="text-emerald-950">Miễn cọc thêm:</strong> Cọc ban đầu <strong>{formatVND(contract.depositHeld)}</strong> tiếp tục được bảo lưu 100%.
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-lg bg-sky-50/60 border border-sky-200 flex items-start gap-2.5 text-xs text-slate-700">
-                  <Sparkles className="w-4 h-4 text-sky-600 flex-shrink-0 mt-0.5" />
-                  <p className="leading-relaxed">
-                    <strong className="text-sky-950">Bảo lưu ô kho:</strong> Giữ nguyên vị trí ô {contract.unitNumber} và mã PIN mở cửa không thay đổi.
-                  </p>
-                </div>
-              </div>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Cọc {formatVND(contract.depositHeld)} được giữ nguyên. Ô {contract.unitNumber} và mã PIN mở cửa không đổi.
+              </p>
             </Card>
 
             {/* Action Bar */}
@@ -765,7 +807,7 @@ export const RenewalPage: React.FC = () => {
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold shrink-0">
                 <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
                 <span>Hiệu lực phiên giao dịch:</span>
-                <span className="font-mono text-xs text-amber-900 font-extrabold tracking-wider bg-amber-100/80 px-2 py-0.5 rounded border border-amber-300/60 shadow-2xs">
+                <span className="num text-xs text-amber-900 font-extrabold tracking-wider bg-amber-100/80 px-2 py-0.5 rounded border border-amber-300/60 shadow-2xs">
                   {formatCountdown(countdownSeconds)}
                 </span>
               </div>

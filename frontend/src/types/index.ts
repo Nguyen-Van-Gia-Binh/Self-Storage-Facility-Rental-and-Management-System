@@ -302,7 +302,9 @@ export interface DailyIncidentTask {
   customerPhone?: string;
   slaDeadline: string;
   slaDueAt?: string;
-  status: 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | string;
+  status: 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'AUTO_CLOSED' | string;
+  completed?: boolean;
+  contractStatus?: string;
   isOverlockTask?: boolean;
   assignedStaffId?: number;
   assignedStaffName?: string;
@@ -346,6 +348,7 @@ export interface UpdateFacilityRequest {
 
 export interface SurchargeItem {
   id: number;
+  code?: string;
   name: string;
   category?: 'ACCESS_KEY' | 'CLEANING' | 'DAMAGE' | 'VALUE_ADDED' | string;
   facilityId?: number | null;

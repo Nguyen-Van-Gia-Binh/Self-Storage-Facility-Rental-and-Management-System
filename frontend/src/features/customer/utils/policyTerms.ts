@@ -7,6 +7,19 @@ export function termMonthChoices(minMonths?: number | null, maxMonths?: number |
   return months.length > 0 ? months : [max];
 }
 
+/** Kẹp số tháng gia hạn vào khoảng chính sách. Rỗng hoặc không phải số thì về min. */
+export function clampRenewalMonths(
+  value: number,
+  minMonths?: number | null,
+  maxMonths?: number | null,
+): number {
+  const min = Math.max(1, Number(minMonths) || 1);
+  const max = Math.max(min, Number(maxMonths) || min);
+  const whole = Math.trunc(Number(value));
+  if (!Number.isFinite(whole)) return min;
+  return Math.min(max, Math.max(min, whole));
+}
+
 export function parseReminderDays(raw?: string | null): number[] {
   if (!raw) return [];
   return raw

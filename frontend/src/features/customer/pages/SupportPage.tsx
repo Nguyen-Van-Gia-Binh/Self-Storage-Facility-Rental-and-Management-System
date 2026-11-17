@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { DateField } from '@/components/ui/DateField';
 import { Modal } from '@/components/ui/Modal';
 import { 
   LifeBuoy,
@@ -574,11 +575,10 @@ export const SupportPage: React.FC = () => {
                       <div className="space-y-1.5">
                         <div>
                           <label className="text-[10px] text-slate-400 block mb-0.5">Từ ngày</label>
-                          <input
-                            type="date"
+                          <DateField
                             value={customFromDate}
-                            onChange={(e) => {
-                              setCustomFromDate(e.target.value);
+                            onChange={(next) => {
+                              setCustomFromDate(next);
                               setDateFilter('CUSTOM');
                             }}
                             className="w-full text-xs px-2 py-1 rounded-lg border border-slate-200 focus:outline-none focus:border-brand-500"
@@ -586,11 +586,10 @@ export const SupportPage: React.FC = () => {
                         </div>
                         <div>
                           <label className="text-[10px] text-slate-400 block mb-0.5">Đến ngày</label>
-                          <input
-                            type="date"
+                          <DateField
                             value={customToDate}
-                            onChange={(e) => {
-                              setCustomToDate(e.target.value);
+                            onChange={(next) => {
+                              setCustomToDate(next);
                               setDateFilter('CUSTOM');
                             }}
                             className="w-full text-xs px-2 py-1 rounded-lg border border-slate-200 focus:outline-none focus:border-brand-500"

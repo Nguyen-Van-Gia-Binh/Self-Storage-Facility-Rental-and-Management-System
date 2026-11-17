@@ -93,12 +93,12 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; dotColor
   // Trạng thái Sự cố (SupportStatus)
   NEW: {
     label: 'Chờ tiếp nhận',
-    className: 'bg-amber-50 text-amber-700 border-amber-200/80',
+    className: 'bg-amber-50 text-amber-900 border-amber-200/80',
     dotColor: 'bg-amber-500',
   },
   OPEN: {
     label: 'Chờ tiếp nhận',
-    className: 'bg-amber-50 text-amber-700 border-amber-200/80',
+    className: 'bg-amber-50 text-amber-900 border-amber-200/80',
     dotColor: 'bg-amber-500',
   },
   ASSIGNED: {

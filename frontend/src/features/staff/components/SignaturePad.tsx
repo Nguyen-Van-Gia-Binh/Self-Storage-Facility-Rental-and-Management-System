@@ -193,7 +193,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
         </div>
       </div>
 
-      <div className="relative border-2 border-dashed border-slate-300 rounded-xl bg-white overflow-hidden shadow-inner h-36">
+      <div className="relative border border-slate-200 bg-slate-50 rounded-lg overflow-hidden h-36">
         <canvas
           ref={canvasRef}
           className={`w-full h-full touch-none ${

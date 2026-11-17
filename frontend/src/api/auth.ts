@@ -99,38 +99,30 @@ export async function loginWithGoogle(idToken: string): Promise<AuthData> {
  * Yêu cầu mã xác thực OTP 60s qua email để đặt lại mật khẩu
  */
 export async function forgotPassword(email: string): Promise<{ message: string }> {
-  try {
-    const res = await apiClient<ApiResponse<void> | void>('/auth/forgot-password', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    });
+  const res = await apiClient<ApiResponse<void> | void>('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
 
-    const msg = (res && typeof res === 'object' && 'message' in res)
-      ? String((res as { message: unknown }).message)
-      : 'Mã xác thực OTP đã được gửi đến email của bạn';
-    return { message: msg };
-  } catch (err: unknown) {
-    throw err;
-  }
+  const msg = (res && typeof res === 'object' && 'message' in res)
+    ? String((res as { message: unknown }).message)
+    : 'Mã xác thực OTP đã được gửi đến email của bạn';
+  return { message: msg };
 }
 
 /**
  * Kiểm tra mã xác thực OTP hợp lệ trước khi cho phép đặt mật khẩu mới
  */
 export async function verifyOtp(payload: { email: string; otp: string }): Promise<{ message: string }> {
-  try {
-    const res = await apiClient<ApiResponse<void> | void>('/auth/verify-otp', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+  const res = await apiClient<ApiResponse<void> | void>('/auth/verify-otp', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 
-    const msg = (res && typeof res === 'object' && 'message' in res)
-      ? String((res as { message: unknown }).message)
-      : 'Mã xác thực OTP hợp lệ';
-    return { message: msg };
-  } catch (err: unknown) {
-    throw err;
-  }
+  const msg = (res && typeof res === 'object' && 'message' in res)
+    ? String((res as { message: unknown }).message)
+    : 'Mã xác thực OTP hợp lệ';
+  return { message: msg };
 }
 
 /**

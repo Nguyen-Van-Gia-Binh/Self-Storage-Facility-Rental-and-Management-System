@@ -29,11 +29,11 @@ export const PaymentInfoPanel: React.FC<PaymentInfoPanelProps> = ({ contract }) 
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-100">
           <span className="text-[11px] font-medium text-slate-500 block">Đơn giá thuê / tháng</span>
-          <span className="text-sm font-mono font-bold text-slate-900 mt-0.5 block">{fmt(monthly)}</span>
+          <span className="text-sm num font-bold text-slate-900 mt-0.5 block">{fmt(monthly)}</span>
         </div>
         <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-100">
           <span className="text-[11px] font-medium text-slate-500 block">Tiền cọc bảo chứng</span>
-          <span className="text-sm font-mono font-bold text-emerald-700 mt-0.5 block">{fmt(deposit)}</span>
+          <span className="text-sm num font-bold text-emerald-700 mt-0.5 block">{fmt(deposit)}</span>
         </div>
       </div>
 
@@ -45,7 +45,7 @@ export const PaymentInfoPanel: React.FC<PaymentInfoPanelProps> = ({ contract }) 
           </span>
           <span className="text-[11px] text-slate-500">{months} tháng thuê + tiền cọc</span>
         </div>
-        <span className="text-base font-mono font-extrabold text-brand-700">{fmt(totalPaid)}</span>
+        <span className="text-base num font-extrabold text-brand-700">{fmt(totalPaid)}</span>
       </div>
 
       {/* Tình trạng thanh toán */}

@@ -169,7 +169,7 @@ export const StorageUnitFormModal: React.FC<StorageUnitFormModalProps> = ({
                 onChange={(e) =>
                   setForm((p) => ({ ...p, floor: parseInt(e.target.value, 10) }))
                 }
-                className={`${inputCls} font-mono`}
+                className={`${inputCls} num`}
               />
             </div>
             <div>

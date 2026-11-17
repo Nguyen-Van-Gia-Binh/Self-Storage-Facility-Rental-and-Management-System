@@ -125,7 +125,7 @@ export const FacilityDetailDrawer: React.FC<FacilityDetailDrawerProps> = ({
                           24/7 (Truy cập không giới hạn)
                         </span>
                       ) : (
-                        <span className="text-slate-800 font-mono font-medium">{facility.openingHours || '06:00 - 22:00'}</span>
+                        <span className="text-slate-800 num font-medium">{facility.openingHours || '06:00 - 22:00'}</span>
                       )}
                     </div>
                   </div>
@@ -137,14 +137,14 @@ export const FacilityDetailDrawer: React.FC<FacilityDetailDrawerProps> = ({
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="p-3 rounded-xl border border-slate-100 bg-slate-50">
                 <div className="text-slate-500 font-medium">Giá thuê từ:</div>
-                <div className="text-base font-bold font-mono text-brand-600 mt-1">
+                <div className="text-base font-bold num text-brand-600 mt-1">
                   {facility.lowestMonthlyPrice ? formatCurrency(facility.lowestMonthlyPrice) : 'N/A'}
                 </div>
               </div>
 
               <div className="p-3 rounded-xl border border-slate-100 bg-slate-50">
                 <div className="text-slate-500 font-medium">Số loại ô kho:</div>
-                <div className="text-base font-bold font-mono text-slate-800 mt-1">
+                <div className="text-base font-bold num text-slate-800 mt-1">
                   {facility.activeUnitTypeCount ?? 0} loại
                 </div>
               </div>

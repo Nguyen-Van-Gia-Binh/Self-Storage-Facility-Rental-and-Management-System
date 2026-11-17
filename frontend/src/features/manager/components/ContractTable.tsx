@@ -199,7 +199,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
 
                   {/* Hạn hợp đồng */}
                   <td className="py-3.5 px-4">
-                    <div className="font-mono font-medium text-slate-800">
+                    <div className="num font-medium text-slate-800">
                       {c.endDateExclusive || '—'}
                     </div>
                     {(c.status === 'ACTIVE' || c.status === 'PENDING_CHECK_IN') && c.daysRemaining !== undefined && (

@@ -215,11 +215,26 @@ public class UnitTypeServiceImpl implements UnitTypeService {
             @CacheEvict(value = "assignedFacilities", allEntries = true)
     })
     public void deactivateUnitType(Long facilityId, Long unitTypeId) {
-        UnitType ut = unitTypeRepository.findById(unitTypeId)
+        unitTypeRepository.findById(unitTypeId)
                 .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND));
 
-        ut.setActive(false);
-        unitTypeRepository.save(ut);
+        long reserved = storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(
+                facilityId, unitTypeId, StorageUnitStatus.RESERVED);
+        long occupied = storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(
+                facilityId, unitTypeId, StorageUnitStatus.OCCUPIED);
+        if (reserved + occupied > 0) {
+            throw new CustomException(ErrorCode.UNIT_TYPE_IN_USE);
+        }
+
+        long physicalUnits = storageUnitRepository.countByFacilityIdAndUnitTypeId(facilityId, unitTypeId);
+        if (physicalUnits > 0) {
+            throw new CustomException(
+                    ErrorCode.UNIT_TYPE_HAS_PHYSICAL_UNITS,
+                    "Không thể xóa loại ô kho này vì hiện đang có " + physicalUnits
+                            + " ô kho vật lý thuộc loại này. Vui lòng chuyển đổi hoặc xóa các ô kho trước.");
+        }
+
+        priceRepository.deleteByFacilityIdAndUnitTypeId(facilityId, unitTypeId);
     }
 
     @Override
@@ -229,14 +244,10 @@ public class UnitTypeServiceImpl implements UnitTypeService {
             @CacheEvict(value = "assignedFacilities", allEntries = true)
     })
     public UnitTypeResponse updateUnitTypeStatus(Long facilityId, Long unitTypeId, boolean isActive) {
-        if (!isActive) {
-            deactivateUnitType(facilityId, unitTypeId);
-        } else {
-            UnitType ut = unitTypeRepository.findById(unitTypeId)
-                    .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND));
-            ut.setActive(true);
-            unitTypeRepository.save(ut);
-        }
+        UnitType ut = unitTypeRepository.findById(unitTypeId)
+                .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND));
+        ut.setActive(isActive);
+        unitTypeRepository.save(ut);
         return getUnitTypeById(facilityId, unitTypeId);
     }
 }

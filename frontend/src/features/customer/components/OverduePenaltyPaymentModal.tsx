@@ -185,7 +185,7 @@ export const OverduePenaltyPaymentModal: React.FC<OverduePenaltyPaymentModalProp
               </div>
             </div>
             <div className="text-right shrink-0">
-              <span className="font-mono text-base font-extrabold text-rose-700 tracking-wider">
+              <span className="num text-base font-extrabold text-rose-700 tracking-wider">
                 {formatVND(totalAmount)}
               </span>
               <span className="text-[10px] text-rose-600 block">

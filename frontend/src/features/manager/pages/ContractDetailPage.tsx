@@ -693,7 +693,7 @@ export const ContractDetailPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 font-medium">Thời hạn thuê:</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-slate-900">
+                  <span className="num font-bold text-slate-900">
                     {contract.startDate || '—'} → {contract.endDateExclusive || '—'}
                   </span>
                   <span className="text-[11px] font-semibold px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md">
@@ -913,7 +913,7 @@ export const ContractDetailPage: React.FC = () => {
                   <span className="font-bold text-slate-800">Thanh toán cọc ban đầu</span>
                   <p className="text-[11px] text-slate-400">VNPay • {contract.startDate || 'Khởi tạo'}</p>
                 </div>
-                <span className="font-mono font-bold text-emerald-700">
+                <span className="num font-bold text-emerald-700">
                   +{fmt(contract.depositAmount || 0)}
                 </span>
               </div>
@@ -925,7 +925,7 @@ export const ContractDetailPage: React.FC = () => {
                   </span>
                   <p className="text-[11px] text-slate-400">VNPay • {contract.startDate || 'Khởi tạo'}</p>
                 </div>
-                <span className="font-mono font-bold text-brand-600">
+                <span className="num font-bold text-brand-600">
                   +{fmt((contract.monthlyPrice || 0) * (contract.rentalMonths || 1))}
                 </span>
               </div>
@@ -936,7 +936,7 @@ export const ContractDetailPage: React.FC = () => {
                     <span className="font-bold text-rose-700">Phí phạt quá hạn tích lũy</span>
                     <p className="text-[11px] text-rose-500">Chưa tất toán</p>
                   </div>
-                  <span className="font-mono font-bold text-rose-600">
+                  <span className="num font-bold text-rose-600">
                     -{fmt(contract.accruedOverdueFee)}
                   </span>
                 </div>

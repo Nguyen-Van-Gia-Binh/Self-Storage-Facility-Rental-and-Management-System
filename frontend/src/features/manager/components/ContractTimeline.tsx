@@ -107,7 +107,7 @@ export const ContractTimeline: React.FC<ContractTimelineProps> = ({ contract }) 
 
             {/* Event detail */}
             <div className="text-xs">
-              <span className="text-[11px] font-mono text-slate-400 block">{ev.time}</span>
+              <span className="text-[11px] num text-slate-400 block">{ev.time}</span>
               <h4 className="font-bold text-slate-800 mt-0.5">{ev.title}</h4>
               {ev.description && (
                 <p className="text-slate-500 mt-0.5 leading-relaxed">{ev.description}</p>

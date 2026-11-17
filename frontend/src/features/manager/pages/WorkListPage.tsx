@@ -173,7 +173,7 @@ export const WorkListPage: React.FC = () => {
 
   // Lọc và Sắp xếp
   const filteredTasks = useMemo(() => {
-    let result = tasks.filter((t) => {
+    const result = tasks.filter((t) => {
       // Lọc theo search
       const matchSearch =
         searchQuery.trim() === '' ||

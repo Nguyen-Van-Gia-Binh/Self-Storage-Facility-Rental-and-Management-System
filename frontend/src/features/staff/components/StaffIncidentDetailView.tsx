@@ -5,18 +5,16 @@ import {
   CheckCircle2,
   User,
   Phone,
-  Receipt,
-  ShieldCheck,
   Loader2,
   FileText,
   AlertCircle,
-  Wrench,
 } from 'lucide-react';
 import type { DailyIncidentTask, SurchargeItem } from '@/types';
 import {
   getStaffIncidentDetail,
   resolveStaffIncident,
   markStaffIncidentRelocation,
+  isSupportTaskDone,
 } from '@/api/staff';
 import { fetchSurcharges } from '@/api/pricing';
 import { applyCatalogFee, getContractById } from '@/api/contract';
@@ -54,7 +52,6 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
 
   // Fault attribution states: COMPANY vs CUSTOMER
   const [faultParty, setFaultParty] = useState<'COMPANY' | 'CUSTOMER' | null>(null);
-  const [isCustomerPaidConfirmed, setIsCustomerPaidConfirmed] = useState<boolean>(false);
 
   // Toast notification
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -142,7 +139,11 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
     loadSurcharges();
   }, [loadSurcharges]);
 
-  const isResolved = ticketStatus === 'RESOLVED' || ticketStatus === 'CLOSED';
+  const isResolved = isSupportTaskDone({
+    status: ticketStatus,
+    completed: incidentDetail.completed ?? task.completed,
+    contractStatus: incidentDetail.contractStatus ?? task.contractStatus,
+  });
 
   // Tính số tiền của từng phụ phí theo công thức chuẩn catalogLineAmount từ Backend
   const calculateFeeAmount = (fee: SurchargeItem): number => {
@@ -174,7 +175,6 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
       showToast('success', checked ? 'Đã kích hoạt cờ di dời kho khẩn cấp!' : 'Đã hủy cờ di dời kho.');
     } catch (err: any) {
       setErrorMsg(err?.message || 'Không cập nhật được nhu cầu di dời.');
-      showToast('error', 'Không cập nhật được nhu cầu di dời.');
     } finally {
       setSavingRelocation(false);
     }
@@ -203,11 +203,6 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
       return;
     }
 
-    if (faultParty === 'CUSTOMER' && !isCustomerPaidConfirmed) {
-      setErrorMsg('Khách hàng chưa thanh toán toàn bộ số phí. Vui lòng xác nhận đã thu đủ phí trước khi hoàn tất nghiệm thu.');
-      return;
-    }
-
     if (task.ticketId == null) {
       setErrorMsg('Phiếu sự cố không có mã từ hệ thống.');
       return;
@@ -218,20 +213,22 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
 
     try {
       const targetContractId = incidentDetail.contractId ?? task.contractId;
-      // Nếu lỗi do khách hàng và có phụ phí chọn + có contractId: ghi nhận phụ phí vào hợp đồng
-      if (faultParty === 'CUSTOMER' && selectedFeeIds.length > 0 && targetContractId != null) {
+      const ticketCode = incidentDetail.code || task.code;
+      if (faultParty === 'CUSTOMER' && selectedFeeIds.length > 0) {
+        if (targetContractId == null || !ticketCode) {
+          setErrorMsg('Phiếu chưa gắn hợp đồng hoặc mã sự cố, chưa ghi được phụ phí.');
+          setSubmitting(false);
+          return;
+        }
         for (const feeId of selectedFeeIds) {
-          try {
-            const feeItem = allSurcharges.find((f) => f.id === feeId);
-            const feeName = feeItem ? feeItem.name : `Phụ phí #${feeId}`;
-            await applyCatalogFee(
-              targetContractId,
-              feeId,
-              `[Sự cố ${incidentDetail.code || `SUP-${task.ticketId}`}] ${feeName} - Khách đã thanh toán`,
-            );
-          } catch (feeErr) {
-            console.warn('Lỗi ghi nhận phụ phí vào hợp đồng:', feeErr);
-          }
+          const feeItem = allSurcharges.find((f) => f.id === feeId);
+          const feeName = feeItem ? feeItem.name : `Phụ phí #${feeId}`;
+          await applyCatalogFee(
+            targetContractId,
+            feeId,
+            `[Sự cố ${ticketCode}] ${feeName} - Chưa thu`,
+            false,
+          );
         }
       }
 
@@ -258,7 +255,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
           .filter((f) => selectedFeeIds.includes(f.id))
           .map((f) => `${f.name} (${calculateFeeAmount(f).toLocaleString('vi-VN')} đ)`)
           .join(', ');
-        faultSummary = `\n[Trách nhiệm: Lỗi do khách hàng | Phụ phí: ${selectedFeeNames || 'Không phát sinh phụ phí'} | Tổng thu: ${totalFeeAmount.toLocaleString('vi-VN')} đ | Đã thanh toán đầy đủ 100%${relocationText}]`;
+        faultSummary = `\n[Trách nhiệm: Lỗi do khách hàng | Phụ phí: ${selectedFeeNames || 'Không phát sinh phụ phí'} | Tổng thu: ${totalFeeAmount.toLocaleString('vi-VN')} đ | Chưa thu — chờ Quản lý cơ sở thu tiền${relocationText}]`;
       }
 
       const fullResolutionNote = `${resolutionNote.trim()} ${faultSummary}`;
@@ -276,7 +273,6 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
       }, 1200);
     } catch (err: any) {
       setErrorMsg(err?.message || 'Không thể lưu biên bản giải quyết sự cố. Vui lòng thử lại.');
-      showToast('error', err?.message || 'Không thể lưu biên bản giải quyết sự cố.');
     } finally {
       setSubmitting(false);
     }
@@ -287,8 +283,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
     !isAgreed ||
     !resolutionNote.trim() ||
     faultParty === null ||
-    (allSurcharges.length > 0 && selectedFeeIds.length === 0) ||
-    (faultParty === 'CUSTOMER' && !isCustomerPaidConfirmed);
+    (allSurcharges.length > 0 && selectedFeeIds.length === 0);
 
   const rawTitle = incidentDetail.title || 'Xử lý sự cố thực địa';
   const colonIdx = rawTitle.indexOf(':');
@@ -382,7 +377,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
               {incidentDetail.createdAt && (
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-slate-500">Thời gian báo:</span>
-                  <span className="font-mono font-medium text-slate-700">
+                  <span className="num font-medium text-slate-700">
                     {new Date(incidentDetail.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
@@ -491,109 +486,81 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
 
               {/* Phân định trách nhiệm (BẮT BUỘC) */}
               <div className="space-y-3">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-teal-600" />
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
                   <span>1. Phân định trách nhiệm <span className="text-rose-500">*</span></span>
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFaultParty('COMPANY');
-                      setIsCustomerPaidConfirmed(false);
-                    }}
-                    className={`p-4 rounded-xl border text-left transition cursor-pointer ${
-                      faultParty === 'COMPANY'
-                        ? 'border-emerald-500 bg-emerald-50/50 shadow-xs ring-1 ring-emerald-400'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-xs text-slate-900">Lỗi do Công ty (Hạ tầng)</span>
-                      <span className="font-bold text-xs text-emerald-700 font-mono">
-                        {faultParty === 'COMPANY' && totalFeeAmount > 0
-                          ? `${totalFeeAmount.toLocaleString('vi-VN')} đ (Công ty chịu)`
-                          : 'Công ty chịu 100%'}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                      Sự cố do cơ sở vật chất xuống cấp, thấm dột tự nhiên. Khách hàng miễn phí 0 đ, chi phí khắc phục trừ vào doanh thu cơ sở.
-                    </p>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFaultParty('CUSTOMER');
-                    }}
-                    className={`p-4 rounded-xl border text-left transition cursor-pointer ${
-                      faultParty === 'CUSTOMER'
-                        ? 'border-amber-500 bg-amber-50/50 shadow-xs ring-1 ring-amber-400'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-xs text-slate-900">Lỗi do Khách hàng</span>
-                      <span className="font-bold text-xs text-amber-700 font-mono">
-                        {faultParty === 'CUSTOMER' && totalFeeAmount > 0
-                          ? `${totalFeeAmount.toLocaleString('vi-VN')} đ (Khách trả)`
-                          : 'Áp dụng phụ phí niêm yết'}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                      Sử dụng sai quy cách, làm gãy khóa, bẩn tường. Khách hàng phải bồi hoàn theo biểu giá niêm yết.
-                    </p>
-                  </button>
+                <div className="flex flex-col gap-3">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="faultParty"
+                      checked={faultParty === 'COMPANY'}
+                      onChange={() => {
+                        setFaultParty('COMPANY');
+                      }}
+                      className="mt-1 w-4 h-4 accent-brand-500"
+                    />
+                    <span>
+                      <span className="block text-sm font-medium text-slate-900">Lỗi do Công ty (Hạ tầng)</span>
+                      <span className="block text-sm text-slate-500">Sự cố do cơ sở vật chất xuống cấp, thấm dột tự nhiên. Khách hàng miễn phí 0 đ, chi phí khắc phục trừ vào doanh thu cơ sở.</span>
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="faultParty"
+                      checked={faultParty === 'CUSTOMER'}
+                      onChange={() => setFaultParty('CUSTOMER')}
+                      className="mt-1 w-4 h-4 accent-brand-500"
+                    />
+                    <span>
+                      <span className="block text-sm font-medium text-slate-900">Lỗi do Khách hàng</span>
+                      <span className="block text-sm text-slate-500">Sử dụng sai quy cách, làm gãy khóa, bẩn tường. Khách hàng phải bồi hoàn theo biểu giá niêm yết.</span>
+                    </span>
+                  </label>
                 </div>
               </div>
 
               {/* Danh mục hạng mục sửa chữa / vật tư khi Lỗi do Công ty */}
               {faultParty === 'COMPANY' && (
-                <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-200 space-y-3 animate-in fade-in">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
-                      <Wrench className="w-4 h-4 text-emerald-700" />
-                      <span>Chọn hạng mục sửa chữa / vật tư khắc phục (Công ty chi trả):</span>
-                    </label>
-                    <span className="font-mono font-bold text-xs text-emerald-900">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-medium text-slate-700">Chọn hạng mục sửa chữa / vật tư khắc phục (Công ty chi trả):</span>
+                    <span className="num text-sm text-slate-900 shrink-0">
                       Chi phí công ty chịu: {totalFeeAmount.toLocaleString('vi-VN')} đ
                     </span>
                   </div>
 
                   {loadingSurcharges ? (
                     <div className="py-4 text-center text-xs text-slate-500">
-                      <Loader2 className="w-4 h-4 animate-spin mx-auto mb-1 text-emerald-600" />
+                      <Loader2 className="w-4 h-4 animate-spin mx-auto mb-1 text-slate-400" />
                       Đang tải danh mục sửa chữa / vật tư...
                     </div>
                   ) : allSurcharges.length === 0 ? (
                     <p className="text-xs text-slate-500 italic">Không có danh mục sửa chữa nào đang hoạt động trong hệ thống.</p>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                    <div className="max-h-48 overflow-y-auto">
                       {allSurcharges.map((fee) => {
                         const isChecked = selectedFeeIds.includes(fee.id);
                         const cost = calculateFeeAmount(fee);
                         return (
                           <label
                             key={fee.id}
-                            className={`p-2.5 rounded-lg border text-xs flex items-center justify-between cursor-pointer transition ${
-                              isChecked
-                                ? 'bg-emerald-100/70 border-emerald-400 text-emerald-950 font-medium'
-                                : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
-                            }`}
+                            className="flex items-center justify-between gap-3 py-2.5 border-b border-slate-200 cursor-pointer"
                           >
-                            <div className="flex items-center gap-2">
+                            <span className="flex items-start gap-3 min-w-0">
                               <input
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => toggleFee(fee.id)}
-                                className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
+                                className="mt-0.5 w-4 h-4 accent-brand-500"
                               />
-                              <div>
-                                <p className="font-semibold">{fee.name}</p>
-                                <span className="text-[10px] text-slate-500">{feeCategoryLabel(fee.category)}</span>
-                              </div>
-                            </div>
-                            <span className="font-mono font-bold text-emerald-800">
+                              <span className="min-w-0">
+                                <span className="block text-sm font-medium text-slate-900">{fee.name}</span>
+                                <span className="block text-xs text-slate-500">{feeCategoryLabel(fee.category)}</span>
+                              </span>
+                            </span>
+                            <span className="num text-sm text-slate-900 shrink-0">
                               {cost.toLocaleString('vi-VN')} đ
                             </span>
                           </label>
@@ -602,74 +569,58 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                     </div>
                   )}
 
-                  {/* Giải thích hạch toán vào báo cáo cơ sở FM-06 */}
-                  <div className="pt-2 border-t border-emerald-200/80 space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between text-emerald-950 font-semibold">
-                      <span>Khách hàng thanh toán:</span>
-                      <span className="font-mono text-emerald-700 font-bold">0 đ (Miễn phí hoàn toàn theo BR-SUP-02)</span>
-                    </div>
-                    <p className="text-[11px] text-emerald-800 leading-relaxed bg-emerald-100/60 p-2.5 rounded-lg border border-emerald-300/80">
-                      💡 <strong>Hạch toán kế toán vận hành:</strong> Chi phí sửa chữa{' '}
-                      <span className="font-mono font-bold text-emerald-900">{totalFeeAmount.toLocaleString('vi-VN')} đ</span> này được ghi nhận trực tiếp vào{' '}
-                      <strong>Báo cáo cơ sở (FM-06)</strong> tại mục <em>"4. Chi phí công ty chịu"</em> và trừ thẳng vào <em>Doanh thu thuần cơ sở</em>.
-                    </p>
-                    {allSurcharges.length > 0 && selectedFeeIds.length === 0 && (
-                      <p className="text-[11px] text-amber-700 font-medium flex items-center gap-1 mt-1">
-                        <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
-                        <span>Vui lòng tích chọn các hạng mục vật tư / sửa chữa đã thực hiện để hệ thống hạch toán chi phí cơ sở.</span>
-                      </p>
-                    )}
-                  </div>
+                  <p className="text-sm text-slate-600">
+                    Khách hàng thanh toán: <span className="num text-slate-900">0 đ (Miễn phí hoàn toàn theo BR-SUP-02)</span>
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    Chi phí sửa chữa <span className="num text-slate-900">{totalFeeAmount.toLocaleString('vi-VN')} đ</span> được ghi nhận vào Báo cáo cơ sở (FM-06) tại mục "4. Chi phí công ty chịu" và trừ vào Doanh thu thuần cơ sở.
+                  </p>
+                  {allSurcharges.length > 0 && selectedFeeIds.length === 0 && (
+                    <p className="text-sm text-slate-600">Vui lòng tích chọn các hạng mục vật tư / sửa chữa đã thực hiện để hệ thống hạch toán chi phí cơ sở.</p>
+                  )}
                 </div>
               )}
 
               {/* Danh mục phụ phí niêm yết (Khi lỗi do khách hàng) */}
               {faultParty === 'CUSTOMER' && (
-                <div className="p-4 rounded-xl bg-amber-50/50 border border-amber-200 space-y-3 animate-in fade-in">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
-                      <Receipt className="w-4 h-4 text-amber-700" />
-                      <span>Chọn phụ phí bồi hoàn từ danh mục niêm yết:</span>
-                    </label>
-                    <span className="font-mono font-bold text-xs text-amber-900">
-                      Tổng thu: {totalFeeAmount.toLocaleString('vi-VN')} đ
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-medium text-slate-700">Chọn phụ phí bồi hoàn từ danh mục niêm yết:</span>
+                    <span className="text-sm text-slate-700 shrink-0">
+                      Tổng thu: <span className="num text-rose-600">{totalFeeAmount.toLocaleString('vi-VN')} đ</span>
                     </span>
                   </div>
 
                   {loadingSurcharges ? (
                     <div className="py-4 text-center text-xs text-slate-500">
-                      <Loader2 className="w-4 h-4 animate-spin mx-auto mb-1 text-amber-600" />
+                      <Loader2 className="w-4 h-4 animate-spin mx-auto mb-1 text-slate-400" />
                       Đang tải biểu giá phụ phí...
                     </div>
                   ) : allSurcharges.length === 0 ? (
                     <p className="text-xs text-slate-500 italic">Không có phụ phí nào đang hoạt động trong danh mục.</p>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                    <div className="max-h-48 overflow-y-auto">
                       {allSurcharges.map((fee) => {
                         const isChecked = selectedFeeIds.includes(fee.id);
                         const cost = calculateFeeAmount(fee);
                         return (
                           <label
                             key={fee.id}
-                            className={`p-2.5 rounded-lg border text-xs flex items-center justify-between cursor-pointer transition ${
-                              isChecked
-                                ? 'bg-amber-100/70 border-amber-400 text-amber-950 font-medium'
-                                : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
-                            }`}
+                            className="flex items-center justify-between gap-3 py-2.5 border-b border-slate-200 cursor-pointer"
                           >
-                            <div className="flex items-center gap-2">
+                            <span className="flex items-start gap-3 min-w-0">
                               <input
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => toggleFee(fee.id)}
-                                className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 w-3.5 h-3.5"
+                                className="mt-0.5 w-4 h-4 accent-brand-500"
                               />
-                              <div>
-                                <p className="font-semibold">{fee.name}</p>
-                                <span className="text-[10px] text-slate-500">{feeCategoryLabel(fee.category)}</span>
-                              </div>
-                            </div>
-                            <span className="font-mono font-bold text-amber-800">
+                              <span className="min-w-0">
+                                <span className="block text-sm font-medium text-slate-900">{fee.name}</span>
+                                <span className="block text-xs text-slate-500">{feeCategoryLabel(fee.category)}</span>
+                              </span>
+                            </span>
+                            <span className="num text-sm text-slate-900 shrink-0">
                               {cost.toLocaleString('vi-VN')} đ
                             </span>
                           </label>
@@ -678,34 +629,12 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                     </div>
                   )}
 
-                  {/* Checkbox xác nhận đã thu đủ tiền */}
-                  <div className="pt-2 border-t border-amber-200/80 flex items-start gap-2">
-                    <input
-                      type="checkbox"
-                      id="customer-paid-checkbox"
-                      checked={isCustomerPaidConfirmed}
-                      onChange={(e) => setIsCustomerPaidConfirmed(e.target.checked)}
-                      className="rounded border-amber-400 text-amber-600 focus:ring-amber-500 w-4 h-4 mt-0.5 cursor-pointer"
-                    />
-                    <label htmlFor="customer-paid-checkbox" className="text-xs font-semibold text-amber-950 cursor-pointer">
-                      Xác nhận: Khách hàng đã thanh toán đủ số tiền {totalFeeAmount.toLocaleString('vi-VN')} đ (hoặc đồng ý khấu trừ cọc khi thanh lý).
-                    </label>
-                  </div>
-
-                  {/* Giải thích hạch toán vào báo cáo cơ sở FM-06 */}
-                  <div className="pt-2 border-t border-amber-200/80 space-y-1.5 text-xs">
-                    <p className="text-[11px] text-amber-900 leading-relaxed bg-amber-100/70 p-2.5 rounded-lg border border-amber-300/80">
-                      💡 <strong>Hạch toán kế toán vận hành:</strong> Khoản phụ phí bồi hoàn{' '}
-                      <span className="font-mono font-bold text-amber-950">{totalFeeAmount.toLocaleString('vi-VN')} đ</span> này được cộng trực tiếp vào{' '}
-                      <strong>Báo cáo cơ sở (FM-06)</strong> tại mục <em>"2. Phí dịch vụ (Khách trả)"</em> và tính vào <em>Doanh thu thuần cơ sở</em>.
-                    </p>
-                    {allSurcharges.length > 0 && selectedFeeIds.length === 0 && (
-                      <p className="text-[11px] text-amber-800 font-medium flex items-center gap-1 mt-1">
-                        <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-700" />
-                        <span>Vui lòng tích chọn các khoản phụ phí bồi hoàn để hệ thống ghi nhận doanh thu dịch vụ cho cơ sở.</span>
-                      </p>
-                    )}
-                  </div>
+                  <p className="text-sm text-slate-600">
+                    Khoản <span className="num text-slate-900">{totalFeeAmount.toLocaleString('vi-VN')} đ</span> ghi nợ trên hợp đồng. Quản lý cơ sở bấm Đã nhận tiền thì số này mới vào doanh thu phụ phí.
+                  </p>
+                  {allSurcharges.length > 0 && selectedFeeIds.length === 0 && (
+                    <p className="text-sm text-slate-600">Vui lòng tích chọn các khoản phụ phí bồi hoàn để hệ thống ghi nhận doanh thu dịch vụ cho cơ sở.</p>
+                  )}
                 </div>
               )}
 
@@ -758,7 +687,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                 <button
                   type="submit"
                   disabled={isSubmitDisabled}
-                  className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? (
                     <>

@@ -23,6 +23,9 @@ import com.swp391.selfstorage.reservation.entity.AccessLog;
 import com.swp391.selfstorage.reservation.repository.AccessLogRepository;
 import com.swp391.selfstorage.payment.entity.PaymentTransaction;
 import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
+import com.swp391.selfstorage.reservation.dto.CustomerHistoryItemResponse;
+import com.swp391.selfstorage.user.entity.AuditLog;
+import com.swp391.selfstorage.user.repository.AuditLogRepository;
 import com.swp391.selfstorage.policy.entity.PolicyVersion;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.policy.service.PolicyNumbers;
@@ -43,15 +46,21 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.text.NumberFormat;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -71,6 +80,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
     private final UserRepository userRepository;
     private final HandoverRecordRepository handoverRecordRepository;
     private final SupportRequestRepository supportRequestRepository;
+    private final AuditLogRepository auditLogRepository;
     private final ContractService contractService;
 
     public CustomerRentalServiceImpl(
@@ -86,6 +96,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             @org.springframework.beans.factory.annotation.Autowired(required = false) UserRepository userRepository,
             @org.springframework.beans.factory.annotation.Autowired(required = false) HandoverRecordRepository handoverRecordRepository,
             @org.springframework.beans.factory.annotation.Autowired(required = false) SupportRequestRepository supportRequestRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) AuditLogRepository auditLogRepository,
             ContractService contractService
     ) {
         this.rentalContractRepository = rentalContractRepository;
@@ -100,6 +111,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         this.userRepository = userRepository;
         this.handoverRecordRepository = handoverRecordRepository;
         this.supportRequestRepository = supportRequestRepository;
+        this.auditLogRepository = auditLogRepository;
         this.contractService = contractService;
     }
 
@@ -706,6 +718,149 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
                         l.getDeviceInfo()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CustomerHistoryItemResponse> getMyHistory(UserPrincipal currentUser) {
+        if (currentUser == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED);
+        }
+        if (currentUser.getRole() != UserRole.STORAGE_CUSTOMER) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
+
+        List<RentalContract> contracts = rentalContractRepository.findAllByCustomerId(currentUser.getId());
+        Map<Long, RentalContract> byId = new LinkedHashMap<>();
+        for (RentalContract contract : contracts) {
+            if (contract.getId() != null && currentUser.getId().equals(contract.getCustomerId())) {
+                byId.put(contract.getId(), contract);
+            }
+        }
+
+        List<CustomerHistoryItemResponse> items = new ArrayList<>();
+        for (RentalContract contract : byId.values()) {
+            OffsetDateTime at = contract.getUpdatedAt() != null ? contract.getUpdatedAt() : contract.getCreatedAt();
+            String code = contract.getCode() != null ? contract.getCode() : ("#" + contract.getId());
+            items.add(new CustomerHistoryItemResponse(
+                    at != null ? at.toInstant().toString() : null,
+                    "CONTRACT",
+                    code,
+                    contractStatusLabel(contract.getStatus())
+            ));
+        }
+
+        if (paymentTransactionRepository != null && !byId.isEmpty()) {
+            Set<Long> contractIds = byId.keySet();
+            Set<Long> reservationIds = byId.values().stream()
+                    .map(RentalContract::getReservationId)
+                    .filter(id -> id != null)
+                    .collect(Collectors.toSet());
+            Map<Long, PaymentTransaction> payments = new LinkedHashMap<>();
+            for (PaymentTransaction payment : paymentTransactionRepository.findByContractIdIn(contractIds)) {
+                if (payment.getId() != null && ownsPayment(payment, contractIds, reservationIds)) {
+                    payments.put(payment.getId(), payment);
+                }
+            }
+            if (!reservationIds.isEmpty()) {
+                for (PaymentTransaction payment : paymentTransactionRepository.findByReservationIdIn(reservationIds)) {
+                    if (payment.getId() != null && ownsPayment(payment, contractIds, reservationIds)) {
+                        payments.putIfAbsent(payment.getId(), payment);
+                    }
+                }
+            }
+            for (PaymentTransaction payment : payments.values()) {
+                Instant at = payment.getPaidAt() != null ? payment.getPaidAt() : payment.getCreatedAt();
+                RentalContract contract = payment.getContractId() != null ? byId.get(payment.getContractId()) : null;
+                String code = contract != null && contract.getCode() != null ? contract.getCode() : "";
+                String detail = money(payment.getAmount()) + " · " + paymentStatusLabel(payment.getStatus());
+                if (!code.isEmpty()) {
+                    detail = detail + " · " + code;
+                }
+                items.add(new CustomerHistoryItemResponse(
+                        at != null ? at.toString() : null,
+                        "PAYMENT",
+                        paymentTypeLabel(payment.getTransactionType()),
+                        detail
+                ));
+            }
+        }
+
+        if (auditLogRepository != null && !byId.isEmpty()) {
+            for (AuditLog log : auditLogRepository.findByEntityTypeAndActionAndEntityIdIn(
+                    "RENTAL_CONTRACT", "REASSIGN_UNIT", byId.keySet())) {
+                if (log.getEntityId() == null || !byId.containsKey(log.getEntityId())) {
+                    continue;
+                }
+                RentalContract contract = byId.get(log.getEntityId());
+                String code = contract.getCode() != null ? contract.getCode() : ("#" + contract.getId());
+                items.add(new CustomerHistoryItemResponse(
+                        log.getCreatedAt() != null ? log.getCreatedAt().toInstant().toString() : null,
+                        "ADJUSTMENT",
+                        "Đổi ô kho",
+                        code
+                ));
+            }
+        }
+
+        items.sort(Comparator.comparing(
+                CustomerHistoryItemResponse::getAt,
+                Comparator.nullsLast(Comparator.reverseOrder())
+        ));
+        return items;
+    }
+
+    private static boolean ownsPayment(PaymentTransaction payment, Set<Long> contractIds, Set<Long> reservationIds) {
+        if (payment.getContractId() != null) {
+            return contractIds.contains(payment.getContractId());
+        }
+        return payment.getReservationId() != null && reservationIds.contains(payment.getReservationId());
+    }
+
+    private static String money(Long amount) {
+        long value = amount == null ? 0L : amount;
+        return NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN")).format(value) + " ₫";
+    }
+
+    private static String paymentTypeLabel(String type) {
+        if (type == null) return "Giao dịch";
+        return switch (type) {
+            case "INITIAL_PAYMENT" -> "Thanh toán hợp đồng";
+            case "CONTRACT_RENEWAL", "RENEWAL_PAYMENT" -> "Gia hạn hợp đồng";
+            case "SETTLEMENT" -> "Quyết toán";
+            case "OVERDUE_PENALTY" -> "Phí quá hạn";
+            case "EXTRA_FEE_PAYMENT" -> "Phí phát sinh";
+            case "REFUND", "RENT_REFUND" -> "Hoàn tiền thuê";
+            case "DEPOSIT_REFUND" -> "Hoàn tiền cọc";
+            case "RESCHEDULE_FEE" -> "Phí dời lịch";
+            default -> "Giao dịch";
+        };
+    }
+
+    private static String paymentStatusLabel(String status) {
+        if (status == null) return "Không rõ";
+        return switch (status) {
+            case "SUCCESS" -> "Thành công";
+            case "PENDING" -> "Đang xử lý";
+            case "FAILED" -> "Thất bại";
+            case "CANCELLED" -> "Đã hủy";
+            case "REFUNDED" -> "Đã hoàn";
+            default -> status;
+        };
+    }
+
+    private static String contractStatusLabel(ContractStatus status) {
+        if (status == null) return "Không rõ";
+        return switch (status) {
+            case PENDING_CHECK_IN -> "Chờ nhận kho";
+            case ACTIVE -> "Đang thuê";
+            case OVERDUE -> "Quá hạn";
+            case PENDING_RETURN -> "Chờ trả kho";
+            case RETURNED -> "Đã trả kho";
+            case CLOSED -> "Đã tất toán";
+            case TERMINATED -> "Đã chấm dứt";
+            case CANCELLED -> "Đã hủy";
+            case PENDING_EMERGENCY_RESOLUTION -> "Chờ xử lý sự cố";
+        };
     }
 }
 

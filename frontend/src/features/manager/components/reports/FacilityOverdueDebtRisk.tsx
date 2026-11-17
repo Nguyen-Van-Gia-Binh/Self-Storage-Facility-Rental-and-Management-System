@@ -79,7 +79,7 @@ export const FacilityOverdueDebtRisk: React.FC<Props> = ({ data, loading }) => {
           <span className="text-xs text-slate-500 font-medium block">
             Tổng tiền phạt phát sinh:
           </span>
-          <div className="text-2xl font-black text-rose-600 my-1 font-mono">
+          <div className="text-2xl font-black text-rose-600 my-1 num">
             {formatVND(totalPenaltyFee)}
           </div>
           <p className="text-[11px] text-slate-500">
@@ -94,13 +94,13 @@ export const FacilityOverdueDebtRisk: React.FC<Props> = ({ data, loading }) => {
           <div className="space-y-1.5 text-xs text-slate-600">
             <div className="flex items-center justify-between">
               <span>Hợp đồng trong hạn ân hạn (D+1 đến D+3):</span>
-              <span className="font-bold text-slate-800 font-mono">
+              <span className="font-bold text-slate-800 num">
                 {graceContractsCount} hợp đồng (Miễn phạt 0 đ)
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span>Hợp đồng đang bị tính phạt (D+4 đến D+10):</span>
-              <span className="font-bold text-rose-700 font-mono">
+              <span className="font-bold text-rose-700 num">
                 {penalizedContractsCount} hợp đồng (Phạt 10%/ngày trên cọc)
               </span>
             </div>

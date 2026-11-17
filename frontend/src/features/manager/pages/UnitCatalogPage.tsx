@@ -328,7 +328,7 @@ export const UnitCatalogPage: React.FC = () => {
                 <div>
                   <div className="flex items-center flex-wrap gap-2">
                     <span className="text-base font-bold text-slate-900">{selectedType.name}</span>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-brand-50 text-brand-700 border border-brand-200/60 font-mono">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-brand-50 text-brand-700 border border-brand-200/60 num">
                       {selectedType.areaM2} m²
                     </span>
                     {(selectedType.code?.toUpperCase().includes('CLIMATE') ||
@@ -354,7 +354,7 @@ export const UnitCatalogPage: React.FC = () => {
                     <span>
                       Đơn giá:{' '}
                       {selectedType.monthlyPrice && selectedType.monthlyPrice > 0 && selectedType.priceStatus !== 'UNLISTED' && selectedType.priceStatus !== 'Chưa niêm yết' ? (
-                        <strong className="font-mono text-brand-600">
+                        <strong className="num text-brand-600">
                           {new Intl.NumberFormat('vi-VN').format(selectedType.monthlyPrice)} đ/tháng
                         </strong>
                       ) : (
@@ -443,7 +443,7 @@ export const UnitCatalogPage: React.FC = () => {
                           }`}
                         >
                           <span>{f.label}</span>
-                          <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                          <span className={`text-[10px] num px-1.5 py-0.2 rounded-full ${
                             isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
                           }`}>
                             {count}

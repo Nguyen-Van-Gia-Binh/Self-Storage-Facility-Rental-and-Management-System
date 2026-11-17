@@ -2,9 +2,6 @@
 import React from 'react';
 import {
   ShieldCheck,
-  Clock,
-  AlertTriangle,
-  RefreshCw,
   Info,
   Settings2,
   Eye,
@@ -65,7 +62,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
           <div>
             <div className="flex items-center space-x-2">
               <h3 className="font-bold text-slate-900 text-base">
-                Chính sách vận hành hệ thống — Phiên bản v{policy.version}
+                Chính sách vận hành hệ thống — Phiên bản {policy.version}
               </h3>
               <span className="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-emerald-200">
                 Đang hiệu lực
@@ -86,7 +83,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
           <button
             type="button"
             onClick={onOpenPublishDrawer}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs hover:shadow-sm cursor-pointer shrink-0"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold transition-all cursor-pointer shrink-0"
           >
             <Settings2 className="w-4 h-4" />
             <span>Cập nhật chính sách</span>
@@ -95,8 +92,8 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
       </div>
 
       {/* Alert Banner Pháp lý */}
-      <div className="p-4 bg-amber-50/70 border border-amber-200/80 rounded-2xl flex items-start space-x-3 text-xs text-amber-950 leading-relaxed shadow-2xs">
-        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+      <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-start space-x-3 text-xs text-slate-600 leading-relaxed">
+        <AlertCircle className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
         <p>
           <strong>Lưu ý:</strong> Thay đổi chính sách chỉ áp dụng cho đơn đặt chỗ và hợp đồng tạo mới sau ngày hiệu lực. Hợp đồng đã ký giữ nguyên snapshot thông số theo phiên bản ban đầu nhằm đảm bảo tính toàn vẹn pháp lý.
         </p>
@@ -115,42 +112,24 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Card: Quy định tiền cọc */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2 hover:border-amber-200 transition-colors">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2 text-amber-700">
-                <ShieldCheck className="w-4 h-4" />
-                <h5 className="font-bold text-xs uppercase tracking-wider">Quy định tiền cọc</h5>
-              </div>
-              <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60">
-                Bắt buộc
-              </span>
-            </div>
+        <div className="bg-white rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200">
+          <div className="p-5 space-y-2">
+            <h5 className="font-medium text-xs text-slate-500">Quy định tiền cọc</h5>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-black text-slate-900 tracking-tight">
+              <span className="text-2xl font-semibold text-slate-900 tabular-nums tracking-tight">
                 {policy.depositMultiplier}
               </span>
-              <span className="text-base font-bold text-slate-600">tháng</span>
+              <span className="text-sm text-slate-600">tháng</span>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed">
               Bằng {policy.depositMultiplier} tháng tiền thuê khi khách hàng đặt chỗ và nhận kho bàn giao.
             </p>
           </div>
 
-          {/* Card: Chính sách hủy đặt chỗ */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2 hover:border-blue-200 transition-colors">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2 text-blue-700">
-                <RefreshCw className="w-4 h-4" />
-                <h5 className="font-bold text-xs uppercase tracking-wider">Chính sách hủy đặt chỗ</h5>
-              </div>
-              <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60">
-                Linh hoạt
-              </span>
-            </div>
+          <div className="p-5 space-y-2">
+            <h5 className="font-medium text-xs text-slate-500">Chính sách hủy đặt chỗ</h5>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-black text-slate-900 tracking-tight">
+              <span className="text-2xl font-semibold text-slate-900 tracking-tight">
                 Hoàn 100% / {Math.round(policy.cancelLateRefundRate * 100)}%
               </span>
             </div>
@@ -172,53 +151,41 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
           <p className="text-xs text-slate-500">Thời hạn tạm giữ ô kho và các mốc quy định gia hạn hợp đồng thuê.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Card: Thời hạn giữ chỗ & Bàn giao */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2 hover:border-indigo-200 transition-colors">
-            <div className="flex items-center space-x-2 text-indigo-700">
-              <Clock className="w-4 h-4" />
-              <h5 className="font-bold text-xs uppercase tracking-wider">Giữ chỗ & Bàn giao</h5>
-            </div>
+        <div className="bg-white rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-200">
+          <div className="p-5 space-y-2">
+            <h5 className="font-medium text-xs text-slate-500">Giữ chỗ & Bàn giao</h5>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-black text-slate-900 tracking-tight">
+              <span className="text-2xl font-semibold text-slate-900 tabular-nums tracking-tight">
                 {policy.reservationHoldHours}
               </span>
-              <span className="text-base font-bold text-slate-600">giờ</span>
+              <span className="text-sm text-slate-600">giờ</span>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed">
               Tạm giữ chỗ {policy.reservationHoldHours} giờ để hoàn tất cọc; ân hạn thêm {policy.checkinGraceDays} ngày tiếp đón trước khi hủy do vắng mặt.
             </p>
           </div>
 
-          {/* Card: Thời hạn khóa quyền gia hạn */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2 hover:border-indigo-200 transition-colors">
-            <div className="flex items-center space-x-2 text-emerald-700">
-              <RefreshCw className="w-4 h-4" />
-              <h5 className="font-bold text-xs uppercase tracking-wider">Khóa quyền gia hạn</h5>
-            </div>
+          <div className="p-5 space-y-2">
+            <h5 className="font-medium text-xs text-slate-500">Khóa quyền gia hạn</h5>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-xs font-semibold text-slate-500">Trước</span>
-              <span className="text-3xl font-black text-slate-900 tracking-tight">
+              <span className="text-xs text-slate-500">Trước</span>
+              <span className="text-2xl font-semibold text-slate-900 tabular-nums tracking-tight">
                 {policy.returnNoticeDays}
               </span>
-              <span className="text-base font-bold text-slate-600">ngày</span>
+              <span className="text-sm text-slate-600">ngày</span>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed">
               Tự động khóa tính năng gia hạn khi hợp đồng còn dưới {policy.returnNoticeDays} ngày. Khách buộc phải ký hợp đồng mới nếu muốn tiếp tục.
             </p>
           </div>
 
-          {/* Card: Giới hạn thời gian gia hạn */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2 hover:border-slate-300 transition-colors">
-            <div className="flex items-center space-x-2 text-slate-700">
-              <Clock className="w-4 h-4 text-amber-500" />
-              <h5 className="font-bold text-xs uppercase tracking-wider">Kỳ hạn gia hạn</h5>
-            </div>
+          <div className="p-5 space-y-2">
+            <h5 className="font-medium text-xs text-slate-500">Kỳ hạn gia hạn</h5>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-black text-slate-900 tracking-tight">
+              <span className="text-2xl font-semibold text-slate-900 tabular-nums tracking-tight">
                 {policy.renewalMinMonths} — {policy.renewalMaxMonths}
               </span>
-              <span className="text-base font-bold text-slate-600">tháng</span>
+              <span className="text-sm text-slate-600">tháng</span>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed">
               Kỳ hạn tối thiểu {policy.renewalMinMonths} tháng và tối đa {policy.renewalMaxMonths} tháng cho mỗi lần gia hạn hợp đồng.
@@ -238,42 +205,24 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
           <p className="text-xs text-slate-500">Quy định xử lý hợp đồng quá hạn và nghiệm thu quyết toán khi trả kho.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Card: Phí quá hạn hợp đồng */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2 hover:border-rose-200 transition-colors">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2 text-rose-700">
-                <AlertTriangle className="w-4 h-4" />
-                <h5 className="font-bold text-xs uppercase tracking-wider">Phí quá hạn hợp đồng</h5>
-              </div>
-              <span className="text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200/60">
-                Trần: {Math.round(policy.overdueCapRate * 100)}% cọc
-              </span>
-            </div>
+        <div className="bg-white rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200">
+          <div className="p-5 space-y-2">
+            <h5 className="font-medium text-xs text-slate-500">Phí quá hạn hợp đồng</h5>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-black text-rose-600 tracking-tight">
+              <span className="text-2xl font-semibold text-slate-900 tabular-nums tracking-tight">
                 {Math.round(policy.overdueDailyRate * 100)}%
               </span>
-              <span className="text-base font-bold text-slate-600">/ ngày</span>
+              <span className="text-sm text-slate-600">/ ngày</span>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed">
               Ân hạn {policy.overdueGraceDays} ngày. Từ ngày thứ {policy.overdueGraceDays + 1} quá hạn tính phạt {Math.round(policy.overdueDailyRate * 100)}%/ngày, trần tối đa {Math.round(policy.overdueCapRate * 100)}% tiền cọc.
             </p>
           </div>
 
-          {/* Card: Quy định trả kho */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2 hover:border-teal-200 transition-colors">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2 text-teal-700">
-                <ShieldCheck className="w-4 h-4" />
-                <h5 className="font-bold text-xs uppercase tracking-wider">Quy định trả kho</h5>
-              </div>
-              <span className="text-[11px] font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200/60">
-                Nghiệm thu
-              </span>
-            </div>
+          <div className="p-5 space-y-2">
+            <h5 className="font-medium text-xs text-slate-500">Quy định trả kho</h5>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-black text-slate-900 tracking-tight">
+              <span className="text-2xl font-semibold text-slate-900 tracking-tight">
                 Linh hoạt 24/7
               </span>
             </div>
@@ -300,7 +249,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
           </div>
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs text-slate-500 border-b border-slate-100">
-              <tr>
+              <tr className="whitespace-nowrap">
                 <th className="px-5 py-3 font-semibold">Phiên bản</th>
                 <th className="px-5 py-3 font-semibold">Ngày hiệu lực</th>
                 <th className="px-5 py-3 font-semibold">Người ban hành</th>
@@ -311,13 +260,13 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
             <tbody>
               {versions.map((item) => (
                 <tr key={`${item.id}-${item.versionNo}`} className="border-t border-slate-100 hover:bg-slate-50/50 transition-colors">
-                  <td className="px-5 py-3 font-bold text-slate-900 font-mono">v{item.versionNo}</td>
-                  <td className="px-5 py-3 text-slate-700">{formatDay(item.effectiveDate)}</td>
-                  <td className="px-5 py-3 text-slate-600 text-xs">
+                  <td className="px-5 py-3 font-bold text-slate-900 font-mono whitespace-nowrap">v{item.versionNo}</td>
+                  <td className="px-5 py-3 text-slate-700 whitespace-nowrap tabular-nums">{formatDay(item.effectiveDate)}</td>
+                  <td className="px-5 py-3 text-slate-600 text-xs whitespace-nowrap">
                     {item.publishedBy ? `BOM #${item.publishedBy}` : 'Hệ thống'}
                   </td>
                   <td className="px-5 py-3">
-                    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${statusClass(item.status)}`}>
+                    <span className={`inline-flex text-xs font-semibold px-2.5 py-0.5 rounded-full border whitespace-nowrap ${statusClass(item.status)}`}>
                       {item.status}
                     </span>
                   </td>
@@ -326,7 +275,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
                       <button
                         type="button"
                         onClick={() => onViewVersion(item)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 rounded-lg transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         <span>Xem chi tiết</span>

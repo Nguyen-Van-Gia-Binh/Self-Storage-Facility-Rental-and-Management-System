@@ -12,9 +12,9 @@ import {
   TrendingUp,
   TrendingDown,
   Check,
-  Bell,
 } from 'lucide-react';
 import type { UnitTypeCatalog } from '@/types';
+import { DateField } from '@/components/ui/DateField';
 import { useScrollLock } from '@/hooks/useScrollLock';
 
 function vietnamToday(): string {
@@ -30,14 +30,14 @@ function roundToThousand(value: number): number {
   return Math.round(value / 1000) * 1000;
 }
 
-function defaultPricePerM2(unitType: UnitTypeCatalog): number {
+function defaultPricePerM2(unitType: UnitTypeCatalog): number | null {
   if (unitType.pricePerM2 != null && unitType.pricePerM2 > 0) {
     return unitType.pricePerM2;
   }
   if (unitType.monthlyPrice > 0 && unitType.areaM2 > 0) {
-    return roundToThousand(unitType.monthlyPrice / unitType.areaM2);
+    return Math.round(unitType.monthlyPrice / unitType.areaM2);
   }
-  return 800000;
+  return null;
 }
 
 /**
@@ -63,15 +63,11 @@ interface PriceUpdateDrawerProps {
   onConfirmSingle?: (
     unitTypeId: number,
     pricePerM2: number,
-    effectiveDate: string,
-    reason?: string,
-    notifyCustomers?: boolean
+    effectiveDate: string
   ) => Promise<void>;
   onConfirmBulk?: (
     updates: { unitTypeId: number; pricePerM2: number }[],
-    effectiveDate: string,
-    reason?: string,
-    notifyCustomers?: boolean
+    effectiveDate: string
   ) => Promise<void>;
   isLoading?: boolean;
 }
@@ -96,8 +92,6 @@ export const PriceUpdateDrawer: React.FC<PriceUpdateDrawerProps> = ({
 
   const todayStr = vietnamToday();
   const [effectiveDate, setEffectiveDate] = useState<string>(todayStr);
-  const [reason, setReason] = useState<string>('');
-  const [notifyCustomers, setNotifyCustomers] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   // Single mode state
@@ -111,11 +105,10 @@ export const PriceUpdateDrawer: React.FC<PriceUpdateDrawerProps> = ({
   useEffect(() => {
     if (isOpen) {
       setEffectiveDate(vietnamToday());
-      setReason('');
       setError(null);
       if (unitType) {
         const initialRate = defaultPricePerM2(unitType);
-        setSinglePriceInput(formatNumberWithCommas(initialRate));
+        setSinglePriceInput(initialRate == null ? '' : formatNumberWithCommas(initialRate));
       } else {
         setBulkMethod('PERCENT');
         setPercentInput('10');
@@ -152,15 +145,20 @@ export const PriceUpdateDrawer: React.FC<PriceUpdateDrawerProps> = ({
 
     return activeTargets.map((target) => {
       const currentRate = defaultPricePerM2(target);
-      let newRate = currentRate;
+      let newRate: number;
 
       if (bulkMethod === 'PERCENT') {
-        newRate = roundToThousand(currentRate * (1 + pct / 100));
+        newRate = currentRate == null ? 0 : roundToThousand(currentRate * (1 + pct / 100));
       } else {
-        newRate = fixedRate > 0 ? fixedRate : currentRate;
+        newRate = fixedRate > 0 ? fixedRate : (currentRate ?? 0);
       }
 
-      const currentMonthly = target.monthlyPrice > 0 ? target.monthlyPrice : roundToThousand(currentRate * target.areaM2);
+      const currentMonthly =
+        target.monthlyPrice > 0
+          ? target.monthlyPrice
+          : currentRate == null
+            ? 0
+            : roundToThousand(currentRate * target.areaM2);
       const newMonthly = roundToThousand(newRate * target.areaM2);
       const diff = newMonthly - currentMonthly;
 
@@ -210,9 +208,14 @@ export const PriceUpdateDrawer: React.FC<PriceUpdateDrawerProps> = ({
         pricePerM2: item.newRate,
       }));
 
+      if (updates.some((item) => item.pricePerM2 <= 0)) {
+        setError('Có loại kho chưa có đơn giá để điều chỉnh. Hãy nhập đơn giá mới.');
+        return;
+      }
+
       setError(null);
       if (onConfirmBulk) {
-        await onConfirmBulk(updates, effectiveDate, reason.trim() || undefined, notifyCustomers);
+        await onConfirmBulk(updates, effectiveDate);
       }
     } else {
       const singleNum = parseFormattedNumber(singlePriceInput);
@@ -227,7 +230,7 @@ export const PriceUpdateDrawer: React.FC<PriceUpdateDrawerProps> = ({
 
       setError(null);
       if (onConfirmSingle && unitType) {
-        await onConfirmSingle(unitType.id, singleNum, effectiveDate, reason.trim() || undefined, notifyCustomers);
+        await onConfirmSingle(unitType.id, singleNum, effectiveDate);
       }
     }
   };
@@ -244,26 +247,21 @@ export const PriceUpdateDrawer: React.FC<PriceUpdateDrawerProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200/80 flex items-center justify-between bg-slate-900 text-white shrink-0">
-          <div className="flex items-center space-x-2.5">
-            <div className="p-2 rounded-lg bg-blue-600 text-white shadow-xs">
-              <DollarSign className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="font-bold text-base text-white">
-                {isBulkMode ? 'Cập nhật giá hàng loạt' : 'Cập nhật đơn giá 1 m²'}
-              </h2>
-              <p className="text-xs text-slate-300">
-                {facilityName} · {isBulkMode ? `${activeTargets.length} loại kho được chọn` : activeTargets[0].name}
-              </p>
-            </div>
+        <div className="px-6 py-4 border-b border-slate-200 bg-white flex items-center justify-between shrink-0">
+          <div>
+            <h2 className="font-bold text-base text-slate-900">
+              {isBulkMode ? 'Cập nhật giá hàng loạt' : 'Cập nhật đơn giá 1 m²'}
+            </h2>
+            <p className="text-xs text-slate-500">
+              {facilityName} · {isBulkMode ? `${activeTargets.length} loại kho được chọn` : activeTargets[0].name}
+            </p>
           </div>
 
           <button
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
             title="Đóng (Esc)"
           >
             <X className="w-5 h-5" />
@@ -304,28 +302,17 @@ export const PriceUpdateDrawer: React.FC<PriceUpdateDrawerProps> = ({
               </div>
             </div>
           ) : (
-            <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1.5 text-xs">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500">Cơ sở áp dụng:</span>
-                <span className="font-bold text-slate-900">{facilityName}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500">Loại ô kho:</span>
-                <span className="font-bold text-slate-900">{activeTargets[0].name}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500">Diện tích tiêu chuẩn:</span>
-                <span className="font-mono font-bold text-slate-900">{activeTargets[0].areaM2} m²</span>
-              </div>
-              <div className="flex justify-between items-center pt-1.5 border-t border-slate-200/60">
-                <span className="text-slate-500">Giá thuê hiện tại:</span>
-                <span className="font-bold text-amber-600 font-mono text-sm">
-                  {activeTargets[0].monthlyPrice > 0
-                    ? `${activeTargets[0].monthlyPrice.toLocaleString('vi-VN')} ₫/tháng`
-                    : 'Chưa niêm yết'}
-                </span>
-              </div>
-            </div>
+            <p className="text-sm text-slate-700">
+              <span className="font-semibold text-slate-900">{activeTargets[0].name}</span>
+              {' '}({activeTargets[0].areaM2} m²)
+              <span className="mx-1.5 text-slate-300">·</span>
+              Giá hiện tại:{' '}
+              <span className="font-semibold text-slate-900 tabular-nums">
+                {activeTargets[0].monthlyPrice > 0
+                  ? `${activeTargets[0].monthlyPrice.toLocaleString('vi-VN')} đ/tháng`
+                  : 'Chưa niêm yết'}
+              </span>
+            </p>
           )}
 
           {/* BULK MODE: Segmented Control (Toggle % vs Fixed VNĐ) */}
@@ -375,7 +362,7 @@ export const PriceUpdateDrawer: React.FC<PriceUpdateDrawerProps> = ({
                         setError(null);
                       }}
                       placeholder="VD: 10 (tăng 10%) hoặc -5 (giảm 5%)"
-                      className="w-full text-sm font-bold border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 pr-10 font-mono"
+                      className="w-full text-sm font-bold border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 pr-10 num"
                     />
                     <span className="absolute right-3.5 top-2.5 text-sm font-bold text-slate-500">
                       %
@@ -408,7 +395,7 @@ export const PriceUpdateDrawer: React.FC<PriceUpdateDrawerProps> = ({
                         setError(null);
                       }}
                       placeholder="VD: 800,000"
-                      className="w-full text-sm font-bold border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 pr-16 font-mono"
+                      className="w-full text-sm font-bold border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 pr-16 num"
                     />
                     <span className="absolute right-3.5 top-2.5 text-xs text-slate-500">
                       ₫/m²
@@ -435,7 +422,7 @@ export const PriceUpdateDrawer: React.FC<PriceUpdateDrawerProps> = ({
                       setError(null);
                     }}
                     placeholder="VD: 800,000"
-                    className="w-full text-base font-bold border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 pr-16 font-mono tabular-nums"
+                    className="w-full text-lg font-bold border border-slate-300 rounded-xl px-3.5 py-3 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 pr-16 tabular-nums"
                   />
                   <span className="absolute right-3.5 top-3 text-xs text-slate-500 font-medium">
                     ₫/m²
@@ -444,19 +431,15 @@ export const PriceUpdateDrawer: React.FC<PriceUpdateDrawerProps> = ({
               </div>
 
               {/* Tính toán tự động minh bạch */}
-              <div className="p-3 bg-amber-50/80 border border-amber-200/90 rounded-xl text-xs text-amber-900 space-y-1">
-                <p className="font-bold flex items-center justify-between">
-                  <span>Giá thuê tháng ước tính:</span>
-                  <span className="text-sm font-mono text-amber-700 font-bold">
-                    {singlePreviewMonthly > 0
-                      ? `${singlePreviewMonthly.toLocaleString('vi-VN')} ₫/tháng`
-                      : '—'}
-                  </span>
-                </p>
-                <p className="text-[11px] text-amber-700/90">
-                  (= đơn giá × {unitType?.areaM2} m², tự động làm tròn đến 1.000 đồng)
-                </p>
-              </div>
+              <p className="text-sm font-semibold text-brand-700 tabular-nums">
+                Tương đương:{' '}
+                {singlePreviewMonthly > 0
+                  ? `${singlePreviewMonthly.toLocaleString('vi-VN')} đ/tháng`
+                  : '—'}
+              </p>
+              <p className="text-xs text-slate-500">
+                Đơn giá × {unitType?.areaM2} m², làm tròn đến 1.000 đồng.
+              </p>
             </div>
           )}
 
@@ -489,13 +472,13 @@ export const PriceUpdateDrawer: React.FC<PriceUpdateDrawerProps> = ({
                           <p className="font-semibold text-slate-800">{item.unitType.name}</p>
                           <p className="text-[10px] text-slate-400">{item.unitType.areaM2} m²</p>
                         </td>
-                        <td className="py-2 px-3 text-right font-mono tabular-nums text-slate-500">
+                        <td className="py-2 px-3 text-right tabular-nums text-slate-500">
                           {item.currentMonthly.toLocaleString('vi-VN')} ₫
                         </td>
-                        <td className="py-2 px-3 text-right font-mono tabular-nums font-bold text-blue-700">
+                        <td className="py-2 px-3 text-right tabular-nums font-bold text-blue-700">
                           {item.newMonthly.toLocaleString('vi-VN')} ₫
                         </td>
-                        <td className="py-2 px-3 text-right font-mono tabular-nums">
+                        <td className="py-2 px-3 text-right tabular-nums">
                           {item.diff > 0 ? (
                             <span className="text-emerald-600 font-semibold flex items-center justify-end gap-0.5">
                               <TrendingUp className="w-3 h-3" />
@@ -525,12 +508,11 @@ export const PriceUpdateDrawer: React.FC<PriceUpdateDrawerProps> = ({
             </label>
             <div className="relative">
               <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-              <input
-                type="date"
+              <DateField
                 value={effectiveDate}
                 min={todayStr}
-                onChange={(e) => setEffectiveDate(e.target.value)}
-                className="w-full text-sm border border-slate-300 rounded-xl pl-10 pr-3.5 py-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                onChange={setEffectiveDate}
+                className="w-full text-sm border border-slate-300 rounded-xl pl-10 pr-3.5 py-2.5 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
               />
             </div>
             <p className="text-[11px] text-slate-400 mt-1">
@@ -538,49 +520,12 @@ export const PriceUpdateDrawer: React.FC<PriceUpdateDrawerProps> = ({
             </p>
           </div>
 
-          {/* Lý do thay đổi giá (Lưu Audit log) */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Lý do thay đổi giá (Lưu vết kiểm toán)
-            </label>
-            <textarea
-              rows={2}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="VD: Điều chỉnh theo lạm phát năm 2027, Chiến dịch kích cầu mùa hè..."
-              className="w-full text-xs border border-slate-300 rounded-xl p-3 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 leading-relaxed"
-            />
-          </div>
-
-          {/* Checkbox: Gửi thông báo cho khách hàng */}
-          <div className="flex items-start gap-2.5 p-3 bg-slate-50 border border-slate-200/80 rounded-xl">
-            <input
-              type="checkbox"
-              id="notifyCustomers"
-              checked={notifyCustomers}
-              onChange={(e) => setNotifyCustomers(e.target.checked)}
-              className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-            />
-            <label htmlFor="notifyCustomers" className="text-xs text-slate-700 cursor-pointer leading-snug">
-              <span className="font-semibold flex items-center gap-1.5">
-                <Bell className="w-3.5 h-3.5 text-blue-600" />
-                Gửi email thông báo chính sách giá mới
-              </span>
-              <span className="text-[11px] text-slate-500 block mt-0.5">
-                Tự động gửi thông báo minh bạch cho các khách hàng đang thuê ô kho thuộc diện điều chỉnh.
-              </span>
-            </label>
-          </div>
-
-          {/* Khối Cảnh báo tác động nghiệp vụ (UX Best Practice) */}
-          <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl flex items-start space-x-2 text-[11px] text-amber-900 leading-relaxed">
-            <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <div>
-              <strong>Lưu ý áp dụng giá:</strong> Đơn giá mới chỉ áp dụng cho các đặt chỗ và hợp đồng
-              tạo từ ngày hiệu lực trở đi. Các hợp đồng đã ký tiếp tục giữ nguyên snapshot giá cam kết
-              cho đến hết kỳ hạn thuê.
-            </div>
-          </div>
+          <p className="flex items-start gap-2 text-xs text-slate-500 leading-relaxed">
+            <Info className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+            <span>
+              Đơn giá mới chỉ áp dụng cho đặt chỗ và hợp đồng tạo từ ngày hiệu lực trở đi. Hợp đồng đã ký giữ nguyên giá đã cam kết đến hết kỳ.
+            </span>
+          </p>
         </form>
 
         {/* Footer Actions */}
@@ -597,7 +542,7 @@ export const PriceUpdateDrawer: React.FC<PriceUpdateDrawerProps> = ({
             type="button"
             onClick={handleSubmit}
             disabled={isLoading}
-            className="inline-flex items-center gap-1.5 px-5 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg text-xs font-bold shadow-xs hover:shadow-md transition-all cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-5 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
           >
             {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
             <Check className="w-4 h-4" />

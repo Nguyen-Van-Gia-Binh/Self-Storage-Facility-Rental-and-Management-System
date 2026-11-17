@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { DateField } from '@/components/ui/DateField';
 import {
   Building2,
   Calendar,
@@ -236,10 +237,9 @@ export const StaffAssignmentPage: React.FC = () => {
 
           <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm">
             <Calendar className="w-4 h-4 text-slate-400" />
-            <input
-              type="date"
+            <DateField
               value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              onChange={setSelectedDate}
               className="text-xs font-semibold text-slate-700 bg-transparent outline-none cursor-pointer"
             />
           </div>

@@ -1,7 +1,7 @@
 // frontend/src/features/bom/components/FacilityModal.tsx
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Building2, MapPin, Phone, Clock, FileText, Loader2, AlertCircle, Sparkles } from 'lucide-react';
+import { X, MapPin, Phone, Clock, FileText, Loader2, AlertCircle, Sparkles, Lock } from 'lucide-react';
 import type { FacilityListItem, CreateFacilityRequest, UpdateFacilityRequest } from '@/types';
 import { generateFacilityCode } from '../utils/facilityCodeGenerator';
 
@@ -59,6 +59,13 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
   );
   const [is247, setIs247] = useState<boolean>(isInitial247);
 
+  const [savedHours, setSavedHours] = useState(() => {
+    const hours = parseOpeningHours(initialData?.openingHours);
+    return isInitial247
+      ? { openTime: '06:00', closeTime: '22:00' }
+      : hours;
+  });
+
   const [formData, setFormData] = useState(() => {
     const hours = parseOpeningHours(initialData?.openingHours);
     return {
@@ -66,8 +73,8 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
       name: initialData?.name || '',
       address: initialData?.address || '',
       phone: digitsOnlyPhone(initialData?.phone),
-      openTime: hours.openTime,
-      closeTime: hours.closeTime,
+      openTime: isInitial247 ? '00:00' : hours.openTime,
+      closeTime: isInitial247 ? '23:59' : hours.closeTime,
       description: initialData?.description || '',
     };
   });
@@ -115,6 +122,25 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
       };
     }
   }, [isOpen]);
+
+  const handle247Change = (next: boolean) => {
+    if (next) {
+      if (!(formData.openTime === '00:00' && formData.closeTime === '23:59')) {
+        setSavedHours({ openTime: formData.openTime, closeTime: formData.closeTime });
+      }
+      setFormData((prev) => ({ ...prev, openTime: '00:00', closeTime: '23:59' }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        openTime: savedHours.openTime,
+        closeTime: savedHours.closeTime,
+      }));
+    }
+    setIs247(next);
+    if (errors.openingHours) {
+      setErrors((current) => ({ ...current, openingHours: '' }));
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -204,36 +230,37 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
         }
       }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
-        {/* Modal Header */}
-        <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Building2 className="w-5 h-5 text-amber-400" />
-            <h3 className="font-bold text-lg text-white">
-              {isEdit ? 'Chỉnh sửa thông tin cơ sở' : 'Thêm cơ sở lưu trữ mới'}
-            </h3>
-          </div>
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+        <div className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between">
+          <h3 className="font-bold text-lg text-slate-900">
+            {isEdit ? 'Chỉnh sửa thông tin cơ sở' : 'Thêm cơ sở lưu trữ mới'}
+          </h3>
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="text-slate-400 hover:text-white transition-colors p-1 rounded-lg"
+            className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-lg"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Body / Form */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto overflow-x-hidden space-y-4 flex-1">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="p-6 overflow-y-auto overflow-x-hidden space-y-4 flex-1">
           {/* Mã cơ sở */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
-              Mã cơ sở <span className="text-rose-500">*</span>
-            </label>
             {isEdit ? (
-              <div className="text-sm font-mono font-bold text-slate-700 bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5">
-                {formData.code} <span className="text-xs font-normal text-slate-400 ml-2">(Mã cố định không thể sửa)</span>
+              <div className="flex items-center gap-2 text-sm text-slate-700">
+                <span className="text-slate-500">Mã cơ sở</span>
+                <span className="font-mono font-semibold text-slate-900">{formData.code}</span>
+                <Lock className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
+                <span className="text-xs text-slate-500">Không thể thay đổi</span>
               </div>
             ) : (
+              <>
+              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                Mã cơ sở <span className="text-rose-500">*</span>
+              </label>
               <div className="relative">
                 <input
                   type="text"
@@ -252,23 +279,24 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
                   className={`w-full text-sm font-mono border rounded-xl pl-3.5 pr-24 py-2.5 outline-none transition-all ${
                     errors.code
                       ? 'border-rose-300 focus:ring-2 focus:ring-rose-200'
-                      : 'border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-100'
+                      : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'
                   }`}
                 />
                 <button
                   type="button"
                   onClick={handleRegenerateCode}
                   title="Tự động tính lại mã dựa trên Tên & Địa chỉ"
-                  className="absolute right-2 top-2 px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 transition-all flex items-center gap-1 cursor-pointer"
+                  className="absolute right-2 top-2 px-2.5 py-1 text-xs font-medium rounded-lg text-slate-600 hover:bg-slate-100 transition-colors flex items-center gap-1 cursor-pointer"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  <Sparkles className="w-3.5 h-3.5 text-slate-500" />
                   <span>Tự tạo</span>
                 </button>
               </div>
+              </>
             )}
             {!isEdit && autoGenInfo && (
-              <p className="mt-1 text-xs text-amber-700 font-medium flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <p className="mt-1 text-xs text-slate-500 flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                 <span>{autoGenInfo.reason}</span>
               </p>
             )}
@@ -296,7 +324,7 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
                 className={`w-full text-sm border rounded-xl px-3.5 py-2.5 outline-none transition-all ${
                   errors.name
                     ? 'border-rose-300 focus:ring-2 focus:ring-rose-200'
-                    : 'border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-100'
+                    : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'
                 }`}
               />
             </div>
@@ -322,7 +350,7 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
                 className={`w-full text-sm border rounded-xl pl-10 pr-3.5 py-2.5 outline-none transition-all ${
                   errors.address
                     ? 'border-rose-300 focus:ring-2 focus:ring-rose-200'
-                    : 'border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-100'
+                    : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'
                 }`}
               />
             </div>
@@ -355,7 +383,7 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
                 className={`w-full text-sm border rounded-xl pl-10 pr-3.5 py-2.5 outline-none transition-all ${
                   errors.phone
                     ? 'border-rose-300 focus:ring-2 focus:ring-rose-200'
-                    : 'border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-100'
+                    : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'
                 }`}
               />
             </div>
@@ -368,79 +396,77 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
 
           {/* Thời gian hoạt động */}
           <div className="min-w-0 space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <label className="block text-xs font-semibold text-slate-700 uppercase">
                 Thời gian hoạt động
               </label>
-              <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700 select-none">
-                <input
-                  type="checkbox"
-                  checked={is247}
-                  onChange={(e) => {
-                    setIs247(e.target.checked);
-                    if (errors.openingHours) {
-                      setErrors((current) => ({ ...current, openingHours: '' }));
-                    }
-                  }}
-                  className="rounded text-amber-600 focus:ring-amber-500 w-4 h-4"
-                />
-                <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-[11px] font-bold">
-                  Truy cập 24/7
-                </span>
-              </label>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-600">Truy cập 24/7</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={is247}
+                  aria-label="Truy cập 24/7"
+                  onClick={() => handle247Change(!is247)}
+                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 ${
+                    is247 ? 'bg-brand-500' : 'bg-slate-200'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200 ${
+                      is247 ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
 
-            {is247 ? (
-              <div className="p-3 bg-teal-50/70 border border-teal-200 rounded-xl text-xs text-teal-800 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-teal-600 shrink-0" />
-                <span>Cơ sở mở cửa 24/7 không giới hạn. Khách hàng có thể quét mã PIN vào kho bất kỳ lúc nào.</span>
-              </div>
-            ) : (
-              <div className="flex items-end gap-2 min-w-0">
-                <div className="min-w-0 flex-1">
-                  <span className="block text-[11px] font-medium text-slate-500 mb-1">Mở cửa</span>
-                  <div className="relative">
-                    <Clock className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
-                    <input
-                      type="time"
-                      aria-label="Giờ mở cửa"
-                      value={formData.openTime}
-                      onChange={(e) => {
-                        setFormData({ ...formData, openTime: e.target.value });
-                        if (errors.openingHours) {
-                          setErrors((current) => ({ ...current, openingHours: '' }));
-                        }
-                      }}
-                      className={`w-full min-w-0 text-sm border rounded-xl pl-9 pr-2 py-2.5 outline-none transition-all ${
-                        errors.openingHours
-                          ? 'border-rose-300 focus:ring-2 focus:ring-rose-200'
-                          : 'border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-100'
-                      }`}
-                    />
-                  </div>
-                </div>
-                <span className="pb-2.5 text-slate-400 text-sm shrink-0">–</span>
-                <div className="min-w-0 flex-1">
-                  <span className="block text-[11px] font-medium text-slate-500 mb-1">Đóng cửa</span>
+            <div className="flex items-end gap-2 min-w-0">
+              <div className="min-w-0 flex-1">
+                <span className="block text-[11px] font-medium text-slate-500 mb-1">Mở cửa</span>
+                <div className="relative">
+                  <Clock className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
                   <input
                     type="time"
-                    aria-label="Giờ đóng cửa"
-                    value={formData.closeTime}
+                    aria-label="Giờ mở cửa"
+                    value={formData.openTime}
+                    disabled={is247}
                     onChange={(e) => {
-                      setFormData({ ...formData, closeTime: e.target.value });
+                      setFormData({ ...formData, openTime: e.target.value });
                       if (errors.openingHours) {
                         setErrors((current) => ({ ...current, openingHours: '' }));
                       }
                     }}
-                    className={`w-full min-w-0 text-sm border rounded-xl px-3 py-2.5 outline-none transition-all ${
+                    className={`w-full min-w-0 text-sm border rounded-xl pl-9 pr-2 py-2.5 outline-none transition-all disabled:bg-slate-50 disabled:text-slate-400 ${
                       errors.openingHours
                         ? 'border-rose-300 focus:ring-2 focus:ring-rose-200'
-                        : 'border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-100'
+                        : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'
                     }`}
                   />
                 </div>
               </div>
-            )}
+              <span className="pb-2.5 text-slate-400 text-sm shrink-0">–</span>
+              <div className="min-w-0 flex-1">
+                <span className="block text-[11px] font-medium text-slate-500 mb-1">Đóng cửa</span>
+                <input
+                  type="time"
+                  aria-label="Giờ đóng cửa"
+                  value={formData.closeTime}
+                  disabled={is247}
+                  onChange={(e) => {
+                    setFormData({ ...formData, closeTime: e.target.value });
+                    if (errors.openingHours) {
+                      setErrors((current) => ({ ...current, openingHours: '' }));
+                    }
+                  }}
+                  className={`w-full min-w-0 text-sm border rounded-xl px-3 py-2.5 outline-none transition-all disabled:bg-slate-50 disabled:text-slate-400 ${
+                    errors.openingHours
+                      ? 'border-rose-300 focus:ring-2 focus:ring-rose-200'
+                      : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'
+                  }`}
+                />
+              </div>
+            </div>
             {errors.openingHours && (
               <p className="mt-1 text-xs text-rose-500 flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5" /> {errors.openingHours}
@@ -460,13 +486,13 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
                 placeholder="Ghi chú về vị trí, camera an ninh 24/7, thang máy tải hàng..."
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full text-sm border border-slate-300 rounded-xl pl-10 pr-3.5 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 resize-none"
+                className="w-full text-sm border border-slate-300 rounded-xl pl-10 pr-3.5 py-2.5 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 resize-none"
               />
             </div>
           </div>
+          </div>
 
-          {/* Footer buttons */}
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-end space-x-3">
             <button
               type="button"
               onClick={onClose}
@@ -478,7 +504,7 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
             <button
               type="submit"
               disabled={isLoading}
-              className="px-5 py-2 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 active:bg-amber-700 rounded-xl shadow-md transition-all flex items-center space-x-1.5 disabled:opacity-50"
+              className="px-5 py-2 text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 rounded-xl transition-colors flex items-center space-x-1.5 disabled:opacity-50"
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
               <span>{isEdit ? 'Cập nhật' : 'Tạo cơ sở'}</span>

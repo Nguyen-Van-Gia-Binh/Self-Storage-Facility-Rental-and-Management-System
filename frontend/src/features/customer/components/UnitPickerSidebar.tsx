@@ -114,7 +114,7 @@ export const UnitPickerSidebar: React.FC<UnitPickerSidebarProps> = ({
           <span>
             Tiền thuê ({durationMonths} tháng):
           </span>
-          <span className="font-semibold text-slate-900 font-mono">
+          <span className="font-semibold text-slate-900 num">
             {hasSelected ? formatVND(priceCalculation.grossRent) : '-- đ'}
           </span>
         </div>
@@ -130,7 +130,7 @@ export const UnitPickerSidebar: React.FC<UnitPickerSidebarProps> = ({
                   }:`
                 : `Chiết khấu (-${priceCalculation.discountPercent}%):`}
             </span>
-            <span className="font-mono text-emerald-800 font-black">
+            <span className="num text-emerald-800 font-black">
               -{formatVND(priceCalculation.discountAmount)}
             </span>
           </div>
@@ -138,7 +138,7 @@ export const UnitPickerSidebar: React.FC<UnitPickerSidebarProps> = ({
 
         <div className="flex justify-between text-slate-600">
           <span>Tiền đặt cọc ({depositMultiplierLabel} tháng):</span>
-          <span className="font-semibold text-slate-900 font-mono">
+          <span className="font-semibold text-slate-900 num">
             {hasSelected ? formatVND(priceCalculation.depositAmount) : '-- đ'}
           </span>
         </div>
@@ -150,7 +150,7 @@ export const UnitPickerSidebar: React.FC<UnitPickerSidebarProps> = ({
           <span className="text-xs font-black uppercase tracking-wider text-slate-900">
             Tổng thanh toán:
           </span>
-          <span className="text-xl font-black text-[#008B74] font-mono tracking-tight">
+          <span className="text-xl font-black text-[#008B74] num tracking-tight">
             {hasSelected ? formatVND(priceCalculation.totalDue) : '-- đ'}
           </span>
         </div>

@@ -34,6 +34,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import com.swp391.selfstorage.reservation.dto.AccessLogResponse;
@@ -46,6 +47,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -65,6 +67,7 @@ class CustomerRentalServiceTest {
     @Mock private com.swp391.selfstorage.contract.repository.HandoverRecordRepository handoverRecordRepository;
     @Mock private com.swp391.selfstorage.support.repository.SupportRequestRepository supportRequestRepository;
     @Mock private com.swp391.selfstorage.contract.service.ContractService contractService;
+    @Mock private com.swp391.selfstorage.user.repository.AuditLogRepository auditLogRepository;
 
     @InjectMocks
     private CustomerRentalServiceImpl customerRentalService;
@@ -786,6 +789,60 @@ class CustomerRentalServiceTest {
         assertEquals(settledTime, res.getSettledAt());
         assertEquals("Trần Quản Lý", res.getSettledByName());
         assertEquals("Biên bản nghiệm thu hoàn tất, xước sơn nhẹ trừ 200k", res.getSettlementNote());
+    }
+
+    @Test
+    @DisplayName("Khách A không thấy giao dịch của hợp đồng khách B")
+    void customerADoesNotSeeCustomerBPayment() {
+        activeContract.setUpdatedAt(OffsetDateTime.parse("2026-10-01T00:00:00Z"));
+        when(rentalContractRepository.findAllByCustomerId(15L)).thenReturn(List.of(activeContract));
+
+        com.swp391.selfstorage.payment.entity.PaymentTransaction mine =
+                com.swp391.selfstorage.payment.entity.PaymentTransaction.builder()
+                        .id(1L)
+                        .contractId(501L)
+                        .reservationId(1042L)
+                        .transactionType("INITIAL_PAYMENT")
+                        .amount(1_500_000L)
+                        .status("SUCCESS")
+                        .paymentMethod("VNPAY")
+                        .paidAt(Instant.parse("2026-10-02T00:00:00Z"))
+                        .build();
+        com.swp391.selfstorage.payment.entity.PaymentTransaction theirs =
+                com.swp391.selfstorage.payment.entity.PaymentTransaction.builder()
+                        .id(2L)
+                        .contractId(999L)
+                        .transactionType("INITIAL_PAYMENT")
+                        .amount(9_990_000L)
+                        .status("SUCCESS")
+                        .paymentMethod("VNPAY")
+                        .paidAt(Instant.parse("2026-10-03T00:00:00Z"))
+                        .build();
+        when(paymentTransactionRepository.findByContractIdIn(any())).thenReturn(List.of(mine, theirs));
+        when(paymentTransactionRepository.findByReservationIdIn(any())).thenReturn(List.of());
+
+        com.swp391.selfstorage.user.entity.AuditLog foreignAudit =
+                com.swp391.selfstorage.user.entity.AuditLog.builder()
+                        .id(9L)
+                        .action("REASSIGN_UNIT")
+                        .entityType("RENTAL_CONTRACT")
+                        .entityId(999L)
+                        .createdAt(OffsetDateTime.parse("2026-10-04T00:00:00Z"))
+                        .build();
+        when(auditLogRepository.findByEntityTypeAndActionAndEntityIdIn(eq("RENTAL_CONTRACT"), eq("REASSIGN_UNIT"), any()))
+                .thenReturn(List.of(foreignAudit));
+
+        var items = customerRentalService.getMyHistory(customerUser);
+
+        assertTrue(items.stream().noneMatch(item -> item.getDetail() != null && item.getDetail().contains("9.990.000")));
+        assertTrue(items.stream().anyMatch(item ->
+                "PAYMENT".equals(item.getKind()) && item.getDetail().contains("1.500.000")));
+        verify(paymentTransactionRepository).findByContractIdIn(argThat(ids ->
+                ids.contains(501L) && !ids.contains(999L)));
+        verify(auditLogRepository).findByEntityTypeAndActionAndEntityIdIn(
+                eq("RENTAL_CONTRACT"),
+                eq("REASSIGN_UNIT"),
+                argThat(ids -> ids.contains(501L) && !ids.contains(999L)));
     }
 }
 

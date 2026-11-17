@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
+import { DateField } from '@/components/ui/DateField';
 import {
   CalendarDays,
   X,
@@ -36,6 +37,7 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [orderCode, setOrderCode] = useState<number | null>(null);
+  const [openedAt] = useState(() => Date.now());
 
   // BR-RES-06: Khóa dời lịch nếu hợp đồng đã dời lịch 1 lần
   const isAlreadyRescheduled = (contract?.rescheduleCount ?? 0) >= 1;
@@ -45,9 +47,8 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
     if (!contract?.startDate) return 999;
     const clean = contract.startDate.slice(0, 10);
     const startMs = new Date(clean + 'T00:00:00').getTime();
-    const nowMs = Date.now();
-    return (startMs - nowMs) / (1000 * 60 * 60);
-  }, [contract?.startDate]);
+    return (startMs - openedAt) / (1000 * 60 * 60);
+  }, [contract?.startDate, openedAt]);
 
   const isEligibleForReschedule = hoursUntilStart >= 48 && !isAlreadyRescheduled;
 
@@ -58,7 +59,7 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
     const [y, m, d] = clean.split('-').map(Number);
     const start = new Date(y, m - 1, d);
 
-    const tomorrow = new Date();
+    const tomorrow = new Date(openedAt);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     const startPlus1 = new Date(start);
@@ -102,7 +103,7 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
     const t1 = new Date(y1, m1 - 1, d1).getTime();
     const t2 = new Date(y2, m2 - 1, d2).getTime();
     return Math.max(0, Math.round((t2 - t1) / (1000 * 60 * 60 * 24)));
-  }, [contract?.startDate, newStartDate]);
+  }, [contract, newStartDate]);
 
   // Đơn giá ngày = tiền thuê tháng / 30
   const dailyRate = useMemo(() => {
@@ -355,15 +356,14 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
               <label htmlFor="newStartDate" className="block text-xs font-bold text-slate-700">
                 Chọn ngày bắt đầu mới <span className="text-rose-500">*</span>
               </label>
-              <input
+              <DateField
                 id="newStartDate"
-                type="date"
                 min={minDateStr}
                 max={maxDateStr}
                 value={newStartDate}
                 disabled={!isEligibleForReschedule}
-                onChange={(e) => {
-                  setNewStartDate(e.target.value);
+                onChange={(next) => {
+                  setNewStartDate(next);
                   setError(null);
                 }}
                 required

@@ -221,7 +221,7 @@ export const DirectContractPaymentModal: React.FC<DirectContractPaymentModalProp
 
             <div className="pt-3 border-t border-slate-200/60 flex justify-between items-baseline">
               <span className="text-xs font-semibold text-slate-500">Tổng thanh toán ban đầu (Thuê + Cọc):</span>
-              <span className="text-lg font-black font-mono text-emerald-700">
+              <span className="text-lg font-black num text-emerald-700">
                 {formatVND(totalAmount)}
               </span>
             </div>

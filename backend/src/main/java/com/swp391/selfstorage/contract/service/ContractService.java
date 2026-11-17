@@ -27,6 +27,9 @@ public interface ContractService {
 
     /** Ghi ACCESS_KEY hoặc VALUE_ADDED từ danh mục vào hợp đồng đang thuê (BR-PRI-04). */
     CatalogFeeChargeResponse applyCatalogFee(Long contractId, ApplyCatalogFeeRequest request, Long actorId, List<Long> facilityIds);
+
+    /** FM thu tiền mặt một khoản phụ phí chưa thu. Ghi EXTRA_FEE_PAYMENT SUCCESS, không đi qua markPaid. */
+    CatalogFeeChargeResponse collectCatalogFee(Long contractId, Long chargeId, List<Long> facilityIds);
     SettlementPreviewResponse getSettlementPreview(Long contractId, List<Long> facilityIds);
     SettlementApprovalResponse approveSettlement(Long contractId, SettlementApprovalRequest request, Long managerId, List<Long> facilityIds);
 

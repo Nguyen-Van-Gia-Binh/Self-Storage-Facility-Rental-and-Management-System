@@ -15,7 +15,10 @@ import com.swp391.selfstorage.policy.entity.ExtraFeeType;
 import com.swp391.selfstorage.policy.entity.PolicyVersion;
 import com.swp391.selfstorage.policy.repository.ExtraFeeTypeRepository;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
+import com.swp391.selfstorage.payment.entity.PaymentTransaction;
+import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -778,5 +781,110 @@ class ContractReturnServiceTest {
                                 .build();
                 CatalogFeeChargeResponse paidRes = contractService.applyCatalogFee(700L, paidReq, 8L, List.of(1L));
                 assertEquals("PAID", paidRes.getStatus());
+        }
+
+        @Test
+        @DisplayName("applyCatalogFee ghi phí khi hợp đồng chờ nhận kho, từ chối khi đã đóng")
+        void testApplyCatalogFee_pendingCheckInSaves_closedDoesNot() {
+                RentalContract contract = RentalContract.builder()
+                                .id(701L)
+                                .facilityId(1L)
+                                .monthlyPrice(1_000_000L)
+                                .status(ContractStatus.PENDING_CHECK_IN)
+                                .build();
+                ExtraFeeType damageFee = ExtraFeeType.builder()
+                                .code("DMG-WALL")
+                                .name("Hư hại nặng")
+                                .category("DAMAGE")
+                                .amount(500_000L)
+                                .feeType("FIXED")
+                                .facilityId(1L)
+                                .isActive(true)
+                                .build();
+                damageFee.setId(16L);
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(701L), anyList())).thenReturn(Optional.of(contract));
+                when(extraFeeTypeRepository.findById(16L)).thenReturn(Optional.of(damageFee));
+                when(extraChargeRepository.save(any(ContractExtraCharge.class))).thenAnswer(inv -> inv.getArgument(0));
+
+                ApplyCatalogFeeRequest request = ApplyCatalogFeeRequest.builder()
+                                .extraFeeTypeId(16L)
+                                .note("Sự cố")
+                                .paid(false)
+                                .build();
+                CatalogFeeChargeResponse saved = contractService.applyCatalogFee(701L, request, 8L, List.of(1L));
+                assertEquals(500_000L, saved.getAmount());
+                verify(extraChargeRepository).save(any(ContractExtraCharge.class));
+
+                contract.setStatus(ContractStatus.CLOSED);
+                CustomException ex = assertThrows(CustomException.class,
+                                () -> contractService.applyCatalogFee(701L, request, 8L, List.of(1L)));
+                assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+                verify(extraChargeRepository, times(1)).save(any(ContractExtraCharge.class));
+        }
+
+        @Test
+        @DisplayName("FM thu phụ phí: một EXTRA_FEE_PAYMENT SUCCESS, lần hai không ghi thêm, quyết toán không trừ lại")
+        void testCollectCatalogFee_WritesOneSuccessPaymentAndSettlementSkipsIt() {
+                RentalContract contract = RentalContract.builder()
+                                .id(700L)
+                                .facilityId(1L)
+                                .monthlyPrice(1_000_000L)
+                                .depositAmount(1_000_000L)
+                                .depositBalance(1_000_000L)
+                                .startDate(LocalDate.of(2026, 1, 1))
+                                .endDateExclusive(LocalDate.of(2026, 12, 1))
+                                .returnDate(LocalDate.of(2026, 11, 16))
+                                .status(ContractStatus.ACTIVE)
+                                .build();
+                ContractExtraCharge charge = ContractExtraCharge.builder()
+                                .id(88L)
+                                .contractId(700L)
+                                .extraFeeTypeId(15L)
+                                .amount(300_000L)
+                                .reason("DAMAGE: Thay ổ khóa — [Sự cố SUP-202611-0001] Chưa thu")
+                                .status(ExtraChargeStatus.UNPAID)
+                                .build();
+                List<PaymentTransaction> savedPayments = new ArrayList<>();
+                PaymentTransactionRepository paymentRepository = mock(PaymentTransactionRepository.class);
+                ReflectionTestUtils.setField(contractService, "paymentTransactionRepository", paymentRepository);
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(700L), anyList())).thenReturn(Optional.of(contract));
+                when(extraChargeRepository.findById(88L)).thenReturn(Optional.of(charge));
+                when(extraChargeRepository.findByContractIdAndStatus(eq(700L), eq(ExtraChargeStatus.UNPAID)))
+                                .thenAnswer(inv -> charge.getStatus() == ExtraChargeStatus.UNPAID ? List.of(charge) : List.of());
+                when(extraChargeRepository.save(any(ContractExtraCharge.class))).thenAnswer(inv -> inv.getArgument(0));
+                when(paymentRepository.findByContractId(700L)).thenAnswer(inv -> new ArrayList<>(savedPayments));
+                when(paymentRepository.save(any(PaymentTransaction.class))).thenAnswer(inv -> {
+                        PaymentTransaction payment = inv.getArgument(0);
+                        payment.setId(501L);
+                        savedPayments.add(payment);
+                        return payment;
+                });
+                when(paymentRepository.findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(eq(700L), eq("SETTLEMENT")))
+                                .thenReturn(Optional.empty());
+
+                SettlementPreviewResponse before = contractService.getSettlementPreview(700L, List.of(1L));
+                assertEquals(300_000L, before.getUnpaidExtraCharges());
+
+                CatalogFeeChargeResponse first = contractService.collectCatalogFee(700L, 88L, List.of(1L));
+                assertEquals("PAID", first.getStatus());
+                assertEquals(300_000L, first.getAmount());
+                assertEquals(1, savedPayments.size());
+                PaymentTransaction payment = savedPayments.get(0);
+                assertEquals("EXTRA_FEE_PAYMENT", payment.getTransactionType());
+                assertEquals("SUCCESS", payment.getStatus());
+                assertEquals("CASH", payment.getPaymentMethod());
+                assertEquals(300_000L, payment.getAmount());
+                assertEquals(700L, payment.getContractId());
+                assertEquals("DESK-CASH-88", payment.getProviderReference());
+                assertNotNull(payment.getPaidAt());
+
+                SettlementPreviewResponse after = contractService.getSettlementPreview(700L, List.of(1L));
+                assertEquals(0L, after.getUnpaidExtraCharges());
+
+                contractService.collectCatalogFee(700L, 88L, List.of(1L));
+                assertEquals(1, savedPayments.size());
+                verify(contractRepository, never()).save(any());
         }
 }

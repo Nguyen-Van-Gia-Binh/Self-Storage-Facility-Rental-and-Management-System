@@ -62,9 +62,9 @@ export const RevenueStreamDonut: React.FC<RevenueStreamDonutProps> = ({
       label: 'Tiền thuê kho',
       shortLabel: 'Tiền thuê',
       amount: rental,
-      hexColor: '#10b981', // emerald-500
-      twBg: 'bg-emerald-500',
-      twText: 'text-emerald-700',
+      hexColor: '#57b29a',
+      twBg: 'bg-brand-500',
+      twText: 'text-slate-900',
       desc: 'Dòng tiền hợp đồng cốt lõi theo tháng/kỳ',
     },
     {
@@ -72,9 +72,9 @@ export const RevenueStreamDonut: React.FC<RevenueStreamDonutProps> = ({
       label: 'Phí gia hạn',
       shortLabel: 'Gia hạn',
       amount: renewal,
-      hexColor: '#6366f1', // indigo-500
-      twBg: 'bg-indigo-500',
-      twText: 'text-indigo-700',
+      hexColor: '#64748b',
+      twBg: 'bg-slate-500',
+      twText: 'text-slate-700',
       desc: 'Hợp đồng tái tục kỳ mới của khách quen',
     },
     {
@@ -82,9 +82,9 @@ export const RevenueStreamDonut: React.FC<RevenueStreamDonutProps> = ({
       label: 'Cọc giữ chỗ & đảm bảo',
       shortLabel: 'Tiền cọc',
       amount: deposit,
-      hexColor: '#0ea5e9', // sky-500
-      twBg: 'bg-sky-500',
-      twText: 'text-sky-700',
+      hexColor: '#94a3b8',
+      twBg: 'bg-slate-400',
+      twText: 'text-slate-600',
       desc: 'Khoản ký quỹ đảm bảo thực hiện hợp đồng',
     },
     {
@@ -92,9 +92,9 @@ export const RevenueStreamDonut: React.FC<RevenueStreamDonutProps> = ({
       label: 'Phụ phí dịch vụ',
       shortLabel: 'Phụ phí',
       amount: surcharge,
-      hexColor: '#f59e0b', // amber-500
-      twBg: 'bg-amber-500',
-      twText: 'text-amber-700',
+      hexColor: '#cbd5e1',
+      twBg: 'bg-slate-300',
+      twText: 'text-slate-600',
       desc: 'Bốc dỡ, điện lạnh, xe nâng, vật tư đóng gói',
     },
     {
@@ -174,7 +174,7 @@ export const RevenueStreamDonut: React.FC<RevenueStreamDonutProps> = ({
             )}
             <div className="text-slate-500 flex items-center gap-1.5">
               <span>Tổng phát sinh:</span>
-              <span className="font-mono font-bold text-slate-900 text-sm">
+              <span className="num font-bold text-slate-900 text-sm">
                 {formatCurrency(total)}
               </span>
             </div>
@@ -247,11 +247,11 @@ export const RevenueStreamDonut: React.FC<RevenueStreamDonutProps> = ({
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 max-w-[120px] truncate">
                         {activeStream.shortLabel}
                       </span>
-                      <span className="text-base font-bold font-mono text-slate-900 tracking-tight leading-tight">
+                      <span className="text-base font-bold num text-slate-900 tracking-tight leading-tight">
                         {formatCurrency(activeStream.amount)}
                       </span>
                       <span
-                        className={`text-xs font-bold font-mono mt-0.5 ${activeStream.twText}`}
+                        className={`text-xs font-bold num mt-0.5 ${activeStream.twText}`}
                       >
                         {activePercent !== null ? `${activePercent.toFixed(1)}%` : ''}
                       </span>
@@ -261,7 +261,7 @@ export const RevenueStreamDonut: React.FC<RevenueStreamDonutProps> = ({
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                         Tổng thực thu
                       </span>
-                      <span className="text-base font-bold font-mono text-slate-900 tracking-tight leading-tight">
+                      <span className="text-base font-bold num text-slate-900 tracking-tight leading-tight">
                         {formatCurrency(total)}
                       </span>
                       <span className="text-[11px] text-slate-500 font-medium mt-0.5">
@@ -301,26 +301,23 @@ export const RevenueStreamDonut: React.FC<RevenueStreamDonutProps> = ({
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className={`w-3 h-3 rounded-full ${s.twBg} shrink-0`} />
-                    <div className="truncate">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-slate-900 truncate">
-                          {s.label}
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-xs font-bold text-slate-900 truncate">
+                        {s.label}
+                      </span>
+                      {isSelected && (
+                        <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-brand-100 text-brand-800 shrink-0">
+                          Đang lọc
                         </span>
-                        {isSelected && (
-                          <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-brand-100 text-brand-800">
-                            Đang lọc
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-slate-500 truncate">{s.desc}</div>
+                      )}
                     </div>
                   </div>
 
                   <div className="text-right shrink-0">
-                    <div className="text-xs font-bold font-mono tabular-nums text-slate-900">
+                    <div className="text-xs font-bold tabular-nums text-slate-900">
                       {formatCurrency(s.amount)}
                     </div>
-                    <div className="text-[11px] font-mono font-semibold text-slate-500">
+                    <div className="text-[11px] font-semibold text-slate-500">
                       {percent.toFixed(1)}%
                     </div>
                   </div>
@@ -340,14 +337,14 @@ export const RevenueStreamDonut: React.FC<RevenueStreamDonutProps> = ({
             <div className="flex items-center gap-4 self-end sm:self-auto shrink-0">
               <div className="flex items-center gap-1.5">
                 <span className="text-slate-500">Hoàn trả khách:</span>
-                <span className="font-mono font-bold text-rose-600 text-sm">
+                <span className="num font-bold text-rose-600 text-sm">
                   {refund > 0 ? `- ${formatCurrency(refund)}` : formatCurrency(0)}
                 </span>
               </div>
               <span className="text-slate-300">|</span>
               <div className="flex items-center gap-1.5">
                 <span className="text-slate-600 font-semibold">Thực nhận ròng (Net):</span>
-                <span className="font-mono font-bold text-emerald-700 text-sm">
+                <span className="num font-bold text-emerald-700 text-sm">
                   {formatCurrency(netRevenue)}
                 </span>
               </div>

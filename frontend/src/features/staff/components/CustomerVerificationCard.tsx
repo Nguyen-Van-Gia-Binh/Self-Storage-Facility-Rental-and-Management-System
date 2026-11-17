@@ -149,7 +149,7 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
           <span className="flex items-center gap-1.5 text-slate-500">
             <Calendar className="w-3.5 h-3.5 text-teal-600" /> Kỳ hạn ({contract.rentalMonths} tháng):
           </span>
-          <strong className="text-slate-900 font-mono">
+          <strong className="text-slate-900 num">
             {contract.startDate} → {contract.endDateExclusive}
           </strong>
         </div>
@@ -165,7 +165,7 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
           <span className="flex items-center gap-1.5 text-slate-500">
             <CreditCard className="w-3.5 h-3.5 text-emerald-600" /> Tổng thanh toán (Thuê + Cọc):
           </span>
-          <strong className="font-mono text-sm text-slate-900 font-bold">
+          <strong className="num text-sm text-slate-900 font-bold">
             {formatCurrency(contract.totalPayable)}
           </strong>
         </div>

@@ -97,6 +97,7 @@ class RenewalServiceTest {
                 paymentTransactionRepository);
         org.mockito.Mockito.lenient().when(unitTypeRepository.findById(7L))
                 .thenReturn(Optional.of(UnitType.builder().id(7L).code("UT-S").isActive(true).build()));
+        org.mockito.Mockito.lenient().when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
     }
 
     @AfterEach
@@ -172,6 +173,33 @@ class RenewalServiceTest {
         assertEquals(100L, quote.getContractId());
         assertEquals(1, quote.getRenewalMonths());
         assertEquals(800000L, quote.getTotalAmount());
+    }
+
+    @Test
+    @DisplayName("Callback còn 19 ngày không đổi ngày kết thúc và không lưu dòng gia hạn")
+    void testProcessRenewal_rejectsWhenNineteenDaysLeft() {
+        RentalContract contract = buildContract(ContractStatus.ACTIVE);
+        LocalDate end = LocalDate.now().plusDays(19);
+        contract.setEndDateExclusive(end);
+        PaymentTransaction payment = PaymentTransaction.builder()
+                .id(900L)
+                .amount(800_000L)
+                .renewalMonths(1)
+                .status("SUCCESS")
+                .providerReference("GH100T1")
+                .build();
+        when(paymentTransactionRepository.findById(900L)).thenReturn(Optional.of(payment));
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+
+        RenewalRequest request = new RenewalRequest();
+        request.setRenewalMonths(1);
+        CustomException ex = assertThrows(CustomException.class,
+                () -> renewalService.processRenewal(100L, request, 900L));
+
+        assertEquals(ErrorCode.RENEWAL_DEADLINE_PASSED, ex.getErrorCode());
+        assertEquals(end, contract.getEndDateExclusive());
+        verify(rentalContractRepository, never()).save(any());
+        verify(contractRenewalRepository, never()).save(any());
     }
 
     @Test

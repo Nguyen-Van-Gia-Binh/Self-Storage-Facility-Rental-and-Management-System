@@ -23,7 +23,7 @@ describe('FacilityPriceTable UI Polish', () => {
     cleanup();
   });
 
-  it('renders total units as a badge and audit history as a ghost button', () => {
+  it('renders total units as a number and audit history as a ghost button', () => {
     render(
       <BrowserRouter>
         <FacilityPriceTable
@@ -32,14 +32,15 @@ describe('FacilityPriceTable UI Polish', () => {
           selectedFacilityId={1}
           onOpenPriceModal={vi.fn()}
           onOpenBulkPriceModal={vi.fn()}
+          onDelete={vi.fn()}
         />
       </BrowserRouter>
     );
 
     // Badge tổng ô kho (đã lược bỏ đơn vị vì đã có trên tiêu đề cột)
-    const badge = screen.getByText('12');
-    expect(badge).toBeInTheDocument();
-    expect(badge.className).toContain('rounded-full');
+    const totalUnits = screen.getByText('12');
+    expect(totalUnits).toBeInTheDocument();
+    expect(totalUnits.className).not.toContain('rounded-full');
 
     // Header cột
     expect(screen.getByText('Tổng ô kho (ô)')).toBeInTheDocument();
@@ -62,6 +63,7 @@ describe('FacilityPriceTable UI Polish', () => {
           selectedFacilityId={1}
           onOpenPriceModal={vi.fn()}
           onOpenBulkPriceModal={vi.fn()}
+          onDelete={vi.fn()}
         />
       </BrowserRouter>
     );

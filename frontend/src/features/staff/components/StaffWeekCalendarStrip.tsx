@@ -218,7 +218,7 @@ export const StaffWeekCalendarStrip: React.FC<StaffWeekCalendarStripProps> = ({
               {/* Hàng 2: Số ngày to nổi bật */}
               <div className="my-0.5">
                 <span
-                  className={`text-2xl sm:text-3xl font-black font-mono tracking-tight ${
+                  className={`text-2xl sm:text-3xl font-black num tracking-tight ${
                     isSelected ? 'text-white' : 'text-slate-900'
                   }`}
                 >

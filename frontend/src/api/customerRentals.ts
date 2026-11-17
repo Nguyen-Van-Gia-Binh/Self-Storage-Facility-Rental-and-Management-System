@@ -382,7 +382,7 @@ export async function updateContractPin(
     };
   } catch (err: any) {
     console.error('Lỗi gọi API đổi mã PIN:', err);
-    throw new Error(err?.message || 'Không thể cập nhật mã PIN trên máy chủ.');
+    throw new Error(err?.message || 'Không thể cập nhật mã PIN trên máy chủ.', { cause: err });
   }
 }
 
@@ -450,6 +450,19 @@ export async function renewContract(
     console.error('Lỗi gia hạn hợp đồng:', err);
     throw err;
   }
+}
+
+export interface CustomerHistoryItem {
+  at: string | null;
+  kind: 'PAYMENT' | 'CONTRACT' | 'ADJUSTMENT';
+  title: string;
+  detail: string;
+}
+
+/** Dòng thời gian của khách đang đăng nhập. GET /customers/me/history */
+export async function getMyHistory(): Promise<CustomerHistoryItem[]> {
+  const res = await apiClient<ApiResponse<CustomerHistoryItem[]>>('/customers/me/history');
+  return Array.isArray(res?.data) ? res.data : [];
 }
 
 /**

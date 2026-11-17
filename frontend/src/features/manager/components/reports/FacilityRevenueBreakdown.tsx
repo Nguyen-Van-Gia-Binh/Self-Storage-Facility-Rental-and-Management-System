@@ -75,7 +75,7 @@ export const FacilityRevenueBreakdown: React.FC<Props> = ({ data, loading }) => 
                 <DollarSign className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-xl font-black text-blue-700 font-mono">{formatVND(rentalRevenue)}</div>
+            <div className="text-xl font-black text-blue-700 num">{formatVND(rentalRevenue)}</div>
           </div>
           <p className="text-[11px] text-slate-500 mt-2">
             Thu từ các hợp đồng thuê đang hiệu lực trong kỳ
@@ -91,7 +91,7 @@ export const FacilityRevenueBreakdown: React.FC<Props> = ({ data, loading }) => 
                 <Wrench className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-xl font-black text-purple-700 font-mono">{formatVND(customerServiceFee)}</div>
+            <div className="text-xl font-black text-purple-700 num">{formatVND(customerServiceFee)}</div>
           </div>
           <p className="text-[11px] text-slate-500 mt-2">
             Phụ phí dịch vụ & sửa chữa sự cố do khách chịu
@@ -107,7 +107,7 @@ export const FacilityRevenueBreakdown: React.FC<Props> = ({ data, loading }) => 
                 <AlertTriangle className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-xl font-black text-amber-700 font-mono">{formatVND(overduePenaltyFee)}</div>
+            <div className="text-xl font-black text-amber-700 num">{formatVND(overduePenaltyFee)}</div>
           </div>
           <p className="text-[11px] text-slate-500 mt-2">
             Phạt lũy tiến (10% - 20%/ngày) trên tiền cọc từ D+4 đến D+10
@@ -123,7 +123,7 @@ export const FacilityRevenueBreakdown: React.FC<Props> = ({ data, loading }) => 
                 <MinusCircle className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-xl font-black text-rose-600 font-mono">
+            <div className="text-xl font-black text-rose-600 num">
               - {formatVND(companyIncidentCost)}
             </div>
           </div>
@@ -154,14 +154,14 @@ export const FacilityRevenueBreakdown: React.FC<Props> = ({ data, loading }) => 
 
           <div className="text-left lg:text-right">
             <div className="text-xs text-blue-300 font-medium">Doanh thu thuần thực tế kỳ này:</div>
-            <div className="text-2xl sm:text-3xl font-black text-white font-mono tracking-tight mt-0.5">
+            <div className="text-2xl sm:text-3xl font-black text-white num tracking-tight mt-0.5">
               {formatVND(netRevenue)}
             </div>
           </div>
         </div>
 
         {/* Diễn giải chi tiết phép tính minh bạch */}
-        <div className="mt-4 pt-3 border-t border-slate-700/60 flex flex-wrap items-center gap-2 text-xs font-mono text-slate-300">
+        <div className="mt-4 pt-3 border-t border-slate-700/60 flex flex-wrap items-center gap-2 text-xs num text-slate-300">
           <span className="text-slate-400 font-sans">Chi tiết:</span>
           <span className="text-blue-300">{formatVND(rentalRevenue)} (Thuê)</span>
           <span>+</span>
@@ -188,7 +188,7 @@ export const FacilityRevenueBreakdown: React.FC<Props> = ({ data, loading }) => 
               <span className="text-xs font-bold text-slate-800">
                 Tiền cọc ký quỹ đang quản lý (Deposit Balance):
               </span>
-              <span className="text-sm font-bold text-emerald-700 font-mono">
+              <span className="text-sm font-bold text-emerald-700 num">
                 {formatVND(data.depositBalance)}
               </span>
             </div>

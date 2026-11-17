@@ -447,4 +447,16 @@ class StaffSupportServiceTest {
                 staffSupportService.resolveSupportRequest(801L, new ResolveSupportRequest("Đã xử lý xong", null), staffUser));
         assertEquals(ErrorCode.SUPPORT_REQUEST_NOT_ASSIGNED_TO_STAFF, ex4.getErrorCode());
     }
+
+    @Test
+    @DisplayName("Phiếu mới gửi: quản lý không được bật cờ chuyển ô kho")
+    void managerCannotFlagRelocationOnNewTicket() {
+        when(supportRequestRepository.findById(801L)).thenReturn(Optional.of(sampleTicket));
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                staffSupportService.markRelocationRequired(801L, true, managerUser));
+
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        verify(supportRequestRepository, never()).save(any());
+    }
 }

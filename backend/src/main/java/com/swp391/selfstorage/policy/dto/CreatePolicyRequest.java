@@ -58,7 +58,7 @@ public class CreatePolicyRequest {
     @DecimalMax(value = "1.0", message = "Tỉ lệ hoàn tiền tối đa là 1.0 (100%)")
     private BigDecimal cancelNoShowRefundRate;
 
-    @NotBlank(message = "Cấu hình ngày nhắc gia hạn không được để trống (ví dụ: '30,15,7,3,1')")
+    @NotBlank(message = "Cấu hình ngày nhắc gia hạn không được để trống (ví dụ: '60,30,25,21')")
     private String renewalReminderDays;
 
     @NotNull(message = "Số tháng gia hạn tối thiểu không được để trống")

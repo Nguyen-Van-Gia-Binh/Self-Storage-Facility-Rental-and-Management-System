@@ -305,6 +305,18 @@ export async function applyCatalogFee(
   return res.data;
 }
 
+/** FM thu tiền mặt một khoản phụ phí chưa thu. Tạo giao dịch EXTRA_FEE_PAYMENT thành công. */
+export async function collectCatalogFee(
+  contractId: number,
+  chargeId: number,
+): Promise<{ id: number; amount: number; status?: string }> {
+  const res = await apiClient<ApiResponse<{ id: number; amount: number; status?: string }>>(
+    `/contracts/${contractId}/catalog-fees/${chargeId}/collect`,
+    { method: 'POST' },
+  );
+  return res.data;
+}
+
 /**
  * Hoàn tất dọn ô kho sau nghiệm thu: CLEANING → RESERVED hoặc AVAILABLE (BR-RET-09).
  * POST /api/v1/contracts/{id}/cleaning-complete

@@ -23,7 +23,8 @@ describe('ISS-84: HandoverInspectionForm Action Footer Clean Scroll Fix', () => 
 
   it('Thanh thao tác bàn giao được định dạng tự nhiên ở chân thẻ form với viền trên và nền phân tách rõ ràng', () => {
     const content = fs.readFileSync(handoverInspectionFormPath, 'utf-8');
-    expect(content).toMatch(/bg-slate-50\/80\s+-mx-5\s+-mb-5\s+p-4\s+rounded-b-2xl\s+border-t\s+border-slate-200/);
+    expect(content).toMatch(/pt-6\s+border-t\s+border-slate-200\s+flex\s+flex-col\s+sm:flex-row/);
+    expect(content).not.toMatch(/sticky bottom-0/);
   });
 
   it('Giữ nguyên đầy đủ 2 nhánh hành động trên cùng 1 hàng ngang cân đối, loại bỏ nhãn vàng gây rớt dòng', () => {

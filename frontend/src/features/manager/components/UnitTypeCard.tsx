@@ -134,7 +134,7 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
               <Maximize2 className="w-2.5 h-2.5" />
               Diện tích
             </span>
-            <p className="font-mono font-bold text-slate-800 mt-0.5 text-xs">
+            <p className="num font-bold text-slate-800 mt-0.5 text-xs">
               {area} m²
             </p>
           </div>
@@ -143,7 +143,7 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
               <Box className="w-2.5 h-2.5" />
               Kích thước
             </span>
-            <p className="font-mono font-semibold text-slate-700 mt-0.5 text-[11px] whitespace-nowrap">
+            <p className="num font-semibold text-slate-700 mt-0.5 text-[11px] whitespace-nowrap">
               {type.widthM}×{type.depthM}×{type.heightM}m
             </p>
           </div>
@@ -152,7 +152,7 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
               <Layers className="w-2.5 h-2.5" />
               Tổng quy mô
             </span>
-            <p className="font-mono font-bold text-slate-800 mt-0.5 text-xs">
+            <p className="num font-bold text-slate-800 mt-0.5 text-xs">
               {totalUnits} ô
             </p>
           </div>

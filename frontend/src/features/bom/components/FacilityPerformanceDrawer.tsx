@@ -138,21 +138,21 @@ export const FacilityPerformanceDrawer: React.FC<FacilityPerformanceDrawerProps>
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                   <div className="text-[11px] font-medium text-slate-500">Tổng thực thu</div>
-                  <div className="text-base font-bold font-mono text-slate-900 mt-1">
+                  <div className="text-base font-bold num text-slate-900 mt-1">
                     {formatCurrency(facility.totalRevenue)}
                   </div>
                 </div>
 
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                   <div className="text-[11px] font-medium text-slate-500">Tỷ lệ lấp đầy</div>
-                  <div className="text-base font-bold font-mono text-slate-900 mt-1">
+                  <div className="text-base font-bold num text-slate-900 mt-1">
                     {rateUnknown ? 'Không xác định' : formatPercent(facility.occupancyRate)}
                   </div>
                 </div>
 
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                   <div className="text-[11px] font-medium text-slate-500">Ô trống / Khai thác</div>
-                  <div className="text-base font-bold font-mono text-slate-900 mt-1">
+                  <div className="text-base font-bold num text-slate-900 mt-1">
                     <span className="text-emerald-600">{facility.availableUnits}</span> /{' '}
                     <span>{exploitable}</span>
                   </div>
@@ -160,7 +160,7 @@ export const FacilityPerformanceDrawer: React.FC<FacilityPerformanceDrawerProps>
 
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                   <div className="text-[11px] font-medium text-slate-500">HĐ nợ quá hạn</div>
-                  <div className="text-base font-bold font-mono mt-1">
+                  <div className="text-base font-bold num mt-1">
                     {facility.overdueCount > 0 ? (
                       <span className="text-rose-600">{facility.overdueCount} HĐ</span>
                     ) : (
@@ -188,7 +188,7 @@ export const FacilityPerformanceDrawer: React.FC<FacilityPerformanceDrawerProps>
                         <div className={`w-2 h-2 rounded-full ${s.color}`} />
                         <span className="text-slate-700 font-medium">{s.label}</span>
                       </div>
-                      <div className="text-right font-mono">
+                      <div className="text-right num">
                         <span className="font-bold text-slate-900 mr-2">
                           {formatCurrency(s.amount)}
                         </span>
@@ -202,7 +202,7 @@ export const FacilityPerformanceDrawer: React.FC<FacilityPerformanceDrawerProps>
                 {facility.refundAmount > 0 && (
                   <div className="pt-2 mt-1 border-t border-slate-200/60 flex items-center justify-between text-xs text-amber-800">
                     <span className="font-semibold">Đã hoàn trả khách:</span>
-                    <span className="font-mono font-bold text-rose-600">
+                    <span className="num font-bold text-rose-600">
                       - {formatCurrency(facility.refundAmount)}
                     </span>
                   </div>
@@ -221,7 +221,7 @@ export const FacilityPerformanceDrawer: React.FC<FacilityPerformanceDrawerProps>
                     <PackageCheck className="w-4 h-4 text-emerald-600" />
                     <span>Ô còn trống sẵn sàng đón khách:</span>
                   </div>
-                  <span className="font-mono font-bold text-emerald-900 text-sm">
+                  <span className="num font-bold text-emerald-900 text-sm">
                     {facility.availableUnits} ô
                   </span>
                 </div>
@@ -231,7 +231,7 @@ export const FacilityPerformanceDrawer: React.FC<FacilityPerformanceDrawerProps>
                     <ShieldCheck className="w-4 h-4 text-sky-600" />
                     <span>Ô đang có khách thuê hoạt động:</span>
                   </div>
-                  <span className="font-mono font-bold text-sky-900 text-sm">
+                  <span className="num font-bold text-sky-900 text-sm">
                     {facility.occupiedUnits} ô
                   </span>
                 </div>
@@ -241,7 +241,7 @@ export const FacilityPerformanceDrawer: React.FC<FacilityPerformanceDrawerProps>
                     <Wrench className="w-4 h-4 text-slate-500" />
                     <span>Bảo trì / Ngừng khai thác:</span>
                   </div>
-                  <span className="font-mono font-bold text-slate-900 text-sm">
+                  <span className="num font-bold text-slate-900 text-sm">
                     {facility.outOfServiceUnits} ô
                   </span>
                 </div>

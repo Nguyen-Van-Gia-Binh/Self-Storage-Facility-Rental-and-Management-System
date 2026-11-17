@@ -320,7 +320,7 @@ export const StaffReturnInspectionPage: React.FC = () => {
                     </div>
                     <div className="flex justify-between">
                       <span>Tiền cọc:</span>
-                      <span className="font-mono font-bold text-slate-900">
+                      <span className="num font-bold text-slate-900">
                         {selectedContract.depositAmount.toLocaleString('vi-VN')} đ
                       </span>
                     </div>

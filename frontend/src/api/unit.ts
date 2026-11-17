@@ -57,6 +57,11 @@ export const toggleUnitTypeStatus = (facilityId: number, unitTypeId: number, isA
     body: JSON.stringify({ isActive }),
   });
 
+export const deleteUnitType = (facilityId: number, unitTypeId: number) =>
+  apiClient<void>(`/facilities/${facilityId}/unit-types/${unitTypeId}`, {
+    method: 'DELETE',
+  });
+
 export const fetchStorageUnits = (facilityId: number, params: StorageUnitListParams = {}) =>
   apiClient<PageResponse<StorageUnitResponse>>(
     `/facilities/${facilityId}/storage-units${buildQuery(params as Record<string, string | number | boolean | undefined>)}`

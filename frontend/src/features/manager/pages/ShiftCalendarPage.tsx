@@ -17,6 +17,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
+import { DateField } from '@/components/ui/DateField';
 import {
   getStaffWorkload,
   getDailyDispatchTasks,
@@ -332,12 +333,10 @@ export const ShiftCalendarPage: React.FC = () => {
 
               <div className="flex items-center gap-1.5 px-2 py-1 bg-white rounded-lg border border-slate-200/80 text-xs font-bold text-slate-800">
                 <CalendarIcon className="w-3.5 h-3.5 text-brand-600" />
-                <span>{formatDisplayDate(selectedDate)}</span>
-                <input
-                  type="date"
+                <DateField
                   value={selectedDate}
-                  onChange={(e) => handleDateChange(e.target.value)}
-                  className="opacity-0 absolute w-6 cursor-pointer"
+                  onChange={handleDateChange}
+                  className="w-24 bg-transparent text-xs font-bold text-slate-800 outline-none"
                 />
               </div>
 

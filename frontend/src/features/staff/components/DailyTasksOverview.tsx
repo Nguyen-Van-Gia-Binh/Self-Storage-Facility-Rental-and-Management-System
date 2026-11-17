@@ -11,6 +11,7 @@ import { StaffWeekCalendarStrip } from './StaffWeekCalendarStrip';
 import { StaffCheckInDetailView } from './StaffCheckInDetailView';
 import { StaffReturnDetailView } from './StaffReturnDetailView';
 import { StaffIncidentDetailView } from './StaffIncidentDetailView';
+import { isSupportTaskDone } from '@/api/staff';
 
 type ActiveTaskView =
   | { type: 'checkin'; task: DailyCheckInTask }
@@ -77,7 +78,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
   // Helper nhận diện công việc đã xong
   const isCheckInDone = (c: any) => Boolean(c.completed || c.status === 'COMPLETED' || c.status === 'ACTIVE');
   const isReturnDone = (r: any) => Boolean(r.completed || r.status === 'COMPLETED' || r.status === 'INSPECTED' || r.status === 'RETURNED');
-  const isIncidentDone = (i: any) => Boolean(i.status === 'RESOLVED' || i.status === 'CLOSED');
+  const isIncidentDone = (i: DailyIncidentTask) => isSupportTaskDone(i);
 
   // Thống kê nhanh theo trạng thái ca trực
   const checkInDoneCount = tasks.pendingCheckIns.filter(isCheckInDone).length;

@@ -216,7 +216,7 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
               {currentUnitTypeName}
             </span>
             {startDate && endDate && (
-              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-brand-100 text-brand-800 border border-brand-300 font-mono flex items-center gap-1">
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-brand-100 text-brand-800 border border-brand-300 num flex items-center gap-1">
                 <Calendar className="w-3 h-3 text-brand-600" />
                 {formatVnDate(startDate)} → {formatVnDate(endDate)}
               </span>
@@ -244,7 +244,7 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
                 >
                   <Layers className={`w-3.5 h-3.5 ${isActive ? 'text-brand-600' : 'text-slate-400'}`} />
                   <span>Tầng {floor}</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full num ${
                     isActive ? 'bg-brand-50 text-brand-700 font-bold' : 'bg-slate-300/80 text-slate-700'
                   }`}>
                     {count}

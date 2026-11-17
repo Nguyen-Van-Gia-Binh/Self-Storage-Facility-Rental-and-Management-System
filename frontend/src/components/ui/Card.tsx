@@ -20,8 +20,8 @@ export const Card: React.FC<CardProps> = ({ children, className = '', hoverable 
   return (
     <div
       className={[
-        'bg-white rounded-2xl border border-slate-200 shadow-sm',
-        hoverable ? 'transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer' : '',
+        'bg-white rounded-2xl border border-slate-200 shadow-none',
+        hoverable ? 'transition-[border-color,transform] duration-200 hover:border-brand-300 hover:-translate-y-0.5 cursor-pointer' : '',
         accent ? accentStyles[accent] : '',
         className,
       ].join(' ')}

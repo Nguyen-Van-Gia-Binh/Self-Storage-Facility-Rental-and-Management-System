@@ -1,10 +1,15 @@
-import { describe, it, expect } from 'vitest';
+// @vitest-environment jsdom
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
+import { MemoryRouter } from 'react-router-dom';
+import { render, screen } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
 import { StatusBadge } from '../components/StatusBadge';
 import { TypeBadge } from '../components/TypeBadge';
 import { PriorityBadge } from '../components/PriorityBadge';
-import { IncidentSummaryCard, type IncidentFacilityStats } from '../components/IncidentSummaryCard';
+import { IncidentDashboardPage } from '../pages/IncidentDashboardPage';
+import * as facilityApi from '@/api/facility';
+import type { FacilityListItem } from '@/types';
 import { IncidentTable } from '../components/IncidentTable';
 import { IncidentDetailPanel } from '../components/IncidentDetailPanel';
 import { StorageUnitMiniPanel } from '../components/StorageUnitMiniPanel';
@@ -13,25 +18,26 @@ import { StaffAssignmentSection } from '../components/StaffAssignmentSection';
 import { IncidentTimeline } from '../components/IncidentTimeline';
 import type { ManagementSupportTicket, StaffWorkloadItem } from '../types/staffAssignment';
 
+vi.mock('@/api/facility', () => ({
+  fetchMyAssignedFacilities: vi.fn(),
+}));
+
 const cleanHtml = (html: string) =>
   html
     .replace(/<!-- -->/g, '')
     .replace(/&amp;/g, '&');
 
 describe('Xử lý sự cố — Kiến trúc Drill-down 3 Cấp độ (FM-05, SCR-FM-05)', () => {
-  const mockFacilityStats: IncidentFacilityStats = {
-    facilityId: 1,
-    facilityCode: 'FAC-CG',
-    facilityName: 'Cơ sở Cầu Giấy',
+  const mockFacility: FacilityListItem = {
+    id: 1,
+    code: 'FAC-CG',
+    name: 'Cơ sở Cầu Giấy',
     address: '123 Cầu Giấy, Hà Nội',
-    city: 'Hà Nội',
     phone: '0901234567',
     description: 'Cơ sở Cầu Giấy hiện đại',
-    total: 5,
-    pendingCount: 1,
-    inProgressCount: 1,
-    resolvedCount: 3,
-    cancelledCount: 0,
+    openingHours: '08:00 - 20:00',
+    isActive: true,
+    createdAt: '2026-01-01',
   };
 
   const mockTicket: ManagementSupportTicket = {
@@ -91,20 +97,23 @@ describe('Xử lý sự cố — Kiến trúc Drill-down 3 Cấp độ (FM-05, S
     },
   ];
 
-  describe('Cấp 1 — Thẻ tổng quan cơ sở (IncidentSummaryCard)', () => {
-    it('hiển thị đầy đủ thông tin cơ sở, địa chỉ, hotline và nút điều hướng xem sự cố', () => {
-      const html = cleanHtml(
-        renderToString(
-          <IncidentSummaryCard data={mockFacilityStats} onSelect={() => {}} />
-        )
+  describe('Cấp 1 — Bảng cơ sở', () => {
+    it('hiển thị tên, mã, địa chỉ, điện thoại, trạng thái và nút Sự cố', async () => {
+      vi.mocked(facilityApi.fetchMyAssignedFacilities).mockResolvedValue([mockFacility]);
+
+      render(
+        <MemoryRouter>
+          <IncidentDashboardPage />
+        </MemoryRouter>
       );
 
-      expect(html).toContain('FAC-CG');
-      expect(html).toContain('Cơ sở Cầu Giấy');
-      expect(html).toContain('123 Cầu Giấy, Hà Nội');
-      expect(html).toContain('0901234567');
-      expect(html).toContain('Xem danh sách sự cố');
-      // Không hiển thị các con số vụn vặt chờ nhận / đang xử lý trên card Cấp 1 theo chuẩn đồng nhất hệ thống
+      expect(await screen.findByText('FAC-CG')).toBeTruthy();
+      expect(screen.getByText('Cơ sở Cầu Giấy')).toBeTruthy();
+      expect(screen.getByText('123 Cầu Giấy, Hà Nội')).toBeTruthy();
+      expect(screen.getByText('0901234567')).toBeTruthy();
+      expect(screen.getByText('Hoạt động')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Sự cố' })).toBeTruthy();
+      const html = cleanHtml(document.body.innerHTML);
       expect(html).not.toContain('Chờ nhận:');
       expect(html).not.toContain('Đang xử lý:');
     });
@@ -198,30 +207,21 @@ describe('Xử lý sự cố — Kiến trúc Drill-down 3 Cấp độ (FM-05, S
       expect(html).toContain('Ảnh hiện trường ban đầu');
     });
 
-    it('IncidentDetailPanel hiển thị nút Đổi kho khi ticket có yêu cầu di dời', () => {
+    it('IncidentDetailPanel ghi Có khi ticket cần di dời, không hiện cảnh báo đổi kho', () => {
       const relocationTicket = { ...mockTicket, relocationRequired: true };
       const html = cleanHtml(
-        renderToString(
-          <IncidentDetailPanel
-            ticket={relocationTicket}
-            onRelocateUnit={() => {}}
-          />
-        )
+        renderToString(<IncidentDetailPanel ticket={relocationTicket} />)
       );
 
-      expect(html).toContain('⚠️ Cần chuyển ô kho');
-      expect(html).toContain('Đổi kho');
+      expect(html).toContain('Có');
+      expect(html).not.toContain('Cần chuyển ô kho');
+      expect(html).not.toContain('Đổi kho');
     });
 
-    it('IncidentDetailPanel ẩn nút Đổi kho khi ticket không yêu cầu di dời', () => {
+    it('IncidentDetailPanel ghi Không khi ticket không yêu cầu di dời', () => {
       const normalTicket = { ...mockTicket, relocationRequired: false };
       const html = cleanHtml(
-        renderToString(
-          <IncidentDetailPanel
-            ticket={normalTicket}
-            onRelocateUnit={() => {}}
-          />
-        )
+        renderToString(<IncidentDetailPanel ticket={normalTicket} />)
       );
 
       expect(html).toContain('Không');

@@ -493,7 +493,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                               </span>
                             </div>
                           </div>
-                          <span className="font-mono font-bold text-slate-800 shrink-0 ml-2">
+                          <span className="num font-bold text-slate-800 shrink-0 ml-2">
                             {fee.type === 'PERCENTAGE'
                               ? `${fee.amount}% (${feePrice.toLocaleString('vi-VN')} đ)`
                               : `${feePrice.toLocaleString('vi-VN')} đ`}
@@ -507,7 +507,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                 {selectedFeeIds.length > 0 && (
                   <div className="flex items-center justify-between pt-2.5 border-t border-slate-200 text-xs font-semibold">
                     <span className="text-slate-600">Tổng phụ phí phát sinh:</span>
-                    <span className="font-mono text-teal-700 text-sm font-bold">
+                    <span className="num text-teal-700 text-sm font-bold">
                       {totalFeeAmount.toLocaleString('vi-VN')} đ
                     </span>
                   </div>
@@ -611,7 +611,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                         <AlertTriangle className="w-4 h-4 text-rose-600" />
                         Khoản phụ phí khách hàng cần thanh toán:
                       </span>
-                      <span className="font-mono font-bold text-sm text-rose-700">
+                      <span className="num font-bold text-sm text-rose-700">
                         {totalFeeAmount.toLocaleString('vi-VN')} đ
                       </span>
                     </div>

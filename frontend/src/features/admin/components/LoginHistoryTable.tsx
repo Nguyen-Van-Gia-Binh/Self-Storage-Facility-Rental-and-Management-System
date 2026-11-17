@@ -12,6 +12,7 @@ import {
   Monitor,
 } from 'lucide-react';
 import type { LoginHistoryItem, LoginHistoryFilterParams } from '../types/audit';
+import { DateField } from '@/components/ui/DateField';
 
 interface LoginHistoryTableProps {
   histories: LoginHistoryItem[];
@@ -124,20 +125,16 @@ export const LoginHistoryTable: React.FC<LoginHistoryTableProps> = ({
 
           {/* Từ ngày - Đến ngày */}
           <div className="flex items-center gap-1.5">
-            <input
-              type="date"
+            <DateField
               value={filter.from || ''}
-              onChange={(e) => onFilterChange({ ...filter, from: e.target.value, page: 0 })}
+              onChange={(next) => onFilterChange({ ...filter, from: next, page: 0 })}
               className="w-1/2 px-2 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-gray-700"
-              title="Từ ngày"
             />
             <span className="text-gray-400 text-xs">-</span>
-            <input
-              type="date"
+            <DateField
               value={filter.to || ''}
-              onChange={(e) => onFilterChange({ ...filter, to: e.target.value, page: 0 })}
+              onChange={(next) => onFilterChange({ ...filter, to: next, page: 0 })}
               className="w-1/2 px-2 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-gray-700"
-              title="Đến ngày"
             />
           </div>
 
@@ -191,7 +188,7 @@ export const LoginHistoryTable: React.FC<LoginHistoryTableProps> = ({
             ) : (
               histories.map((item, index) => (
                 <tr key={item.id} className="hover:bg-gray-50/60 transition-colors">
-                  <td className="py-3.5 px-4 font-mono text-gray-400">
+                  <td className="py-3.5 px-4 num text-gray-400">
                     {page * (filter.size || 10) + index + 1}
                   </td>
                   <td className="py-3.5 px-4 font-medium text-gray-900 whitespace-nowrap">

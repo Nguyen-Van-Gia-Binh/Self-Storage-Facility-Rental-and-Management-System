@@ -10,6 +10,7 @@ import com.swp391.selfstorage.unit.dto.CreateUnitTypeRequest;
 import com.swp391.selfstorage.unit.dto.UnitTypeResponse;
 import com.swp391.selfstorage.unit.dto.UpdateUnitTypeRequest;
 import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
+import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.entity.UnitType;
 import com.swp391.selfstorage.unit.mapper.UnitMapper;
 import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
@@ -239,14 +240,70 @@ class UnitTypeServiceTest {
     }
 
     @Test
-    @DisplayName("CAT-03 / BR-BOM-03: Vô hiệu hóa mềm (Graceful Deactivation) thành công ngay cả khi đang có khách thuê")
+    @DisplayName("CAT-03 / BR-BOM-03: Vô hiệu hóa mềm thành công ngay cả khi đang có khách thuê, không gỡ giá")
     void shouldGracefullyDeactivateUnitType_evenWhenActiveOrReservedUnitsExist() {
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+        when(unitTypeRepository.save(any(UnitType.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(priceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(facilityPrice));
+        when(storageUnitRepository.countByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(10L);
+
+        UnitTypeResponse res = unitTypeService.updateUnitTypeStatus(1L, 7L, false);
+
+        assertNotNull(res);
+        assertFalse(unitType.isActive());
+        verify(priceRepository, never()).deleteByFacilityIdAndUnitTypeId(anyLong(), anyLong());
+    }
+
+    @Test
+    @DisplayName("US-FM-01.1 AC-3: Từ chối gỡ loại kho khi cơ sở còn ô đang đặt hoặc đang thuê")
+    void shouldRefuseDelete_whenFacilityHasReservedOrOccupiedUnit() {
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+        when(storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(1L, 7L, StorageUnitStatus.RESERVED))
+                .thenReturn(1L);
+        when(storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(1L, 7L, StorageUnitStatus.OCCUPIED))
+                .thenReturn(0L);
+
+        CustomException ex = assertThrows(CustomException.class, () -> unitTypeService.deactivateUnitType(1L, 7L));
+
+        assertEquals(ErrorCode.UNIT_TYPE_IN_USE, ex.getErrorCode());
+        assertEquals("Đang có ô kho thuộc loại này được sử dụng", ex.getMessage());
+        assertTrue(unitType.isActive());
+        verify(priceRepository, never()).deleteByFacilityIdAndUnitTypeId(anyLong(), anyLong());
+        verify(unitTypeRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("TC-F5-002: Từ chối gỡ loại kho khi cơ sở còn ô vật lý, kể cả ô trống")
+    void shouldRefuseDelete_whenFacilityStillHasPhysicalUnits() {
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+        when(storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(1L, 7L, StorageUnitStatus.RESERVED))
+                .thenReturn(0L);
+        when(storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(1L, 7L, StorageUnitStatus.OCCUPIED))
+                .thenReturn(0L);
+        when(storageUnitRepository.countByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(15L);
+
+        CustomException ex = assertThrows(CustomException.class, () -> unitTypeService.deactivateUnitType(1L, 7L));
+
+        assertEquals(ErrorCode.UNIT_TYPE_HAS_PHYSICAL_UNITS, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("15"));
+        assertTrue(unitType.isActive());
+        verify(priceRepository, never()).deleteByFacilityIdAndUnitTypeId(anyLong(), anyLong());
+    }
+
+    @Test
+    @DisplayName("Gỡ giá của đúng cơ sở khi không còn ô kho, không tắt loại kho dùng chung")
+    void shouldUnlinkFacilityPrice_whenNoUnitsRemain() {
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+        when(storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(1L, 7L, StorageUnitStatus.RESERVED))
+                .thenReturn(0L);
+        when(storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(1L, 7L, StorageUnitStatus.OCCUPIED))
+                .thenReturn(0L);
+        when(storageUnitRepository.countByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(0L);
 
         unitTypeService.deactivateUnitType(1L, 7L);
 
-        assertFalse(unitType.isActive());
-        verify(unitTypeRepository).save(unitType);
-        verifyNoInteractions(storageUnitRepository);
+        assertTrue(unitType.isActive());
+        verify(priceRepository).deleteByFacilityIdAndUnitTypeId(1L, 7L);
+        verify(unitTypeRepository, never()).save(any());
     }
 }

@@ -5,9 +5,10 @@ import type { ManagementSupportTicket } from '../types/staffAssignment';
 
 interface IncidentTimelineProps {
   ticket: ManagementSupportTicket;
+  plain?: boolean;
 }
 
-export const IncidentTimeline: React.FC<IncidentTimelineProps> = ({ ticket }) => {
+export const IncidentTimeline: React.FC<IncidentTimelineProps> = ({ ticket, plain = false }) => {
   const [isOpen, setIsOpen] = useState<boolean>(true);
 
   const fmt = (iso?: string) => {
@@ -85,13 +86,13 @@ export const IncidentTimeline: React.FC<IncidentTimelineProps> = ({ ticket }) =>
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+    <div className={plain ? 'py-4' : 'bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden'}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full p-4 flex items-center justify-between hover:bg-slate-50/80 transition-colors text-left"
+        className={`w-full flex items-center justify-between hover:bg-slate-50/80 transition-colors text-left ${plain ? 'py-1' : 'p-4'}`}
       >
         <div className="flex items-center gap-2">
-          <History className="w-4 h-4 text-slate-500" />
+          {!plain && <History className="w-4 h-4 text-slate-500" />}
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
             Lịch sử hoạt động & Tiến trình xử lý ({events.length} mốc)
           </h3>
@@ -119,7 +120,7 @@ export const IncidentTimeline: React.FC<IncidentTimelineProps> = ({ ticket }) =>
                     <span className="font-semibold text-xs text-slate-900 block">
                       {ev.title}
                     </span>
-                    <span className="text-[11px] text-slate-400 font-mono mt-0.5 block">
+                    <span className="text-[11px] text-slate-400 num mt-0.5 block">
                       {ev.time}
                     </span>
                   </div>

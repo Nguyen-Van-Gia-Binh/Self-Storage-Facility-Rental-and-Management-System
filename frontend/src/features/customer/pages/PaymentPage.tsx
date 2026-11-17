@@ -307,7 +307,7 @@ export const PaymentPage: React.FC = () => {
               </div>
             </div>
             <div className="text-right flex-shrink-0">
-              <span className="font-mono text-lg sm:text-xl font-black text-amber-900 tracking-wider">
+              <span className="num text-lg sm:text-xl font-black text-amber-900 tracking-wider">
                 {formatCountdown(secondsRemaining)}
               </span>
               <span className="text-[10px] text-amber-700 block uppercase font-bold">Thời gian còn lại</span>

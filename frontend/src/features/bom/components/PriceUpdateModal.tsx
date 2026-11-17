@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, DollarSign, Calendar, AlertCircle, Loader2, Info } from 'lucide-react';
 import type { UnitTypeCatalog } from '@/types';
+import { DateField } from '@/components/ui/DateField';
 
 function vietnamToday(): string {
   return new Intl.DateTimeFormat('en-CA', {
@@ -148,11 +149,11 @@ export const PriceUpdateModal: React.FC<PriceUpdateModalProps> = ({
             </div>
             <div className="flex justify-between items-center">
               <span className="text-slate-500">Diện tích:</span>
-              <span className="font-mono font-bold text-slate-800">{unitType.areaM2} m²</span>
+              <span className="num font-bold text-slate-800">{unitType.areaM2} m²</span>
             </div>
             <div className="flex justify-between items-center pt-1 border-t border-slate-200/60">
               <span className="text-slate-500">Giá thuê hiện tại:</span>
-              <span className="font-bold text-amber-600 font-mono">
+              <span className="font-bold text-amber-600 num">
                 {unitType.monthlyPrice > 0
                   ? `${unitType.monthlyPrice.toLocaleString('vi-VN')} ₫/tháng`
                   : 'Chưa niêm yết'}
@@ -208,11 +209,10 @@ export const PriceUpdateModal: React.FC<PriceUpdateModalProps> = ({
             </label>
             <div className="relative">
               <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-              <input
-                type="date"
+              <DateField
                 value={effectiveDate}
                 min={todayStr}
-                onChange={(e) => setEffectiveDate(e.target.value)}
+                onChange={setEffectiveDate}
                 className="w-full text-sm border border-slate-300 rounded-xl pl-10 pr-3.5 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
               />
             </div>

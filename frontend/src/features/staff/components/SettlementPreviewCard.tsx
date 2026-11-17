@@ -75,13 +75,13 @@ export const SettlementPreviewCard: React.FC<SettlementPreviewCardProps> = ({
               <span>
                 1. Tiền thuê ngày chưa sử dụng ({unusedDays > 0 ? `${unusedDays} ngày` : 'phần chưa dùng'}):
               </span>
-              <span className="font-mono font-bold text-emerald-700">
+              <span className="num font-bold text-emerald-700">
                 +{earlyRentRefund.toLocaleString('vi-VN')} đ
               </span>
             </div>
             <div className="flex justify-between text-slate-500 px-1 text-[11px]">
               <span>2. Phạt vi phạm trả kho sớm (Phạt 100% Cọc bù phòng trống):</span>
-              <span className="font-mono font-semibold line-through text-slate-400">
+              <span className="num font-semibold line-through text-slate-400">
                 +{depositAmount.toLocaleString('vi-VN')} đ (0 đ hoàn)
               </span>
             </div>
@@ -89,7 +89,7 @@ export const SettlementPreviewCard: React.FC<SettlementPreviewCardProps> = ({
         ) : (
           <div className="flex justify-between text-slate-600">
             <span>Tiền cọc ban đầu được bảo toàn (100%):</span>
-            <span className="font-mono font-medium text-slate-900">
+            <span className="num font-medium text-slate-900">
               {depositAmount.toLocaleString('vi-VN')} đ
             </span>
           </div>
@@ -100,7 +100,7 @@ export const SettlementPreviewCard: React.FC<SettlementPreviewCardProps> = ({
             (-) Chi phí bồi thường hư hại:
             {damageCost > 0 && <span className="text-rose-500 text-xs">*</span>}
           </span>
-          <span className={`font-mono font-medium ${damageCost > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+          <span className={`num font-medium ${damageCost > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
             {damageCost > 0 ? `-${damageCost.toLocaleString('vi-VN')} đ` : '0 đ'}
           </span>
         </div>
@@ -108,7 +108,7 @@ export const SettlementPreviewCard: React.FC<SettlementPreviewCardProps> = ({
         {overdueFee > 0 && (
           <div className="flex justify-between text-slate-600">
             <span>(-) Phí quá hạn tích lũy:</span>
-            <span className="font-mono font-medium text-rose-600">
+            <span className="num font-medium text-rose-600">
               -{overdueFee.toLocaleString('vi-VN')} đ
             </span>
           </div>
@@ -117,7 +117,7 @@ export const SettlementPreviewCard: React.FC<SettlementPreviewCardProps> = ({
         {unpaidExtraCharges > 0 && (
           <div className="flex justify-between text-slate-600">
             <span>(-) Phụ phí chưa thanh toán:</span>
-            <span className="font-mono font-medium text-rose-600">
+            <span className="num font-medium text-rose-600">
               -{unpaidExtraCharges.toLocaleString('vi-VN')} đ
             </span>
           </div>
@@ -139,7 +139,7 @@ export const SettlementPreviewCard: React.FC<SettlementPreviewCardProps> = ({
             </p>
           </div>
           <span
-            className={`font-mono text-xl font-bold ${
+            className={`num text-xl font-bold ${
               payableAmount > 0 ? 'text-rose-600' : 'text-teal-600'
             }`}
           >

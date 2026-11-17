@@ -238,7 +238,7 @@ export const FacilityRevenueChart: React.FC<FacilityRevenueChartProps> = ({
                   <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider truncate max-w-[130px]">
                     {activeStream.label}
                   </span>
-                  <span className="text-base font-black text-slate-900 font-mono mt-0.5">
+                  <span className="text-base font-black text-slate-900 num mt-0.5">
                     {formatVND(activeStream.amount)}
                   </span>
                   <span className="text-[11px] font-bold text-indigo-600 mt-0.5">
@@ -250,7 +250,7 @@ export const FacilityRevenueChart: React.FC<FacilityRevenueChartProps> = ({
                   <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                     Tổng dòng thu vào
                   </span>
-                  <span className="text-lg font-black text-slate-900 font-mono mt-0.5">
+                  <span className="text-lg font-black text-slate-900 num mt-0.5">
                     {formatVND(streamSum)}
                   </span>
                   <span className="text-[10px] font-medium text-slate-500 mt-0.5">
@@ -281,7 +281,7 @@ export const FacilityRevenueChart: React.FC<FacilityRevenueChartProps> = ({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs text-slate-600">
               <span className="font-semibold">Thanh phân bổ tỷ trọng dòng tiền:</span>
-              <span className="font-mono text-slate-500">
+              <span className="num text-slate-500">
                 {streamSum > 0 ? '100%' : '0%'}
               </span>
             </div>
@@ -338,12 +338,12 @@ export const FacilityRevenueChart: React.FC<FacilityRevenueChartProps> = ({
                       />
                       <span className="text-xs font-bold text-slate-800">{stream.label}</span>
                     </div>
-                    <span className="text-[11px] font-black font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                    <span className="text-[11px] font-black num text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
                       {pct.toFixed(1)}%
                     </span>
                   </div>
 
-                  <div className="text-sm font-black font-mono text-slate-900">
+                  <div className="text-sm font-black num text-slate-900">
                     {formatVND(stream.amount)}
                   </div>
 
@@ -371,7 +371,7 @@ export const FacilityRevenueChart: React.FC<FacilityRevenueChartProps> = ({
                   </div>
                 </div>
               </div>
-              <div className="text-sm font-black font-mono text-rose-700">
+              <div className="text-sm font-black num text-rose-700">
                 - {formatVND(companyIncidentCost)}
               </div>
             </div>

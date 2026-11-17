@@ -134,7 +134,7 @@ export const ContractFinancialModal: React.FC<ContractFinancialModalProps> = ({
                           <span className="text-[10px] text-slate-400">{charge.createdAt}</span>
                         </div>
                         <div className="text-right">
-                          <span className="font-mono font-bold text-slate-800">
+                          <span className="num font-bold text-slate-800">
                             {charge.amount.toLocaleString('vi-VN')} đ
                           </span>
                           <span

@@ -8,6 +8,7 @@ public class ContractSettledEvent {
     private final Long contractId;
     private final Long customerId;
     private final Long facilityId;
+    private final long rentRefundAmount;
     private final long depositRefundAmount;
     private final long payableAmount;
     private final OffsetDateTime settledAt;

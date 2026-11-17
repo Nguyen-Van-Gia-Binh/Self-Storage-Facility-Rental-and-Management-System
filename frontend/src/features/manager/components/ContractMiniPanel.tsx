@@ -9,6 +9,7 @@ interface ContractMiniPanelProps {
   endDate?: string;
   status?: string;
   onViewContractDetail?: () => void;
+  plain?: boolean;
 }
 
 export const ContractMiniPanel: React.FC<ContractMiniPanelProps> = ({
@@ -17,11 +18,15 @@ export const ContractMiniPanel: React.FC<ContractMiniPanelProps> = ({
   endDate,
   status = 'ACTIVE',
   onViewContractDetail,
+  plain = false,
 }) => {
+  const shell = plain
+    ? 'py-4 border-b border-slate-200 last:border-b-0'
+    : 'bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4';
   if (!contractCode) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4 flex flex-col justify-center items-center text-center text-slate-400 text-xs">
-        <FileCheck className="w-8 h-8 text-slate-300 mb-2" />
+      <div className={`${shell} flex flex-col justify-center items-center text-center text-slate-400 text-xs`}>
+        {!plain && <FileCheck className="w-8 h-8 text-slate-300 mb-2" />}
         <span>Sự cố không gắn với hợp đồng thuê cụ thể</span>
       </div>
     );
@@ -37,13 +42,15 @@ export const ContractMiniPanel: React.FC<ContractMiniPanelProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4 flex flex-col justify-between">
+    <div className={`${shell} flex flex-col justify-between`}>
       <div>
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <FileCheck className="w-4 h-4" />
-            </div>
+            {!plain && (
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <FileCheck className="w-4 h-4" />
+              </div>
+            )}
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
                 HỢP ĐỒNG THUÊ

@@ -193,7 +193,7 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
 
         <div className="flex items-center gap-2.5 self-start sm:self-auto">
           {lastRefreshed && (
-            <span className="text-xs text-slate-400 font-mono hidden md:inline">
+            <span className="text-xs text-slate-400 num hidden md:inline">
               Cập nhật lúc: {lastRefreshed}
             </span>
           )}

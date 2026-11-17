@@ -17,6 +17,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { createDirectContract, type CreateDirectContractRequest } from '@/api/contract';
+import { DateField } from '@/components/ui/DateField';
 import { fetchUnitTypes, fetchStorageUnits } from '@/api/unit';
 import { getUsers, type AppUser } from '@/api/user';
 import { fetchMyAssignedFacilities } from '@/api/facility';
@@ -708,11 +709,10 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
                 <Calendar className="w-3.5 h-3.5 text-brand-600" />
                 4. Ngày bắt đầu thuê
               </label>
-              <input
-                type="date"
+              <DateField
                 min={today}
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={setStartDate}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
               />
               <p className="text-[10px] text-teal-600 font-medium mt-1">
@@ -835,7 +835,7 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
             </div>
             <div className="pt-2 border-t border-slate-200 flex justify-between items-baseline">
               <span className="font-bold text-slate-800">Tổng thanh toán ban đầu:</span>
-              <span className="text-base font-black font-mono text-teal-700">
+              <span className="text-base font-black num text-teal-700">
                 {totalPayment.toLocaleString('vi-VN')} đ
               </span>
             </div>

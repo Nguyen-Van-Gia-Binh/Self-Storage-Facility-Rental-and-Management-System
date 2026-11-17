@@ -5,7 +5,6 @@ import {
   User,
   FileText,
   Image as ImageIcon,
-  ArrowRightLeft,
 } from 'lucide-react';
 import type { ManagementSupportTicket } from '../types/staffAssignment';
 import { StatusBadge } from './StatusBadge';
@@ -15,12 +14,10 @@ import { ImageGallery } from './ImageGallery';
 interface IncidentDetailPanelProps {
   ticket: ManagementSupportTicket;
   onAddAttachment?: () => void;
-  onRelocateUnit?: () => void;
 }
 
 export const IncidentDetailPanel: React.FC<IncidentDetailPanelProps> = ({
   ticket,
-  onRelocateUnit,
 }) => {
   const formatDate = (isoStr?: string) => {
     if (!isoStr) return '—';
@@ -35,7 +32,7 @@ export const IncidentDetailPanel: React.FC<IncidentDetailPanelProps> = ({
   const initialImages = (ticket.attachments || []).map((a) => a.fileUrl);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+    <div className="border-b border-slate-200">
       {/* Header Panel */}
       <div className="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -64,7 +61,7 @@ export const IncidentDetailPanel: React.FC<IncidentDetailPanelProps> = ({
         {/* Thông tin sự cố & Người báo */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Box 1: Thông tin sự cố */}
-          <div className="bg-slate-50/70 rounded-xl p-4 border border-slate-100">
+          <div className="pb-4 border-b border-slate-200">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
               <FileText className="w-3.5 h-3.5" />
               Thông tin tiếp nhận
@@ -80,28 +77,15 @@ export const IncidentDetailPanel: React.FC<IncidentDetailPanelProps> = ({
               </div>
               <div className="flex items-center justify-between py-1">
                 <span className="text-slate-500">Yêu cầu di dời kho:</span>
-                <div className="flex items-center gap-2">
-                  <span className={`font-bold ${ticket.relocationRequired ? 'text-amber-600' : 'text-slate-600'}`}>
-                    {ticket.relocationRequired ? '⚠️ Cần chuyển ô kho' : 'Không'}
-                  </span>
-                  {ticket.relocationRequired && onRelocateUnit && (
-                    <button
-                      type="button"
-                      onClick={onRelocateUnit}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors shadow-2xs"
-                      title="Tiến hành đổi ô kho ngay"
-                    >
-                      <ArrowRightLeft className="w-3 h-3" />
-                      <span>Đổi kho</span>
-                    </button>
-                  )}
-                </div>
+                <span className="font-semibold text-slate-800">
+                  {ticket.relocationRequired ? 'Có' : 'Không'}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Box 2: Người báo cáo */}
-          <div className="bg-slate-50/70 rounded-xl p-4 border border-slate-100">
+          <div className="pb-4 md:border-b md:border-slate-200">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5" />
               Người gửi yêu cầu
@@ -134,9 +118,9 @@ export const IncidentDetailPanel: React.FC<IncidentDetailPanelProps> = ({
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
             Mô tả sự cố từ khách hàng
           </h4>
-          <div className="p-4 bg-slate-50/80 rounded-xl border border-slate-200 text-xs text-slate-800 leading-relaxed font-normal whitespace-pre-wrap">
+          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
             {ticket.description || 'Không có mô tả chi tiết từ người gửi.'}
-          </div>
+          </p>
         </div>
 
         {/* Hình ảnh đính kèm hiện trường ban đầu */}
@@ -150,9 +134,9 @@ export const IncidentDetailPanel: React.FC<IncidentDetailPanelProps> = ({
           {initialImages.length > 0 ? (
             <ImageGallery images={initialImages} plain />
           ) : (
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 text-center text-xs text-slate-400">
+            <p className="text-xs text-slate-400">
               Khách hàng không đính kèm hình ảnh ban đầu
-            </div>
+            </p>
           )}
         </div>
       </div>

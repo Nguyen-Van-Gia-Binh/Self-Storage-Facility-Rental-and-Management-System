@@ -135,7 +135,7 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
               e.stopPropagation();
               onCancel(ticket);
             }}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 transition-colors"
+            className="inline-flex items-center gap-1 text-sm font-medium text-slate-400 hover:text-rose-600 transition-colors"
             title="Hủy yêu cầu"
           >
             <XCircle className="w-3.5 h-3.5" />

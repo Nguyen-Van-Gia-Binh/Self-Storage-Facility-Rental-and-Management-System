@@ -101,7 +101,7 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
             <Clock className="w-4 h-4 text-brand-600 animate-pulse" />
             <div className="text-left">
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Thời gian giữ ô kho</div>
-              <div className="text-base font-black text-brand-700 font-mono tracking-tight">{formattedCountdown}</div>
+              <div className="text-base font-black text-brand-700 num tracking-tight">{formattedCountdown}</div>
             </div>
           </div>
         )}
@@ -282,7 +282,7 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
             <div className="pt-1 space-y-2 text-xs">
               <div className="flex justify-between text-slate-600">
                 <span>Tiền thuê ({durationMonths} tháng):</span>
-                <span className="font-semibold text-slate-900 font-mono">
+                <span className="font-semibold text-slate-900 num">
                   {formatVND(calculation.rentalFee)}
                 </span>
               </div>
@@ -298,7 +298,7 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
                         }:`
                       : `Chiết khấu (-${calculation.discountPercent}%):`}
                   </span>
-                  <span className="font-mono text-emerald-800 font-black">
+                  <span className="num text-emerald-800 font-black">
                     -{formatVND(calculation.discountAmount)}
                   </span>
                 </div>
@@ -306,7 +306,7 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
 
               <div className="flex justify-between text-slate-600">
                 <span>Tiền đặt cọc ({depositMultiplierLabel} tháng):</span>
-                <span className="font-semibold text-slate-900 font-mono">
+                <span className="font-semibold text-slate-900 num">
                   {formatVND(calculation.depositAmount)}
                 </span>
               </div>
@@ -314,7 +314,7 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
               {hasExtendedInsurance && insuranceTotal > 0 && (
                 <div className="flex justify-between text-emerald-800 font-bold bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200/60">
                   <span>Gói bảo vệ toàn diện 50M:</span>
-                  <span className="font-mono text-emerald-800 font-black">
+                  <span className="num text-emerald-800 font-black">
                     +{formatVND(insuranceTotal)}
                   </span>
                 </div>
@@ -327,7 +327,7 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
                 <span className="text-xs font-black uppercase tracking-wider text-slate-900">
                   Tổng thanh toán:
                 </span>
-                <span className="text-xl font-black text-[#008B74] font-mono tracking-tight">
+                <span className="text-xl font-black text-[#008B74] num tracking-tight">
                   {formatVND(totalAmount)}
                 </span>
               </div>

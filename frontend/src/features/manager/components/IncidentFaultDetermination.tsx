@@ -1,6 +1,6 @@
 // frontend/src/features/manager/components/IncidentFaultDetermination.tsx
 import React from 'react';
-import { ShieldCheck, AlertTriangle, CheckCircle2, Lock } from 'lucide-react';
+import { ShieldCheck, Lock } from 'lucide-react';
 
 interface IncidentFaultDeterminationProps {
   faultType?: 'COMPANY' | 'CUSTOMER' | null;
@@ -20,7 +20,7 @@ export const IncidentFaultDetermination: React.FC<IncidentFaultDeterminationProp
   const fmt = (v: number) => new Intl.NumberFormat('vi-VN').format(v) + ' đ';
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5">
+    <div className="py-5 border-b border-slate-200">
       {/* Header Panel */}
       <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
         <div className="flex items-center gap-2">
@@ -45,7 +45,7 @@ export const IncidentFaultDetermination: React.FC<IncidentFaultDeterminationProp
 
       {!isResolvedOrClosed && !faultType ? (
         /* Khi nhân viên chưa hoàn tất xử lý hiện trường */
-        <div className="p-5 rounded-xl bg-slate-50/80 border border-slate-200 text-center text-xs text-slate-500 space-y-1">
+        <div className="text-xs text-slate-500 space-y-1">
           <p className="font-semibold text-slate-700">
             ⏳ Nhân viên kỹ thuật đang kiểm tra hiện trường
           </p>
@@ -55,83 +55,54 @@ export const IncidentFaultDetermination: React.FC<IncidentFaultDeterminationProp
         </div>
       ) : (
         /* Kết quả phân định do Staff lập (Read-only cards) */
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Card 1: Lỗi do Công ty */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div
-            className={`p-4 rounded-xl border flex flex-col justify-between transition-all ${
+            className={`p-4 rounded-lg border ${
               faultType === 'COMPANY'
-                ? 'bg-emerald-50/40 border-emerald-500 ring-2 ring-emerald-500/10'
-                : 'bg-slate-50/40 border-slate-200 opacity-60'
+                ? 'bg-white border-2 border-brand-500'
+                : 'bg-slate-50 border-slate-200 text-slate-500'
             }`}
           >
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                  <CheckCircle2
-                    className={`w-4 h-4 ${
-                      faultType === 'COMPANY' ? 'text-emerald-600' : 'text-slate-400'
-                    }`}
-                  />
-                  Lỗi do Công ty / Hệ thống
-                </span>
-                {faultType === 'COMPANY' && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                    ✓ Đã áp dụng
-                  </span>
-                )}
+            <p className={`text-sm font-bold ${faultType === 'COMPANY' ? 'text-slate-900' : 'text-slate-500'}`}>
+              Lỗi do Công ty / Hệ thống
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              Cơ sở chịu 100% chi phí sửa chữa.
+            </p>
+            {faultType === 'COMPANY' && (
+              <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-200 text-sm">
+                <span className="font-bold text-slate-900">Tổng thu:</span>
+                <span className="font-bold text-rose-600 tabular-nums">0 đ</span>
               </div>
-              <p className="text-[11px] text-slate-600 leading-relaxed mt-1">
-                Sự cố hao mòn tự nhiên, hỏng hóc cơ sở vật chất. Cơ sở chịu 100% chi phí sửa chữa.
-              </p>
-            </div>
-
-            <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between text-xs">
-              <span className="text-slate-500 font-medium">Chi phí khách hàng:</span>
-              <span className="font-bold text-emerald-600">0 đ (Miễn phí)</span>
-            </div>
+            )}
           </div>
 
-          {/* Card 2: Lỗi do Khách hàng */}
           <div
-            className={`p-4 rounded-xl border flex flex-col justify-between transition-all ${
+            className={`p-4 rounded-lg border ${
               faultType === 'CUSTOMER'
-                ? 'bg-amber-50/40 border-amber-500 ring-2 ring-amber-500/10'
-                : 'bg-slate-50/40 border-slate-200 opacity-60'
+                ? 'bg-white border-2 border-brand-500'
+                : 'bg-slate-50 border-slate-200 text-slate-500'
             }`}
           >
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                  <AlertTriangle
-                    className={`w-4 h-4 ${
-                      faultType === 'CUSTOMER' ? 'text-amber-600' : 'text-slate-400'
-                    }`}
-                  />
-                  Lỗi do Khách hàng gây ra
-                </span>
-                {faultType === 'CUSTOMER' && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
-                    ✓ Đã thu tiền tại chỗ
+            <p className={`text-sm font-bold ${faultType === 'CUSTOMER' ? 'text-slate-900' : 'text-slate-500'}`}>
+              Lỗi do Khách hàng gây ra
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              Đã thu tiền tại chỗ
+            </p>
+            {faultType === 'CUSTOMER' && (
+              <>
+                <p className="text-sm text-slate-600 mt-3 pt-3 border-t border-slate-100">
+                  {feeCategoryName || 'Chi phí xử lý'}
+                </p>
+                <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-200 text-sm">
+                  <span className="font-bold text-slate-900">Tổng thu:</span>
+                  <span className="font-bold text-rose-600 tabular-nums">
+                    {cost > 0 ? fmt(cost) : 'Theo biểu phí'}
                   </span>
-                )}
-              </div>
-              <p className="text-[11px] text-slate-600 leading-relaxed mt-1">
-                Làm mất chìa/khóa, quên mã PIN, hư hại do tác động ngoại lực. Khách hàng đã thanh toán đủ 100% chi phí tại chỗ cho nhân viên kỹ thuật trước khi hoàn tất nghiệm thu.
-              </p>
-
-              {faultType === 'CUSTOMER' && feeCategoryName && (
-                <div className="mt-2 text-[11px] font-medium text-amber-900 bg-amber-100/60 px-2.5 py-1 rounded-lg">
-                  Khoản mục: {feeCategoryName}
                 </div>
-              )}
-            </div>
-
-            <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between text-xs">
-              <span className="text-slate-500 font-medium">Đã thanh toán tại chỗ:</span>
-              <span className="font-bold text-rose-600">
-                {cost > 0 ? fmt(cost) : 'Đã thanh toán theo biểu phí'}
-              </span>
-            </div>
+              </>
+            )}
           </div>
         </div>
       )}

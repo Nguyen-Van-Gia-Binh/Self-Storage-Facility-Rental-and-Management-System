@@ -3,11 +3,6 @@ import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
 import { 
   X, 
-  KeyRound, 
-  Wrench, 
-  CreditCard, 
-  Package, 
-  HelpCircle, 
   AlertTriangle, 
   Upload, 
   Trash2, 
@@ -31,43 +26,12 @@ export interface CreateSupportTicketModalProps {
   onSubmit: (payload: CreateSupportTicketPayload) => Promise<void>;
 }
 
-const CATEGORIES: { 
-  key: SupportCategory; 
-  label: string; 
-  desc: string; 
-  icon: React.ElementType;
-  urgentDefault?: boolean;
-}[] = [
-  {
-    key: 'LOCK_ACCESS',
-    label: 'Khóa & Mã PIN',
-    desc: 'Kẹt chốt cơ, hỏng bàn phím điện tử, cửa không nhận tín hiệu',
-    icon: KeyRound,
-  },
-  {
-    key: 'UNIT_DAMAGE',
-    label: 'Hư hỏng kho & Đèn',
-    desc: 'Bóng đèn tắt, cửa cuốn kẹt, thấm dột, ẩm mốc',
-    icon: Wrench,
-  },
-  {
-    key: 'PAYMENT',
-    label: 'Thanh toán & Phí',
-    desc: 'Lỗi nạp cọc, sai biên lai, hoàn trả tiền thừa',
-    icon: CreditCard,
-  },
-  {
-    key: 'BELONGINGS',
-    label: 'Tài sản & Xe đẩy',
-    desc: 'Mượn xe nâng hàng, kiểm đếm, hỗ trợ bốc xếp',
-    icon: Package,
-  },
-  {
-    key: 'OTHER',
-    label: 'Vấn đề khác',
-    desc: 'Ý kiến đóng góp, thắc mắc dịch vụ cơ sở',
-    icon: HelpCircle,
-  },
+const CATEGORIES: { key: SupportCategory; label: string }[] = [
+  { key: 'LOCK_ACCESS', label: 'Khóa & Mã PIN' },
+  { key: 'UNIT_DAMAGE', label: 'Hư hỏng kho & Đèn' },
+  { key: 'PAYMENT', label: 'Thanh toán & Phí' },
+  { key: 'BELONGINGS', label: 'Tài sản & Xe đẩy' },
+  { key: 'OTHER', label: 'Vấn đề khác' },
 ];
 
 
@@ -311,27 +275,22 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
             <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide mb-2">
               Vấn đề bạn cần hỗ trợ <span className="text-rose-500">*</span>
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="flex flex-wrap gap-2">
               {CATEGORIES.map((cat) => {
                 const isSelected = selectedCategory === cat.key;
-                const Icon = cat.icon;
                 return (
-                  <div
+                  <button
                     key={cat.key}
+                    type="button"
                     onClick={() => handleSelectCategory(cat.key)}
-                    className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-3 ${
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
                       isSelected
-                        ? 'border-brand-500 bg-brand-50/40 ring-1 ring-brand-400'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                        ? 'border-brand-500 bg-brand-50 text-brand-800'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                     }`}
                   >
-                    <div className={`p-2 rounded-lg shrink-0 ${isSelected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <h4 className={`text-xs font-bold ${isSelected ? 'text-brand-900' : 'text-slate-800'}`}>
-                      {cat.label}
-                    </h4>
-                  </div>
+                    {cat.label}
+                  </button>
                 );
               })}
             </div>
@@ -356,7 +315,7 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
               <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
                 Mô tả chi tiết vấn đề <span className="text-rose-500">*</span>
               </label>
-              <span className={`text-[11px] ${description.length < 10 ? 'text-rose-500' : 'text-slate-400'}`}>
+              <span className={`text-[11px] ${description.length >= 950 ? 'text-rose-500' : 'text-slate-400'}`}>
                 {description.length} / 1000 ký tự (tối thiểu 10)
               </span>
             </div>
@@ -395,7 +354,7 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
               ))}
 
               {attachments.length < 5 && (
-                <label className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 hover:border-brand-500 flex flex-col items-center justify-center text-slate-400 hover:text-brand-600 cursor-pointer transition-colors bg-slate-50/50">
+                <label className="w-20 h-20 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-slate-500 hover:text-brand-700 cursor-pointer transition-colors bg-slate-100">
                   <Upload className="w-5 h-5 mb-1" />
                   <span className="text-[10px] font-bold">Thêm ảnh</span>
                   <input

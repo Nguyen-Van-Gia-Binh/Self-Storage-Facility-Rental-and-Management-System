@@ -150,6 +150,10 @@ public class PolicyServiceImpl implements PolicyService {
                 throw new CustomException(ErrorCode.VALIDATION_FAILED,
                         "Các mốc nhắc gia hạn phải lớn hơn 0 và không được trùng nhau");
             }
+            if (day <= 20) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                        "Mốc nhắc gia hạn phải lớn hơn 20 ngày vì từ mốc đó cổng tự gia hạn đã khóa");
+            }
         }
     }
 }

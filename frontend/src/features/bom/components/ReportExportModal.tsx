@@ -206,7 +206,7 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
                 Kỳ số liệu:
               </label>
-              <div className="px-3 py-2 bg-slate-100/70 border border-slate-200 rounded-lg text-xs font-mono text-slate-700">
+              <div className="px-3 py-2 bg-slate-100/70 border border-slate-200 rounded-lg text-xs num text-slate-700">
                 {formatDate(currentFilters.from)} → {formatDate(currentFilters.to)}
               </div>
             </div>
