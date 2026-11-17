@@ -95,7 +95,7 @@ describe('SettlementApprovalModal Component', () => {
     });
 
     expect(screen.getByRole('button', { name: /Thử tải lại bảng quyết toán/i })).toBeInTheDocument();
-    const submitBtn = screen.getByRole('button', { name: /Chốt tất toán & Đóng hợp đồng/i });
+    const submitBtn = screen.getByRole('button', { name: /Chốt tất toán & Đóng HĐ/i });
     expect(submitBtn).toBeDisabled();
   });
 
@@ -131,7 +131,7 @@ describe('SettlementApprovalModal Component', () => {
     expect(screen.getAllByText(/Hủy trước ≥ 7 ngày — Không phạt/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/3\.000\.000 đ/).length).toBeGreaterThan(0);
 
-    const submitBtn = screen.getByRole('button', { name: /Xác nhận đã hoàn 3\.000\.000 đ & Đóng HĐ/i });
+    const submitBtn = screen.getByRole('button', { name: /^Xác nhận hoàn tiền$/i });
     expect(submitBtn).not.toBeDisabled();
   });
 
@@ -168,8 +168,13 @@ describe('SettlementApprovalModal Component', () => {
     expect(screen.getAllByText(/Trả kho sớm/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Tiền thuê ngày chưa sử dụng/i)).toBeInTheDocument();
     expect(screen.getByText(/Phạt vi phạm trả kho sớm/i)).toBeInTheDocument();
+    expect(screen.getByText('400.000 đ')).toBeInTheDocument();
 
-    const submitBtn = screen.getByRole('button', { name: /Xác nhận đã hoàn 400\.000 đ & Đóng HĐ/i });
+    // Không dùng số thứ tự 1., 2. hay gạch ngang line-through trong bảng quyết toán
+    expect(screen.queryByText(/^1\.\s*Tiền thuê/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^2\.\s*Phạt vi phạm/)).not.toBeInTheDocument();
+
+    const submitBtn = screen.getByRole('button', { name: /^Xác nhận hoàn tiền$/i });
     expect(submitBtn).not.toBeDisabled();
   });
 
@@ -204,8 +209,9 @@ describe('SettlementApprovalModal Component', () => {
     expect(screen.getByText(/Từ chối nhận kho/i)).toBeInTheDocument();
     expect(screen.getByText(/Hoàn 100% Tiền thuê đã đóng/i)).toBeInTheDocument();
     expect(screen.getByText(/Hoàn 100% Tiền cọc ban đầu/i)).toBeInTheDocument();
+    expect(screen.getByText('3.000.000 đ')).toBeInTheDocument();
 
-    const submitBtn = screen.getByRole('button', { name: /Xác nhận đã hoàn 3\.000\.000 đ & Đóng HĐ/i });
+    const submitBtn = screen.getByRole('button', { name: /^Xác nhận hoàn tiền$/i });
     expect(submitBtn).not.toBeDisabled();
   });
 
@@ -242,7 +248,7 @@ describe('SettlementApprovalModal Component', () => {
     expect(screen.getByText(/Phí niêm phong & chuyển về Kho Tổng/i)).toBeInTheDocument();
 
     // Default with 0 extra cost: balanced settlement
-    const submitBtn = screen.getByRole('button', { name: /Chốt tất toán & Đóng hợp đồng/i });
+    const submitBtn = screen.getByRole('button', { name: /Chốt tất toán & Đóng HĐ/i });
     expect(submitBtn).not.toBeDisabled();
   });
 
@@ -279,8 +285,9 @@ describe('SettlementApprovalModal Component', () => {
     expect(screen.getByText(/Tiền cọc ban đầu được bảo toàn/i)).toBeInTheDocument();
     expect(screen.getByText(/Khấu trừ hư hại \/ vệ sinh/i)).toBeInTheDocument();
     expect(screen.getByText(/Khấu trừ phí quá hạn phát sinh/i)).toBeInTheDocument();
+    expect(screen.getByText('850.000 đ')).toBeInTheDocument();
 
-    const submitBtn = screen.getByRole('button', { name: /Xác nhận đã hoàn 850\.000 đ & Đóng HĐ/i });
+    const submitBtn = screen.getByRole('button', { name: /^Xác nhận hoàn tiền$/i });
     expect(submitBtn).not.toBeDisabled();
   });
 
@@ -317,13 +324,13 @@ describe('SettlementApprovalModal Component', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Xác nhận đã hoàn 1\.000\.000 đ & Đóng HĐ/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^Xác nhận hoàn tiền$/i })).toBeInTheDocument();
     });
 
     const noteInput = screen.getByPlaceholderText(/VD: Đã xác nhận STK hoàn tiền qua Vietcombank/i);
     fireEvent.change(noteInput, { target: { value: 'Đã chuyển khoản VCB số GD #12345' } });
 
-    const submitBtn = screen.getByRole('button', { name: /Xác nhận đã hoàn 1\.000\.000 đ & Đóng HĐ/i });
+    const submitBtn = screen.getByRole('button', { name: /^Xác nhận hoàn tiền$/i });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
@@ -371,7 +378,8 @@ describe('SettlementApprovalModal Component', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Xác nhận đã thu đủ 150\.000 đ & Đóng HĐ/i })).toBeInTheDocument();
+      expect(screen.getByText('150.000 đ')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Xác nhận thu tiền & Đóng HĐ/i })).toBeInTheDocument();
     });
 
     // Bấm "+ Thêm chi phí phát sinh"
@@ -386,10 +394,10 @@ describe('SettlementApprovalModal Component', () => {
 
     // 150.000 đ existing + 250.000 đ extra = 400.000 đ payableAmount
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Xác nhận đã thu đủ 400\.000 đ & Đóng HĐ/i })).toBeInTheDocument();
+      expect(screen.getByText('400.000 đ')).toBeInTheDocument();
     });
 
-    const submitBtn = screen.getByRole('button', { name: /Xác nhận đã thu đủ 400\.000 đ & Đóng HĐ/i });
+    const submitBtn = screen.getByRole('button', { name: /Xác nhận thu tiền & Đóng HĐ/i });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
@@ -434,10 +442,10 @@ describe('SettlementApprovalModal Component', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Xác nhận đã hoàn 1\.000\.000 đ & Đóng HĐ/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^Xác nhận hoàn tiền$/i })).toBeInTheDocument();
     });
 
-    const submitBtn = screen.getByRole('button', { name: /Xác nhận đã hoàn 1\.000\.000 đ & Đóng HĐ/i });
+    const submitBtn = screen.getByRole('button', { name: /^Xác nhận hoàn tiền$/i });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
@@ -490,9 +498,9 @@ describe('SettlementApprovalModal Component', () => {
     // Select online VietQR option
     fireEvent.click(qrRadio);
 
-    // Verify CTA button label updates
+    // Verify CTA button label updates (ngắn gọn, không nhồi số tiền dài dòng)
     const ctaBtn = screen.getByRole('button', {
-      name: /Chốt công nợ & Mở cổng thanh toán QR \(\+300\.000 đ\)/i,
+      name: /^Chốt công nợ & Mở cổng QR$/i,
     });
     expect(ctaBtn).toBeInTheDocument();
 
@@ -511,5 +519,21 @@ describe('SettlementApprovalModal Component', () => {
       expect(onSuccessMock).toHaveBeenCalledWith(9022, 'Đã mở cổng nộp bù online cho khách hàng');
       expect(onCloseMock).toHaveBeenCalled();
     });
+  });
+
+  it('chuẩn hóa giao diện Enterprise SaaS: header trắng, không dùng gradient tím đen, không gạch ngang line-through, số liệu căn phải tabular-nums', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const content = fs.readFileSync(
+      path.resolve(process.cwd(), 'src/features/manager/components/SettlementApprovalModal.tsx'),
+      'utf-8'
+    );
+
+    expect(content).not.toContain('from-slate-900 via-purple-950');
+    expect(content).not.toContain('from-purple-700 to-indigo-700');
+    expect(content).not.toContain('line-through');
+    expect(content).toContain('tabular-nums');
+    expect(content).toContain('Hủy bỏ');
+    expect(content).toContain('Xác nhận hoàn tiền');
   });
 });
