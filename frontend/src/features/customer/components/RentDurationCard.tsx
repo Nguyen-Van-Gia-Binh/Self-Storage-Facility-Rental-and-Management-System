@@ -100,8 +100,8 @@ export const RentDurationCard: React.FC<RentDurationCardProps> = ({
             Thời hạn thuê
           </label>
 
-          {/* Segmented Control */}
-          <div className="grid grid-cols-5 gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
+          {/* Segmented Control liền mạch */}
+          <div className="inline-flex bg-slate-100 p-1 rounded-xl w-full border border-slate-200/70">
             {quickMilestones.map((pkg) => {
               const isSelected = !isCustomMode && durationMonths === pkg.months;
               return (
@@ -112,10 +112,10 @@ export const RentDurationCard: React.FC<RentDurationCardProps> = ({
                     setIsCustomMode(false);
                     onDurationChange(pkg.months);
                   }}
-                  className={`py-2 px-1 text-center rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  className={`flex-1 py-2 px-1 text-center rounded-lg text-xs transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-[#008B74] text-white shadow-xs font-black'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                      ? 'bg-white text-brand-700 shadow-xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900 font-medium hover:bg-white/50'
                   }`}
                 >
                   {pkg.label}
@@ -125,10 +125,10 @@ export const RentDurationCard: React.FC<RentDurationCardProps> = ({
             <button
               type="button"
               onClick={() => setIsCustomMode(true)}
-              className={`py-2 px-1 text-center rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`flex-1 py-2 px-1 text-center rounded-lg text-xs transition-all cursor-pointer ${
                 isCustomMode
-                  ? 'bg-[#008B74] text-white shadow-xs font-black'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  ? 'bg-white text-brand-700 shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900 font-medium hover:bg-white/50'
               }`}
             >
               Tùy chỉnh

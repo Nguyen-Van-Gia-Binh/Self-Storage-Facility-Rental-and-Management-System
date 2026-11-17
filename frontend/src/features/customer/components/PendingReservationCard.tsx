@@ -9,27 +9,36 @@ import {
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import type { ReservationResponse } from '@/api/reservation';
+import { useActivePolicy } from '@/hooks/useActivePolicy';
 
 export interface PendingReservationCardProps {
   reservation: ReservationResponse;
   onCancel?: (reservation: ReservationResponse) => void;
+  holdHours?: number;
 }
 
 export const PendingReservationCard: React.FC<PendingReservationCardProps> = ({
   reservation,
   onCancel,
+  holdHours,
 }) => {
+  const policy = useActivePolicy();
+  const effectiveHoldHours = holdHours || policy?.reservationHoldHours || 15;
+
   const [secondsLeft, setSecondsLeft] = useState<number>(() => {
-    if (!reservation.holdExpiresAt) return 48 * 3600;
+    if (!reservation.holdExpiresAt) return effectiveHoldHours * 3600;
     const diff = Math.floor((new Date(reservation.holdExpiresAt).getTime() - Date.now()) / 1000);
     return Math.max(0, diff);
   });
 
   useEffect(() => {
-    if (!reservation.holdExpiresAt) return;
     const updateCountdown = () => {
-      const diff = Math.floor((new Date(reservation.holdExpiresAt).getTime() - Date.now()) / 1000);
-      setSecondsLeft(Math.max(0, diff));
+      if (reservation.holdExpiresAt) {
+        const diff = Math.floor((new Date(reservation.holdExpiresAt).getTime() - Date.now()) / 1000);
+        setSecondsLeft(Math.max(0, diff));
+      } else {
+        setSecondsLeft((prev) => Math.max(0, prev - 1));
+      }
     };
 
     updateCountdown();

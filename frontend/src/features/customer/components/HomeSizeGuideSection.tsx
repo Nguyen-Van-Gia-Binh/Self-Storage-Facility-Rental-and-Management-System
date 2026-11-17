@@ -79,7 +79,7 @@ export const HomeSizeGuideSection: React.FC<HomeSizeGuideSectionProps> = ({
         {/* Hàng trên: Bento Grid bất đối xứng 7/12 + 5/12 */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           {/* BENTO 1 (7 cột): Kho Máy Lạnh kèm Pixel-Art Diorama 60fps */}
-          <div className="lg:col-span-7 bg-white rounded-3xl border border-sky-200/90 shadow-xs overflow-hidden grid grid-cols-1 sm:grid-cols-12">
+          <div className="lg:col-span-7 bg-white rounded-3xl border border-sky-200/90 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden grid grid-cols-1 sm:grid-cols-12">
             <div className="sm:col-span-6 p-6 sm:p-7 flex flex-col justify-center gap-4">
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-bold text-xl text-[#0a1614]">Kho Máy Lạnh</h3>
@@ -138,12 +138,12 @@ export const HomeSizeGuideSection: React.FC<HomeSizeGuideSectionProps> = ({
           </div>
 
           {/* BENTO 2 (5 cột): Kho Tiêu Chuẩn kèm minh họa rõ nét vừa khung */}
-          <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200/95 shadow-xs overflow-hidden flex flex-col justify-between">
+          <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200/95 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col justify-between">
             <div className="h-56 sm:h-60 bg-[#ecf7ef] flex items-center justify-center p-2 border-b border-slate-200/80">
               <img
                 src={pixelStandardImg}
                 alt="Minh họa kho tiêu chuẩn SmartStorage"
-                className="h-full w-auto object-contain"
+                className="h-full w-auto object-contain hover:scale-105 transition-transform duration-500"
               />
             </div>
 
@@ -181,13 +181,13 @@ export const HomeSizeGuideSection: React.FC<HomeSizeGuideSectionProps> = ({
           {USE_CASES.map((uc) => (
             <div
               key={uc.code}
-              className="bg-white/95 backdrop-blur-xs rounded-2xl border border-sky-200/80 p-5 sm:p-6 shadow-2xs space-y-3.5 flex flex-col justify-between"
+              className="bg-white/95 backdrop-blur-xs rounded-2xl border border-sky-200/80 p-5 sm:p-6 shadow-2xs hover:-translate-y-1 hover:shadow-md transition-all duration-300 space-y-3.5 flex flex-col justify-between group"
             >
               <div className="h-40 rounded-2xl bg-[#f4f9fe] border border-sky-100/90 flex items-center justify-center p-3 overflow-hidden">
                 <img
                   src={uc.imageSrc}
                   alt={`Minh họa ${uc.title}`}
-                  className="h-full w-auto object-contain"
+                  className="h-full w-auto object-contain group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
 

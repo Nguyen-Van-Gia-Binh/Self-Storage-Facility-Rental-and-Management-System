@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { User, Loader2, ArrowRight, ShieldCheck, FileText } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { User, ShieldCheck, FileText, CheckCircle2, Clock, Key } from 'lucide-react';
+import { formatVND } from '../utils/pricing';
 import {
   TermsAndPolicyModal,
   type TermsPolicyTabKey,
@@ -21,12 +21,14 @@ export interface BookingCustomerFormProps {
   holdHours: number;
   depositMultiplierLabel: string;
   bookingError: string | null;
-  isSubmitting: boolean;
-  isCheckingAvailability: boolean;
-  isButtonDisabled: boolean;
+  isSubmitting?: boolean;
+  isCheckingAvailability?: boolean;
+  isButtonDisabled?: boolean;
   onSubmit: (e: React.FormEvent) => void;
   hasExtendedInsurance?: boolean;
   setHasExtendedInsurance?: (v: boolean) => void;
+  durationMonths?: number;
+  insuranceTotal?: number;
 }
 
 /**
@@ -48,12 +50,14 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
   holdHours,
   depositMultiplierLabel,
   bookingError,
-  isSubmitting,
-  isCheckingAvailability,
-  isButtonDisabled,
+  isSubmitting: _isSubmitting,
+  isCheckingAvailability: _isCheckingAvailability,
+  isButtonDisabled: _isButtonDisabled,
   onSubmit,
   hasExtendedInsurance = false,
   setHasExtendedInsurance,
+  durationMonths = 1,
+  insuranceTotal = 0,
 }) => {
   const [termsModal, setTermsModal] = useState<{
     isOpen: boolean;
@@ -69,7 +73,7 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
 
   return (
     <>
-    <form onSubmit={onSubmit} className="space-y-5">
+    <form id="booking-customer-form" onSubmit={onSubmit} className="space-y-5">
       {/* 1. THÔNG TIN KHÁCH HÀNG */}
       <div className="bg-white border border-brand-200 rounded-2xl p-6 shadow-xs space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b border-brand-100">
@@ -168,19 +172,19 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
           <label
             className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
               !hasExtendedInsurance
-                ? 'border-brand-500 bg-brand-50/20 shadow-xs'
+                ? 'border-brand-500 bg-brand-50/20 shadow-xs ring-1 ring-brand-500'
                 : 'border-slate-200 hover:border-slate-300 bg-white'
             }`}
           >
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <span className="text-xs font-bold text-slate-900 flex items-center gap-2">
                   <input
                     type="radio"
                     name="insurancePlan"
                     checked={!hasExtendedInsurance}
                     onChange={() => setHasExtendedInsurance?.(false)}
-                    className="w-4 h-4 text-brand-600 border-slate-300 focus:ring-brand-500 cursor-pointer"
+                    className="w-4 h-4 accent-[#008B74] text-brand-600 border-slate-300 focus:ring-brand-500 cursor-pointer"
                   />
                   <span>Gói Cơ bản (Tiêu chuẩn)</span>
                 </span>
@@ -188,7 +192,7 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
                   Miễn phí
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 leading-relaxed pl-5">
+              <p className="text-[11px] text-slate-500 leading-relaxed pl-6">
                 Mức bảo vệ bồi thường rủi ro tiêu chuẩn tối đa tới <strong>10.000.000 ₫</strong>. Đã tích hợp sẵn cho mọi đơn thuê.
               </p>
             </div>
@@ -198,28 +202,35 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
           <label
             className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
               hasExtendedInsurance
-                ? 'border-emerald-500 bg-emerald-50/30 shadow-xs'
+                ? 'border-brand-500 bg-brand-50/20 shadow-xs ring-1 ring-brand-500'
                 : 'border-slate-200 hover:border-slate-300 bg-white'
             }`}
           >
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <span className="text-xs font-bold text-slate-900 flex items-center gap-2">
                   <input
                     type="radio"
                     name="insurancePlan"
                     aria-label="Gói Toàn diện 50M"
                     checked={hasExtendedInsurance}
                     onChange={() => setHasExtendedInsurance?.(true)}
-                    className="w-4 h-4 text-emerald-600 border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                    className="w-4 h-4 accent-[#008B74] text-brand-600 border-slate-300 focus:ring-brand-500 cursor-pointer"
                   />
                   <span>Gói Toàn diện 50M</span>
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  +50.000 ₫/tháng
-                </span>
+                <div className="text-right shrink-0">
+                  <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 text-brand-700 border border-brand-200/60">
+                    +50.000 ₫/tháng
+                  </span>
+                  {durationMonths > 1 && (
+                    <span className="block text-[10px] text-brand-600 font-semibold mt-0.5">
+                      = +{formatVND(insuranceTotal || durationMonths * 50000)} ({durationMonths} tháng)
+                    </span>
+                  )}
+                </div>
               </div>
-              <p className="text-[11px] text-slate-500 leading-relaxed pl-5">
+              <p className="text-[11px] text-slate-500 leading-relaxed pl-6">
                 Mức bảo vệ nâng cao bồi hoàn rủi ro tối đa tới <strong>50.000.000 ₫</strong>. Khuyên dùng cho hàng giá trị cao, đồ điện tử và tài liệu.
               </p>
             </div>
@@ -243,49 +254,55 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
           </button>
         </div>
 
-        {/* 3 Thẻ quyền lợi an tâm trực quan */}
-        <div className="grid grid-cols-1 gap-2.5 text-xs">
+        {/* 3 Điều khoản quyền lợi dạng danh sách phẳng, không lạm dụng màu nền */}
+        <div className="space-y-3 pt-1">
           {/* Cam kết 1: Hoàn cọc 100% */}
-          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200/60">
-            <span className="text-lg leading-none mt-0.5">🛡️</span>
+          <div className="flex items-start gap-3 pb-3 border-b border-slate-100">
+            <div className="mt-0.5 text-emerald-600 shrink-0">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
             <div className="space-y-0.5">
-              <strong className="text-emerald-950 font-bold block text-xs">Hoàn trả 100% tiền cọc</strong>
-              <span className="text-slate-600 leading-relaxed block">
+              <h4 className="text-xs font-bold text-slate-900">Hoàn trả 100% tiền cọc</h4>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
                 Tiền cọc giữ kho ({depositMultiplierLabel} tháng) được hoàn trả 100% ngay khi bạn thanh lý hợp đồng đúng hạn.
-              </span>
+              </p>
             </div>
           </div>
 
           {/* Cam kết 2: Giữ chỗ 48h linh hoạt */}
-          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/60">
-            <span className="text-lg leading-none mt-0.5">⏱️</span>
+          <div className="flex items-start gap-3 pb-3 border-b border-slate-100">
+            <div className="mt-0.5 text-blue-600 shrink-0">
+              <Clock className="w-4 h-4" />
+            </div>
             <div className="space-y-0.5">
-              <strong className="text-blue-950 font-bold block text-xs">Giữ chỗ an tâm trong {holdHours} giờ</strong>
-              <span className="text-slate-600 leading-relaxed block">
+              <h4 className="text-xs font-bold text-slate-900">Giữ chỗ an tâm trong {holdHours} giờ</h4>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
                 Đơn đặt cọc có hiệu lực trong {holdHours} giờ. Hủy trước ngày bắt đầu được hoàn 100% tiền thuê.
-              </span>
+              </p>
             </div>
           </div>
 
           {/* Cam kết 3: Nhận bàn giao kho */}
-          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/60">
-            <span className="text-lg leading-none mt-0.5">🔑</span>
+          <div className="flex items-start gap-3 pb-3 border-b border-slate-100">
+            <div className="mt-0.5 text-amber-500 shrink-0">
+              <Key className="w-4 h-4" />
+            </div>
             <div className="space-y-0.5">
-              <strong className="text-amber-950 font-bold block text-xs">Bàn giao minh bạch &amp; an toàn</strong>
-              <span className="text-slate-600 leading-relaxed block">
+              <h4 className="text-xs font-bold text-slate-900">Bàn giao minh bạch &amp; an toàn</h4>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
                 Xuất trình CCCD trùng khớp khi đến cơ sở để nhận mã PIN điện tử (hoặc mã QR) mở kho riêng.
-              </span>
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-start gap-2.5 pt-2">
+        <div className="flex items-start gap-2.5 pt-1">
           <input
             id="booking-agree-terms"
             type="checkbox"
             checked={agreeTerms}
             onChange={(e) => setAgreeTerms(e.target.checked)}
-            className="mt-0.5 w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500 cursor-pointer"
+            className="mt-0.5 w-4 h-4 accent-[#008B74] text-brand-600 rounded border-slate-300 focus:ring-brand-500 cursor-pointer"
           />
           <label htmlFor="booking-agree-terms" className="text-xs font-semibold text-[#0a1614] leading-relaxed cursor-pointer">
             Tôi đã đọc, hiểu rõ và đồng ý với{' '}
@@ -326,28 +343,8 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
         </div>
       )}
 
-      {/* NÚT TIẾP TỤC */}
-      <div className="flex items-center justify-end gap-3 pt-2">
-        <Button
-          type="submit"
-          variant="primary"
-          size="md"
-          disabled={isSubmitting || isCheckingAvailability || isButtonDisabled}
-          className="px-8 py-3 bg-brand-500 hover:bg-brand-600 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all hover:scale-[1.01] flex items-center gap-2 cursor-pointer"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Đang kết nối cổng thanh toán VNPay...</span>
-            </>
-          ) : (
-            <>
-              <span>Tiếp tục: Thanh toán VNPay &amp; Giữ chỗ 48h</span>
-              <ArrowRight className="w-4 h-4" />
-            </>
-          )}
-        </Button>
-      </div>
+      {/* Submit ẩn hỗ trợ phím Enter khi nhập form */}
+      <button type="submit" className="hidden" aria-hidden="true" tabIndex={-1} />
     </form>
 
     <TermsAndPolicyModal

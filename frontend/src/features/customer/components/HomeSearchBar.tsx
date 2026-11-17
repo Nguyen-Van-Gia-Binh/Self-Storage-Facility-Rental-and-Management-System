@@ -74,7 +74,7 @@ export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
             <div
               role="listbox"
               aria-label="Chọn khu vực thành phố"
-              className="absolute top-full left-0 mt-2 w-full min-w-[230px] bg-white rounded-2xl shadow-xl border border-slate-200 p-1.5 z-50"
+              className="absolute top-full left-0 mt-2 w-full min-w-[230px] bg-white rounded-2xl shadow-xl border border-slate-200 p-1.5 z-50 animate-in fade-in-50 zoom-in-95 duration-150"
             >
               {availableCities.map((city) => {
                 const isSelected = selectedCity === city;

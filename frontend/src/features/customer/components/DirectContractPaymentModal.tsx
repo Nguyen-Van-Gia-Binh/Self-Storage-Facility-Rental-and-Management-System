@@ -243,16 +243,18 @@ export const DirectContractPaymentModal: React.FC<DirectContractPaymentModalProp
         {/* Footer Actions */}
         <div className="border-t border-slate-100 px-6 py-4 bg-slate-50/80 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           {/* Quick Mock Pay for Dev / Test Mode */}
-          <button
-            type="button"
-            onClick={handleMockPay}
-            disabled={isMocking || isPaid || !orderCode}
-            className="flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-300 px-3 py-2 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
-            title="Giả lập thanh toán thành công tức thì"
-          >
-            <Zap className={`w-3.5 h-3.5 text-amber-600 ${isMocking ? 'animate-bounce' : ''}`} />
-            <span>⚡ Giả lập thanh toán thành công</span>
-          </button>
+          {import.meta.env.DEV && (
+            <button
+              type="button"
+              onClick={handleMockPay}
+              disabled={isMocking || isPaid || !orderCode}
+              className="flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-300 px-3 py-2 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+              title="Giả lập thanh toán thành công tức thì"
+            >
+              <Zap className={`w-3.5 h-3.5 text-amber-600 ${isMocking ? 'animate-bounce' : ''}`} />
+              <span>⚙️ Giả lập thanh toán</span>
+            </button>
+          )}
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
             <Button

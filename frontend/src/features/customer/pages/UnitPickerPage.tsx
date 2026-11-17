@@ -254,22 +254,18 @@ export const UnitPickerPage: React.FC = () => {
 
             {/* Bước 2.2: Danh sách Kích thước theo loại kho đã chọn */}
             {!storageType ? (
-              <div className="py-8 px-4 text-center bg-slate-50 border border-dashed border-slate-200 rounded-2xl space-y-1.5">
-                <span className="text-2xl block">📦</span>
-                <p className="text-xs sm:text-sm font-bold text-slate-700">
-                  Vui lòng chọn loại kho bạn cần ở trên
-                </p>
-                <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-                  Chọn <strong>Kho Tiêu Chuẩn</strong> hoặc <strong>Kho Máy Lạnh</strong> để xem danh sách kích thước và số lượng ô kho còn trống.
-                </p>
-              </div>
+              <p className="text-center text-xs text-slate-400 py-3 font-medium">
+                Vui lòng chọn loại kho ở trên để xem danh sách kích thước và ô kho trống.
+              </p>
             ) : (
-              <UnitTypeAccordionList
-                availableTypes={availableTypes}
-                selectedTypeId={selectedTypeId}
-                availabilityMap={availabilityMap}
-                onSelectType={handleSelectType}
-              />
+              <div className="animate-in fade-in-50 slide-in-from-top-2 duration-200">
+                <UnitTypeAccordionList
+                  availableTypes={availableTypes}
+                  selectedTypeId={selectedTypeId}
+                  availabilityMap={availabilityMap}
+                  onSelectType={handleSelectType}
+                />
+              </div>
             )}
 
           </div>

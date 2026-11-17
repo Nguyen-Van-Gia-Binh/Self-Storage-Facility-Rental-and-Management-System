@@ -7,12 +7,14 @@ import {
 } from 'lucide-react';
 import type { RentedContract } from '../types';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
+import { useActivePolicy } from '@/hooks/useActivePolicy';
 
 export interface CustomerRentalsKpiSummaryProps {
   contracts: RentedContract[];
   pendingReservationsCount?: number;
   activeTab: string;
   onSelectTab: (tab: string) => void;
+  holdHours?: number;
 }
 
 export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps> = ({
@@ -20,7 +22,10 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
   pendingReservationsCount = 0,
   activeTab,
   onSelectTab,
+  holdHours,
 }) => {
+  const policy = useActivePolicy();
+  const effectiveHoldHours = holdHours || policy?.reservationHoldHours || 15;
   const activeCount = contracts.filter((c) => c.status === 'ACTIVE').length;
   const pendingCheckinCount = contracts.filter(
     (c) => c.status === 'PENDING_CHECKIN' || (c.status as string) === 'PENDING_CHECK_IN'
@@ -72,7 +77,7 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
     },
     {
       id: 'PENDING_PAYMENT',
-      label: 'Giữ chỗ 48h', // Đang giữ chỗ 48h
+      label: `Giữ chỗ ${effectiveHoldHours}h`, // Đang giữ chỗ
       count: pendingReservationsCount,
       unitLabel: 'đơn',
       badgeText: 'Chờ thanh toán',

@@ -157,7 +157,7 @@ export const BookingPriceSummary: React.FC<BookingPriceSummaryProps> = ({
           <div className="flex justify-between items-center text-emerald-800 bg-emerald-50 px-2.5 py-1.5 rounded-md text-xs font-semibold border border-emerald-200">
             <span className="flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              Bảo hiểm mở rộng (50M):
+              Bảo hiểm mở rộng 50M ({calculation.months} tháng):
             </span>
             <span>+{formatVND(insuranceTotal)}</span>
           </div>

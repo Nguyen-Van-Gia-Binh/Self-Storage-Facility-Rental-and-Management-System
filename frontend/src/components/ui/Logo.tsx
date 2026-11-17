@@ -95,7 +95,9 @@ export const Logo: React.FC<LogoProps> = ({
     >
       {/* Icon biểu tượng thương hiệu thống nhất 3 khối hộp Boxes */}
       <div
-        className={`${conf.box} bg-brand-500 text-white flex items-center justify-center shrink-0 shadow-xs transition-transform duration-200 group-hover:scale-105`}
+        className={`${conf.box} ${
+          variant === 'light' ? 'bg-white text-brand-700' : 'bg-brand-500 text-white'
+        } flex items-center justify-center shrink-0 shadow-xs transition-transform duration-200 group-hover:scale-105`}
       >
         <Boxes className={conf.icon} />
       </div>
@@ -126,7 +128,7 @@ export const Logo: React.FC<LogoProps> = ({
           {showSubtitle && subtitle && (
             <span
               className={`${conf.subtitle} ${
-                variant === 'light' ? 'text-slate-400' : 'text-brand-600'
+                variant === 'light' ? 'text-white/80' : 'text-brand-600'
               } block truncate`}
             >
               {subtitle}

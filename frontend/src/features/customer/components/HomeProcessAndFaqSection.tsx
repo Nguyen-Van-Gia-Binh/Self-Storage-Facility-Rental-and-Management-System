@@ -95,12 +95,12 @@ export const HomeProcessAndFaqSection: React.FC<HomeProcessAndFaqSectionProps> =
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-[#f3f8fc] p-6 rounded-2xl border border-sky-200/80 shadow-[0_4px_0_0_rgba(14,116,144,0.08)]">
+              <div className="bg-[#f3f8fc] p-6 rounded-2xl border border-sky-200/80 shadow-[0_4px_0_0_rgba(14,116,144,0.08)] hover:-translate-y-1 hover:shadow-md transition-all duration-300">
                 <div className="flex items-center justify-between gap-3 mb-4">
                   <span className="font-pixel inline-flex items-center px-2.5 py-1 rounded-lg bg-white border border-sky-200 text-[12px] text-[#0c5a8a] tracking-wider">
                     MÀN 01 · CHỌN KHO
                   </span>
-                  <div className="w-20 h-20 rounded-2xl bg-white border border-sky-200/75 shadow-2xs flex items-center justify-center p-2 shrink-0">
+                  <div className="w-20 h-20 rounded-2xl bg-white border border-sky-200/75 shadow-2xs flex items-center justify-center p-2 shrink-0 group-hover:scale-105 transition-transform">
                     <img
                       src={pixelStepBoxImg}
                       alt=""
@@ -117,12 +117,12 @@ export const HomeProcessAndFaqSection: React.FC<HomeProcessAndFaqSectionProps> =
                 </p>
               </div>
 
-              <div className="bg-[#f3f8fc] p-6 rounded-2xl border border-sky-200/80 shadow-[0_4px_0_0_rgba(14,116,144,0.08)]">
+              <div className="bg-[#f3f8fc] p-6 rounded-2xl border border-sky-200/80 shadow-[0_4px_0_0_rgba(14,116,144,0.08)] hover:-translate-y-1 hover:shadow-md transition-all duration-300">
                 <div className="flex items-center justify-between gap-3 mb-4">
                   <span className="font-pixel inline-flex items-center px-2.5 py-1 rounded-lg bg-white border border-sky-200 text-[12px] text-[#0c5a8a] tracking-wider">
                     MÀN 02 · THANH TOÁN
                   </span>
-                  <div className="w-20 h-20 rounded-2xl bg-white border border-sky-200/75 shadow-2xs flex items-center justify-center p-2 shrink-0">
+                  <div className="w-20 h-20 rounded-2xl bg-white border border-sky-200/75 shadow-2xs flex items-center justify-center p-2 shrink-0 group-hover:scale-105 transition-transform">
                     <img
                       src={pixelStepPaymentImg}
                       alt=""
@@ -139,12 +139,12 @@ export const HomeProcessAndFaqSection: React.FC<HomeProcessAndFaqSectionProps> =
                 </p>
               </div>
 
-              <div className="bg-[#f3f8fc] p-6 rounded-2xl border border-sky-200/80 shadow-[0_4px_0_0_rgba(14,116,144,0.08)]">
+              <div className="bg-[#f3f8fc] p-6 rounded-2xl border border-sky-200/80 shadow-[0_4px_0_0_rgba(14,116,144,0.08)] hover:-translate-y-1 hover:shadow-md transition-all duration-300">
                 <div className="flex items-center justify-between gap-3 mb-4">
                   <span className="font-pixel inline-flex items-center px-2.5 py-1 rounded-lg bg-white border border-sky-200 text-[12px] text-[#0c5a8a] tracking-wider">
                     MÀN 03 · NHẬN KHO
                   </span>
-                  <div className="w-20 h-20 rounded-2xl bg-white border border-sky-200/75 shadow-2xs flex items-center justify-center p-2 shrink-0">
+                  <div className="w-20 h-20 rounded-2xl bg-white border border-sky-200/75 shadow-2xs flex items-center justify-center p-2 shrink-0 group-hover:scale-105 transition-transform">
                     <img
                       src={pixelStepPinImg}
                       alt=""
@@ -178,13 +178,13 @@ export const HomeProcessAndFaqSection: React.FC<HomeProcessAndFaqSectionProps> =
               {VALUE_HIGHLIGHTS.map(({ code, title, desc, iconSrc }) => (
                 <div
                   key={code}
-                  className="p-6 rounded-2xl border border-slate-200 bg-white space-y-2.5"
+                  className="p-6 rounded-2xl border border-slate-200 bg-white space-y-2.5 hover:-translate-y-1 hover:shadow-md transition-all duration-300 group"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-pixel text-[13px] font-medium text-[#0284c7] tracking-wider">
                       {code}
                     </span>
-                    <div className="w-16 h-16 rounded-2xl bg-[#f3f8fc] border border-sky-200/70 flex items-center justify-center p-2 shrink-0">
+                    <div className="w-16 h-16 rounded-2xl bg-[#f3f8fc] border border-sky-200/70 flex items-center justify-center p-2 shrink-0 group-hover:scale-105 transition-transform duration-300">
                       <img
                         src={iconSrc}
                         alt=""
@@ -258,7 +258,7 @@ export const HomeProcessAndFaqSection: React.FC<HomeProcessAndFaqSectionProps> =
                   />
                 </button>
                 {openFaq === index && (
-                  <p className="text-sm text-slate-700 mt-3 leading-relaxed border-t border-sky-100 pt-3">
+                  <p className="text-sm text-slate-700 mt-3 leading-relaxed border-t border-sky-100 pt-3 animate-in fade-in slide-in-from-top-1 duration-200">
                     {item.a}
                   </p>
                 )}

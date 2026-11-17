@@ -317,24 +317,34 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
       >
         {/* Top Decorative Header */}
         <div
-          className={`p-5 text-white relative transition-colors duration-200 ${
+          className={`p-5 sm:px-6 sm:py-5 relative transition-colors duration-200 ${
             showRejectionView
               ? rejectionAction === 'RELOCATE'
-                ? 'bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700'
-                : 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700'
-              : 'bg-gradient-to-r from-[#0d6050] to-[#12836d]'
+                ? 'bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white'
+                : 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white'
+              : currentTab === 'checkin'
+              ? 'bg-gradient-to-r from-[#0d6050] to-[#12836d] text-white'
+              : 'bg-white border-b border-slate-200 text-slate-900 rounded-t-2xl'
           }`}
         >
           <button
             type="button"
             onClick={handleClose}
-            className="absolute top-4 right-4 text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+            className={`absolute top-4 right-4 p-1.5 rounded-lg transition-colors cursor-pointer ${
+              showRejectionView || currentTab === 'checkin'
+                ? 'text-white/80 hover:text-white hover:bg-white/10'
+                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
+            }`}
             title="Đóng cửa sổ"
           >
             <X className="w-5 h-5" />
           </button>
 
-          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+          <h2
+            className={`text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2 ${
+              showRejectionView || currentTab === 'checkin' ? 'text-white' : 'text-slate-900'
+            }`}
+          >
             {showRejectionView ? (
               <>
                 <AlertOctagon className="w-6 h-6 text-amber-200 shrink-0" />
@@ -350,10 +360,14 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
             )}
           </h2>
           {!showRejectionView && (
-            <p className="text-xs text-emerald-100/90 mt-1">
+            <p
+              className={`text-xs sm:text-sm mt-1 ${
+                currentTab === 'checkin' ? 'text-emerald-100/90' : 'text-slate-500'
+              }`}
+            >
               {currentTab === 'checkin'
                 ? `Biên bản nghiệm thu 4 tiêu chí cho ô kho ${passData.unitNumber}`
-                : 'Mã QR quét tại cổng cơ sở & Thông tin lịch nhận bàn giao ô kho'}
+                : 'Mã QR quét tại cổng cơ sở & Thông tin nhận bàn giao ô kho.'}
             </p>
           )}
         </div>
@@ -903,90 +917,110 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
             /* TAB 1: BOARDING PASS TICKET BOX (QR QUÉT TẠI CỔNG & LỄ TÂN)    */
             /* ============================================================== */
             <>
-              <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/70 space-y-3.5">
-                {/* QR Code & Unit Info Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-                  <div className="flex flex-col items-center justify-center p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
-                    <img
-                      src={qrImageUrl}
-                      alt="Check-in QR Pass"
-                      className="w-36 h-36 object-contain rounded-lg"
-                    />
-                    <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">
-                      Mã quét tại cổng
+              {/* Flattened Layout: QR & Info (Bỏ khung xám to bọc ngoài) */}
+              <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-stretch pb-2">
+                {/* Cột QR Code: Làm nổi bật với viền nét đứt nhẹ */}
+                <div className="w-full sm:w-1/2 flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 shadow-2xs">
+                  <img
+                    src={qrImageUrl}
+                    alt="Check-in QR Pass"
+                    className="w-36 h-36 object-contain rounded-lg"
+                  />
+                  <span className="mt-3 text-xs font-bold text-slate-500 tracking-wider uppercase">
+                    Mã quét tại cổng
+                  </span>
+                </div>
+
+                {/* Cột Thông tin: Dùng text phẳng, bỏ khung con */}
+                <div className="w-full sm:w-1/2 flex flex-col justify-center space-y-3">
+                  <div>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                      Ô kho được phân bổ
                     </span>
+                    <div className="text-lg font-bold text-slate-900 mt-1 flex items-center gap-2">
+                      {hasUnitAssigned ? (
+                        <>
+                          <span>Ô {passData.unitNumber}</span>
+                          <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded">
+                            Đã giữ chỗ
+                          </span>
+                        </>
+                      ) : (
+                        <div className="flex flex-col">
+                          <span className="text-slate-900 text-lg font-bold">Chưa gán số ô</span>
+                          <span className="inline-flex items-center px-2 py-0.5 mt-1 rounded text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 w-fit">
+                            Chờ quầy phân bổ
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="space-y-2.5 text-xs">
-                    <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1">
-                      <span className="text-[11px] text-slate-400 block font-medium">Ô kho được phân bổ</span>
-                      <div className="text-xl font-black text-[#0a1614] flex items-center gap-2">
-                        {hasUnitAssigned ? (
-                          <>
-                            Ô {passData.unitNumber}
-                            <span className="text-xs font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
-                              Đã giữ chỗ
-                            </span>
-                          </>
-                        ) : (
-                          <div className="flex flex-col">
-                            <span className="text-slate-700 text-base font-bold">Chưa gán số ô</span>
-                            <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 w-fit mt-0.5">
-                              Chờ quầy phân bổ
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                  <div className="space-y-2 text-sm text-slate-700">
+                    {/* Tên & SĐT (Fix lỗi thừa ngoặc đơn rỗng) */}
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span>
+                        <strong className="text-slate-800">{passData.customerName}</strong>
+                        {passData.customerPhone ? ` (${passData.customerPhone})` : ''}
+                      </span>
                     </div>
 
-                    <div className="space-y-1 text-slate-600 text-[11px]">
-                      <div className="flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span>
-                          <strong className="text-slate-800">{passData.customerName}</strong> ({passData.customerPhone})
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <CreditCard className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span>CCCD: <strong className="font-mono text-slate-800">{passData.customerIdentity || '—'}</strong></span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span>Bắt đầu từ: <strong className="text-slate-800">{formatDateVN(passData.startDate)}</strong></span>
-                      </div>
+                    {/* CCCD: Chỉ hiển thị khi có dữ liệu thực tế (Ẩn khi rỗng hoặc '-') */}
+                    {passData.customerIdentity &&
+                      passData.customerIdentity.trim() !== '' &&
+                      passData.customerIdentity !== '—' &&
+                      passData.customerIdentity !== '-' &&
+                      passData.customerIdentity !== '--' && (
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="w-4 h-4 text-slate-400 shrink-0" />
+                          <span>
+                            CCCD: <strong className="font-mono text-slate-800">{passData.customerIdentity}</strong>
+                          </span>
+                        </div>
+                      )}
+
+                    {/* Ngày bắt đầu */}
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span>
+                        Bắt đầu từ: <strong className="text-slate-800">{formatDateVN(passData.startDate)}</strong>
+                      </span>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Facility Location Details */}
-                <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1 text-xs text-slate-600">
-                  <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                    <MapPin className="w-4 h-4 text-brand-600 shrink-0" />
-                    <span>{passData.facilityName}</span>
+              {/* Phần Cơ sở: Đường kẻ ngang mỏng phân tách */}
+              <div className="border-t border-slate-200 pt-4">
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 text-brand-600 mt-0.5 shrink-0" />
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm">{passData.facilityName}</h4>
+                    {passData.facilityAddress && (
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed">{passData.facilityAddress}</p>
+                    )}
+                    {(passData.facilityPhone || resolvedOpeningHours) && (
+                      <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-slate-500">
+                        {passData.facilityPhone && (
+                          <span className="flex items-center gap-1">
+                            <Phone className="w-3.5 h-3.5 text-slate-400" />
+                            {passData.facilityPhone}
+                          </span>
+                        )}
+                        {resolvedOpeningHours && (
+                          <span>🕒 Giờ mở cửa: {resolvedOpeningHours}</span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  {passData.facilityAddress && (
-                    <p className="text-slate-500 pl-5 leading-relaxed text-[11px]">{passData.facilityAddress}</p>
-                  )}
-                  {(passData.facilityPhone || resolvedOpeningHours) && (
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-5 pt-1 text-[11px] text-slate-500">
-                      {passData.facilityPhone && (
-                        <span className="flex items-center gap-1">
-                          <Phone className="w-3 h-3 text-slate-400" />
-                          {passData.facilityPhone}
-                        </span>
-                      )}
-                      {resolvedOpeningHours && (
-                        <span>• Giờ mở cửa: {resolvedOpeningHours}</span>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
 
               {/* Call-to-action */}
               {hasUnitAssigned ? (
                 <div
-                  className={`border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs ${
+                  className={`border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs ${
                     isCheckInAvailable
                       ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200'
                       : 'bg-slate-50 border-slate-200'
@@ -1046,11 +1080,10 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
                   </Button>
                 </div>
               ) : (
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 flex items-center gap-2.5 text-xs text-amber-900 shadow-2xs">
-                  <Info className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span className="font-medium">
-                    Ô kho cụ thể của quý khách đang được nhân viên cơ sở điều phối, vui lòng kiểm tra sau.
-                  </span>
+                /* Khối Lưu ý tinh gọn: Chuyển sang xanh Info */
+                <div className="flex items-center gap-2.5 p-3 bg-blue-50 text-blue-700 text-xs sm:text-sm rounded-lg border border-blue-100">
+                  <Info className="w-4 h-4 shrink-0 text-blue-600" />
+                  <p>Vị trí ô kho cụ thể sẽ được nhân viên cơ sở cập nhật trước ngày nhận kho.</p>
                 </div>
               )}
             </>

@@ -181,7 +181,7 @@ export const MyUnitsModals: React.FC<MyUnitsModalsProps> = ({
         />
       )}
 
-      {/* 8. Modal xác nhận hủy đơn giữ chỗ 48h */}
+      {/* 8. Modal xác nhận hủy đơn giữ chỗ */}
       <Modal
         isOpen={Boolean(cancellingReservation)}
         onClose={onCloseCancelReservationModal}
@@ -190,23 +190,42 @@ export const MyUnitsModals: React.FC<MyUnitsModalsProps> = ({
         <div className="p-5 sm:p-6 space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-rose-600" />
+              <AlertTriangle className="w-5 h-5 text-rose-500" />
               Xác nhận hủy giữ chỗ
             </h3>
             <button
               type="button"
               disabled={isCancelling}
               onClick={onCloseCancelReservationModal}
-              className="text-slate-400 hover:text-slate-600 font-bold px-1.5 py-0.5 rounded cursor-pointer"
+              className="text-slate-400 hover:text-slate-600 font-bold px-1.5 py-0.5 rounded cursor-pointer text-lg leading-none"
             >
               ×
             </button>
           </div>
 
-          <div className="flex items-center gap-3 p-3.5 bg-rose-50 rounded-xl border border-rose-100 text-rose-800 text-xs leading-relaxed">
-            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
-            <p className="font-bold text-rose-900">Bạn có chắc chắn muốn hủy giữ chỗ?</p>
-          </div>
+          {cancellingReservation && (
+            <div className="space-y-3">
+              <p className="text-sm text-slate-700">
+                Bạn đang thực hiện hủy đơn giữ chỗ cho ô kho:
+              </p>
+              {/* Khối tóm tắt thông tin đơn hàng (Nền xám nhạt) */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1">
+                <p className="text-sm font-bold text-slate-900">
+                  Mã đơn: {cancellingReservation.code || `#${cancellingReservation.id}`}
+                </p>
+                <p className="text-xs sm:text-sm text-slate-500">
+                  {[cancellingReservation.unitTypeName, cancellingReservation.facilityName]
+                    .filter(Boolean)
+                    .join(' - ') || 'Chi tiết ô kho lưu trữ'}
+                </p>
+              </div>
+
+              {/* Cảnh báo hậu quả (Dùng text, không dùng nền đỏ) */}
+              <p className="text-xs sm:text-sm text-rose-600 font-medium leading-relaxed">
+                Thao tác này không thể hoàn tác. Tiền cọc của bạn sẽ được xử lý theo chính sách hoàn hủy của hệ thống.
+              </p>
+            </div>
+          )}
 
           {cancelError && (
             <p className="text-xs text-rose-600 font-semibold">{cancelError}</p>
@@ -229,7 +248,7 @@ export const MyUnitsModals: React.FC<MyUnitsModalsProps> = ({
               size="sm"
               disabled={isCancelling}
               onClick={onConfirmCancelReservation}
-              className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-xs transition-colors"
             >
               {isCancelling ? (
                 <>

@@ -169,12 +169,36 @@ describe('DigitalMoveInPassModal — Tách biệt Vé nhận kho và Check-in on
     expect(screen.getByText(/Chưa gán số ô/i)).toBeInTheDocument();
     expect(screen.getByText(/Chờ quầy phân bổ/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/Ô kho cụ thể của quý khách đang được nhân viên cơ sở điều phối, vui lòng kiểm tra sau/i)
+      screen.getByText(/Vị trí ô kho cụ thể sẽ được nhân viên cơ sở cập nhật trước ngày nhận kho/i)
     ).toBeInTheDocument();
 
     // Tuyệt đối KHÔNG hiển thị nút hay tab Check-in online
     expect(screen.queryByRole('button', { name: /Check-in online/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/Check-in online ngay/i)).not.toBeInTheDocument();
+  });
+
+  it('làm sạch hiển thị dữ liệu trống: không có ngoặc rỗng () khi thiếu SĐT và ẩn dòng CCCD khi trống/—', () => {
+    const mockEmptyFieldPassData: MoveInPassData = {
+      ...mockUnassignedPassData,
+      customerPhone: undefined,
+      customerIdentity: '—',
+    };
+
+    render(
+      <DigitalMoveInPassModal
+        isOpen={true}
+        onClose={vi.fn()}
+        passData={mockEmptyFieldPassData}
+        initialMode="pass"
+      />
+    );
+
+    // Tên hiển thị sạch, không có ()
+    expect(screen.getByText(/Nguyễn Phạm Xuân Nhi/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Nguyễn Phạm Xuân Nhi\s*\(\s*\)/i)).not.toBeInTheDocument();
+
+    // Ẩn dòng CCCD khi dữ liệu là '—' hoặc rỗng
+    expect(screen.queryByText(/CCCD:/i)).not.toBeInTheDocument();
   });
 
   it('khi có contractId: gọi checkInContract API thật, hiển thị mã PIN trả về từ backend và gọi onSuccessCheckIn', async () => {

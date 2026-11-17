@@ -74,7 +74,7 @@ export const HomeFacilityCard: React.FC<HomeFacilityCardProps> = ({ facility: fa
           href={mapsHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="py-2.5 px-3.5 border border-slate-300 rounded-xl text-slate-700 text-[13px] font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center gap-1.5"
+          className="py-2.5 px-3.5 border border-slate-300 rounded-xl text-slate-700 text-[13px] font-semibold hover:bg-slate-50 active:scale-95 transition-all flex items-center justify-center gap-1.5"
           title="Mở chỉ đường trên Google Maps"
         >
           <Navigation className="w-3.5 h-3.5 text-[#0284c7]" />
@@ -82,7 +82,7 @@ export const HomeFacilityCard: React.FC<HomeFacilityCardProps> = ({ facility: fa
         </a>
         <Link
           to={unitPickerHref}
-          className="btn-tactile flex-1 text-center py-2.5 px-3.5 rounded-xl text-[13px] font-bold bg-[#0c5a8a] hover:bg-[#084369] text-white flex items-center justify-center gap-1.5"
+          className="btn-tactile active:scale-[0.98] flex-1 text-center py-2.5 px-3.5 rounded-xl text-[13px] font-bold bg-[#0c5a8a] hover:bg-[#084369] text-white flex items-center justify-center gap-1.5"
         >
           <span>Chọn ô kho</span>
           <ArrowRight className="w-3.5 h-3.5" />

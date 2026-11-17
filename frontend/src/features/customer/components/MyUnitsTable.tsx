@@ -35,6 +35,60 @@ import type { ReservationResponse } from '@/api/reservation';
 import { DigitalMoveInPassModal } from './DigitalMoveInPassModal';
 import { DirectContractPaymentModal } from './DirectContractPaymentModal';
 import { tokenStorage } from '@/utils/tokenStorage';
+import { useActivePolicy } from '@/hooks/useActivePolicy';
+
+export interface ReservationCountdownBadgeProps {
+  holdExpiresAt?: string;
+  fallbackHoldHours?: number;
+}
+
+export const ReservationCountdownBadge: React.FC<ReservationCountdownBadgeProps> = ({
+  holdExpiresAt,
+  fallbackHoldHours = 15,
+}) => {
+  const [secondsLeft, setSecondsLeft] = useState<number>(() => {
+    if (!holdExpiresAt) return fallbackHoldHours * 3600;
+    const diff = Math.floor((new Date(holdExpiresAt).getTime() - Date.now()) / 1000);
+    return Math.max(0, diff);
+  });
+
+  useEffect(() => {
+    const updateCountdown = () => {
+      if (holdExpiresAt) {
+        const diff = Math.floor((new Date(holdExpiresAt).getTime() - Date.now()) / 1000);
+        setSecondsLeft(Math.max(0, diff));
+      } else {
+        setSecondsLeft((prev) => Math.max(0, prev - 1));
+      }
+    };
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, [holdExpiresAt]);
+
+  const isExpired = secondsLeft <= 0;
+
+  const formattedCountdown = useMemo(() => {
+    if (isExpired) return 'Hết hạn giữ chỗ';
+    const hours = Math.floor(secondsLeft / 3600);
+    const minutes = Math.floor((secondsLeft % 3600) / 60);
+    const seconds = secondsLeft % 60;
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `Còn ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  }, [secondsLeft, isExpired]);
+
+  return (
+    <Badge
+      variant="overdue"
+      className="min-w-[136px] justify-center gap-1 font-bold text-xs"
+      title={isExpired ? 'Đơn giữ chỗ đã hết hạn thanh toán' : `Thời gian giữ chỗ còn lại: ${formattedCountdown}`}
+    >
+      <Clock className={`w-3 h-3 text-rose-600 ${isExpired ? '' : 'animate-pulse'}`} />
+      <span>{formattedCountdown}</span>
+    </Badge>
+  );
+};
 
 export interface MyUnitsTableProps {
   contracts: RentedContract[];
@@ -54,6 +108,7 @@ export interface MyUnitsTableProps {
   onCheckInSuccess?: () => void;
   renewalNoticeDays?: number;
   pageSize?: number;
+  holdHours?: number;
 }
 
 export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
@@ -73,7 +128,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
   onCheckInSuccess,
   renewalNoticeDays,
   pageSize = 7,
+  holdHours,
 }) => {
+  const policy = useActivePolicy();
+  const effectiveHoldHours = holdHours || policy?.reservationHoldHours || 15;
   const [activePassContract, setActivePassContract] = useState<RentedContract | null>(null);
   const [activePassMode, setActivePassMode] = useState<'pass' | 'checkin'>('pass');
   const [payingContract, setPayingContract] = useState<RentedContract | null>(null);
@@ -174,10 +232,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
             <tr>
               <th className="py-3 px-4 w-[15%]">Ô</th>
               <th className="py-3 px-4 w-[17%]">Cơ sở</th>
-              <th className="py-3 px-4 w-[22%]">Thời hạn</th>
-              <th className="py-3 px-4 w-[17%]">Mã PIN / Mở kho</th>
-              <th className="py-3 px-4 w-[15%]">Trạng thái</th>
-              <th className="py-3 px-4 w-[14%] text-right">Thao tác</th>
+              <th className="py-3 px-4 w-[21%]">Thời hạn</th>
+              <th className="py-3 px-4 w-[15%] text-center">Mã PIN / Mở kho</th>
+              <th className="py-3 px-4 w-[16%] text-center">Trạng thái</th>
+              <th className="py-3 px-4 w-[16%] text-center">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -198,7 +256,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                   {/* Cột 1: Ô & Loại ô (Gộp 2 dòng) */}
                   <td className="py-3 px-4 whitespace-nowrap">
                     <div className="flex flex-col">
-                      <span className="font-extrabold text-sm tracking-tight font-mono text-slate-900">
+                      <span className="font-extrabold text-sm tracking-tight text-slate-900">
                         {awaitingUnit ? 'Chưa gán' : rsv.storageUnitCode}
                       </span>
                       <span className="text-[11px] font-medium text-slate-500">
@@ -221,21 +279,20 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                   </td>
 
                   {/* Cột 5: Mã mở khóa */}
-                  <td className="py-3.5 px-4 text-slate-300 text-xs whitespace-nowrap">
-                    <span className="inline-flex items-center w-[116px] h-7 text-slate-300 text-xs pl-2">—</span>
+                  <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                    <span className="inline-flex items-center justify-center text-slate-300 text-xs">—</span>
                   </td>
 
-                  {/* Cột 6: Trạng thái */}
-                  <td className="py-3.5 px-4 whitespace-nowrap">
-                    <Badge variant="overdue" className="w-[136px] justify-center gap-1">
-                      <Clock className="w-3 h-3 text-rose-600 animate-pulse" />
-                      <span>Giữ chỗ 48h</span>
-                    </Badge>
+                  {/* Cột 6: Trạng thái (Đồng hồ đếm lùi thời gian thực) */}
+                  <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                    <div className="flex justify-center">
+                      <ReservationCountdownBadge holdExpiresAt={rsv.holdExpiresAt} fallbackHoldHours={effectiveHoldHours} />
+                    </div>
                   </td>
 
                   {/* Cột 7: Thao tác */}
-                  <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                  <td className="py-3.5 px-4 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
                       <Link to={bookingUrl} className="shrink-0" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="primary"
@@ -377,7 +434,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                         <button
                           type="button"
                           onClick={() => onViewDetail(contract)}
-                          className="font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded text-xs font-mono self-start cursor-pointer transition-colors"
+                          className="font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded text-xs self-start cursor-pointer transition-colors"
                           title="Xem chi tiết hợp đồng & Phụ lục đổi ô kho"
                         >
                           Chờ đổi ô
@@ -386,7 +443,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                         <button
                           type="button"
                           onClick={() => onViewDetail(contract)}
-                          className="font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded text-xs font-mono self-start cursor-pointer transition-colors"
+                          className="font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded text-xs self-start cursor-pointer transition-colors"
                           title="Xem chi tiết hợp đồng"
                         >
                           Chưa gán ô
@@ -395,7 +452,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                         <button
                           type="button"
                           onClick={() => onViewDetail(contract)}
-                          className={`font-extrabold text-sm tracking-tight font-mono text-left transition-colors cursor-pointer ${
+                          className={`font-extrabold text-sm tracking-tight text-left transition-colors cursor-pointer ${
                             isClosed ? "text-slate-400 hover:text-slate-600" : "text-slate-900 hover:text-brand-700 hover:underline"
                           }`}
                           title="Xem chi tiết hợp đồng"
@@ -450,7 +507,8 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                   </td>
 
                   {/* Cột 5: Mã mở khóa */}
-                  <td className="py-3.5 px-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                  <td className="py-3.5 px-4 whitespace-nowrap text-center" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex justify-center">
                     {contract.status === 'OVERDUE' && !isOverdueUnlocked ? (
                       <span
                         className="inline-flex items-center justify-center w-[116px] h-7 text-rose-700 text-[11px] font-bold bg-rose-50 px-2.5 rounded-lg border border-rose-200"
@@ -462,7 +520,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                       <div className="inline-flex items-center justify-between min-w-[116px] h-7 gap-1 px-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs shadow-2xs">
                         <div className="inline-flex items-center gap-1">
                           <span className="text-slate-400 text-[10px] font-medium">PIN:</span>
-                          <span className="font-mono font-black text-slate-800 tracking-wider">
+                          <span className="font-bold text-slate-800 tracking-wider">
                             {isRevealed ? contract.accessPin : '••••••'}
                           </span>
                         </div>
@@ -553,12 +611,14 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                         Đã khóa PIN
                       </span>
                     ) : (
-                      <span className="inline-flex items-center w-[116px] h-7 text-slate-300 text-xs pl-2">—</span>
+                      <span className="inline-flex items-center justify-center w-[116px] h-7 text-slate-300 text-xs">—</span>
                     )}
+                    </div>
                   </td>
 
                   {/* Cột 6: Trạng thái */}
-                  <td className="py-3.5 px-4 whitespace-nowrap">
+                  <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                    <div className="flex justify-center">
                     {contract.hasPendingRenewal ? (
                       <Badge
                         variant="warning"
@@ -643,11 +703,12 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                         {contract.status}
                       </Badge>
                     )}
+                    </div>
                   </td>
 
                   {/* Cột 7: Thao tác (Gọn gàng: Nút chính cố định độ rộng + slot cố định cho menu •••) */}
-                  <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                  <td className="py-3.5 px-4 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
                       {/* 1. Nút hành động chính */}
                       {contract.hasPendingInitialPayment ? (
                         <Button
@@ -1080,7 +1141,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                 <div>
                   <h3 className="text-base font-bold">Chính Sách Gia Hạn Khung T-20 Ngày</h3>
                   <p className="text-xs text-slate-400">
-                    Ô kho: <span className="text-amber-400 font-bold font-mono">{lateRenewalContract.unitNumber}</span> ({lateRenewalContract.facilityName})
+                    Ô kho: <span className="text-amber-400 font-bold">{lateRenewalContract.unitNumber}</span> ({lateRenewalContract.facilityName})
                   </p>
                 </div>
               </div>
