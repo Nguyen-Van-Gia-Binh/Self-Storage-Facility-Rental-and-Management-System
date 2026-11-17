@@ -98,7 +98,8 @@ describe('Giám sát hợp đồng — Kiến trúc Drill-down 3 Cấp độ (FM
     expect(html).toContain('Cơ sở Cầu Giấy');
     expect(html).toContain('FAC-CG');
     expect(html).toContain('123 Cầu Giấy, Hà Nội');
-    expect(html).toContain('0901234567');
+    expect(html).toContain('Đang thuê');
+    expect(html).toContain('Quá hạn');
     expect(html).toContain('Xem danh sách hợp đồng');
   });
 
@@ -119,7 +120,7 @@ describe('Giám sát hợp đồng — Kiến trúc Drill-down 3 Cấp độ (FM
     expect(html).toContain('Nguyễn Văn A');
     expect(html).toContain('S-101');
     expect(html).toContain('Đang hiệu lực');
-    expect(html).toContain('2026-12-31');
+    expect(html).toContain('31/12/2026');
     expect(html).toContain('Chi tiết');
   });
 

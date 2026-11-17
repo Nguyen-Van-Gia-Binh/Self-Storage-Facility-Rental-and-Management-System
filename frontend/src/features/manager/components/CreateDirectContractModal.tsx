@@ -2,25 +2,17 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
-  FileCheck,
   Search,
-  Building2,
-  Layers,
-  Box,
-  Calendar,
-  CreditCard,
-  User,
   AlertCircle,
   CheckCircle2,
-  Phone,
   Mail,
-  FileText,
 } from 'lucide-react';
 import { createDirectContract, type CreateDirectContractRequest } from '@/api/contract';
 import { DateField } from '@/components/ui/DateField';
 import { fetchUnitTypes, fetchStorageUnits } from '@/api/unit';
 import { getUsers, type AppUser } from '@/api/user';
 import { fetchMyAssignedFacilities } from '@/api/facility';
+import { formatDateVN } from '@/features/customer/utils/unitPickerHelpers';
 import type { UnitTypeResponse, StorageUnitResponse } from '@/types/unit';
 import type { FacilityListItem } from '@/types';
 import type { WaitlistResponse } from '@/types/waitlist';
@@ -391,474 +383,473 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-200">
-        {/* Modal Header */}
-        <div className="bg-gradient-to-r from-brand-700 via-brand-800 to-teal-800 px-6 py-5 text-white flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-sm border border-white/20">
-              <FileCheck className="w-5 h-5 text-white" />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto"
+      onClick={() => !submitting && handleClose()}
+    >
+      <div
+        className="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden my-6 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header trắng sạch (Apple / Stripe style) */}
+        <div className="flex justify-between items-start gap-4 px-6 py-5 border-b border-gray-200 bg-white shrink-0">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-xl font-bold text-gray-900 tracking-tight">
+                Tạo Hợp Đồng Trực Tiếp
+              </h2>
+              {waitlistId && (
+                <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md font-semibold">
+                  Đơn chờ #{waitlistId}
+                </span>
+              )}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold tracking-tight">
-                  {waitlistId ? 'Tạo Hợp Đồng Trực Tiếp (Waitlist CRM)' : 'Tạo Hợp Đồng Trực Tiếp'}
-                </h2>
-                {waitlistId && (
-                  <span className="text-[10px] bg-teal-400/25 text-teal-100 border border-teal-300/40 px-2 py-0.5 rounded-full font-bold">
-                    Đơn Waitlist #{waitlistId}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-white/80">
-                {waitlistId
-                  ? 'Chốt hợp đồng trực tiếp cho khách hàng từ danh sách chờ telesales CRM'
-                  : 'Lập hợp đồng trực tiếp tại quầy cho khách hàng có tài khoản hệ thống'}
-              </p>
-            </div>
+            <p className="text-sm text-gray-500 mt-1">
+              {waitlistId
+                ? 'Chốt hợp đồng trực tiếp cho khách hàng từ danh sách chờ.'
+                : 'Lập hợp đồng trực tiếp tại quầy cho khách hàng có tài khoản.'}
+            </p>
           </div>
           <button
+            type="button"
+            aria-label="Đóng"
             onClick={handleClose}
-            className="p-1.5 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <form ref={formRef} onSubmit={handleSubmit} noValidate className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
-          {/* Priority Alert Banner if unassigned reservations exist for this waitlist */}
-          {isBlockedByPriority && (
-            <div className="p-4 bg-amber-50 border border-amber-300 rounded-2xl text-xs text-amber-900 shadow-sm">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
-                <div className="space-y-1.5 flex-1">
-                  <h4 className="font-bold text-sm text-amber-900">
-                    QUY CHẾ ƯU TIÊN: Đang có {initialWaitlist?.unassignedReservationCount} khách đặt trước chưa gán ô kho
-                  </h4>
-                  <p className="text-xs text-amber-800 leading-relaxed">
-                    Theo quy chế phân bổ hệ thống, khách hàng đã thanh toán cọc giữ chỗ trước online được ưu tiên bảo đảm ô kho. 
-                    Quản lý cơ sở (FM) bắt buộc phải hoàn tất gán ô kho cho các khách đặt trước này tại mục <strong>Gán ô kho</strong> trước khi phân bổ hoặc tạo hợp đồng cho khách trong Danh sách chờ (Waitlist).
-                  </p>
-                  <div className="pt-1">
-                    <a
-                      href={`/manager/allocation?facilityId=${selectedFacilityId}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white font-bold rounded-lg transition-colors shadow-2xs"
-                    >
-                      Chuyển sang màn hình Gán ô kho ngay →
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Alert Banner when no units are available for the selected unit type */}
-          {isNoAvailableUnits && !isBlockedByPriority && (
-            <div className="p-4 bg-rose-50 border border-rose-300 rounded-2xl text-xs text-rose-900 shadow-sm">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-rose-600 mt-0.5 shrink-0" />
-                <div className="space-y-1.5 flex-1">
-                  <h4 className="font-bold text-sm text-rose-900">
-                    HẠNG KHO NÀY HIỆN ĐÃ HẾT Ô TRỐNG (0 Ô KHẢ DỤNG)
-                  </h4>
-                  <p className="text-xs text-rose-800 leading-relaxed">
-                    Cơ sở hiện không còn ô kho nào thuộc hạng này sẵn sàng cho thuê. Quản lý cơ sở (FM) không thể tạo hợp đồng trực tiếp khi chưa có ô kho trống.
-                    Vui lòng tư vấn khách hàng đổi sang hạng kho còn trống khác hoặc chỉ tạo hợp đồng khi có khách trả kho!
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {errorMessage && (
-            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-2.5 text-xs text-rose-700">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
-          {/* Section 1: Chọn cơ sở */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5 text-brand-600" />
-              1. Cơ sở áp dụng
-            </label>
-            {defaultFacilityId && facilities.length > 0 ? (
-              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 flex items-center justify-between">
-                <span>{facilities.find((f) => f.id === defaultFacilityId)?.name || `Cơ sở #${defaultFacilityId}`}</span>
-                <span className="text-[10px] bg-brand-100 text-brand-800 font-bold px-2 py-0.5 rounded-full">
-                  Cơ sở hiện tại
-                </span>
-              </div>
-            ) : (
-              <select
-                value={selectedFacilityId}
-                onChange={(e) => setSelectedFacilityId(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-              >
-                {facilities.map((fac) => (
-                  <option key={fac.id} value={fac.id}>
-                    {fac.name} ({fac.code})
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          {/* Section 2: Khách hàng */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-brand-600" />
-                2. Khách hàng thuê
-              </label>
-              <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
-                Tài khoản khách hàng hệ thống
-              </span>
-            </div>
-
-            {selectedCustomer ? (
-              <div className="space-y-3">
-                <div className="p-3 bg-brand-50/50 border border-brand-200 rounded-2xl flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-xs">
-                      {selectedCustomer.fullName?.charAt(0)?.toUpperCase() || 'K'}
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
-                        <span>{selectedCustomer.fullName}</span>
-                        <span className="text-[10px] text-slate-500 font-normal">#{selectedCustomer.id}</span>
-                      </div>
-                      <div className="text-[11px] text-slate-600 flex items-center gap-3 mt-0.5">
-                        <span className="flex items-center gap-1">
-                          <Mail className="w-3 h-3 text-slate-400" />
-                          {selectedCustomer.email}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedCustomer(null);
-                      setCustomerPhone('');
-                    }}
-                    className="px-2.5 py-1 text-[11px] font-semibold text-brand-700 hover:bg-brand-100 rounded-lg transition-colors cursor-pointer"
-                  >
-                    Đổi khách hàng
-                  </button>
-                </div>
-
-                {/* Input nhập/xác nhận Số điện thoại */}
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
-                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <Phone className="w-3.5 h-3.5 text-brand-600" />
-                      Số điện thoại liên hệ nhận kho <span className="text-rose-500">*</span>
-                    </span>
-                    {!selectedCustomer.phone && (
-                      <span className="text-[10px] text-amber-600 font-semibold">Tài khoản chưa có SĐT, vui lòng bổ sung</span>
-                    )}
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    pattern="0[0-9]{9}"
-                    placeholder="Nhập số điện thoại khách hàng (10 số, ví dụ: 0987654321)..."
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-                  />
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    Số điện thoại này sẽ dùng để gửi thông báo bàn giao, mã PIN mở cửa thông minh và cập nhật vào hồ sơ khách hàng.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="relative">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="Tìm theo tên, số điện thoại hoặc email khách hàng..."
-                    value={customerSearchKeyword}
-                    onChange={(e) => setCustomerSearchKeyword(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleSearchCustomers(customerSearchKeyword);
-                      }
-                    }}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-                  />
-                </div>
-
-                {customerSearching && (
-                  <div className="p-3 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
-                    <div className="w-3.5 h-3.5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-                    <span>Đang tìm khách hàng...</span>
-                  </div>
-                )}
-
-                {customerSearchError && (
-                  <div className="p-3 text-center text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-xl">
-                    {customerSearchError}
-                  </div>
-                )}
-
-                {!customerSearching && !customerSearchError && customerSearchResults.length > 0 && (
-                  <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-white shadow-2xs">
-                    {customerSearchResults.map((cust) => (
-                      <div
-                        key={cust.id}
-                        onClick={() => handleSelectCustomer(cust)}
-                        className="p-2.5 hover:bg-brand-50/40 cursor-pointer flex items-center justify-between text-xs transition-colors"
+        {/* Form wrapper bao bọc Body cuộn + Footer cố định */}
+        <form ref={formRef} onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 min-h-0">
+          {/* Modal Body */}
+          <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
+            {/* Priority Alert Banner if unassigned reservations exist for this waitlist */}
+            {isBlockedByPriority && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                  <div className="space-y-1.5 flex-1">
+                    <h4 className="font-bold text-sm text-amber-900">
+                      Cần ưu tiên gán ô cho {initialWaitlist?.unassignedReservationCount} đơn đặt trước
+                    </h4>
+                    <p className="text-xs text-amber-800 leading-relaxed">
+                      Khách hàng đã thanh toán cọc giữ chỗ trước online được ưu tiên bảo đảm ô kho. Vui lòng hoàn tất gán ô kho tại mục <strong>Gán ô kho</strong> trước khi tạo hợp đồng từ danh sách chờ.
+                    </p>
+                    <div className="pt-1">
+                      <a
+                        href={`/manager/allocation?facilityId=${selectedFacilityId}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-lg transition-colors"
                       >
-                        <div>
-                          <span className="font-semibold text-slate-800">{cust.fullName}</span>
-                          <span className="text-slate-500 ml-2 text-[11px]">
-                            {cust.phone ? `(${cust.phone})` : '(Chưa có SĐT)'}
-                          </span>
-                          <div className="text-[11px] text-slate-400">{cust.email}</div>
-                        </div>
-                        <span className="text-[11px] font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-200/60">
-                          Chọn
-                        </span>
-                      </div>
-                    ))}
+                        Chuyển sang màn hình Gán ô kho →
+                      </a>
+                    </div>
                   </div>
-                )}
+                </div>
+              </div>
+            )}
 
-                {!customerSearching && !customerSearchError && customerSearchResults.length === 0 && (
-                  <div className="p-3 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-slate-200/80">
-                    <p>Không tìm thấy khách hàng nào khớp với từ khóa.</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      Vui lòng tìm kiếm theo số điện thoại, email hoặc họ tên khách hàng đã đăng ký trên hệ thống.
+            {/* Alert Banner when no units are available for the selected unit type */}
+            {isNoAvailableUnits && !isBlockedByPriority && (
+              <div className="p-4 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-900">
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-rose-600 mt-0.5 shrink-0" />
+                  <div className="space-y-1 flex-1">
+                    <h4 className="font-bold text-sm text-rose-900">
+                      Hạng kho này hiện đã hết ô trống
+                    </h4>
+                    <p className="text-xs text-rose-800 leading-relaxed">
+                      Cơ sở hiện không còn ô kho khả dụng thuộc hạng này. Vui lòng chọn hạng kho còn trống khác hoặc tạo hợp đồng khi có ô trả.
                     </p>
                   </div>
-                )}
+                </div>
               </div>
             )}
-          </div>
 
-          {/* Section 3: Hạng kho & Ô kho cụ thể */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            {errorMessage && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-2 text-xs text-rose-700">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
+            {/* Section 1: Cơ sở áp dụng */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-brand-600" />
-                3. Loại ô kho (Unit Type)
-              </label>
-              {loadingUnitTypes ? (
-                <div className="h-9 bg-slate-100 rounded-xl animate-pulse" />
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-600 inline-flex items-center justify-center text-[11px] font-bold">
+                  1
+                </span>
+                Cơ sở áp dụng
+              </h3>
+              {defaultFacilityId && facilities.length > 0 ? (
+                <div className="px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-gray-900 flex items-center justify-between">
+                  <span>{facilities.find((f) => f.id === defaultFacilityId)?.name || `Cơ sở #${defaultFacilityId}`}</span>
+                  <span className="text-xs bg-gray-100 text-gray-600 border border-gray-200 font-medium px-2 py-0.5 rounded-md">
+                    Cơ sở hiện tại
+                  </span>
+                </div>
               ) : (
                 <select
-                  value={selectedUnitTypeId}
-                  onChange={(e) => setSelectedUnitTypeId(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                  value={selectedFacilityId}
+                  onChange={(e) => setSelectedFacilityId(Number(e.target.value))}
+                  className="w-full h-10 px-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                 >
-                  {unitTypes.map((ut) => (
-                    <option key={ut.id} value={ut.id}>
-                      {ut.name} ({ut.areaM2}m²) - {ut.monthlyPrice.toLocaleString('vi-VN')} đ/tháng
+                  {facilities.map((fac) => (
+                    <option key={fac.id} value={fac.id}>
+                      {fac.name} ({fac.code})
                     </option>
                   ))}
                 </select>
               )}
             </div>
 
+            {/* Section 2: Khách hàng thuê */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
-                <Box className="w-3.5 h-3.5 text-brand-600" />
-                Ô kho vật lý (Tùy chọn)
-              </label>
-              {loadingUnits ? (
-                <div className="h-9 bg-slate-100 rounded-xl animate-pulse" />
+              <div className="flex items-center justify-between mb-2.5">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-600 inline-flex items-center justify-center text-[11px] font-bold">
+                    2
+                  </span>
+                  Khách hàng thuê
+                </h3>
+                <span className="text-xs text-gray-400">
+                  Tài khoản hệ thống
+                </span>
+              </div>
+
+              {selectedCustomer ? (
+                <div className="space-y-3">
+                  <div className="p-3.5 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-xs shrink-0">
+                        {selectedCustomer.fullName?.charAt(0)?.toUpperCase() || 'K'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                          <span className="truncate">{selectedCustomer.fullName}</span>
+                          <span className="text-xs text-gray-400 font-normal">#{selectedCustomer.id}</span>
+                        </div>
+                        <div className="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5 truncate">
+                          <Mail className="w-3 h-3 text-gray-400 shrink-0" />
+                          <span className="truncate">{selectedCustomer.email}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCustomer(null);
+                        setCustomerPhone('');
+                      }}
+                      className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                    >
+                      Đổi khách
+                    </button>
+                  </div>
+
+                  {/* Input nhập/xác nhận Số điện thoại */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center justify-between">
+                      <span>
+                        Số điện thoại liên hệ nhận kho <span className="text-rose-500">*</span>
+                      </span>
+                      {!selectedCustomer.phone && (
+                        <span className="text-xs text-amber-600 font-medium">Cần bổ sung SĐT</span>
+                      )}
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      pattern="0[0-9]{9}"
+                      placeholder="Nhập số điện thoại (10 số, ví dụ: 0987654321)"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      className="w-full h-10 px-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 tabular-nums focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    />
+                  </div>
+                </div>
               ) : (
-                <select
-                  value={selectedStorageUnitId || ''}
-                  onChange={(e) =>
-                    setSelectedStorageUnitId(e.target.value ? Number(e.target.value) : undefined)
-                  }
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Tìm theo tên, số điện thoại hoặc email khách hàng..."
+                      value={customerSearchKeyword}
+                      onChange={(e) => setCustomerSearchKeyword(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSearchCustomers(customerSearchKeyword);
+                        }
+                      }}
+                      className="w-full h-10 pl-9 pr-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    />
+                  </div>
+
+                  {customerSearching && (
+                    <div className="p-3 text-center text-xs text-gray-500 flex items-center justify-center gap-2">
+                      <div className="w-3.5 h-3.5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                      <span>Đang tìm khách hàng...</span>
+                    </div>
+                  )}
+
+                  {customerSearchError && (
+                    <div className="p-3 text-center text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg">
+                      {customerSearchError}
+                    </div>
+                  )}
+
+                  {!customerSearching && !customerSearchError && customerSearchResults.length > 0 && (
+                    <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100 bg-white">
+                      {customerSearchResults.map((cust) => (
+                        <div
+                          key={cust.id}
+                          onClick={() => handleSelectCustomer(cust)}
+                          className="px-3 py-2.5 hover:bg-gray-50 cursor-pointer flex items-center justify-between gap-2 text-xs transition-colors"
+                        >
+                          <div className="min-w-0">
+                            <span className="font-semibold text-gray-900">{cust.fullName}</span>
+                            <span className="text-gray-500 ml-2 tabular-nums">
+                              {cust.phone ? `(${cust.phone})` : '(Chưa có SĐT)'}
+                            </span>
+                            <div className="text-gray-400 truncate mt-0.5">{cust.email}</div>
+                          </div>
+                          <span className="px-3 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 rounded-md shrink-0">
+                            Chọn
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {!customerSearching && !customerSearchError && customerSearchResults.length === 0 && (
+                    <div className="p-3 text-center text-xs text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
+                      Không tìm thấy khách hàng nào khớp với từ khóa.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Section 3: Loại ô kho & Ô kho vật lý (Grid 2 cột đều nhau) */}
+            <div>
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-600 inline-flex items-center justify-center text-[11px] font-bold">
+                  3
+                </span>
+                Loại ô kho &amp; Ô kho vật lý
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Loại ô kho <span className="text-rose-500">*</span>
+                  </label>
+                  {loadingUnitTypes ? (
+                    <div className="h-10 bg-gray-100 rounded-lg animate-pulse" />
+                  ) : (
+                    <select
+                      value={selectedUnitTypeId}
+                      onChange={(e) => setSelectedUnitTypeId(Number(e.target.value))}
+                      className="w-full h-10 px-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    >
+                      {unitTypes.map((ut) => (
+                        <option key={ut.id} value={ut.id}>
+                          {ut.name} ({ut.areaM2}m²) - {ut.monthlyPrice.toLocaleString('vi-VN')} đ/tháng
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ô kho vật lý (Tùy chọn)
+                  </label>
+                  {loadingUnits ? (
+                    <div className="h-10 bg-gray-100 rounded-lg animate-pulse" />
+                  ) : (
+                    <select
+                      value={selectedStorageUnitId || ''}
+                      onChange={(e) =>
+                        setSelectedStorageUnitId(e.target.value ? Number(e.target.value) : undefined)
+                      }
+                      className="w-full h-10 px-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    >
+                      <option value="">-- Chưa gán ô (Phân bổ trên Sơ đồ 2D sau) --</option>
+                      {availableUnits.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.code} (Tầng {u.floor} - {u.position || 'Trống'})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">
+                    {availableUnits.length > 0
+                      ? `${availableUnits.length} ô kho đang trống sẵn sàng cho thuê`
+                      : 'Hiện chưa có ô kho trống ngay'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 4: Ngày bắt đầu & Thời hạn thuê (Grid 2 cột đồng đều) */}
+            <div>
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-600 inline-flex items-center justify-center text-[11px] font-bold">
+                  4
+                </span>
+                Thời gian thuê
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ngày bắt đầu thuê <span className="text-rose-500">*</span>
+                  </label>
+                  <DateField
+                    min={today}
+                    value={startDate}
+                    onChange={setStartDate}
+                    className="w-full h-10 px-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Hỗ trợ đặt trước từ hôm nay trở đi
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Thời hạn thuê
+                  </label>
+                  <select
+                    value={rentalMonths}
+                    onChange={(e) => setRentalMonths(Number(e.target.value))}
+                    className="w-full h-10 px-3 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                      <option key={m} value={m}>
+                        {m} tháng {m === 12 ? '(1 năm)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-400 mt-1 tabular-nums">
+                    Ngày kết thúc dự kiến:{' '}
+                    <span className="font-semibold text-gray-700">{endDate ? formatDateVN(endDate) : '—'}</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 5: Phương thức thanh toán */}
+            <div>
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-600 inline-flex items-center justify-center text-[11px] font-bold">
+                  5
+                </span>
+                Phương thức thu cọc &amp; tiền thuê ban đầu
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label
+                  className={`relative flex items-start gap-3 rounded-lg border bg-white p-3.5 cursor-pointer transition-all ${
+                    paymentMethod === 'CASH'
+                      ? 'border-brand-500 ring-1 ring-brand-500 bg-brand-50/20'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
                 >
-                  <option value="">-- Chưa gán ô (Sẽ phân bổ trên Sơ đồ 2D sau) --</option>
-                  {availableUnits.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.code} (Tầng {u.floor} - {u.position || 'Trống'})
-                    </option>
-                  ))}
-                </select>
-              )}
-              <p className="text-[10px] text-slate-400 mt-1">
-                {availableUnits.length > 0
-                  ? `${availableUnits.length} ô kho đang trống sẵn sàng cho thuê`
-                  : 'Hiện chưa có ô kho trống ngay (hợp đồng sẽ phân bổ sau)'}
-              </p>
-              {availableUnits.length === 0 && (
-                <p className="text-[11px] text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200 mt-1.5 leading-snug">
-                  ⚠️ Lưu ý: Hạng kho này hiện không có sẵn ô trống vật lý. Bạn có thể tư vấn khách đổi sang hạng kho còn trống khác hoặc lập hợp đồng gán ô sau.
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Section 4: Ngày bắt đầu & Thời hạn thuê */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-brand-600" />
-                4. Ngày bắt đầu thuê
-              </label>
-              <DateField
-                min={today}
-                value={startDate}
-                onChange={setStartDate}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-              />
-              <p className="text-[10px] text-teal-600 font-medium mt-1">
-                Hỗ trợ đặt trước từ hôm nay hoặc bất kỳ ngày nào trong tương lai
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                Thời hạn thuê (tháng)
-              </label>
-              <select
-                value={rentalMonths}
-                onChange={(e) => setRentalMonths(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-              >
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
-                  <option key={m} value={m}>
-                    {m} tháng {m === 12 ? '(1 năm)' : ''}
-                  </option>
-                ))}
-              </select>
-              <p className="text-[10px] text-slate-400 mt-1">
-                Ngày kết thúc dự kiến: <span className="font-semibold text-slate-700">{endDate}</span>
-              </p>
-            </div>
-          </div>
-
-          {/* Section 5: Phương thức thanh toán cọc */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
-              <CreditCard className="w-3.5 h-3.5 text-brand-600" />
-              5. Phương thức thu cọc / tiền thuê ban đầu
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label
-                className={`p-3 rounded-2xl border text-xs font-semibold flex flex-col gap-1 cursor-pointer transition-all ${
-                  paymentMethod === 'CASH'
-                    ? 'border-brand-500 bg-brand-50/50 text-brand-900 ring-2 ring-brand-500/20'
-                    : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
                   <input
                     type="radio"
                     name="paymentMethod"
                     value="CASH"
                     checked={paymentMethod === 'CASH'}
                     onChange={() => setPaymentMethod('CASH')}
-                    className="hidden"
+                    className="mt-1 h-4 w-4 accent-brand-600 cursor-pointer shrink-0"
                   />
-                  <div className="w-4 h-4 rounded-full border border-current flex items-center justify-center shrink-0">
-                    {paymentMethod === 'CASH' && <div className="w-2 h-2 rounded-full bg-brand-600" />}
+                  <div>
+                    <span className="block text-sm font-bold text-gray-900">Tiền mặt tại quầy</span>
+                    <span className="block text-xs text-gray-500 mt-0.5 leading-relaxed">
+                      Hợp đồng kích hoạt ngay, sẵn sàng nhận kho.
+                    </span>
                   </div>
-                  <span>Tiền mặt tại quầy (CASH)</span>
-                </div>
-                <p className="text-[10px] text-slate-500 pl-6.5 font-normal">
-                  Đã thu tiền mặt tại quầy — Hợp đồng kích hoạt sẵn sàng nhận kho.
-                </p>
-              </label>
+                </label>
 
-              <label
-                className={`p-3 rounded-2xl border text-xs font-semibold flex flex-col gap-1 cursor-pointer transition-all ${
-                  paymentMethod === 'BANK_TRANSFER'
-                    ? 'border-brand-500 bg-brand-50/50 text-brand-900 ring-2 ring-brand-500/20'
-                    : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
+                <label
+                  className={`relative flex items-start gap-3 rounded-lg border bg-white p-3.5 cursor-pointer transition-all ${
+                    paymentMethod === 'BANK_TRANSFER'
+                      ? 'border-brand-500 ring-1 ring-brand-500 bg-brand-50/20'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
                   <input
                     type="radio"
                     name="paymentMethod"
                     value="BANK_TRANSFER"
                     checked={paymentMethod === 'BANK_TRANSFER'}
                     onChange={() => setPaymentMethod('BANK_TRANSFER')}
-                    className="hidden"
+                    className="mt-1 h-4 w-4 accent-brand-600 cursor-pointer shrink-0"
                   />
-                  <div className="w-4 h-4 rounded-full border border-current flex items-center justify-center shrink-0">
-                    {paymentMethod === 'BANK_TRANSFER' && (
-                      <div className="w-2 h-2 rounded-full bg-brand-600" />
-                    )}
+                  <div>
+                    <span className="block text-sm font-bold text-gray-900">Chuyển khoản (VNPay)</span>
+                    <span className="block text-xs text-gray-500 mt-0.5 leading-relaxed">
+                      Khách tự thanh toán online trên mục Kho của tôi.
+                    </span>
                   </div>
-                  <span>Chuyển khoản trực tiếp (BANK_TRANSFER)</span>
-                </div>
-                <p className="text-[10px] text-teal-700 pl-6.5 font-medium">
-                  Hợp đồng xuất hiện ngay trên tài khoản khách hàng để thanh toán trực tuyến VNPay.
-                </p>
-              </label>
-            </div>
-          </div>
-
-          {/* Section 6: Ghi chú */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-slate-500" />
-              6. Ghi chú hợp đồng
-            </label>
-            <textarea
-              rows={2}
-              placeholder="Ghi chú thêm thông tin tư vấn, yêu cầu riêng của khách hàng..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-            />
-          </div>
-
-          {/* Bảng tính chi phí & Tóm tắt */}
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2 text-xs">
-            <div className="flex justify-between text-slate-600">
-              <span>Đơn giá thuê tháng:</span>
-              <span className="font-semibold text-slate-900">{monthlyPrice.toLocaleString('vi-VN')} đ/tháng</span>
-            </div>
-            <div className="flex justify-between text-slate-600">
-              <span>Tiền đặt cọc bảo đảm (1 tháng):</span>
-              <span className="font-semibold text-slate-900">{depositAmount.toLocaleString('vi-VN')} đ</span>
-            </div>
-            <div className="flex justify-between text-slate-600">
-              <span>Tiền thuê {rentalMonths} tháng:</span>
-              <span className="font-semibold text-slate-900">{totalRent.toLocaleString('vi-VN')} đ</span>
-            </div>
-            <div className="pt-2 border-t border-slate-200 flex justify-between items-baseline">
-              <span className="font-bold text-slate-800">Tổng thanh toán ban đầu:</span>
-              <span className="text-base font-black num text-teal-700">
-                {totalPayment.toLocaleString('vi-VN')} đ
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-500 pt-1">
-              * Hợp đồng được tạo ngay cho khách hàng. Nếu chọn <strong className="text-teal-700">Chuyển khoản</strong>, khách hàng sẽ thấy nút &quot;Thanh toán ngay&quot; trên trang &quot;Kho của tôi&quot; để thanh toán VNPay kích hoạt kho.
-            </p>
-          </div>
-
-          {/* Modal Footer */}
-          <div className="pt-3 border-t border-slate-100 space-y-3">
-            {errorMessage && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-xs text-rose-700 animate-in fade-in">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
-                <div className="flex-1 font-medium leading-relaxed">{errorMessage}</div>
+                </label>
               </div>
-            )}
+            </div>
+
+            {/* Section 6: Ghi chú hợp đồng */}
+            <div>
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-600 inline-flex items-center justify-center text-[11px] font-bold">
+                  6
+                </span>
+                Ghi chú hợp đồng (Tùy chọn)
+              </h3>
+              <textarea
+                rows={2}
+                placeholder="Ghi chú thêm thông tin tư vấn, yêu cầu riêng của khách hàng..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+              />
+            </div>
+          </div>
+
+          {/* Modal Footer: Tổng tiền + Nút Submit đậm rõ nét */}
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 shrink-0 space-y-4">
+            <div className="space-y-1.5 text-sm">
+              <div className="flex justify-between text-gray-600">
+                <span>Đơn giá thuê tháng:</span>
+                <span className="font-medium text-gray-900 tabular-nums">
+                  {monthlyPrice.toLocaleString('vi-VN')} đ/tháng
+                </span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Tiền đặt cọc (1 tháng):</span>
+                <span className="font-medium text-gray-900 tabular-nums">
+                  {depositAmount.toLocaleString('vi-VN')} đ
+                </span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Tiền thuê {rentalMonths} tháng:</span>
+                <span className="font-medium text-gray-900 tabular-nums">
+                  {totalRent.toLocaleString('vi-VN')} đ
+                </span>
+              </div>
+              <div className="flex justify-between items-baseline border-t border-gray-200 pt-2 mt-2">
+                <span className="font-bold text-gray-900 text-base">Tổng thanh toán ban đầu:</span>
+                <span className="font-bold text-brand-600 text-xl tabular-nums">
+                  {totalPayment.toLocaleString('vi-VN')} đ
+                </span>
+              </div>
+            </div>
 
             <div className="flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={handleClose}
                 disabled={submitting}
-                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
               >
                 Hủy bỏ
               </button>
@@ -872,26 +863,26 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
                   !selectedCustomer ||
                   !customerPhone.trim()
                 }
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-700 to-brand-700 hover:from-teal-800 hover:to-brand-800 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-2 text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-xs transition-colors cursor-pointer disabled:bg-gray-200 disabled:text-gray-500 disabled:shadow-none disabled:cursor-not-allowed inline-flex items-center gap-2"
               >
                 {submitting ? (
                   <>
-                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     <span>Đang khởi tạo...</span>
                   </>
                 ) : isBlockedByPriority ? (
                   <>
-                    <AlertCircle className="w-4 h-4 text-amber-300" />
-                    <span>Bị khóa: Cần gán ô kho cho khách đặt trước</span>
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>Cần gán ô cho khách đặt trước</span>
                   </>
                 ) : isNoAvailableUnits ? (
                   <>
-                    <AlertCircle className="w-4 h-4 text-rose-300" />
+                    <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>Hết ô kho trống khả dụng</span>
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="w-4 h-4" />
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
                     <span>Xác nhận Tạo Hợp Đồng</span>
                   </>
                 )}

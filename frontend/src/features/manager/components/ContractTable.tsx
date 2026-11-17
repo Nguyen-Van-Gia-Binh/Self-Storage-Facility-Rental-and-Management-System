@@ -8,7 +8,14 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import type { ManagerContractItem } from '@/types/contractManager';
+import { formatDateVN } from '@/features/customer/utils/unitPickerHelpers';
 import { StatusBadge } from './StatusBadge';
+
+function formatDisplayDate(iso?: string | null): string {
+  if (!iso) return '—';
+  const trimmed = iso.trim();
+  return /^\d{4}-\d{2}-\d{2}/.test(trimmed) ? formatDateVN(trimmed.slice(0, 10)) : trimmed;
+}
 
 export type ContractSortField = 'code' | 'customer' | 'unit' | 'status' | 'endDate';
 export type SortDirection = 'asc' | 'desc';
@@ -133,81 +140,86 @@ export const ContractTable: React.FC<ContractTableProps> = ({
               <th className="py-3.5 px-4 text-right">Thao tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-xs">
+          <tbody className="divide-y divide-gray-100 text-xs">
             {contracts.map((c) => {
               const isOverdue = c.status === 'OVERDUE';
+              const isClosedRow = c.status === 'CLOSED';
               return (
                 <tr
                   key={c.id}
                   onClick={() => onSelectContract(c)}
-                  className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                  className={`transition-colors cursor-pointer group ${
+                    isClosedRow ? 'bg-gray-50 opacity-75 hover:bg-gray-100/70' : 'bg-white hover:bg-gray-50/80'
+                  }`}
                 >
-                  {/* Mã hợp đồng (Refactoring UI: Bỏ icon hộp rườm rà) */}
+                  {/* Mã hợp đồng */}
                   <td className="py-3.5 px-4">
-                    <span className="font-mono font-bold text-slate-900 group-hover:text-brand-600 transition-colors text-sm block">
+                    <span className="font-mono font-bold text-gray-900 group-hover:text-brand-600 transition-colors text-sm block">
                       {c.code}
                     </span>
                     {c.startDate && (
-                      <p className="text-[11px] text-slate-400 mt-0.5">Từ: {c.startDate}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5 tabular-nums">
+                        Từ: {formatDisplayDate(c.startDate)}
+                      </p>
                     )}
                   </td>
 
-                  {/* Khách thuê (Bỏ icon User lặp lại) */}
+                  {/* Khách thuê */}
                   <td className="py-3.5 px-4">
-                    <div className="font-semibold text-slate-800">{c.customerName}</div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">{c.customerPhone}</div>
+                    <div className="font-semibold text-gray-900">{c.customerName}</div>
+                    <div className="text-[11px] text-gray-500 mt-0.5 tabular-nums">{c.customerPhone}</div>
                   </td>
 
-                  {/* Ô kho (Bỏ icon Box lặp lại) */}
+                  {/* Ô kho */}
                   <td className="py-3.5 px-4">
                     {c.status === 'RELOCATION_PENDING' || (c.relocationEligible && c.status === 'PENDING_CHECK_IN') || !c.storageUnitCode ? (
                       <div className="flex flex-col gap-0.5">
-                        <span className="font-mono font-bold text-amber-800 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded text-xs w-fit">
+                        <span className="font-mono font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md text-xs w-fit">
                           Chờ cấp ô mới
                         </span>
-                        <span className="text-[11px] text-amber-700">
-                          {c.unitTypeName || 'Kho tiêu chuẩn'} • Chờ phân bổ lại
+                        <span className="text-[11px] text-gray-500">
+                          {c.unitTypeName || 'Kho tiêu chuẩn'} · Chờ phân bổ lại
                         </span>
                       </div>
                     ) : (
                       <div>
-                        <span className="font-mono font-bold text-slate-900 block text-sm">
+                        <span className="font-mono font-bold text-gray-900 block text-sm">
                           {c.storageUnitCode}
                         </span>
-                        <span className="text-[11px] text-slate-500 mt-0.5 block">
+                        <span className="text-[11px] text-gray-500 mt-0.5 block">
                           {c.unitTypeName || 'Kho tiêu chuẩn'}
                         </span>
                       </div>
                     )}
                   </td>
 
-                  {/* Trạng thái */}
+                  {/* Trạng thái (Semantic Soft Badges) */}
                   <td className="py-3.5 px-4">
                     <StatusBadge
                       status={c.status}
                       size="sm"
                       customLabel={
-                        c.status === 'CANCELLED' ? '⏳ Hủy · Chờ hoàn tiền' : undefined
+                        c.status === 'CANCELLED' ? 'Hủy · Chờ hoàn tiền' : undefined
                       }
                     />
                     {isOverdue && c.overdueDays !== undefined && (
-                      <span className="block text-[10px] font-bold text-rose-600 mt-0.5">
+                      <span className="block text-[11px] font-semibold text-rose-600 mt-0.5">
                         Quá hạn {c.overdueDays} ngày
                       </span>
                     )}
                   </td>
 
-                  {/* Hạn hợp đồng */}
+                  {/* Hạn hợp đồng (Định dạng chuẩn DD/MM/YYYY) */}
                   <td className="py-3.5 px-4">
-                    <div className="num font-medium text-slate-800">
-                      {c.endDateExclusive || '—'}
+                    <div className="font-semibold text-gray-900 tabular-nums">
+                      {formatDisplayDate(c.endDateExclusive)}
                     </div>
                     {(c.status === 'ACTIVE' || c.status === 'PENDING_CHECK_IN') && c.daysRemaining !== undefined && (
                       <span
-                        className={`text-[11px] font-semibold mt-0.5 inline-block ${
+                        className={`text-[11px] font-medium mt-0.5 inline-block ${
                           c.daysRemaining <= 7
-                            ? 'text-amber-700 font-bold'
-                            : 'text-slate-400'
+                            ? 'text-amber-700 font-semibold'
+                            : 'text-gray-400'
                         }`}
                       >
                         {c.daysRemaining > 0
@@ -216,17 +228,17 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                       </span>
                     )}
                     {c.status === 'OVERDUE' && (
-                      <span className="text-[11px] font-medium text-rose-500 mt-0.5 block">
+                      <span className="text-[11px] font-medium text-rose-600 mt-0.5 block">
                         Đã hết hạn
                       </span>
                     )}
                     {c.status === 'CLOSED' && (
-                      <span className="text-[11px] font-medium text-slate-400 mt-0.5 block">
+                      <span className="text-[11px] font-medium text-gray-400 mt-0.5 block">
                         Đã tất toán
                       </span>
                     )}
                     {c.status === 'TERMINATED' && (
-                      <span className="text-[11px] font-medium text-rose-500 mt-0.5 block">
+                      <span className="text-[11px] font-medium text-rose-600 mt-0.5 block">
                         Đã chấm dứt
                       </span>
                     )}
@@ -242,9 +254,9 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                     )}
                   </td>
 
-                  {/* Thao tác (Bỏ icon Eye bên trong nút) */}
-                  <td className="py-3.5 px-4 text-right">
-                    <div className="inline-flex items-center justify-end gap-1.5">
+                  {/* Thao tác (Primary Mint cho Duyệt quyết toán, Outline xám cho Chi tiết) */}
+                  <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                    <div className="inline-flex items-center justify-end gap-2">
                       {onApproveSettlement &&
                         (c.status === 'INSPECTED' ||
                           c.status === 'TERMINATED' ||
@@ -255,10 +267,10 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                               e.stopPropagation();
                               onApproveSettlement(c);
                             }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-2xs transition-colors cursor-pointer"
                             title="Mở bảng phê duyệt quyết toán và hoàn tiền"
                           >
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <CheckCircle2 className="w-3.5 h-3.5" />
                             <span>Duyệt quyết toán</span>
                           </button>
                         )}
@@ -268,7 +280,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                           e.stopPropagation();
                           onSelectContract(c);
                         }}
-                        className="px-3 py-1 text-xs font-semibold text-slate-700 hover:text-brand-600 hover:bg-brand-50/70 rounded-lg border border-slate-200 hover:border-brand-200 transition-all cursor-pointer"
+                        className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
                       >
                         Chi tiết
                       </button>
