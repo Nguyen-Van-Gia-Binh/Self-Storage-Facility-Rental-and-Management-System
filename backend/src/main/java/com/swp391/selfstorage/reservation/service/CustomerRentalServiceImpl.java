@@ -479,6 +479,11 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
                         .map(su -> su.getStatus() == StorageUnitStatus.MAINTENANCE)
                         .orElse(false);
             }
+            if (!isRelocating && handoverRecordRepository != null) {
+                isRelocating = handoverRecordRepository.findByContractId(contract.getId())
+                        .map(hr -> hr.isRejected() && contract.getStatus() == ContractStatus.PENDING_CHECK_IN)
+                        .orElse(false);
+            }
         }
         res.setRelocationEligible(isRelocating);
         final boolean effectivelyRelocating = isRelocating;

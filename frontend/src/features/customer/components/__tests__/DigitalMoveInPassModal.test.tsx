@@ -15,6 +15,7 @@ vi.mock('react-router-dom', () => ({
 
 vi.mock('@/api/contract', () => ({
   checkInContract: vi.fn(),
+  rejectHandoverContract: vi.fn(),
 }));
 
 describe('DigitalMoveInPassModal — Tách biệt Vé nhận kho và Check-in online', () => {
@@ -221,5 +222,51 @@ describe('DigitalMoveInPassModal — Tách biệt Vé nhận kho và Check-in on
     expect(screen.getByText(/Đã Nghiệm Thu & Ký Số Bàn Giao Thành Công!/)).toBeInTheDocument();
     expect(onSuccessCheckIn).toHaveBeenCalledWith('654321');
     expect(onConfirmSignature).toHaveBeenCalledWith('Lê Thanh Tùng', '654321');
+  });
+
+  it('khi khách bấm "Không nhận kho" và báo sự cố: gọi API rejectHandoverContract thật và hiển thị thông báo ghi nhận thành công', async () => {
+    const onRejectHandover = vi.fn();
+    vi.mocked(contractApi.rejectHandoverContract).mockResolvedValueOnce({
+      contractId: 276,
+      contractStatus: 'PENDING_CHECK_IN',
+      storageUnitStatus: 'MAINTENANCE',
+      message: 'Đã ghi nhận sự cố ô kho.',
+    } as any);
+
+    render(
+      <DigitalMoveInPassModal
+        isOpen={true}
+        onClose={vi.fn()}
+        contractId={276}
+        passData={mockAssignedPassData}
+        initialMode="checkin"
+        onRejectHandover={onRejectHandover}
+      />
+    );
+
+    // Bấm nút Không nhận kho
+    const rejectBtn = screen.getByRole('button', { name: /Không nhận kho/i });
+    fireEvent.click(rejectBtn);
+
+    // Xác nhận đã vào form báo sự cố
+    expect(screen.getByText(/Báo Cáo Sự Cố & Từ Chối Nhận Ô Kho/i)).toBeInTheDocument();
+    expect(screen.getByText(/Đổi ô kho khác cùng loại/i)).toBeInTheDocument();
+
+    // Bấm nút Xác nhận từ chối nhận kho
+    const confirmRejectBtn = screen.getByRole('button', { name: /Xác nhận từ chối nhận kho/i });
+    fireEvent.click(confirmRejectBtn);
+
+    // Chờ gọi API rejectHandoverContract
+    expect(contractApi.rejectHandoverContract).toHaveBeenCalledWith(
+      276,
+      expect.objectContaining({
+        rejectionAction: 'RELOCATE',
+      })
+    );
+
+    // Hiển thị view kết quả
+    const successMsg = await screen.findByText(/Đã ghi nhận yêu cầu: Đổi sang ô kho khác cùng loại/i);
+    expect(successMsg).toBeInTheDocument();
+    expect(onRejectHandover).toHaveBeenCalledWith('RELOCATE', expect.any(String));
   });
 });

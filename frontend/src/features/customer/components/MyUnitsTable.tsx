@@ -517,7 +517,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                           <QrCode className="w-3.5 h-3.5 mr-1 text-slate-500" />
                           Vé nhận kho
                         </Button>
-                        {isStorageUnitAssigned(contract.unitNumber) && (
+                        {isStorageUnitAssigned(contract.unitNumber) && !contract.relocationEligible && (
                           <Button
                             type="button"
                             variant="primary"
@@ -1031,6 +1031,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
               (activePassContract.status as any) = 'TERMINATED';
               activePassContract.handoverRejected = true;
               activePassContract.rejectionReason = reason;
+              activePassContract.unitNumber = '-';
             }
             onCheckInSuccess?.();
           }}

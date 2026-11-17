@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 import { isStorageUnitAssigned } from '../utils/unitAssignment';
 import { formatDateVN, isCheckInAllowedToday } from '../utils/unitPickerHelpers';
-import { checkInContract } from '@/api/contract';
+import { checkInContract, rejectHandoverContract } from '@/api/contract';
 import { fetchFacilityById } from '@/api/facility';
 import { SignaturePad } from '@/features/staff/components/SignaturePad';
 import type { MoveInPassData } from '@/types';
@@ -81,6 +81,8 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
     action: CustomerHandoverAction;
     reason: string;
   } | null>(null);
+  const [isSubmittingRejection, setIsSubmittingRejection] = useState(false);
+  const [rejectionError, setRejectionError] = useState<string | null>(null);
 
   // Synchronize activeTab & fetch live openingHours from facility API when needed
   useEffect(() => {
@@ -92,6 +94,8 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
     }
     setShowRejectionView(false);
     setRejectionResult(null);
+    setRejectionError(null);
+    setIsSubmittingRejection(false);
     setSignatureDataUrl(null);
     setResolvedOpeningHours(passData?.facilityOpeningHours || '');
 
@@ -137,7 +141,8 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
 
   if (!isOpen || !passData) return null;
 
-  const hasUnitAssigned = isStorageUnitAssigned(passData.unitNumber);
+  const hasUnitAssigned =
+    isStorageUnitAssigned(passData.unitNumber) && !(passData as any)?.relocationEligible;
   const isCheckInAvailable = isCheckInAllowedToday(passData.startDate);
   const currentTab = hasUnitAssigned && isCheckInAvailable ? activeTab : 'pass';
   const targetContractId = contractId || (passData as any)?.contractId;
@@ -173,11 +178,15 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
       setIsClosing(false);
       setShowRejectionView(false);
       setRejectionResult(null);
+      setRejectionError(null);
     }, 180);
   };
 
   const handleGoToMyUnits = () => {
     handleClose();
+    if (onRejectHandover && rejectionResult) {
+      onRejectHandover(rejectionResult.action, rejectionResult.reason);
+    }
     navigate('/customer/my-units');
   };
 
@@ -243,20 +252,40 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
     }
   };
 
-  const handleConfirmRejection = (e: React.FormEvent) => {
+  const handleConfirmRejection = async (e: React.FormEvent) => {
     e.preventDefault();
     const finalReason =
       selectedReason === 'Lý do kỹ thuật hoặc khiếm khuyết khác...'
         ? customReasonNote.trim() || 'Khách hàng phát hiện khiếm khuyết vật lý tại hiện trường'
         : selectedReason;
 
-    setRejectionResult({
-      action: rejectionAction,
-      reason: finalReason,
-    });
+    setIsSubmittingRejection(true);
+    setRejectionError(null);
 
-    if (onRejectHandover) {
-      onRejectHandover(rejectionAction, finalReason);
+    try {
+      if (targetContractId) {
+        await rejectHandoverContract(Number(targetContractId), {
+          rejectionAction,
+          rejectionReason: finalReason,
+          reportedDefects: customReasonNote.trim() || finalReason,
+        });
+      }
+
+      setRejectionResult({
+        action: rejectionAction,
+        reason: finalReason,
+      });
+
+      if (onRejectHandover) {
+        onRejectHandover(rejectionAction, finalReason);
+      }
+    } catch (err: any) {
+      console.error('Lỗi khi từ chối nhận kho:', err);
+      setRejectionError(
+        err.message || 'Không thể gửi yêu cầu từ chối nhận kho. Vui lòng thử lại.'
+      );
+    } finally {
+      setIsSubmittingRejection(false);
     }
   };
 
@@ -499,12 +528,20 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
                   )}
                 </div>
 
+                {rejectionError && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center gap-2">
+                    <AlertOctagon className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>{rejectionError}</span>
+                  </div>
+                )}
+
                 {/* Nút hành động trong form rejection */}
                 <div className="pt-2 flex items-center justify-between gap-3 border-t border-slate-200">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
+                    disabled={isSubmittingRejection}
                     onClick={() => setShowRejectionView(false)}
                     className="py-2 text-xs font-semibold cursor-pointer"
                   >
@@ -513,15 +550,16 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
 
                   <Button
                     type="submit"
+                    disabled={isSubmittingRejection}
                     variant={rejectionAction === 'RELOCATE' ? 'primary' : 'danger'}
                     size="sm"
                     className={`py-2 px-4 text-xs font-bold text-white shadow-xs cursor-pointer ${
                       rejectionAction === 'RELOCATE'
                         ? 'bg-amber-600 hover:bg-amber-700'
                         : 'bg-rose-600 hover:bg-rose-700'
-                    }`}
+                    } disabled:opacity-50`}
                   >
-                    Xác nhận từ chối nhận kho
+                    {isSubmittingRejection ? 'Đang gửi yêu cầu...' : 'Xác nhận từ chối nhận kho'}
                   </Button>
                 </div>
               </form>
