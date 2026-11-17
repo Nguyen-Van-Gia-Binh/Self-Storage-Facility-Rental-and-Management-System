@@ -349,7 +349,7 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     });
   });
 
-  it('6. Hợp đồng thực sự có sự cố bàn giao (relocationEligible = true) vẫn hiển thị "Sự cố bàn giao" và "Đổi ô kho"', async () => {
+  it('6. Hợp đồng thực sự có sự cố bàn giao (relocationEligible = true) vẫn hiển thị "Sự cố bàn giao", badge "Cần đổi ô (Sự cố)" và nút chính màu Mint "Gán ô kho"', async () => {
     vi.mocked(reservationApi.listReservations).mockResolvedValue([]);
     vi.mocked(contractApi.getManagerContracts).mockResolvedValue([
       {
@@ -381,8 +381,9 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     await waitFor(() => {
       expect(screen.getByText('CTR-20261108-9999')).toBeDefined();
       expect(screen.getByText('Sự cố bàn giao')).toBeDefined();
-      expect(screen.getByText('Gán lại ô kho')).toBeDefined();
-      expect(screen.getByText('Đổi ô kho')).toBeDefined();
+      expect(screen.getByText('Cần đổi ô (Sự cố)')).toBeDefined();
+      const actionBtn = screen.getByRole('button', { name: /Gán ô kho/i });
+      expect(actionBtn.className).toContain('bg-brand-600');
     });
   });
 
@@ -441,7 +442,7 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     });
   });
 
-  it('8. Đơn đã gán ô kho (isAssigned = true) KHÔNG biến mất khỏi danh sách, hiển thị badge "Ô: ..." và nút "Đổi ô kho"', async () => {
+  it('8. Đơn đã gán ô kho (isAssigned = true) KHÔNG biến mất khỏi danh sách, hiển thị badge "Đã gán: ..." và nút viền xám "Đổi ô"', async () => {
     vi.mocked(reservationApi.listReservations).mockResolvedValue([]);
     vi.mocked(contractApi.getManagerContracts).mockResolvedValue([
       {
@@ -466,13 +467,15 @@ describe('AllocationPage Component (Gán ô kho)', () => {
 
     await waitFor(() => {
       expect(screen.getByText('CTR-20261109-5101')).toBeDefined();
-      expect(screen.getByText('Ô: Q7-AC-M101')).toBeDefined();
+      expect(screen.getByText('Đã gán: Q7-AC-M101')).toBeDefined();
       expect(screen.getByText('NV: Trần Thị Nhân Viên')).toBeDefined();
-      expect(screen.getByText('Đổi ô kho')).toBeDefined();
+      const swapBtn = screen.getByRole('button', { name: /^Đổi ô$/i });
+      expect(swapBtn.className).toContain('bg-white');
+      expect(swapBtn.className).not.toContain('bg-indigo-600');
     });
   });
 
-  it('9. Bấm "Đổi ô kho" cho đơn đã gán mở sơ đồ 2D (có highlightUnitId), chọn ô mới và gọi đổi ô thành công theo BR-AVL-04', async () => {
+  it('9. Bấm "Đổi ô" cho đơn đã gán mở sơ đồ 2D (có highlightUnitId), chọn ô mới và gọi đổi ô thành công theo BR-AVL-04', async () => {
     vi.mocked(reservationApi.listReservations).mockResolvedValue([
       {
         id: 555,
@@ -516,8 +519,8 @@ describe('AllocationPage Component (Gán ô kho)', () => {
       expect(screen.getByText('CTR-20261109-5101')).toBeDefined();
     });
 
-    // Bấm nút "Đổi ô kho"
-    const reassignBtn = screen.getByText('Đổi ô kho');
+    // Bấm nút "Đổi ô"
+    const reassignBtn = screen.getByRole('button', { name: /^Đổi ô$/i });
     fireEvent.click(reassignBtn);
 
     // Modal sơ đồ 2D hiển thị với highlightUnitId là ô 42
@@ -583,15 +586,15 @@ describe('AllocationPage Component (Gán ô kho)', () => {
       expect(screen.getByText('CTR-ASSIGNED-02')).toBeDefined();
     });
 
-    // Chuyển sang tab "Chưa gán ô (1)"
-    fireEvent.click(screen.getByText('Chưa gán ô (1)'));
+    // Chuyển sang tab "Chưa gán ô / Cần đổi (1)"
+    fireEvent.click(screen.getByText('Chưa gán ô / Cần đổi (1)'));
     await waitFor(() => {
       expect(screen.getByText('CTR-UNASSIGNED-01')).toBeDefined();
       expect(screen.queryByText('CTR-ASSIGNED-02')).toBeNull();
     });
 
-    // Chuyển sang tab "Đã gán ô (Có thể đổi) (1)"
-    fireEvent.click(screen.getByText('Đã gán ô (Có thể đổi) (1)'));
+    // Chuyển sang tab "Đã gán ô (1)"
+    fireEvent.click(screen.getByText('Đã gán ô (1)'));
     await waitFor(() => {
       expect(screen.queryByText('CTR-UNASSIGNED-01')).toBeNull();
       expect(screen.getByText('CTR-ASSIGNED-02')).toBeDefined();
@@ -608,7 +611,7 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     // Kiểm tra dropdown hiển thị đúng cơ sở được phân công
     await waitFor(() => {
       expect(screen.getByRole('combobox')).toBeDefined();
-      expect(screen.getByText('Cơ sở Quận 7 - TP.HCM')).toBeDefined();
+      expect(screen.getAllByText('Cơ sở Quận 7 - TP.HCM').length).toBeGreaterThanOrEqual(1);
     });
 
     // Đảm bảo listReservations được gọi với đúng facilityId = 2, không bị gọi không có facilityId
@@ -617,5 +620,20 @@ describe('AllocationPage Component (Gán ô kho)', () => {
         facilityId: 2,
       })
     );
+  });
+
+  it('12. Chuẩn hóa UI Enterprise SaaS: không còn cầu vồng nút cam/tím, bỏ emoji thừa và đồng bộ Soft Badges', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const pagePath = path.resolve(
+      process.cwd(),
+      'src/features/manager/pages/AllocationPage.tsx'
+    );
+    const content = fs.readFileSync(pagePath, 'utf-8');
+
+    expect(content).not.toContain('bg-indigo-600');
+    expect(content).not.toContain('bg-amber-600');
+    expect(content).not.toContain('🏢');
+    expect(content).not.toContain('💡');
   });
 });

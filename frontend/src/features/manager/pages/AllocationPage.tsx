@@ -2,11 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   AlertCircle,
-  Building2,
   Calendar,
   Check,
   CheckCircle2,
-  Layers,
   Mail,
   MapPin,
   Phone,
@@ -21,7 +19,6 @@ import { getManagerContracts, reassignStorageUnit } from '@/api/contract';
 import type { ManagerContractItem } from '@/types/contractManager';
 import { getStaffWorkload } from '@/features/manager/api/staffAssignmentApi';
 import type { StaffWorkloadItem } from '@/features/manager/types/staffAssignment';
-import { Badge } from '@/components/ui/Badge';
 import type { FacilityListItem } from '@/types';
 import type { StorageUnitResponse } from '@/types/unit';
 import { tokenStorage } from '@/utils/tokenStorage';
@@ -568,33 +565,26 @@ export const AllocationPage: React.FC = () => {
         </div>
       )}
 
-      {/* Header bar gọn gàng, hiện đại */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 border border-brand-200/80 flex items-center justify-center shrink-0">
-            <Building2 className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
-                Nhiệm vụ Gán ô kho
-              </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200/80">
-                {queue.length} đơn chờ xử lý
-              </span>
-            </div>
-          </div>
+      {/* Header phẳng gọn gàng chuẩn Enterprise SaaS */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+            Nhiệm vụ Gán ô kho
+          </h1>
+          <p className="text-sm text-gray-500 mt-0.5 tabular-nums">
+            {queue.length} đơn chờ xử lý
+          </p>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
           {facilitiesLoading ? (
-            <div className="h-9 px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 text-xs sm:text-sm font-semibold text-slate-400 flex items-center gap-2 animate-pulse">
-              <span className="w-2 h-2 rounded-full bg-slate-300" />
+            <div className="h-9 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-xs sm:text-sm font-medium text-gray-400 flex items-center gap-2 animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-gray-300" />
               <span>Đang tải cơ sở...</span>
             </div>
           ) : facilities.length > 0 ? (
             <select
-              className="border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm bg-white shadow-2xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
+              className="border border-gray-200 rounded-lg px-3 py-2 text-xs sm:text-sm bg-white font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
               value={facilityId ?? 'ALL'}
               onChange={(e) => {
                 const val = e.target.value === 'ALL' ? null : Number(e.target.value);
@@ -602,7 +592,7 @@ export const AllocationPage: React.FC = () => {
                 localStorage.setItem('manager_selected_facility_id', val != null ? String(val) : 'ALL');
               }}
             >
-              <option value="ALL">🏢 Tất cả cơ sở quản lý</option>
+              <option value="ALL">Tất cả cơ sở quản lý</option>
               {facilities.map((fac) => (
                 <option key={fac.id} value={fac.id}>
                   {fac.name}
@@ -615,75 +605,69 @@ export const AllocationPage: React.FC = () => {
             type="button"
             onClick={() => loadQueue(facilityId, true)}
             disabled={refreshing || loading}
-            className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 bg-white text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
             title="Làm mới danh sách"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 text-gray-500 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Làm mới</span>
           </button>
         </div>
       </div>
 
-      {/* Danh sách nhiệm vụ gán ô kho từ trên xuống (Full-width Vertical Task List) */}
-      <section className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
-        <div className="px-4 py-3.5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/70">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="font-bold text-sm text-slate-800">
-              Danh sách đơn chờ tiếp đón & gán ô
-            </span>
-            {/* Bộ lọc phân loại đơn */}
-            <div className="flex items-center bg-slate-200/80 p-0.5 rounded-xl text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setFilterTab('ALL')}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                  filterTab === 'ALL'
-                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Tất cả ({queue.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilterTab('UNASSIGNED')}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                  filterTab === 'UNASSIGNED'
-                    ? 'bg-white text-amber-900 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Chưa gán ô / Cần đổi ({unassignedCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilterTab('ASSIGNED')}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                  filterTab === 'ASSIGNED'
-                    ? 'bg-white text-emerald-900 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Đã gán ô (Có thể đổi) ({assignedCount})
-              </button>
-            </div>
-          </div>
+      {/* Danh sách nhiệm vụ gán ô kho */}
+      <section className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        {/* Underline Tabs chuẩn Enterprise SaaS */}
+        <div className="px-6 border-b border-gray-200 flex items-center gap-6 overflow-x-auto bg-white">
+          <button
+            type="button"
+            onClick={() => setFilterTab('ALL')}
+            className={`py-3.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+              filterTab === 'ALL'
+                ? 'border-brand-600 text-brand-700'
+                : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            Tất cả ({queue.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterTab('UNASSIGNED')}
+            className={`py-3.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+              filterTab === 'UNASSIGNED'
+                ? 'border-brand-600 text-brand-700'
+                : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            Chưa gán ô / Cần đổi ({unassignedCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterTab('ASSIGNED')}
+            className={`py-3.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+              filterTab === 'ASSIGNED'
+                ? 'border-brand-600 text-brand-700'
+                : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            Đã gán ô ({assignedCount})
+          </button>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50/90 text-slate-600 text-xs font-semibold border-b border-slate-100 uppercase tracking-wider">
+            <thead className="bg-gray-50 text-gray-500 text-xs font-semibold border-b border-gray-200 uppercase tracking-wider">
               <tr>
-                <th className="px-4 py-3 w-[28%]">Mã đơn & Khách hàng</th>
-                <th className="px-4 py-3 w-[24%]">Hạng kho khách đặt</th>
-                <th className="px-4 py-3 w-[20%]">Ngày nhận kho</th>
-                <th className="px-4 py-3 w-[16%]">Trạng thái</th>
-                <th className="px-4 py-3 w-[12%] text-right">Thao tác</th>
+                <th className="px-6 py-3 w-[32%]">Mã đơn &amp; Khách hàng</th>
+                <th className="px-6 py-3 w-[18%]">Hạng kho</th>
+                <th className="px-6 py-3 w-[18%]">Ngày nhận kho</th>
+                <th className="px-6 py-3 w-[18%]">Trạng thái</th>
+                <th className="px-6 py-3 w-[14%] text-right">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-slate-500 text-center">
+                  <td colSpan={5} className="px-6 py-12 text-gray-500 text-center">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <RefreshCw className="w-5 h-5 animate-spin text-brand-600" />
                       <span className="text-xs font-medium">Đang tải danh sách nhiệm vụ gán ô...</span>
@@ -692,19 +676,17 @@ export const AllocationPage: React.FC = () => {
                 </tr>
               ) : displayedQueue.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-14 text-center">
-                    <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                        <CheckCircle2 className="w-6 h-6" />
-                      </div>
-                      <h4 className="text-sm font-bold text-slate-800 mt-1">
+                  <td colSpan={5} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center gap-1.5 max-w-sm mx-auto">
+                      <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                      <h4 className="text-sm font-semibold text-gray-800 mt-1">
                         {filterTab === 'UNASSIGNED'
                           ? 'Không có đơn nào chưa gán ô'
                           : filterTab === 'ASSIGNED'
                           ? 'Chưa có đơn nào đã gán ô'
                           : 'Không có đơn nào chờ gán ô'}
                       </h4>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-gray-500">
                         {filterTab === 'UNASSIGNED'
                           ? 'Toàn bộ đơn trong danh sách hiện đã được phân bổ ô kho sẵn sàng.'
                           : facilityId == null
@@ -716,115 +698,130 @@ export const AllocationPage: React.FC = () => {
                 </tr>
               ) : (
                 displayedQueue.map((row) => {
-                  const urgent = daysUntil(row.startDate) < 3;
+                  const daysLeft = daysUntil(row.startDate);
+                  const isTodayOrPast = daysLeft <= 0;
+                  const isSoon = daysLeft > 0 && daysLeft < 3;
+                  const needsImmediateAllocation =
+                    row.kind === 'CONTRACT_RELOCATION' || !row.isAssigned;
+
                   return (
                     <tr
                       key={row.id}
-                      className="hover:bg-slate-50/80 transition-colors group"
+                      className="hover:bg-gray-50/70 transition-colors"
                     >
-                      {/* Cột 1: Mã đơn & Khách hàng */}
-                      <td className="px-4 py-3.5">
+                      {/* Cột 1: Mã đơn & Khách hàng (Stacked 3 tầng rõ ràng) */}
+                      <td className="px-6 py-4">
                         <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/80 text-xs w-fit">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-gray-900 font-mono text-sm">
                               {row.code}
                             </span>
                             {row.kind === 'CONTRACT_RELOCATION' && (
-                              <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-rose-50 text-rose-700 text-[10px] font-semibold rounded">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                                 Sự cố bàn giao
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500 mt-0.5">
-                            <Building2 className="w-3 h-3 text-brand-600 shrink-0" />
-                            <span>{row.facilityName || `Cơ sở #${row.facilityId}`}</span>
+                          <div className="text-sm text-gray-700">
+                            <span className="font-medium text-gray-800">{row.customerName}</span>
+                            <span className="text-gray-300 mx-1.5">·</span>
+                            <span className="text-gray-500">
+                              {row.facilityName || `Cơ sở #${row.facilityId}`}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-800 font-semibold mt-0.5">
-                            <User className="w-3.5 h-3.5 text-brand-600 shrink-0" />
-                            <span>{row.customerName}</span>
-                          </div>
-                          <span className="text-[11px] text-slate-500 font-mono">
+                          <div className="text-xs text-gray-400 tabular-nums">
                             {row.customerPhone}
-                          </span>
+                          </div>
                         </div>
                       </td>
 
                       {/* Cột 2: Hạng kho */}
-                      <td className="px-4 py-3.5">
-                        <div
-                          className="flex items-center gap-1.5 font-medium text-slate-800"
+                      <td className="px-6 py-4">
+                        <span
+                          className="font-medium text-gray-800"
                           title={row.rentalMonths ? `Thời hạn thuê: ${row.rentalMonths} tháng` : undefined}
                         >
-                          <Layers className="w-4 h-4 text-brand-600 shrink-0" />
-                          <span>{cleanUnitTypeName(row.unitTypeName) || `Loại kho #${row.unitTypeId}`}</span>
-                        </div>
+                          {cleanUnitTypeName(row.unitTypeName) || `Loại kho #${row.unitTypeId}`}
+                        </span>
                       </td>
 
-                      {/* Cột 3: Ngày hẹn nhận kho */}
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-2">
-                          <span className={`num text-xs font-bold ${urgent ? 'text-rose-600' : 'text-slate-700'}`}>
+                      {/* Cột 3: Ngày nhận kho (Text cảnh báo gọn thay cho Badge to) */}
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-gray-900 tabular-nums">
                             {formatDate(row.startDate)}
                           </span>
-                          {urgent && (
-                            <span className="text-[10px] bg-rose-50 border border-rose-200 text-rose-700 px-2 py-0.5 rounded-full font-bold">
-                              Gấp ({daysUntil(row.startDate) <= 0 ? 'Hôm nay' : `${daysUntil(row.startDate)} ngày`})
+                          {isTodayOrPast && (
+                            <span className="text-xs font-semibold text-rose-600 mt-0.5 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3 shrink-0" />
+                              Gấp (Hôm nay)
+                            </span>
+                          )}
+                          {isSoon && (
+                            <span className="text-xs font-semibold text-amber-600 mt-0.5 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3 shrink-0" />
+                              Gấp ({daysLeft} ngày)
                             </span>
                           )}
                         </div>
                       </td>
 
-                      {/* Cột 4: Trạng thái */}
-                      <td className="px-4 py-3.5">
+                      {/* Cột 4: Trạng thái (Soft Badges đồng bộ toàn bộ trạng thái) */}
+                      <td className="px-6 py-4">
                         {row.kind === 'CONTRACT_RELOCATION' ? (
                           <div className="flex flex-col gap-1 items-start">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse" />
-                              Khách báo sự cố (Cần đổi ô)
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                              Cần đổi ô (Sự cố)
                             </span>
                             {row.assignedStaffName && (
-                              <span className="text-[11px] text-slate-500 font-medium">
+                              <span className="text-xs text-gray-500">
                                 NV: {row.assignedStaffName}
                               </span>
                             )}
                           </div>
                         ) : row.isAssigned ? (
                           <div className="flex flex-col gap-1 items-start">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                              Ô: {row.storageUnitCode || `ID ${row.storageUnitId}`}
+                              Đã gán: {row.storageUnitCode || `ID ${row.storageUnitId}`}
                             </span>
                             {row.assignedStaffName && (
-                              <span className="text-[11px] text-slate-500 font-medium">
+                              <span className="text-xs text-gray-500">
                                 NV: {row.assignedStaffName}
                               </span>
                             )}
                           </div>
                         ) : (
-                          <Badge variant="warning">Chờ gán ô</Badge>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            Chờ gán ô
+                          </span>
                         )}
                       </td>
 
-                      {/* Cột 5: Nút hành động mở Sơ đồ 2D */}
-                      <td className="px-4 py-3.5 text-right">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenFloorPlan(row)}
-                          className={`inline-flex items-center justify-center w-[108px] gap-1.5 px-3 py-2 rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer ${
-                            row.kind === 'CONTRACT_RELOCATION'
-                              ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                              : row.isAssigned
-                              ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                              : 'bg-brand-600 hover:bg-brand-700 text-white'
-                          }`}
-                        >
-                          {row.isAssigned && row.kind !== 'CONTRACT_RELOCATION' ? (
-                            <RefreshCw className="w-3.5 h-3.5 text-white" />
+                      {/* Cột 5: Nút thao tác theo đúng Action Hierarchy (Primary Mint vs Secondary Outline) */}
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end">
+                          {needsImmediateAllocation ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenFloorPlan(row)}
+                              className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
+                            >
+                              Gán ô kho
+                            </button>
                           ) : (
-                            <MapPin className="w-3.5 h-3.5 text-white" />
+                            <button
+                              type="button"
+                              onClick={() => handleOpenFloorPlan(row)}
+                              className="px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm font-medium rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+                            >
+                              Đổi ô
+                            </button>
                           )}
-                          <span>{row.kind === 'CONTRACT_RELOCATION' || row.isAssigned ? 'Đổi ô kho' : 'Gán ô kho'}</span>
-                        </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -1040,19 +1037,19 @@ export const AllocationPage: React.FC = () => {
                     <span>{staffError}</span>
                   </p>
                 ) : (
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    💡 <em>Lưu ý: {selected.kind === 'CONTRACT_RELOCATION' || selected.isAssigned ? 'Sau khi đổi ô kho mới thành công, nhân viên tại quầy sẽ thấy ô mới và tiến hành bàn giao ngay.' : 'Bắt buộc chọn nhân viên phụ trách nhận kho để hệ thống tạo lịch trực.'}</em>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Lưu ý: {selected.kind === 'CONTRACT_RELOCATION' || selected.isAssigned ? 'Sau khi đổi ô kho mới thành công, nhân viên tại quầy sẽ thấy ô mới và tiến hành bàn giao ngay.' : 'Bắt buộc chọn nhân viên phụ trách nhận kho để hệ thống tạo lịch trực.'}
                   </p>
                 )}
               </div>
             </div>
 
-            {/* Modal Footer (luôn cố định dưới cùng, không bao giờ bị che khuất) */}
-            <div className="shrink-0 px-5 py-3.5 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50/80">
+            {/* Modal Footer (luôn cố định dưới cùng, đồng bộ nút Primary xanh Mint) */}
+            <div className="shrink-0 px-5 py-3.5 border-t border-gray-200 flex items-center justify-end gap-3 bg-gray-50">
               <button
                 type="button"
                 onClick={() => setModalUnit(null)}
-                className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-200 text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
                 disabled={assigningUnitId != null}
               >
                 Hủy bỏ
@@ -1061,13 +1058,7 @@ export const AllocationPage: React.FC = () => {
                 type="button"
                 onClick={handleConfirmAssignment}
                 disabled={assigningUnitId != null || (!selectedStaffId && !selected.assignedStaffId && selected.kind === 'RESERVATION')}
-                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-xs hover:shadow-sm disabled:opacity-50 transition-all cursor-pointer ${
-                  selected.kind === 'CONTRACT_RELOCATION'
-                    ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                    : selected.isAssigned
-                    ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                    : 'bg-brand-600 hover:bg-brand-700 text-white'
-                }`}
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 {assigningUnitId != null ? (
                   <>
