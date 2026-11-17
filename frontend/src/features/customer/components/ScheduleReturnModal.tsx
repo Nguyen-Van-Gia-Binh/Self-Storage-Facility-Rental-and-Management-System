@@ -215,23 +215,36 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
               </div>
 
               {isEarlyReturn ? (
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-rose-600 text-xs">
-                    <span>Phạt trả sớm (100% cọc):</span>
-                    <span className="font-semibold tabular-nums">-{formatVND(contract.depositHeld)}</span>
+                <div className="space-y-2.5">
+                  <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                    Bảng tóm tắt tài chính
+                  </p>
+                  <div className="space-y-1.5 text-xs sm:text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700">Tiền cọc (Phạt trả sớm 100%):</span>
+                      <span className="font-bold text-rose-600 tabular-nums">
+                        - {formatVND(contract.depositHeld)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700">
+                        Hoàn tiền thuê chưa sử dụng ({unusedRentInfo.unusedDays} ngày):
+                      </span>
+                      <span className="font-bold text-emerald-600 tabular-nums">
+                        + {formatVND(unusedRentInfo.estimatedUnusedRent)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center text-gray-700 text-xs">
-                    <span>Hoàn tiền thuê chưa dùng ({unusedRentInfo.unusedDays} ngày):</span>
-                    <span className="font-semibold tabular-nums">+{formatVND(unusedRentInfo.estimatedUnusedRent)}</span>
-                  </div>
-                  <div className="flex justify-between items-center border-t border-gray-200 pt-2">
-                    <span className="font-semibold text-gray-700 text-sm">Dự kiến hoàn trả:</span>
-                    <span className="font-bold text-gray-900 text-lg tabular-nums">
+                  <div className="flex justify-between items-center border-t border-gray-300 pt-3">
+                    <span className="font-bold text-gray-900 text-xs sm:text-sm uppercase">
+                      Số tiền thực nhận dự kiến:
+                    </span>
+                    <span className="font-bold text-brand-600 text-xl sm:text-2xl tabular-nums">
                       {formatVND(unusedRentInfo.estimatedUnusedRent)}
                     </span>
                   </div>
-                  <p className="text-[11px] text-gray-500">
-                    * Tạm tính trước kiểm tra thực tế ô kho.
+                  <p className="text-[11px] text-gray-500 italic text-right">
+                    (Tạm tính, sẽ trừ phí hư hại nếu có sau khi nghiệm thu)
                   </p>
                 </div>
               ) : (
@@ -313,38 +326,24 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
               </div>
             )}
 
-            {/* Lưu ý khi trả kho trước hạn dài (> 30 ngày) */}
+            {/* Lưu ý khi trả kho trước hạn dài (> 30 ngày) — Nền xám trung tính giải thích rõ ràng */}
             {isEarlyReturn && (
-              <div className="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg space-y-2 text-xs sm:text-sm text-amber-900">
-                <div className="flex items-start gap-2 font-bold text-amber-900">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <span>Lưu ý khi trả kho trước hạn dài (&gt; 30 ngày):</span>
-                </div>
-                <div className="text-xs text-amber-800 space-y-1 pl-6">
-                  <p>
-                    • Hạn hợp đồng đến ngày <strong>{contract.endDate}</strong> (còn <strong>{unusedRentInfo.unusedDays} ngày</strong>).
-                  </p>
-                  <p>
-                    • <strong>Tiền cọc ({formatVND(contract.depositHeld)}):</strong> Không được hoàn lại khi trả trước hạn (phạt 100% tiền cọc).
-                  </p>
-                  <p>
-                    • <strong>Tiền thuê chưa dùng ({formatVND(unusedRentInfo.estimatedUnusedRent)}):</strong> Được hoàn trả 100%.
-                  </p>
-                </div>
-
-                <label className="flex items-start gap-2 pt-2 border-t border-amber-200/80 cursor-pointer select-none text-xs font-semibold text-amber-900">
-                  <input
-                    type="checkbox"
-                    checked={agreeEarlyTerms}
-                    onChange={(e) => {
-                      setAgreeEarlyTerms(e.target.checked);
-                      if (error) setError(null);
-                    }}
-                    className="mt-0.5 rounded border-amber-400 accent-amber-600 h-4 w-4 shrink-0 cursor-pointer"
-                    required
-                  />
-                  <span>Tôi đồng ý không nhận lại tiền cọc và nhận hoàn tiền thuê còn lại.</span>
-                </label>
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-2 text-xs sm:text-sm text-gray-700">
+                <p className="font-bold text-gray-900 flex items-center gap-2">
+                  <Info className="w-4 h-4 text-gray-500 shrink-0" />
+                  <span>Lưu ý quan trọng khi trả kho sớm (&gt; 30 ngày):</span>
+                </p>
+                <ul className="list-disc list-inside space-y-1 ml-1 text-xs text-gray-600 leading-relaxed">
+                  <li>
+                    Hợp đồng của bạn hết hạn vào <strong>{contract.endDate}</strong> (còn <strong>{unusedRentInfo.unusedDays} ngày</strong>).
+                  </li>
+                  <li>
+                    Bạn sẽ mất <strong>100% tiền cọc ({formatVND(contract.depositHeld)})</strong> do vi phạm cam kết thời hạn.
+                  </li>
+                  <li>
+                    Bạn được hoàn lại <strong>100% tiền thuê</strong> của những ngày chưa sử dụng (<strong>{formatVND(unusedRentInfo.estimatedUnusedRent)}</strong>).
+                  </li>
+                </ul>
               </div>
             )}
 
@@ -379,8 +378,26 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
             )}
           </div>
 
-          {/* 3. Footer: Tiến trình rõ ràng (nổi bật mốc Quyết toán 7 ngày làm việc) + Nút Submit đậm nét */}
+          {/* 3. Footer: Checkbox đồng ý pháp lý (khi trả sớm) + Tiến trình + Nút Submit đậm nét */}
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 space-y-3">
+            {isEarlyReturn && (
+              <label className="flex items-start gap-3 cursor-pointer p-3 bg-white border border-gray-200 rounded-lg hover:border-brand-300 transition-colors select-none">
+                <input
+                  type="checkbox"
+                  checked={agreeEarlyTerms}
+                  onChange={(e) => {
+                    setAgreeEarlyTerms(e.target.checked);
+                    if (error) setError(null);
+                  }}
+                  className="mt-0.5 rounded border-gray-300 accent-brand-600 h-4 w-4 shrink-0 cursor-pointer"
+                  required
+                />
+                <span className="text-xs sm:text-sm text-gray-800 font-medium leading-snug">
+                  Tôi đã đọc và đồng ý với việc mất 100% tiền cọc và nhận lại tiền thuê chưa sử dụng theo quy định.
+                </span>
+              </label>
+            )}
+
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-600">
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="font-bold text-brand-700 bg-brand-50 border border-brand-200 px-2 py-0.5 rounded">

@@ -1,13 +1,17 @@
 // @vitest-environment jsdom
 /// <reference types="node" />
 import '@testing-library/jest-dom/vitest';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { ScheduleReturnModal } from '../ScheduleReturnModal';
 import type { RentedContract } from '../../types';
+
+afterEach(() => {
+  cleanup();
+});
 
 vi.mock('@/hooks/useActivePolicy', () => ({
   useActivePolicy: () => ({ returnNoticeDays: 30 }),
@@ -69,5 +73,44 @@ describe('ScheduleReturnModal — Chuẩn hóa UI Enterprise SaaS (Bỏ lạm d�
     fireEvent.click(checkboxes[1]);
     expect(submitBtn).not.toBeDisabled();
     expect(submitBtn.className).toContain('bg-brand-600');
+  });
+
+  it('Trả kho sớm (>30 ngày): hiển thị Bảng tóm tắt tài chính rõ Số tiền thực nhận dự kiến và tách Checkbox đồng ý pháp lý ra ngay trên nút Submit', () => {
+    const in45Days = new Date(Date.now() + 45 * 86400000).toISOString().slice(0, 10);
+    const earlyContract = {
+      id: '13',
+      contractNumber: 'CTR-TEST-013',
+      unitNumber: 'Q1-A201',
+      unitTypeName: 'Tiêu Chuẩn S',
+      facilityName: 'Cơ sở Quận 1 - TP.HCM',
+      startDate: '2026-09-17',
+      endDate: in45Days,
+      status: 'ACTIVE',
+      monthlyRent: 990000,
+      depositHeld: 1000000,
+    } as RentedContract;
+
+    render(
+      <ScheduleReturnModal
+        isOpen={true}
+        onClose={vi.fn()}
+        contract={earlyContract}
+      />
+    );
+
+    expect(screen.getByText(/Bảng tóm tắt tài chính/i)).toBeInTheDocument();
+    expect(screen.getByText(/Số tiền thực nhận dự kiến:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Lưu ý quan trọng khi trả kho sớm/i)).toBeInTheDocument();
+
+    const submitBtn = screen.getByRole('button', { name: /Xác nhận & Báo trả kho/i });
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes).toHaveLength(3); // 2 cam kết dọn kho + 1 đồng ý pháp lý tách riêng
+
+    fireEvent.click(checkboxes[0]);
+    fireEvent.click(checkboxes[1]);
+    expect(submitBtn).toBeDisabled(); // Chưa tick đồng ý pháp lý vẫn bị khóa
+
+    fireEvent.click(checkboxes[2]);
+    expect(submitBtn).not.toBeDisabled();
   });
 });
