@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useInRouterContext } from 'react-router-dom';
 import { Modal } from '@/components/ui/Modal';
 import { DateField } from '@/components/ui/DateField';
 import { Button } from '@/components/ui/Button';
@@ -32,6 +32,7 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
   onSuccess,
 }) => {
   const user = useCurrentUser();
+  const inRouter = useInRouterContext();
   const todayStr = new Date().toISOString().split('T')[0];
 
   const [targetStartDate, setTargetStartDate] = useState<string>(
@@ -154,13 +155,23 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
               </p>
             </div>
             <div className="pt-3 flex flex-col gap-2">
-              <Link
-                to="/customer/my-units?tab=waitlist"
-                onClick={handleClose}
-                className="w-full inline-flex items-center justify-center py-2.5 px-4 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg shadow-xs transition-colors"
-              >
-                Xem Danh sách chờ của tôi →
-              </Link>
+              {inRouter ? (
+                <Link
+                  to="/customer/my-units?tab=waitlist"
+                  onClick={handleClose}
+                  className="w-full inline-flex items-center justify-center py-2.5 px-4 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg shadow-xs transition-colors"
+                >
+                  Xem Danh sách chờ của tôi →
+                </Link>
+              ) : (
+                <a
+                  href="/customer/my-units?tab=waitlist"
+                  onClick={handleClose}
+                  className="w-full inline-flex items-center justify-center py-2.5 px-4 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg shadow-xs transition-colors"
+                >
+                  Xem Danh sách chờ của tôi →
+                </a>
+              )}
               <Button
                 variant="outline"
                 className="w-full justify-center py-2 text-sm font-medium text-gray-700"
@@ -308,15 +319,24 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
                 <div className="space-y-1">
                   <span className="block">{errorMsg}</span>
-                  {errorMsg.includes('Danh sách chờ của tôi') && (
-                    <Link
-                      to="/customer/my-units?tab=waitlist"
-                      onClick={handleClose}
-                      className="inline-block font-semibold text-brand-700 hover:underline"
-                    >
-                      Mở Danh sách chờ của tôi →
-                    </Link>
-                  )}
+                  {errorMsg.includes('Danh sách chờ của tôi') &&
+                    (inRouter ? (
+                      <Link
+                        to="/customer/my-units?tab=waitlist"
+                        onClick={handleClose}
+                        className="inline-block font-semibold text-brand-700 hover:underline"
+                      >
+                        Mở Danh sách chờ của tôi →
+                      </Link>
+                    ) : (
+                      <a
+                        href="/customer/my-units?tab=waitlist"
+                        onClick={handleClose}
+                        className="inline-block font-semibold text-brand-700 hover:underline"
+                      >
+                        Mở Danh sách chờ của tôi →
+                      </a>
+                    ))}
                 </div>
               </div>
             )}
