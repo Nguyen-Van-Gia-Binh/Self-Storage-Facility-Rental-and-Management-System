@@ -279,7 +279,7 @@ describe('HomePage Redesign (3D Sizing, Real Data & Section Order)', () => {
     expect(screen.queryByText(/Bạn Hoàng Nam/i)).not.toBeInTheDocument();
     expect(screen.queryByAltText(/Ảnh đại diện/i)).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Chính sách hủy & hoàn tiền cọc' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Quy định hoàn tiền / Hủy hợp đồng' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByText(/hoàn 100% tiền thuê và 100% tiền cọc/i)).toBeInTheDocument();
   });
