@@ -178,7 +178,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                           Chờ cấp ô mới
                         </span>
                         <span className="text-[11px] text-gray-500">
-                          {c.unitTypeName || 'Kho tiêu chuẩn'} · Chờ phân bổ lại
+                          {c.unitTypeName || 'Kho tiêu chuẩn'}
                         </span>
                       </div>
                     ) : (
