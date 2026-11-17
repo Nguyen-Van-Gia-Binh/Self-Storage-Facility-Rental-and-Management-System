@@ -145,6 +145,7 @@ export function useBookingPayment({
             setRedirectCountdown(counter);
             if (counter <= 0) {
               clearInterval(redirectTimer);
+              navigate('/customer/my-units');
             }
           }, 1000);
         }
@@ -154,7 +155,7 @@ export function useBookingPayment({
     }, 3000);
 
     return () => clearInterval(pollInterval);
-  }, [currentStep, paymentStatus, createdReservationId, handleConfirmBookingPayment]);
+  }, [currentStep, paymentStatus, createdReservationId, handleConfirmBookingPayment, navigate]);
 
   // 8. Sao chép nội dung chuyển khoản nhanh
   const handleCopyText = (text: string, fieldKey: string) => {

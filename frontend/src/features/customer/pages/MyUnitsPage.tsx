@@ -18,6 +18,7 @@ import { MyUnitsGuestPrompt } from '../components/MyUnitsGuestPrompt';
 import { MyUnitsTable } from '../components/MyUnitsTable';
 import { MyUnitsModals } from '../components/MyUnitsModals';
 import { useCustomerContracts } from '../hooks/useCustomerContracts';
+import { useActivePolicy } from '@/hooks/useActivePolicy';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
 import { cancelContractReturn } from '@/api/customerRentals';
 import type { RentedContract } from '../types';
@@ -50,6 +51,9 @@ export const MyUnitsPage: React.FC = () => {
     pendingCheckinCount,
     closedCount,
   } = useCustomerContracts();
+
+  const policy = useActivePolicy();
+  const holdHours = policy?.reservationHoldHours || 15;
 
   // 2. Trạng thái bộ lọc (Tab, Search, Date Filter)
   const [activeTab, setActiveTab] = useState<string>('ALL');
@@ -247,7 +251,7 @@ export const MyUnitsPage: React.FC = () => {
                   : activeTab === 'PENDING_RETURN'
                   ? 'Chờ trả kho'
                   : activeTab === 'PENDING_PAYMENT'
-                  ? 'Giữ chỗ 48h'
+                  ? `Giữ chỗ ${holdHours}h`
                   : 'Đã kết thúc'}
               </span>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
@@ -259,7 +263,7 @@ export const MyUnitsPage: React.FC = () => {
                   className="fixed inset-0 z-20"
                   onClick={() => setIsStatusDropdownOpen(false)}
                 />
-                <div className="absolute left-0 sm:right-0 sm:left-auto top-10 w-56 bg-white border border-slate-200 rounded-xl shadow-lg z-30 p-1.5 space-y-0.5 text-xs">
+                <div className="absolute left-0 sm:right-0 sm:left-auto top-10 w-56 bg-white border border-slate-200 rounded-xl shadow-lg z-30 p-1.5 space-y-0.5 text-xs animate-in fade-in-50 zoom-in-95 duration-150">
                   <button
                     type="button"
                     onClick={() => {
@@ -363,7 +367,7 @@ export const MyUnitsPage: React.FC = () => {
                         : 'hover:bg-slate-50 text-slate-700'
                     }`}
                   >
-                    <span>Giữ chỗ 48h</span>
+                    <span>Giữ chỗ {holdHours}h</span>{/* <span>Giữ chỗ 48h</span> */}
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold">
                       {pendingReservations.length}
                     </span>
@@ -426,7 +430,7 @@ export const MyUnitsPage: React.FC = () => {
                   className="fixed inset-0 z-20"
                   onClick={() => setIsDateDropdownOpen(false)}
                 />
-                <div className="absolute left-0 sm:right-0 sm:left-auto top-10 w-64 bg-white border border-slate-200 rounded-xl shadow-lg z-30 p-2 space-y-1 text-xs">
+                <div className="absolute left-0 sm:right-0 sm:left-auto top-10 w-64 bg-white border border-slate-200 rounded-xl shadow-lg z-30 p-2 space-y-1 text-xs animate-in fade-in-50 zoom-in-95 duration-150">
                   <button
                     type="button"
                     onClick={() => {
@@ -616,6 +620,7 @@ export const MyUnitsPage: React.FC = () => {
           }}
           onCheckInSuccess={loadContracts}
           renewalNoticeDays={noticeDays > 0 ? noticeDays : undefined}
+          holdHours={holdHours}
         />
       )}
 

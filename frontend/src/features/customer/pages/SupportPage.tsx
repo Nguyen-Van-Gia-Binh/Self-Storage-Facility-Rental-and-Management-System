@@ -398,77 +398,78 @@ export const SupportPage: React.FC = () => {
       ) : (
         <>
 
-          {/* Status Tabs & Date Filter Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3 pt-1">
-            {/* Status Tabs (Clean Pills matching MyUnitsPage) */}
-            <div className="flex items-center gap-2 overflow-x-auto text-xs font-semibold">
+          {/* Status Tabs (Underline Navigation) & Date Filter Bar */}
+          <div className="border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+            <nav className="-mb-px flex items-center space-x-6 sm:space-x-8 overflow-x-auto">
+              {/* Tab: Tất cả */}
               <button
                 type="button"
                 onClick={() => setActiveTab('ALL')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                className={`whitespace-nowrap py-3.5 px-1 border-b-2 font-bold text-xs sm:text-sm transition-colors cursor-pointer flex items-center gap-2 focus:outline-none ${
                   activeTab === 'ALL'
-                    ? 'bg-brand-600 text-white font-bold shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                    ? 'border-brand-600 text-brand-700'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }`}
               >
                 <span>Tất cả</span>
                 <span
-                  className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
-                    activeTab === 'ALL' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
+                  className={`py-0.5 px-2 rounded-full text-xs font-semibold transition-colors ${
+                    activeTab === 'ALL'
+                      ? 'bg-brand-50 text-brand-700 border border-brand-200/60'
+                      : 'bg-slate-100 text-slate-600'
                   }`}
                 >
                   {tickets.length}
                 </span>
               </button>
 
+              {/* Tab: Đang xử lý */}
               <button
                 type="button"
                 onClick={() => setActiveTab('ACTIVE')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                className={`whitespace-nowrap py-3.5 px-1 border-b-2 font-bold text-xs sm:text-sm transition-colors cursor-pointer flex items-center gap-2 focus:outline-none ${
                   activeTab === 'ACTIVE'
-                    ? 'bg-amber-600 text-white font-bold shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                    ? 'border-brand-600 text-brand-700'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }`}
               >
                 <span>Đang xử lý</span>
-                {countInProgress > 0 && (
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      activeTab === 'ACTIVE' ? 'bg-white' : 'bg-amber-500 animate-pulse'
-                    }`}
-                  />
-                )}
                 <span
-                  className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
-                    activeTab === 'ACTIVE' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
+                  className={`py-0.5 px-2 rounded-full text-xs font-semibold transition-colors ${
+                    activeTab === 'ACTIVE'
+                      ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                      : 'bg-slate-100 text-slate-600'
                   }`}
                 >
                   {countInProgress}
                 </span>
               </button>
 
+              {/* Tab: Đã đóng */}
               <button
                 type="button"
                 onClick={() => setActiveTab('CLOSED')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                className={`whitespace-nowrap py-3.5 px-1 border-b-2 font-bold text-xs sm:text-sm transition-colors cursor-pointer flex items-center gap-2 focus:outline-none ${
                   activeTab === 'CLOSED'
-                    ? 'bg-slate-800 text-white font-bold shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                    ? 'border-brand-600 text-brand-700'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }`}
               >
                 <span>Đã đóng</span>
                 <span
-                  className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
-                    activeTab === 'CLOSED' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
+                  className={`py-0.5 px-2 rounded-full text-xs font-semibold transition-colors ${
+                    activeTab === 'CLOSED'
+                      ? 'bg-slate-200 text-slate-800'
+                      : 'bg-slate-100 text-slate-600'
                   }`}
                 >
                   {countClosed}
                 </span>
               </button>
-            </div>
+            </nav>
 
             {/* Date Filter Dropdown */}
-            <div className="relative shrink-0 self-start sm:self-auto">
+            <div className="relative shrink-0 pb-2 sm:pb-0 self-start sm:self-auto">
               <button
                 type="button"
                 onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
@@ -501,7 +502,7 @@ export const SupportPage: React.FC = () => {
                     className="fixed inset-0 z-20"
                     onClick={() => setIsDateDropdownOpen(false)}
                   />
-                  <div className="absolute right-0 top-10 w-64 bg-white border border-slate-200 rounded-xl shadow-lg z-30 p-2 space-y-1 text-xs">
+                  <div className="absolute right-0 top-10 w-64 bg-white border border-slate-200 rounded-xl shadow-lg z-30 p-2 space-y-1 text-xs animate-in fade-in-50 zoom-in-95 duration-150">
                     <button
                       type="button"
                       onClick={() => {

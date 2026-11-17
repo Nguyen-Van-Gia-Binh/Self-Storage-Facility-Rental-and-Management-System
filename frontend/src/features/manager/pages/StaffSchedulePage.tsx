@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Users,
   Search,
   Building2,
   RefreshCw,
@@ -132,43 +131,20 @@ export const StaffSchedulePage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Tiêu đề */}
-      <div>
+      {/* Tiêu đề & Thanh tóm tắt nhanh (Summary Bar) */}
+      <div className="mb-2">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
           Phân công nhân sự & Điều phối công việc
         </h1>
-      </div>
-
-      {/* KPI Cards Thống kê toàn hệ thống */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Card 1: Tổng cơ sở */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 flex items-center justify-between hover:border-blue-200 transition-all">
-          <div className="space-y-1">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng cơ sở phân công</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-slate-900 tracking-tight">{facilities.length}</span>
-              <span className="text-xs font-semibold text-slate-500">cơ sở</span>
-            </div>
-            <p className="text-[11px] text-slate-400">Được phân quyền quản lý</p>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-            <Building2 className="w-6 h-6" />
-          </div>
-        </div>
-
-        {/* Card 2: Tổng nhân viên */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 flex items-center justify-between hover:border-emerald-200 transition-all">
-          <div className="space-y-1">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng nhân viên vận hành</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-emerald-600 tracking-tight">{totalUniqueStaff}</span>
-              <span className="text-xs font-semibold text-emerald-700">nhân sự</span>
-            </div>
-            <p className="text-[11px] text-slate-400">Nhân sự thực tế phụ trách cơ sở</p>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-            <Users className="w-6 h-6" />
-          </div>
+        <div className="flex items-center gap-3 text-xs md:text-sm text-slate-500 mt-2">
+          <span>
+            Tổng cơ sở: <strong className="text-slate-900 font-semibold">{facilities.length}</strong>
+          </span>
+          <span className="text-slate-300">|</span>
+          <span>
+            Đội ngũ vận hành:{' '}
+            <strong className="text-slate-900 font-semibold">{totalUniqueStaff} nhân sự</strong>
+          </span>
         </div>
       </div>
 
@@ -255,7 +231,7 @@ export const StaffSchedulePage: React.FC = () => {
         </div>
       )}
 
-      {/* Grid 3 cột Cards Cấp 1 */}
+      {/* Danh sách nén (Compact List View) */}
       {!loading && !error && (
         <>
           {filteredFacilities.length === 0 ? (
@@ -267,15 +243,25 @@ export const StaffSchedulePage: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {paginatedFacilities.map((fac) => (
-                <FacilityShiftSummaryCard
-                  key={fac.id}
-                  facility={fac}
-                  stats={{ totalStaff: facilityStaffMap[Number(fac.id)] ?? 0 }}
-                  onViewSchedule={handleViewSchedule}
-                />
-              ))}
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              {/* Header Bảng */}
+              <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <div className="col-span-5">Cơ sở lưu kho</div>
+                <div className="col-span-5">Địa chỉ</div>
+                <div className="col-span-2 text-right">Đội ngũ nhân sự</div>
+              </div>
+
+              {/* Dòng dữ liệu cơ sở */}
+              <div className="divide-y divide-slate-100">
+                {paginatedFacilities.map((fac) => (
+                  <FacilityShiftSummaryCard
+                    key={fac.id}
+                    facility={fac}
+                    stats={{ totalStaff: facilityStaffMap[Number(fac.id)] ?? 0 }}
+                    onViewSchedule={handleViewSchedule}
+                  />
+                ))}
+              </div>
             </div>
           )}
 

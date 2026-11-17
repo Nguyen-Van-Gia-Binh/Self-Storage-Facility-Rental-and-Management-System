@@ -51,7 +51,7 @@ export const BookingPage: React.FC = () => {
   const depositMultiplierLabel = Number.isInteger(depositMultiplier)
     ? String(depositMultiplier)
     : depositMultiplier.toFixed(1).replace(/\.0$/, '');
-  const holdHours = policy?.reservationHoldHours ?? 48;
+  const holdHours = policy?.reservationHoldHours ?? 15;
   const location = useLocation();
   const navigate = useNavigate();
   const bookingParams = useMemo(() => readBookingParams(location.search), [location.search]);
@@ -460,7 +460,7 @@ export const BookingPage: React.FC = () => {
           setUnavailableModal({
             isOpen: true,
             title: 'Đơn giữ chỗ đã hết hạn hoặc bị hủy',
-            message: 'Đơn giữ chỗ này đã hết thời gian hiệu lực 48h hoặc đã được hủy. Quý khách vui lòng chọn lại ô kho mới.',
+            message: `Đơn giữ chỗ này đã hết thời gian hiệu lực (${holdHours}h) hoặc đã được hủy. Quý khách vui lòng chọn lại ô kho mới.`,
             actionType: 'NAVIGATE_UNITS',
           });
           return;
@@ -686,7 +686,7 @@ export const BookingPage: React.FC = () => {
           </span>
           <span className="text-slate-300">→</span>
           <span className={`px-3 py-1 rounded-full ${currentStep === 3 ? 'bg-brand-100 text-[#0a1614] font-bold border border-brand-300' : 'text-slate-400'}`}>
-            3. Thanh toán VNPay (48h)
+            3. Thanh toán VNPay ({holdHours}h)
           </span>
         </div>
       </div>
@@ -717,6 +717,8 @@ export const BookingPage: React.FC = () => {
               onSubmit={handleProceedToPayment}
               hasExtendedInsurance={hasExtendedInsurance}
               setHasExtendedInsurance={setHasExtendedInsurance}
+              durationMonths={durationMonths}
+              insuranceTotal={insuranceTotal}
             />
           </div>
 
@@ -735,6 +737,11 @@ export const BookingPage: React.FC = () => {
               depositMultiplierLabel={depositMultiplierLabel}
               hasExtendedInsurance={hasExtendedInsurance}
               insuranceTotal={insuranceTotal}
+              showSubmitButton={true}
+              isSubmitting={isSubmitting}
+              isCheckingAvailability={isCheckingAvailability}
+              isButtonDisabled={!reservationIdParam && (availability == null || availability.availableSlots <= 0)}
+              holdHours={holdHours}
             />
           </div>
         </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { formatVND } from '../utils/pricing';
 import type { StorageType, UnitSizeCategory, StorageUnit } from '../types';
@@ -108,53 +108,67 @@ export const UnitPickerSidebar: React.FC<UnitPickerSidebarProps> = ({
         </div>
       </div>
 
-      {/* Bảng tính toán tiền thuê và tiền cọc */}
-      <div className="pt-1 space-y-2 text-xs">
-        <div className="flex justify-between text-slate-600">
-          <span>
-            Tiền thuê ({durationMonths} tháng):
-          </span>
-          <span className="font-semibold text-slate-900 num">
-            {hasSelected ? formatVND(priceCalculation.grossRent) : '-- đ'}
-          </span>
-        </div>
+      {/* Bảng tính toán tiền thuê và tiền cọc hoặc Empty State khi chưa chọn kho */}
+      {hasSelected ? (
+        <>
+          <div className="pt-1 space-y-2 text-xs animate-in fade-in-50 duration-150">
+            <div className="flex justify-between text-slate-600">
+              <span>
+                Tiền thuê ({durationMonths} tháng):
+              </span>
+              <span className="font-semibold text-slate-900 num">
+                {formatVND(priceCalculation.grossRent)}
+              </span>
+            </div>
 
-        {hasSelected && priceCalculation.discountAmount > 0 && (
-          <div className="flex justify-between text-emerald-700 font-bold">
-            <span>
-              {priceCalculation.discountProgramName
-                ? `${priceCalculation.discountProgramName}${
-                    priceCalculation.discountPercent > 0 && !priceCalculation.discountProgramName.includes('%')
-                      ? ` (-${priceCalculation.discountPercent}%)`
-                      : ''
-                  }:`
-                : `Chiết khấu (-${priceCalculation.discountPercent}%):`}
-            </span>
-            <span className="num text-emerald-800 font-black">
-              -{formatVND(priceCalculation.discountAmount)}
-            </span>
+            {priceCalculation.discountAmount > 0 && (
+              <div className="flex justify-between text-emerald-700 font-bold">
+                <span>
+                  {priceCalculation.discountProgramName
+                    ? `${priceCalculation.discountProgramName}${
+                        priceCalculation.discountPercent > 0 && !priceCalculation.discountProgramName.includes('%')
+                          ? ` (-${priceCalculation.discountPercent}%)`
+                          : ''
+                      }:`
+                    : `Chiết khấu (-${priceCalculation.discountPercent}%):`}
+                </span>
+                <span className="num text-emerald-800 font-black">
+                  -{formatVND(priceCalculation.discountAmount)}
+                </span>
+              </div>
+            )}
+
+            <div className="flex justify-between text-slate-600">
+              <span>Tiền đặt cọc ({depositMultiplierLabel} tháng):</span>
+              <span className="font-semibold text-slate-900 num">
+                {formatVND(priceCalculation.depositAmount)}
+              </span>
+            </div>
           </div>
-        )}
 
-        <div className="flex justify-between text-slate-600">
-          <span>Tiền đặt cọc ({depositMultiplierLabel} tháng):</span>
-          <span className="font-semibold text-slate-900 num">
-            {hasSelected ? formatVND(priceCalculation.depositAmount) : '-- đ'}
-          </span>
+          {/* Tổng thanh toán */}
+          <div className="pt-2.5 border-t border-slate-200">
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs font-black uppercase tracking-wider text-slate-900">
+                Tổng thanh toán:
+              </span>
+              <span className="text-xl font-black text-[#008B74] num tracking-tight">
+                {formatVND(priceCalculation.totalDue)}
+              </span>
+            </div>
+          </div>
+        </>
+      ) : (
+        /* Empty State tóm tắt báo giá */
+        <div className="flex flex-col items-center justify-center py-7 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/70 p-4 space-y-2">
+          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+            <Receipt className="w-5 h-5 text-slate-400" />
+          </div>
+          <p className="text-xs text-slate-500 leading-relaxed font-medium">
+            Vui lòng chọn loại kho<br />để xem báo giá chi tiết.
+          </p>
         </div>
-      </div>
-
-      {/* Tổng thanh toán */}
-      <div className="pt-2.5 border-t border-slate-200">
-        <div className="flex items-baseline justify-between">
-          <span className="text-xs font-black uppercase tracking-wider text-slate-900">
-            Tổng thanh toán:
-          </span>
-          <span className="text-xl font-black text-[#008B74] num tracking-tight">
-            {hasSelected ? formatVND(priceCalculation.totalDue) : '-- đ'}
-          </span>
-        </div>
-      </div>
+      )}
 
       {/* CTA Button */}
       <Button
@@ -162,8 +176,8 @@ export const UnitPickerSidebar: React.FC<UnitPickerSidebarProps> = ({
         variant="primary"
         size="md"
         onClick={onProceedToBooking}
-        disabled={isConfirming || !unitTypeName || typeFull}
-        className="w-full py-3 text-xs sm:text-sm font-extrabold bg-[#008B74] hover:bg-[#007461] active:bg-[#005e4f] text-white rounded-md shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled={isConfirming || !hasSelected || typeFull}
+        className="w-full py-3 text-xs sm:text-sm font-extrabold bg-[#008B74] hover:bg-[#007461] active:bg-[#005e4f] text-white rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isConfirming ? (
           <>

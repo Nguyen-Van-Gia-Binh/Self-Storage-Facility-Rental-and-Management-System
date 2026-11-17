@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Badge } from '@/components/ui/Badge';
-import { ArrowRight, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { SupportTicket } from '../types';
-import { getCategoryMeta, getStatusMeta } from './SupportTicketCard';
+import { XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import type { SupportTicket, SupportStatus } from '../types';
+import { getCategoryMeta } from './SupportTicketCard';
 
 export interface SupportTicketTableProps {
   tickets: SupportTicket[];
@@ -10,6 +9,49 @@ export interface SupportTicketTableProps {
   onCancel?: (ticket: SupportTicket) => void;
   pageSize?: number;
 }
+
+/**
+ * Hiển thị Badge trạng thái chuẩn Semantic Colors (Anti AI Slop)
+ * - Đang xử lý: Vàng/Cam (Warning)
+ * - Đã phân công: Xanh dương (Info)
+ * - Mới gửi: Xanh lá (Active)
+ * - Đã đóng: Xám trung tính (Neutral)
+ */
+const renderStatusBadge = (status: SupportStatus) => {
+  switch (status) {
+    case 'IN_PROGRESS':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+          <span>Đang xử lý</span>
+        </span>
+      );
+    case 'ASSIGNED':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          <span>Đã phân công</span>
+        </span>
+      );
+    case 'NEW':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span>Mới gửi</span>
+        </span>
+      );
+    case 'RESOLVED':
+    case 'CLOSED':
+    case 'AUTO_CLOSED':
+    default:
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+          <span>Đã đóng</span>
+        </span>
+      );
+  }
+};
 
 export const SupportTicketTable: React.FC<SupportTicketTableProps> = ({
   tickets,
@@ -48,8 +90,6 @@ export const SupportTicketTable: React.FC<SupportTicketTableProps> = ({
           <tbody className="divide-y divide-slate-100 text-slate-700">
             {paginatedTickets.map((ticket) => {
               const catMeta = getCategoryMeta(ticket.category);
-              const statusMeta = getStatusMeta(ticket.status);
-              const CategoryIcon = catMeta.icon;
 
               const formattedDate = new Date(ticket.createdAt).toLocaleDateString('vi-VN', {
                 day: '2-digit',
@@ -82,13 +122,10 @@ export const SupportTicketTable: React.FC<SupportTicketTableProps> = ({
                     </span>
                   </td>
 
-                  {/* 2. Phân loại */}
+                  {/* 2. Vấn đề hỗ trợ (Text thuần, triệt tiêu viền cầu vồng) */}
                   <td className="py-3.5 px-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${catMeta.color}`}
-                    >
-                      <CategoryIcon className="w-3.5 h-3.5 shrink-0" />
-                      <span>{catMeta.label}</span>
+                    <span className="text-xs font-semibold text-slate-900">
+                      {catMeta.label}
                     </span>
                   </td>
 
@@ -119,20 +156,15 @@ export const SupportTicketTable: React.FC<SupportTicketTableProps> = ({
                     </p>
                   </td>
 
-                  {/* 5. Trạng thái */}
+                  {/* 5. Trạng thái (Semantic Colors có chấm tròn tương phản cao) */}
                   <td className="py-3.5 px-4 whitespace-nowrap">
-                    <div className="inline-flex items-center gap-1.5">
-                      <Badge variant={statusMeta.variant}>{statusMeta.label}</Badge>
-                      {ticket.status === 'IN_PROGRESS' && (
-                        <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                      )}
-                    </div>
+                    {renderStatusBadge(ticket.status)}
                   </td>
 
-                  {/* 6. Thao tác */}
+                  {/* 6. Thao tác (Icon mũi tên tinh gọn) */}
                   <td className="py-3.5 px-4 text-right whitespace-nowrap">
                     <div
-                      className="flex items-center justify-end gap-2"
+                      className="flex items-center justify-end gap-1.5"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {ticket.status === 'NEW' && onCancel && (
@@ -142,20 +174,21 @@ export const SupportTicketTable: React.FC<SupportTicketTableProps> = ({
                             e.stopPropagation();
                             onCancel(ticket);
                           }}
-                          className="inline-flex items-center gap-1 text-sm font-medium text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                           title="Hủy yêu cầu"
                         >
                           <XCircle className="w-3.5 h-3.5" />
-                          <span>Hủy yêu cầu</span>
+                          <span className="hidden sm:inline">Hủy</span>
                         </button>
                       )}
                       <button
                         type="button"
                         onClick={() => onViewDetail(ticket)}
-                        className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline cursor-pointer"
+                        className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors cursor-pointer group-hover:text-brand-600"
+                        title="Xem chi tiết"
+                        aria-label="Xem chi tiết"
                       >
-                        <span>Chi tiết</span>
-                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                        <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                       </button>
                     </div>
                   </td>

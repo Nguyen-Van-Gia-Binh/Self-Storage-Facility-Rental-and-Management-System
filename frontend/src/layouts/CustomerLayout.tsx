@@ -114,29 +114,29 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen flex flex-col bg-[#f2f9f7]">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-white border-b border-slate-200/90 shadow-sm">
+      <header className="sticky top-0 z-30 bg-brand-700 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
           {/* Logo */}
-          <Logo to="/" subtitle="Self-Storage Solutions" size="md" />
+          <Logo to="/" subtitle="Self-Storage Solutions" size="md" variant="light" />
 
           {/* Navigation links */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold">
             <Link 
               to="/" 
-              className={`py-6 transition-colors border-b-2 ${
+              className={`py-6 transition-all duration-200 hover:-translate-y-0.5 active:scale-95 border-b-2 ${
                 isHomeActive 
-                  ? 'border-brand-500 text-slate-900 font-bold' 
-                  : 'border-transparent text-slate-600 hover:text-brand-600'
+                  ? 'border-white text-white font-bold' 
+                  : 'border-transparent text-white/80 hover:text-white'
               }`}
             >
               Trang chủ
             </Link>
             <Link 
               to="/customer/my-units" 
-              className={`py-6 transition-colors border-b-2 ${
+              className={`py-6 transition-all duration-200 hover:-translate-y-0.5 active:scale-95 border-b-2 ${
                 isRentalsActive 
-                  ? 'border-brand-500 text-slate-900 font-bold' 
-                  : 'border-transparent text-slate-600 hover:text-brand-600'
+                  ? 'border-white text-white font-bold' 
+                  : 'border-transparent text-white/80 hover:text-white'
               }`}
             >
               Kho của tôi
@@ -144,10 +144,10 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
             {user && (
               <Link
                 to="/customer/history"
-                className={`py-6 transition-colors border-b-2 ${
+                className={`py-6 transition-all duration-200 hover:-translate-y-0.5 active:scale-95 border-b-2 ${
                   isHistoryActive
-                    ? 'border-brand-500 text-slate-900 font-bold'
-                    : 'border-transparent text-slate-600 hover:text-brand-600'
+                    ? 'border-white text-white font-bold'
+                    : 'border-transparent text-white/80 hover:text-white'
                 }`}
               >
                 Lịch sử
@@ -155,10 +155,10 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
             )}
             <Link 
               to="/customer/support" 
-              className={`py-6 transition-colors border-b-2 ${
+              className={`py-6 transition-all duration-200 hover:-translate-y-0.5 active:scale-95 border-b-2 ${
                 isSupportActive 
-                  ? 'border-brand-500 text-slate-900 font-bold' 
-                  : 'border-transparent text-slate-600 hover:text-brand-600'
+                  ? 'border-white text-white font-bold' 
+                  : 'border-transparent text-white/80 hover:text-white'
               }`}
             >
               Hỗ trợ 24/7
@@ -168,8 +168,8 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
           {/* User actions */}
           <div className="flex items-center gap-2.5">
             {/* Hotline */}
-            <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700">
-              <Phone className="w-3.5 h-3.5 text-brand-500" />
+            <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 border border-white/25 text-xs font-semibold text-white">
+              <Phone className="w-3.5 h-3.5 text-white" />
               <span>Hotline: 1900 8888</span>
             </div>
 
@@ -181,17 +181,17 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
                   type="button"
                   onClick={openBell}
                   aria-label={`Thông báo, ${unreadCount} chưa đọc`}
-                  className="relative inline-flex items-center justify-center w-9 h-9 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  className="relative inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/30 text-white hover:bg-white/10 hover:scale-105 active:scale-95 transition-all duration-150"
                 >
                   <Bell className="w-4 h-4" />
                   {unreadCount > 0 && (
-                    <span className="num absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-brand-500 text-white text-[10px] font-bold leading-4 text-center">
+                    <span className="num absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-white text-brand-700 text-[10px] font-bold leading-4 text-center animate-pulse">
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
                 </button>
                 {isBellOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl border border-slate-200 shadow-none py-1.5 z-50">
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl border border-slate-200 shadow-xl py-1.5 z-50 animate-in fade-in-50 zoom-in-95 duration-150">
                     <p className="px-4 py-2 text-xs font-semibold text-slate-500">Thông báo</p>
                     {bellItems.length === 0 && (
                       <p className="px-4 py-3 text-sm text-slate-500">Chưa có thông báo.</p>
@@ -222,15 +222,15 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
                 <button
                   type="button"
                   onClick={() => setIsDropdownOpen(prev => !prev)}
-                  className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full border border-slate-200 hover:border-slate-300 hover:bg-slate-50/80 transition-all focus:outline-none cursor-pointer"
+                  className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full border border-white/30 hover:bg-white/10 hover:scale-[1.02] active:scale-95 transition-all duration-150 focus:outline-none cursor-pointer"
                 >
-                  <div className="w-7 h-7 rounded-full bg-brand-50 text-brand-700 font-bold text-xs flex items-center justify-center border border-brand-200 shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-white text-brand-700 font-bold text-xs flex items-center justify-center shrink-0">
                     {getInitials(user.fullName)}
                   </div>
-                  <span className="text-xs font-bold text-slate-800 hidden sm:inline max-w-[140px] truncate">
+                  <span className="text-xs font-bold text-white hidden sm:inline max-w-[140px] truncate">
                     {user.fullName || user.username}
                   </span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-3.5 h-3.5 text-white/80 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Dropdown Menu */}
@@ -285,16 +285,16 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
               <div className="flex items-center gap-2 pl-1">
                 <Link
                   to="/auth/login"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-brand-600 hover:bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl transition-all"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/10 active:scale-95 border border-white/40 rounded-xl transition-all duration-150"
                 >
-                  <LogIn className="w-3.5 h-3.5 text-brand-600" />
+                  <LogIn className="w-3.5 h-3.5 text-white" />
                   <span>Đăng nhập</span>
                 </Link>
                 <Link
                   to="/auth/register"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-xs transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-brand-700 bg-white hover:bg-brand-50 active:scale-95 rounded-xl shadow-xs transition-all duration-150"
                 >
-                  <UserPlus className="w-3.5 h-3.5" />
+                  <UserPlus className="w-3.5 h-3.5 text-brand-700" />
                   <span>Đăng ký</span>
                 </Link>
               </div>

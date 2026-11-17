@@ -1,4 +1,5 @@
 import React from 'react';
+import { Loader2, ArrowRight } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { formatDateVN } from '../utils/unitPickerHelpers';
 
@@ -23,6 +24,11 @@ export interface BookingSummaryCardProps {
   depositMultiplierLabel: string;
   hasExtendedInsurance?: boolean;
   insuranceTotal?: number;
+  showSubmitButton?: boolean;
+  isSubmitting?: boolean;
+  isCheckingAvailability?: boolean;
+  isButtonDisabled?: boolean;
+  holdHours?: number;
 }
 
 /**
@@ -41,6 +47,11 @@ export const BookingSummaryCard: React.FC<BookingSummaryCardProps> = ({
   depositMultiplierLabel,
   hasExtendedInsurance = false,
   insuranceTotal = 0,
+  showSubmitButton = false,
+  isSubmitting = false,
+  isCheckingAvailability = false,
+  isButtonDisabled = false,
+  holdHours = 15,
 }) => {
   return (
     <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs sticky top-24 space-y-3">
@@ -120,7 +131,7 @@ export const BookingSummaryCard: React.FC<BookingSummaryCardProps> = ({
 
         {hasExtendedInsurance && insuranceTotal > 0 && (
           <div className="flex justify-between text-emerald-800 font-bold bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200/60">
-            <span>Gói bảo vệ toàn diện 50M:</span>
+            <span>Gói bảo vệ toàn diện 50M ({durationMonths} tháng):</span>
             <span className="num text-emerald-800 font-black">
               +{formatVND(insuranceTotal)}
             </span>
@@ -139,6 +150,30 @@ export const BookingSummaryCard: React.FC<BookingSummaryCardProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Nút Call-To-Action đưa vào cột Tóm Tắt theo chuẩn UX Checkout SaaS */}
+      {showSubmitButton && (
+        <div className="pt-2 border-t border-slate-100">
+          <button
+            type="submit"
+            form="booking-customer-form"
+            disabled={isSubmitting || isCheckingAvailability || isButtonDisabled}
+            className="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl shadow-xs text-xs sm:text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 active:scale-95 cursor-pointer"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Đang kết nối cổng VNPay...</span>
+              </>
+            ) : (
+              <>
+                <span>Tiếp tục: Thanh toán VNPay &amp; Giữ chỗ {holdHours || 48}h</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

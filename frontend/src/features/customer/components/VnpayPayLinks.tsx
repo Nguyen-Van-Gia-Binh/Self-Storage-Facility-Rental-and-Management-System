@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CreditCard, Landmark, ExternalLink, Info, Zap } from 'lucide-react';
+import { CreditCard, Landmark, ExternalLink, Zap } from 'lucide-react';
 import { apiClient } from '@/api/client';
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || '/api/v1';
@@ -115,29 +115,25 @@ export function VnpayPayLinks({ orderCode, className = '' }: VnpayPayLinksProps)
           )}
         </button>
 
-        {/* Nút 3: Giả lập thanh toán nhanh */}
-        <div className="col-span-1 sm:col-span-2">
-          <button
-            type="button"
-            onClick={handleMockPay}
-            disabled={isMocking || redirectingBank !== null}
-            className="w-full px-3.5 py-3 rounded-2xl border-2 border-dashed border-amber-400 bg-amber-50/60 hover:bg-amber-100/70 hover:border-amber-500 transition-all text-left flex items-center justify-between shadow-2xs hover:shadow-xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed group"
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                <Zap className="w-4 h-4 fill-current" />
-              </div>
-              <h4 className="text-xs font-bold text-amber-950">
-                ⚡ Giả lập thanh toán nhanh
-              </h4>
+        {/* Nút 3: Giả lập thanh toán nhanh (Chỉ hiển thị môi trường DEV) */}
+        {import.meta.env.DEV && (
+          <div className="col-span-1 sm:col-span-2">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
+              <p className="text-xs text-amber-800 font-bold flex items-center gap-1.5">
+                <span>⚙️ CÔNG CỤ DÀNH CHO DEV/TESTER:</span>
+              </p>
+              <button
+                type="button"
+                onClick={handleMockPay}
+                disabled={isMocking || redirectingBank !== null}
+                className="text-xs bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded-lg shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <Zap className="w-3.5 h-3.5 fill-current" />
+                <span>{isMocking ? 'Đang xử lý...' : 'Giả lập thanh toán thành công'}</span>
+              </button>
             </div>
-            {isMocking ? (
-              <span className="text-xs font-bold text-amber-800 animate-pulse shrink-0 ml-2">Đang xử lý...</span>
-            ) : (
-              <span className="text-xs font-bold text-amber-700 group-hover:translate-x-0.5 transition-transform shrink-0 ml-2">Thanh toán ngay →</span>
-            )}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
 
       {mockError && (
@@ -145,18 +141,6 @@ export function VnpayPayLinks({ orderCode, className = '' }: VnpayPayLinksProps)
           {mockError}
         </div>
       )}
-
-      {/* Thông tin thẻ test NCB rút gọn */}
-      <div className="bg-amber-50/70 border border-amber-200/90 rounded-xl px-3 py-2 text-[11px] text-amber-900 flex items-center gap-2">
-        <Info className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-        <div className="font-mono flex flex-wrap gap-x-3 gap-y-0.5 text-amber-950">
-          <span className="font-sans font-semibold">Thẻ test NCB:</span>
-          <span>Số: <strong>9704198526191432198</strong></span>
-          <span>Tên: <strong>NGUYEN VAN A</strong></span>
-          <span>Ngày: <strong>07/15</strong></span>
-          <span>OTP: <strong>123456</strong></span>
-        </div>
-      </div>
     </div>
   );
 }
