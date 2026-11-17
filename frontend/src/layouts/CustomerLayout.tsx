@@ -9,7 +9,8 @@ import {
   LogOut,
   LayoutDashboard,
   Bell,
-  History
+  History,
+  Clock
 } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { tokenStorage, normalizeRole, type UserSession } from '@/utils/tokenStorage';
@@ -259,6 +260,14 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
                     )}
 
                     <div className="pt-1">
+                      <Link
+                        to="/customer/my-units?tab=waitlist"
+                        onClick={() => setIsDropdownOpen(false)}
+                        className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        <Clock className="w-4 h-4 text-slate-500" />
+                        <span>Danh sách chờ của tôi</span>
+                      </Link>
                       <Link
                         to="/customer/history"
                         onClick={() => setIsDropdownOpen(false)}

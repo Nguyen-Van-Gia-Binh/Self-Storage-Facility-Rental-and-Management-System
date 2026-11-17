@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Modal } from '@/components/ui/Modal';
 import { DateField } from '@/components/ui/DateField';
 import { Button } from '@/components/ui/Button';
@@ -152,13 +153,20 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
                 Yêu cầu của bạn đã được ghi nhận ưu tiên theo thứ tự đăng ký. Khi có ô kho trống, Quản lý cơ sở sẽ gọi điện tư vấn và giữ chỗ cho bạn.
               </p>
             </div>
-            <div className="pt-3">
+            <div className="pt-3 flex flex-col gap-2">
+              <Link
+                to="/customer/my-units?tab=waitlist"
+                onClick={handleClose}
+                className="w-full inline-flex items-center justify-center py-2.5 px-4 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg shadow-xs transition-colors"
+              >
+                Xem Danh sách chờ của tôi →
+              </Link>
               <Button
-                variant="primary"
-                className="w-full justify-center py-2.5 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
+                variant="outline"
+                className="w-full justify-center py-2 text-sm font-medium text-gray-700"
                 onClick={handleClose}
               >
-                Đã hiểu & Đóng
+                Đóng
               </Button>
             </div>
           </div>
@@ -298,7 +306,18 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
             {errorMsg && (
               <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
-                <span>{errorMsg}</span>
+                <div className="space-y-1">
+                  <span className="block">{errorMsg}</span>
+                  {errorMsg.includes('Danh sách chờ của tôi') && (
+                    <Link
+                      to="/customer/my-units?tab=waitlist"
+                      onClick={handleClose}
+                      className="inline-block font-semibold text-brand-700 hover:underline"
+                    >
+                      Mở Danh sách chờ của tôi →
+                    </Link>
+                  )}
+                </div>
               </div>
             )}
 
