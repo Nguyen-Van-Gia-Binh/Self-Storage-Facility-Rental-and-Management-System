@@ -135,6 +135,34 @@ describe('BOM Discount Program Management Components', () => {
       expect(screen.getByText('Ưu đãi cơ sở Cầu Giấy (10%)')).toBeInTheDocument();
       expect(screen.queryByText('Ưu đãi thuê từ 6 tháng (5%)')).not.toBeInTheDocument();
     });
+
+    it('hiển thị trạng thái gạt xem trước (optimistic) khi pendingToggleId trùng khớp và tự động hoàn lại khi hủy', () => {
+      const { rerender } = render(
+        <DiscountProgramTable
+          programs={mockPrograms}
+          onOpenModal={vi.fn()}
+          onEdit={vi.fn()}
+          onToggleStatus={vi.fn()}
+          pendingToggleId={2}
+        />
+      );
+
+      // Chương trình #2 vốn đang Tạm dừng (false), khi đang chờ xác nhận sẽ gạt sang bật (true)
+      const switches = screen.getAllByRole('switch');
+      expect(switches[1]).toHaveAttribute('aria-checked', 'true');
+
+      // Khi người dùng bấm Hủy bỏ -> pendingToggleId về null -> công tắc gạt ngược lại về false
+      rerender(
+        <DiscountProgramTable
+          programs={mockPrograms}
+          onOpenModal={vi.fn()}
+          onEdit={vi.fn()}
+          onToggleStatus={vi.fn()}
+          pendingToggleId={null}
+        />
+      );
+      expect(screen.getAllByRole('switch')[1]).toHaveAttribute('aria-checked', 'false');
+    });
   });
 
   describe('DiscountProgramModal', () => {

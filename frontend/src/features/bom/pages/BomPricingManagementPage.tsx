@@ -42,6 +42,7 @@ import { PolicySummaryCard } from '../components/PolicySummaryCard';
 import { PolicyDrawer } from '../components/PolicyDrawer';
 import { DiscountProgramTable } from '../components/DiscountProgramTable';
 import { DiscountProgramModal } from '../components/DiscountProgramModal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 type PricingTab = 'PRICING' | 'SURCHARGES' | 'POLICIES' | 'DISCOUNTS';
 
@@ -66,6 +67,8 @@ export const BomPricingManagementPage: React.FC = () => {
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState<DiscountProgramItem | null>(null);
   const [isSavingDiscount, setIsSavingDiscount] = useState(false);
+  const [pendingToggleDiscount, setPendingToggleDiscount] = useState<DiscountProgramItem | null>(null);
+  const [isTogglingDiscount, setIsTogglingDiscount] = useState(false);
 
   // Drawer Price Update State (Single & Bulk)
   const [priceDrawerUnitType, setPriceDrawerUnitType] = useState<UnitTypeCatalog | null>(null);
@@ -394,10 +397,15 @@ export const BomPricingManagementPage: React.FC = () => {
     }
   };
 
-  const handleToggleDiscountStatus = async (item: DiscountProgramItem) => {
-    const actionText = item.isActive ? 'Tạm dừng áp dụng' : 'Kích hoạt lại';
-    const confirmed = window.confirm(`${actionText} chương trình "${item.name}"?`);
-    if (!confirmed) return;
+  const handleToggleDiscountStatus = (item: DiscountProgramItem) => {
+    setPendingToggleDiscount(item);
+  };
+
+  const handleConfirmToggleDiscountStatus = async () => {
+    if (!pendingToggleDiscount) return;
+    const item = pendingToggleDiscount;
+    const actionText = item.isActive ? 'tạm dừng áp dụng' : 'kích hoạt lại';
+    setIsTogglingDiscount(true);
     try {
       await updateDiscountProgram(item.id, {
         name: item.name,
@@ -411,12 +419,15 @@ export const BomPricingManagementPage: React.FC = () => {
         unitTypeId: item.unitTypeId,
         isActive: !item.isActive,
       });
-      showToast(`Đã ${actionText.toLowerCase()} chương trình "${item.name}".`);
+      showToast(`Đã ${actionText} chương trình "${item.name}".`);
       const res = await fetchDiscountPrograms();
       setDiscountPrograms(res.content || []);
+      setPendingToggleDiscount(null);
     } catch (err: unknown) {
       const errorObj = err as { message?: string };
       showToast(errorObj.message || 'Không thay đổi được trạng thái', 'error');
+    } finally {
+      setIsTogglingDiscount(false);
     }
   };
 
@@ -599,6 +610,7 @@ export const BomPricingManagementPage: React.FC = () => {
             setIsDiscountModalOpen(true);
           }}
           onToggleStatus={handleToggleDiscountStatus}
+          pendingToggleId={pendingToggleDiscount?.id ?? null}
           onRefresh={async () => {
             setIsLoadingDiscounts(true);
             try {
@@ -681,6 +693,44 @@ export const BomPricingManagementPage: React.FC = () => {
           onSubmit={handleCreateUnitType}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(pendingToggleDiscount)}
+        title={
+          pendingToggleDiscount?.isActive
+            ? 'Tạm dừng chương trình khuyến mãi'
+            : 'Kích hoạt chương trình khuyến mãi'
+        }
+        description={
+          pendingToggleDiscount ? (
+            <>
+              Bạn có chắc chắn muốn{' '}
+              {pendingToggleDiscount.isActive ? 'tạm dừng áp dụng' : 'kích hoạt lại'} chương trình{' '}
+              <strong className="font-semibold text-gray-900">
+                "{pendingToggleDiscount.name}"
+              </strong>{' '}
+              không?
+            </>
+          ) : undefined
+        }
+        note={
+          pendingToggleDiscount?.isActive
+            ? 'Chương trình sẽ ngừng áp dụng cho các đơn đặt chỗ và hợp đồng mới. Các hợp đồng đã ký không bị ảnh hưởng.'
+            : 'Chương trình sẽ ngay lập tức được áp dụng cho các đơn đặt chỗ và hợp đồng đủ điều kiện.'
+        }
+        confirmLabel={
+          pendingToggleDiscount?.isActive ? 'Xác nhận tạm dừng' : 'Xác nhận kích hoạt'
+        }
+        cancelLabel="Hủy bỏ"
+        variant={pendingToggleDiscount?.isActive ? 'warning' : 'success'}
+        isLoading={isTogglingDiscount}
+        onConfirm={handleConfirmToggleDiscountStatus}
+        onCancel={() => {
+          if (!isTogglingDiscount) {
+            setPendingToggleDiscount(null);
+          }
+        }}
+      />
     </div>
   );
 };

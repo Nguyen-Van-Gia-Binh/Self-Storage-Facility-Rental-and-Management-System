@@ -1,81 +1,83 @@
 import React from 'react';
-import { Lock, Unlock, AlertCircle, Loader2, Info } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { Modal } from './Modal';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
   title: string;
-  description?: string;
+  description?: React.ReactNode;
+  note?: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  variant?: 'danger' | 'success' | 'info';
+  variant?: 'danger' | 'success' | 'warning' | 'info';
   icon?: 'lock' | 'unlock' | 'alert' | 'info';
   isLoading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-const VARIANT_CONFIG = {
-  danger: {
-    icon: Lock,
-    bg: 'bg-rose-50 text-rose-600',
-    button: 'bg-rose-600 hover:bg-rose-700',
-  },
-  success: {
-    icon: Unlock,
-    bg: 'bg-emerald-50 text-emerald-600',
-    button: 'bg-emerald-600 hover:bg-emerald-700',
-  },
-  info: {
-    icon: Info,
-    bg: 'bg-blue-50 text-blue-600',
-    button: 'bg-blue-600 hover:bg-blue-700',
-  },
+const CONFIRM_BUTTON_STYLES: Record<'danger' | 'success' | 'warning' | 'info', string> = {
+  danger: 'bg-rose-600 hover:bg-rose-700 text-white focus-visible:ring-rose-500/30',
+  success: 'bg-brand-600 hover:bg-brand-700 text-white focus-visible:ring-brand-500/30',
+  warning: 'bg-amber-600 hover:bg-amber-700 text-white focus-visible:ring-amber-500/30',
+  info: 'bg-brand-600 hover:bg-brand-700 text-white focus-visible:ring-brand-500/30',
 };
 
 export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   isOpen,
   title,
   description,
+  note,
   confirmLabel = 'Xác nhận',
   cancelLabel = 'Hủy bỏ',
   variant = 'info',
-  icon = 'info',
   isLoading = false,
   onConfirm,
   onCancel,
 }) => {
-  const config = VARIANT_CONFIG[variant];
-  const IconComponent = {
-    lock: Lock,
-    unlock: Unlock,
-    alert: AlertCircle,
-    info: Info,
-  }[icon];
+  const buttonStyle = CONFIRM_BUTTON_STYLES[variant];
 
   return (
-    <Modal isOpen={isOpen} showBackdrop>
-      <div className="p-6 space-y-4 max-w-sm w-full">
+    <Modal
+      isOpen={isOpen}
+      onClose={isLoading ? undefined : onCancel}
+      showBackdrop
+      className="!rounded-lg !shadow-xl !border-gray-200 max-w-md w-full"
+    >
+      <div role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
         {/* Header */}
-        <div className="flex items-start gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${config.bg}`}>
-            <IconComponent className="w-5 h-5" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-base font-bold text-slate-900">{title}</h3>
-            {description && (
-              <p className="mt-1 text-sm text-slate-600">{description}</p>
-            )}
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-2.5 pt-2">
+        <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-gray-200">
+          <h3 id="confirm-dialog-title" className="text-base font-semibold text-gray-900 leading-snug">
+            {title}
+          </h3>
           <button
             type="button"
             onClick={onCancel}
             disabled={isLoading}
-            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50"
+            aria-label="Đóng hộp thoại"
+            className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-5 py-4 space-y-2.5">
+          {description && (
+            <div className="text-sm text-gray-700 leading-relaxed">{description}</div>
+          )}
+          {note && (
+            <p className="text-xs text-gray-500 leading-relaxed">{note}</p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2.5 px-5 py-3.5 bg-gray-50/70 border-t border-gray-200 rounded-b-lg">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isLoading}
+            className="px-3.5 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 rounded-md transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {cancelLabel}
           </button>
@@ -83,7 +85,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
-            className={`px-4 py-2 text-xs font-semibold text-white rounded-xl shadow-md transition-all flex items-center gap-2 disabled:opacity-50 ${config.button}`}
+            className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 disabled:opacity-60 disabled:cursor-not-allowed ${buttonStyle}`}
           >
             {isLoading ? (
               <>

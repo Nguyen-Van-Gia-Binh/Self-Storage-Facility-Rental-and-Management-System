@@ -10,6 +10,7 @@ interface DiscountProgramTableProps {
   onToggleStatus: (item: DiscountProgramItem) => void;
   onRefresh?: () => void;
   isLoading?: boolean;
+  pendingToggleId?: number | null;
 }
 
 type StatusFilter = 'ALL' | 'ACTIVE' | 'INACTIVE';
@@ -54,6 +55,7 @@ export const DiscountProgramTable: React.FC<DiscountProgramTableProps> = ({
   onToggleStatus,
   onRefresh,
   isLoading = false,
+  pendingToggleId = null,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
@@ -318,37 +320,44 @@ export const DiscountProgramTable: React.FC<DiscountProgramTableProps> = ({
                       </td>
                     )}
 
-                    {/* Cột Trạng thái: Toggle Switch 1-click trực tiếp */}
+                    {/* Cột Trạng thái: Toggle Switch 1-click trực tiếp (optimistic preview + tự hoàn lại khi hủy) */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
-                      <div className="inline-flex items-center gap-2.5">
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={item.isActive}
-                          aria-label={
-                            item.isActive
-                              ? `Tạm dừng ${item.name}`
-                              : `Kích hoạt ${item.name}`
-                          }
-                          onClick={() => onToggleStatus(item)}
-                          className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500/30 ${
-                            item.isActive ? 'bg-emerald-600' : 'bg-gray-300'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-2xs ${
-                              item.isActive ? 'translate-x-4.5' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                        <span
-                          className={`text-xs font-medium ${
-                            item.isActive ? 'text-emerald-700' : 'text-gray-500'
-                          }`}
-                        >
-                          {item.isActive ? 'Đang áp dụng' : 'Tạm dừng'}
-                        </span>
-                      </div>
+                      {(() => {
+                        const isPendingToggle = pendingToggleId === item.id;
+                        const visualActive = isPendingToggle ? !item.isActive : item.isActive;
+                        return (
+                          <div className="inline-flex items-center gap-2.5">
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={visualActive}
+                              aria-label={
+                                item.isActive
+                                  ? `Tạm dừng ${item.name}`
+                                  : `Kích hoạt ${item.name}`
+                              }
+                              disabled={isPendingToggle}
+                              onClick={() => onToggleStatus(item)}
+                              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 disabled:cursor-wait ${
+                                visualActive ? 'bg-brand-600' : 'bg-gray-300'
+                              }`}
+                            >
+                              <span
+                                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-2xs ${
+                                  visualActive ? 'translate-x-4.5' : 'translate-x-1'
+                                }`}
+                              />
+                            </button>
+                            <span
+                              className={`text-xs font-medium ${
+                                visualActive ? 'text-emerald-700' : 'text-gray-500'
+                              }`}
+                            >
+                              {visualActive ? 'Đang áp dụng' : 'Tạm dừng'}
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </td>
 
                     {/* Thao tác gọn, hạn chế icon */}
