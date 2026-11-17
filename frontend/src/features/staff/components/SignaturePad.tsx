@@ -167,7 +167,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between text-xs text-slate-500">
+      <div className="flex items-center justify-between text-xs text-gray-500">
         <span className="flex items-center gap-1 font-medium">
           <PenLine className="w-3.5 h-3.5 text-brand-600" />
           Ký trực tiếp bằng ngón tay / bút cảm ứng hoặc chuột
@@ -177,7 +177,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
             type="button"
             onClick={handleSampleSignature}
             disabled={disabled}
-            className="text-brand-600 hover:text-brand-700 font-medium px-2 py-0.5 rounded hover:bg-brand-50 transition-colors cursor-pointer"
+            className="text-brand-600 hover:text-brand-700 font-medium px-2 py-0.5 rounded hover:bg-brand-50 transition-colors cursor-pointer text-xs"
           >
             Ký mẫu nhanh
           </button>
@@ -185,7 +185,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
             type="button"
             onClick={handleClear}
             disabled={disabled || !hasSignature}
-            className="flex items-center gap-1 text-slate-500 hover:text-red-600 disabled:opacity-40 disabled:cursor-not-allowed font-medium px-2 py-0.5 rounded hover:bg-slate-100 transition-colors cursor-pointer"
+            className="flex items-center gap-1 text-gray-400 hover:text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed font-medium px-2 py-0.5 rounded hover:bg-gray-100 transition-colors cursor-pointer text-xs"
           >
             <Eraser className="w-3 h-3" />
             Xóa
@@ -193,11 +193,11 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
         </div>
       </div>
 
-      <div className="relative border border-slate-200 bg-slate-50 rounded-lg overflow-hidden h-36">
+      <div className="relative border border-gray-200 bg-gray-50 rounded-lg overflow-hidden h-28 sm:h-32">
         <canvas
           ref={canvasRef}
           className={`w-full h-full touch-none ${
-            disabled ? 'cursor-not-allowed bg-slate-50' : 'cursor-crosshair'
+            disabled ? 'cursor-not-allowed bg-gray-50' : 'cursor-crosshair'
           }`}
           onMouseDown={startDrawing}
           onMouseMove={draw}
@@ -209,12 +209,12 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
         />
 
         {/* Đường gạch ngang mờ đánh dấu vị trí ký */}
-        <div className="absolute bottom-6 left-6 right-6 border-b border-slate-200 pointer-events-none flex items-center justify-between text-[11px] text-slate-400">
+        <div className="absolute bottom-4 left-6 right-6 border-b border-gray-200 pointer-events-none flex items-center justify-between text-[11px] text-gray-400">
           <span>Khách hàng ký & ghi rõ họ tên</span>
           {hasSignature && (
-            <span className="flex items-center gap-1 text-emerald-600 font-semibold">
+            <span className="flex items-center gap-1 text-emerald-600 font-medium text-xs">
               <Check className="w-3.5 h-3.5" />
-              Đã ghi nhận chữ ký
+              ✓ Đã ghi nhận chữ ký
             </span>
           )}
         </div>

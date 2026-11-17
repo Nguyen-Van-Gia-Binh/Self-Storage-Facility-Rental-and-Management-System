@@ -183,18 +183,17 @@ export const EvidencePhotoCapture: React.FC<EvidencePhotoCaptureProps> = ({
   const canAddMore = photos.length < maxPhotos;
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3">
       {/* Header Label */}
       {label && (
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-            <Camera className="w-3.5 h-3.5 text-teal-600" />
+          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
             <span>
               {label} {required && <span className="text-rose-500">*</span>}
             </span>
           </label>
           {maxPhotos > 1 && (
-            <span className="text-[11px] font-semibold text-slate-400">
+            <span className="text-[11px] font-semibold text-gray-400">
               {photos.length}/{maxPhotos} ảnh
             </span>
           )}
@@ -219,35 +218,35 @@ export const EvidencePhotoCapture: React.FC<EvidencePhotoCaptureProps> = ({
         className="hidden"
       />
 
-      {/* Khu vực điều khiển Chụp Camera & Tải ảnh */}
-      <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200/90 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2.5">
+      {/* Khu vực điều khiển Chụp Camera & Tải ảnh (Làm phẳng, bỏ khung viền lồng nhau) */}
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            {/* Nút 1: Kích hoạt Camera trước để chụp trực tiếp */}
+            {/* Nút 1: Kích hoạt Camera trực tiếp */}
             <button
               type="button"
               onClick={handleOpenCamera}
               disabled={!canAddMore}
-              className="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs transition cursor-pointer disabled:opacity-50"
+              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-lg inline-flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
             >
-              <Camera className="w-4 h-4" />
-              <span>{photos.length > 0 && maxPhotos === 1 ? 'Chụp lại bằng Camera' : 'Mở Camera chụp ảnh'}</span>
+              <Camera className="w-3.5 h-3.5 text-gray-600" />
+              <span>{photos.length > 0 && maxPhotos === 1 ? 'Chụp lại bằng Camera' : 'Mở Camera'}</span>
             </button>
 
-            {/* Nút 2: Chọn file ảnh có sẵn từ máy tính / điện thoại */}
+            {/* Nút 2: Tải ảnh từ thiết bị */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={!canAddMore}
-              className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-lg inline-flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
             >
-              <Upload className="w-3.5 h-3.5 text-slate-500" />
-              <span>Tải ảnh từ thiết bị</span>
+              <Upload className="w-3.5 h-3.5 text-gray-600" />
+              <span>Tải ảnh</span>
             </button>
           </div>
 
           {helperText && (
-            <span className="text-[11px] text-slate-500">{helperText}</span>
+            <span className="text-[11px] text-gray-400">{helperText}</span>
           )}
         </div>
 
@@ -257,7 +256,7 @@ export const EvidencePhotoCapture: React.FC<EvidencePhotoCaptureProps> = ({
             {photos.map((url, idx) => (
               <div
                 key={idx}
-                className="relative group rounded-xl overflow-hidden border border-slate-200 bg-white aspect-4/3 shadow-2xs"
+                className="relative group rounded-lg overflow-hidden border border-gray-200 bg-white aspect-4/3 shadow-2xs"
               >
                 <img
                   src={url}
@@ -284,12 +283,10 @@ export const EvidencePhotoCapture: React.FC<EvidencePhotoCaptureProps> = ({
         ) : (
           <div
             onClick={handleOpenCamera}
-            className="border border-dashed border-slate-300 rounded-xl bg-white/80 hover:bg-teal-50/30 hover:border-teal-400 transition py-4 px-3 flex items-center justify-center gap-2.5 text-xs text-slate-500 cursor-pointer"
+            className="border-2 border-dashed border-gray-200 rounded-lg h-24 flex items-center justify-center bg-gray-50/80 text-gray-400 text-xs cursor-pointer hover:bg-gray-100/70 transition gap-2"
           >
-            <ImageIcon className="w-4 h-4 text-slate-400 shrink-0" />
-            <span>
-              Chưa có ảnh hiện trường — Bấm <strong>Mở Camera chụp ảnh</strong> để kích hoạt webcam/camera trước hoặc chọn ảnh từ máy.
-            </span>
+            <ImageIcon className="w-4 h-4 text-gray-400 shrink-0" />
+            <span>Chưa có ảnh — Bấm Mở Camera hoặc Tải ảnh từ thiết bị</span>
           </div>
         )}
       </div>
