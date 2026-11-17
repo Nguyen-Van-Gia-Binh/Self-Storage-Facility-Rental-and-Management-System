@@ -321,7 +321,7 @@ export const AllocationPage: React.FC = () => {
           originalDefectiveUnitCode: c.storageUnitCode,
           assignedStaffId: c.assignedStaffId,
           assignedStaffName: c.assignedStaffName,
-          isAssigned: true,
+          isAssigned: false,
         }));
 
       const merged = [...pendingContractAllocations, ...pendingRsv, ...relocationContracts]
@@ -652,7 +652,7 @@ export const AllocationPage: React.FC = () => {
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Chưa gán ô ({unassignedCount})
+                Chưa gán ô / Cần đổi ({unassignedCount})
               </button>
               <button
                 type="button"
@@ -777,10 +777,17 @@ export const AllocationPage: React.FC = () => {
                       {/* Cột 4: Trạng thái */}
                       <td className="px-4 py-3.5">
                         {row.kind === 'CONTRACT_RELOCATION' ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse" />
-                            Gán lại ô kho
-                          </span>
+                          <div className="flex flex-col gap-1 items-start">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse" />
+                              Khách báo sự cố (Cần đổi ô)
+                            </span>
+                            {row.assignedStaffName && (
+                              <span className="text-[11px] text-slate-500 font-medium">
+                                NV: {row.assignedStaffName}
+                              </span>
+                            )}
+                          </div>
                         ) : row.isAssigned ? (
                           <div className="flex flex-col gap-1 items-start">
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
@@ -811,7 +818,7 @@ export const AllocationPage: React.FC = () => {
                               : 'bg-brand-600 hover:bg-brand-700 text-white'
                           }`}
                         >
-                          {row.isAssigned ? (
+                          {row.isAssigned && row.kind !== 'CONTRACT_RELOCATION' ? (
                             <RefreshCw className="w-3.5 h-3.5 text-white" />
                           ) : (
                             <MapPin className="w-3.5 h-3.5 text-white" />
