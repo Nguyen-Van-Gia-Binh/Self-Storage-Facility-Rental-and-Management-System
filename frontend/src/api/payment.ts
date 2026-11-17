@@ -33,6 +33,7 @@ export interface CheckoutResult {
   accountNumber?: string;
   bin?: string;
   status?: string;
+  expiresAt?: string;
 }
 
 export interface PaymentStatusResult {
@@ -41,6 +42,8 @@ export interface PaymentStatusResult {
   amount: number;
   status: 'PENDING' | 'PAID' | 'SUCCESS' | 'CANCELLED' | 'EXPIRED' | 'FAILED';
   paidAt?: string;
+  createdAt?: string;
+  expiresAt?: string;
   referenceType: string;
   referenceId: number;
   transactionRef?: string;

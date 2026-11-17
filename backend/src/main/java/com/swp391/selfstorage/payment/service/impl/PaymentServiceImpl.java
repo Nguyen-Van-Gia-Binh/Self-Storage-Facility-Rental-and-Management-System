@@ -205,6 +205,7 @@ public class PaymentServiceImpl implements PaymentService {
                                     .accountNumber(reused.getAccountNumber())
                                     .bin(reused.getBin())
                                     .status("PENDING")
+                                    .expiresAt(expiresAt)
                                     .build();
                         } else {
                             // Số tháng khác - hủy giao dịch cũ
@@ -335,6 +336,7 @@ public class PaymentServiceImpl implements PaymentService {
                                 .accountNumber(reused.getAccountNumber())
                                 .bin(reused.getBin())
                                 .status("PENDING")
+                                .expiresAt(expiresAt)
                                 .build();
                     } else {
                         txn.setStatus("FAILED");
@@ -366,6 +368,8 @@ public class PaymentServiceImpl implements PaymentService {
                                 .amount(txn.getAmount())
                                 .description(txn.getProviderReference() != null ? txn.getProviderReference() : ("HD" + contract.getId()))
                                 .build());
+                Instant reusedExpiresAt = (txn.getCreatedAt() != null ? txn.getCreatedAt() : Instant.now())
+                        .plus(activeHoldHours(), java.time.temporal.ChronoUnit.HOURS);
                 return CheckoutResponse.builder()
                         .orderCode(reused.getOrderCode())
                         .checkoutUrl(reused.getCheckoutUrl())
@@ -376,6 +380,7 @@ public class PaymentServiceImpl implements PaymentService {
                         .accountNumber(reused.getAccountNumber())
                         .bin(reused.getBin())
                         .status("PENDING")
+                        .expiresAt(reusedExpiresAt)
                         .build();
             }
 
@@ -420,7 +425,11 @@ public class PaymentServiceImpl implements PaymentService {
                 .rescheduledStartDate(storedRescheduledStartDate)
                 .build();
 
-        paymentTransactionRepository.save(payment);
+        PaymentTransaction savedPayment = paymentTransactionRepository.save(payment);
+        Instant baseCreatedAt = savedPayment != null && savedPayment.getCreatedAt() != null
+                ? savedPayment.getCreatedAt()
+                : Instant.now();
+        Instant expiresAt = baseCreatedAt.plus(activeHoldHours(), java.time.temporal.ChronoUnit.HOURS);
 
         return CheckoutResponse.builder()
                 .orderCode(orderCode)
@@ -432,6 +441,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .accountNumber(checkoutResult.getAccountNumber())
                 .bin(checkoutResult.getBin())
                 .status("PENDING")
+                .expiresAt(expiresAt)
                 .build();
     }
 
@@ -619,7 +629,11 @@ private void publishContractRenewalCompleted(PaymentTransaction payment) {
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND,
                         "Không tìm thấy giao dịch với orderCode=" + orderCode));
         assertPayer(payment.getReservationId(), payment.getContractId());
-        return paymentMapper.toResponse(payment);
+        PaymentResponse response = paymentMapper.toResponse(payment);
+        if (payment.getCreatedAt() != null) {
+            response.setExpiresAt(payment.getCreatedAt().plus(activeHoldHours(), java.time.temporal.ChronoUnit.HOURS));
+        }
+        return response;
     }
 
     @Override

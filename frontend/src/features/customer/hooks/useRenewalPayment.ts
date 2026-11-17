@@ -10,7 +10,7 @@ interface UseRenewalPaymentParams {
   contract: RentedContract | null;
   currentStep: 1 | 2 | 3;
   renewalMonths: number;
-  /** Thời gian giữ lệnh thanh toán (giờ) theo BOM Policy; 0 = tính theo contract.pendingRenewalExpiresAt */
+  /** Thời gian giữ lệnh thanh toán (giờ) theo BOM Policy; chỉ dùng khi server không trả expiresAt */
   holdHours: number;
   /** orderCode từ URL (?orderCode=...) — khôi phục phiên thanh toán khi reload */
   urlOrderCode: string | null;
@@ -20,14 +20,22 @@ interface UseRenewalPaymentParams {
   onRenewalApplied: (updated: RentedContract) => void;
   /** Yêu cầu page reset về Bước 1 sau khi hủy lệnh thanh toán */
   onRequestStepReset: () => void;
+  /** Đồng bộ orderCode lên URL khi khởi tạo phiên Bước 3 để F5 / quay lại giữ nguyên đồng hồ real-time */
+  onOrderCodeReady?: (orderCode: number) => void;
+}
+
+function parseValidDate(iso?: string | null): Date | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
 /**
  * Khối thanh toán gia hạn qua VNPay Sandbox Napas247 (SC-03, BR-REN-04/05).
- * - Khởi tạo lệnh thanh toán CONTRACT_RENEWAL khi vào Bước 3
- * - Polling trạng thái mỗi 2.5s, countdown 48h, sandbox dev bar, hủy lệnh
- * - Khi tất toán: đọc hạn mới đã áp dụng (BR-REN-04) → kích hoạt hợp đồng + E-Receipt
- * Tách từ `RenewalPage` để page chỉ còn giữ navigation + JSX.
+ * - Khởi tạo / tái sử dụng lệnh thanh toán CONTRACT_RENEWAL khi vào Bước 3
+ * - Đồng bộ real-time `expiresAt` trực tiếp từ Server DB (CheckoutResponse / PaymentStatus / contract.pendingRenewalExpiresAt)
+ *   để thoát ra vào lại hoặc F5 KHÔNG bao giờ bị reset đồng hồ
+ * - Polling trạng thái mỗi 2.5s, hủy lệnh, kích hoạt hợp đồng + E-Receipt
  */
 export function useRenewalPayment({
   contract,
@@ -38,8 +46,8 @@ export function useRenewalPayment({
   onCapacityConflict,
   onRenewalApplied,
   onRequestStepReset,
+  onOrderCodeReady,
 }: UseRenewalPaymentParams) {
-
   // --- State: lệnh thanh toán & đối soát ---
   const [checkoutData, setCheckoutData] = useState<CheckoutResponse | null>(() => {
     return urlOrderCode ? ({ orderCode: Number(urlOrderCode) } as CheckoutResponse) : null;
@@ -60,16 +68,32 @@ export function useRenewalPayment({
   } | null>(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
 
-  // --- State: countdown 48h ---
-  const [countdownSeconds, setCountdownSeconds] = useState(0);
-  const [paymentExpiresAt, setPaymentExpiresAt] = useState<Date | null>(null);
+  // --- State: countdown real-time theo mốc expiresAt của server ---
+  const [serverStatusExpiresAt, setServerStatusExpiresAt] = useState<string | null>(null);
+  const [fallbackExpiresAt, setFallbackExpiresAt] = useState<Date | null>(null);
+  const [nowMs, setNowMs] = useState<number>(() => Date.now());
 
-  // --- State: sandbox dev + hủy lệnh ---
+  // --- State: hủy lệnh ---
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
   // --- State: copy thông tin tài khoản ---
   const [copiedBankInfo, setCopiedBankInfo] = useState<string | null>(null);
+
+  // Đồng bộ orderCode từ contract.pendingRenewalOrderCode nếu người dùng rời trang và quay lại /customer/renew/:id
+  useEffect(() => {
+    if (
+      currentStep === 3 &&
+      !checkoutData?.orderCode &&
+      contract?.hasPendingRenewal &&
+      contract?.pendingRenewalOrderCode
+    ) {
+      setCheckoutData({
+        orderCode: contract.pendingRenewalOrderCode,
+        expiresAt: contract.pendingRenewalExpiresAt,
+      } as CheckoutResponse);
+    }
+  }, [currentStep, checkoutData?.orderCode, contract]);
 
   // Đọc hạn mới do backend ghi một lần khi thanh toán thành công (BR-REN-04).
   const executeRenewalActivation = useCallback(async () => {
@@ -84,7 +108,7 @@ export function useRenewalPayment({
       const updatedContract: RentedContract = {
         ...(refreshed || contract),
         endDate,
-        status: (refreshed?.status || contract.status),
+        status: refreshed?.status || contract.status,
         overdueDays: 0,
         overdueFee: 0,
       };
@@ -111,7 +135,7 @@ export function useRenewalPayment({
     }
   }, [contract, onRenewalApplied]);
 
-  // Khởi tạo link thanh toán VNPay Sandbox khi chuyển sang Bước 3
+  // Khởi tạo / tái sử dụng link thanh toán VNPay Sandbox khi chuyển sang Bước 3
   useEffect(() => {
     if (currentStep !== 3 || !contract || checkoutData?.orderCode) return;
 
@@ -142,6 +166,9 @@ export function useRenewalPayment({
 
         if (isMounted) {
           setCheckoutData(checkout);
+          if (checkout.orderCode && onOrderCodeReady) {
+            onOrderCodeReady(checkout.orderCode);
+          }
         }
       } catch (err: unknown) {
         console.warn('Lỗi khởi tạo VNPay cho hợp đồng:', err);
@@ -171,13 +198,55 @@ export function useRenewalPayment({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, contract, renewalMonths]);
 
-  // Kiểm tra thanh toán chủ động (Nút "Tôi đã hoàn tất chuyển khoản")
+  // Kiểm tra trạng thái thanh toán & đồng bộ expiresAt ngay khi vào Bước 3 + Polling mỗi 2.5s
+  useEffect(() => {
+    if (currentStep !== 3 || !checkoutData?.orderCode || isPaidSuccess) return;
+
+    let cancelled = false;
+    const syncPaymentStatus = async () => {
+      try {
+        const statusRes = await customerApi.getPaymentStatus(checkoutData.orderCode);
+        if (cancelled) return;
+
+        if (statusRes.expiresAt) {
+          setServerStatusExpiresAt(statusRes.expiresAt);
+        } else if (statusRes.createdAt && holdHours > 0) {
+          const created = parseValidDate(statusRes.createdAt);
+          if (created) {
+            setServerStatusExpiresAt(
+              new Date(created.getTime() + holdHours * 60 * 60 * 1000).toISOString()
+            );
+          }
+        }
+
+        if (statusRes.status === 'SUCCESS') {
+          setIsPaidSuccess(true);
+          executeRenewalActivation();
+        }
+      } catch {
+        // Tiếp tục polling
+      }
+    };
+
+    syncPaymentStatus();
+    const interval = setInterval(syncPaymentStatus, 2500);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [currentStep, checkoutData?.orderCode, isPaidSuccess, holdHours, executeRenewalActivation]);
+
+  // Kiểm tra thanh toán chủ động
   const handleCheckPaymentAndRenew = async () => {
     if (!checkoutData?.orderCode) return;
     setIsVerifying(true);
     setPaymentNotice(null);
     try {
       const statusRes = await customerApi.getPaymentStatus(checkoutData.orderCode);
+      if (statusRes.expiresAt) {
+        setServerStatusExpiresAt(statusRes.expiresAt);
+      }
       if (statusRes.status === 'SUCCESS') {
         setIsPaidSuccess(true);
         await executeRenewalActivation();
@@ -192,55 +261,63 @@ export function useRenewalPayment({
     }
   };
 
-  // Polling tự động kiểm tra trạng thái thanh toán mỗi 2.5 giây khi ở Bước 3
+  // Mốc hết hạn thực từ server (ưu tiên tuyệt đối dữ liệu server, không bao giờ bị race-condition reset về Date.now() + holdHours)
+  const authoritativeExpiresAt = useMemo(() => {
+    return (
+      parseValidDate(checkoutData?.expiresAt) ||
+      parseValidDate(serverStatusExpiresAt) ||
+      parseValidDate(contract?.pendingRenewalExpiresAt)
+    );
+  }, [checkoutData?.expiresAt, serverStatusExpiresAt, contract?.pendingRenewalExpiresAt]);
+
+  // Fallback chỉ chạy khi đã có contract & checkoutData xong mà server không trả trường expiresAt (ví dụ test mock cũ)
   useEffect(() => {
-    if (currentStep !== 3 || !checkoutData?.orderCode || isPaidSuccess) return;
-
-    const interval = setInterval(async () => {
-      try {
-        const statusRes = await customerApi.getPaymentStatus(checkoutData.orderCode);
-        if (statusRes.status === 'SUCCESS') {
-          clearInterval(interval);
-          setIsPaidSuccess(true);
-          executeRenewalActivation();
-        }
-      } catch {
-        // Tiếp tục polling
-      }
-    }, 2500);
-
-    return () => clearInterval(interval);
-  }, [currentStep, checkoutData?.orderCode, isPaidSuccess, executeRenewalActivation]);
-
-  // Cập nhật paymentExpiresAt khi checkoutData được khởi tạo
-  useEffect(() => {
-    if (currentStep === 3 && checkoutData?.orderCode && !paymentExpiresAt) {
-      if (contract?.pendingRenewalExpiresAt) {
-        setPaymentExpiresAt(new Date(contract.pendingRenewalExpiresAt));
-      } else {
-        const hours = holdHours > 0 ? holdHours : 0;
-        if (hours > 0) {
-          setPaymentExpiresAt(new Date(Date.now() + hours * 60 * 60 * 1000));
-        }
-      }
+    if (authoritativeExpiresAt) {
+      setFallbackExpiresAt(null);
+      return;
     }
-  }, [currentStep, checkoutData, contract, paymentExpiresAt, holdHours]);
+    if (
+      currentStep === 3 &&
+      checkoutData?.orderCode &&
+      contract &&
+      !isLoadingCheckout &&
+      !fallbackExpiresAt &&
+      holdHours > 0
+    ) {
+      setFallbackExpiresAt(new Date(Date.now() + holdHours * 60 * 60 * 1000));
+    }
+  }, [
+    authoritativeExpiresAt,
+    currentStep,
+    checkoutData?.orderCode,
+    contract,
+    isLoadingCheckout,
+    fallbackExpiresAt,
+    holdHours,
+  ]);
 
-  // Bộ đếm ngược thời gian thanh toán VNPay (48 giờ)
+  const effectiveExpiresAt = authoritativeExpiresAt || fallbackExpiresAt;
+
+  // Bộ đếm ngược thời gian thực tính đồng bộ theo effectiveExpiresAt - nowMs (không nhấp nháy 00:00:00 khi mount)
   useEffect(() => {
-    if (currentStep !== 3 || !paymentExpiresAt) return;
+    if (currentStep !== 3 || !effectiveExpiresAt) return;
 
-    // Khởi tạo ngay lập tức
-    const calcRemaining = () => Math.max(0, Math.floor((paymentExpiresAt.getTime() - Date.now()) / 1000));
-    setCountdownSeconds(calcRemaining());
-
+    setNowMs(Date.now());
     const timer = setInterval(() => {
-      setCountdownSeconds(calcRemaining());
+      setNowMs(Date.now());
     }, 1000);
     return () => clearInterval(timer);
-  }, [currentStep, paymentExpiresAt]);
+  }, [currentStep, effectiveExpiresAt]);
 
-  // Format đếm ngược dạng đồng hồ giờ:phút:giây (hh:mm:ss) thay cho chữ
+  const countdownSeconds = effectiveExpiresAt
+    ? Math.max(0, Math.floor((effectiveExpiresAt.getTime() - nowMs) / 1000))
+    : 0;
+
+  const isSessionExpired = Boolean(
+    currentStep === 3 && effectiveExpiresAt && effectiveExpiresAt.getTime() <= nowMs && !isPaidSuccess
+  );
+
+  // Format đếm ngược dạng đồng hồ giờ:phút:giây (hh:mm:ss)
   const formatCountdown = (secs: number) => {
     const s = Math.max(0, secs);
     const hours = Math.floor(s / 3600);
@@ -269,7 +346,8 @@ export function useRenewalPayment({
 
   const resetPaymentOrder = () => {
     setCheckoutData(null);
-    setPaymentExpiresAt(null);
+    setServerStatusExpiresAt(null);
+    setFallbackExpiresAt(null);
   };
 
   // --- Nội dung chuyển khoản + copy ---
@@ -297,8 +375,9 @@ export function useRenewalPayment({
     isCancelling,
     showCancelDialog,
     setShowCancelDialog,
-    // Countdown
+    // Countdown real-time
     countdownSeconds,
+    isSessionExpired,
     formatCountdown,
     // Kích hoạt + E-Receipt
     isProcessing,

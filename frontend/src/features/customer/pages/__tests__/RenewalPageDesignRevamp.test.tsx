@@ -86,7 +86,8 @@ describe('RenewalPage & RenewalExpiryBanner — Chuẩn hóa luồng Gia hạn 3
 
     // Khung đếm ngược 1 lớp viền duy nhất (không còn khung lồng bg-amber-100/80 border-amber-300/60)
     expect(content).not.toContain('border-amber-300/60');
-    expect(content).toContain('inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg');
+    expect(content).toContain('inline-flex items-center gap-2 px-3 py-1.5 border rounded-lg');
+    expect(content).toContain('bg-amber-50 border-amber-200');
 
     // Không còn khối hồng chèn ngang phá vỡ layout footer; dùng Ghost button + Modal xác nhận
     expect(content).not.toContain('flex flex-wrap items-center gap-2 p-3 bg-rose-50 border border-rose-200');

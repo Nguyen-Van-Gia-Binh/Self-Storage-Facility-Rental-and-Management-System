@@ -86,6 +86,19 @@ export const RenewalPage: React.FC = () => {
         if (!isMounted) return;
         const found = contracts.find((c) => c.id === contractId) || null;
         setContract(found);
+        // Nếu khách thoát ra rồi quay lại trang gia hạn khi vẫn còn phiên thanh toán PENDING còn hạn,
+        // tự động khôi phục thẳng vào Bước 3 với đúng kỳ hạn & mốc đếm ngược real-time từ server
+        if (found?.hasPendingRenewal && found?.pendingRenewalOrderCode) {
+          const expMs = found.pendingRenewalExpiresAt
+            ? new Date(found.pendingRenewalExpiresAt).getTime()
+            : null;
+          if (!expMs || expMs > Date.now()) {
+            if (found.pendingRenewalMonths && found.pendingRenewalMonths > 0) {
+              setRenewalMonths(found.pendingRenewalMonths);
+            }
+            setCurrentStep(3);
+          }
+        }
         setLoading(false);
       })
       .catch((err) => {
@@ -124,6 +137,9 @@ export const RenewalPage: React.FC = () => {
       setCurrentStep(1);
       navigate(`/customer/renew/${contractId}`, { replace: true });
     },
+    onOrderCodeReady: (orderCode) => {
+      navigate(`/customer/renew/${contractId}?step=3&orderCode=${orderCode}`, { replace: true });
+    },
   });
 
   const {
@@ -137,6 +153,7 @@ export const RenewalPage: React.FC = () => {
     showCancelDialog,
     setShowCancelDialog,
     countdownSeconds,
+    isSessionExpired,
     formatCountdown,
     isProcessing,
     renewalResult,
@@ -827,10 +844,30 @@ export const RenewalPage: React.FC = () => {
                   Gia hạn hợp đồng #{contract.contractNumber} thêm {renewalMonths} tháng
                 </p>
               </div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg shrink-0">
-                <Clock className="w-4 h-4 text-amber-600 shrink-0" />
-                <span className="text-sm font-medium text-amber-800">Hiệu lực phiên giao dịch:</span>
-                <span className="text-sm font-bold text-amber-900 tabular-nums tracking-wider">
+              <div
+                className={`inline-flex items-center gap-2 px-3 py-1.5 border rounded-lg shrink-0 ${
+                  isSessionExpired
+                    ? 'bg-rose-50 border-rose-200'
+                    : 'bg-amber-50 border-amber-200'
+                }`}
+              >
+                <Clock
+                  className={`w-4 h-4 shrink-0 ${
+                    isSessionExpired ? 'text-rose-600' : 'text-amber-600'
+                  }`}
+                />
+                <span
+                  className={`text-sm font-medium ${
+                    isSessionExpired ? 'text-rose-800' : 'text-amber-800'
+                  }`}
+                >
+                  {isSessionExpired ? 'Phiên giao dịch đã hết hạn:' : 'Hiệu lực phiên giao dịch:'}
+                </span>
+                <span
+                  className={`text-sm font-bold tabular-nums tracking-wider ${
+                    isSessionExpired ? 'text-rose-900' : 'text-amber-900'
+                  }`}
+                >
                   {formatCountdown(countdownSeconds)}
                 </span>
               </div>
@@ -968,7 +1005,7 @@ export const RenewalPage: React.FC = () => {
 
                     <button
                       type="button"
-                      disabled={isProcessing || isPaidSuccess || isRedirectingVnpay || !checkoutData?.orderCode}
+                      disabled={isProcessing || isPaidSuccess || isRedirectingVnpay || !checkoutData?.orderCode || isSessionExpired}
                       onClick={() => {
                         if (!checkoutData?.orderCode) return;
                         setIsRedirectingVnpay(true);
