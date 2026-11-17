@@ -428,7 +428,7 @@ export const BomPricingManagementPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4 max-w-[1600px] mx-auto pb-12 animate-fade-in">
+    <div className="space-y-3 max-w-[1600px] mx-auto pb-12 animate-fade-in">
       {/* Toast Alert */}
       {toastMessage && (
         <div
