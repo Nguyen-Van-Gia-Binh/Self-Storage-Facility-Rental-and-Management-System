@@ -29,7 +29,9 @@ import {
   AlertOctagon,
   RefreshCw,
   XCircle,
+  Camera,
 } from 'lucide-react';
+import pixelStandardImg from '@/assets/images/pixel-standard-unit.jpg';
 import { isStorageUnitAssigned } from '../utils/unitAssignment';
 import { formatDateVN, isCheckInAllowedToday } from '../utils/unitPickerHelpers';
 import { checkInContract, rejectHandoverContract } from '@/api/contract';
@@ -588,6 +590,59 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
                   <QrCode className="w-3.5 h-3.5" />
                   <span>Xem vé QR</span>
                 </button>
+              </div>
+
+              {/* CAMERA AN NINH IOT QUAN SÁT HIỆN TRƯỜNG THỰC TẾ Ô KHO */}
+              <div className="bg-slate-950 text-white rounded-2xl overflow-hidden border border-slate-800 shadow-md">
+                <div className="px-3.5 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                    </span>
+                    <Camera className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span className="font-bold text-slate-200 text-[11px] uppercase tracking-wider">
+                      Camera An Ninh IoT • Ô Kho {passData.unitNumber}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-400 bg-emerald-950/70 border border-emerald-800/60 px-2 py-0.5 rounded-md">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>REC • LIVE HD</span>
+                  </div>
+                </div>
+
+                <div className="relative aspect-video max-h-48 sm:max-h-56 w-full overflow-hidden bg-slate-900 group">
+                  <img
+                    src={pixelStandardImg}
+                    alt={`Hiện trường ô kho ${passData.unitNumber}`}
+                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                  />
+                  {/* Subtle Camera Grid / Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+
+                  {/* Top-left Timestamp & Camera ID */}
+                  <div className="absolute top-2.5 left-3 text-[10px] font-mono text-white/90 drop-shadow-md space-y-0.5 pointer-events-none">
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-1.5 py-0.2 rounded bg-black/60 border border-white/20 text-white font-bold">
+                        CAM-{passData.unitNumber}
+                      </span>
+                      <span>FACILITY: {passData.facilityName}</span>
+                    </div>
+                  </div>
+
+                  {/* Bottom Info Bar */}
+                  <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between text-[10px] font-mono text-white/90 drop-shadow-md pointer-events-none">
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <span className="font-semibold text-emerald-300">
+                        Mặt bằng đã được vệ sinh &amp; sẵn sàng nhận kho
+                      </span>
+                    </div>
+                    <span className="text-slate-300 hidden sm:inline">
+                      1080p • 30fps
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* IOT TELEMETRY LIVE SENSORS (NHIỆT ĐỘ, ĐỘ ẨM, PIN SMART LOCK) */}

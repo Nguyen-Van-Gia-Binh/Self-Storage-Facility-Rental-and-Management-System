@@ -97,6 +97,9 @@ describe('DigitalMoveInPassModal — Tách biệt Vé nhận kho và Check-in on
 
     // Xác nhận đã sang màn hình Check-in Online & Telemetry
     expect(screen.getByText(/Nghiệm Thu Bàn Giao & Check-in 24\/7/i)).toBeInTheDocument();
+    expect(screen.getByText(/Camera An Ninh IoT • Ô Kho Q7-C102/i)).toBeInTheDocument();
+    expect(screen.getByText(/REC • LIVE HD/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Hiện trường ô kho Q7-C102/i)).toBeInTheDocument();
     expect(screen.getByText(/24.5°C/)).toBeInTheDocument();
     expect(screen.getByText(/52% RH/)).toBeInTheDocument();
     expect(screen.getByText(/98% Pin/)).toBeInTheDocument();
