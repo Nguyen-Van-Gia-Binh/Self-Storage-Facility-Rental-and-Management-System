@@ -157,7 +157,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   return (
     <div className="app-shell h-screen bg-[#f2f9f7] flex flex-col md:flex-row overflow-hidden">
       {/* Mobile Header */}
-      <div className="md:hidden bg-white text-slate-900 border-b border-slate-200/90 px-4 py-3 flex items-center justify-between shadow-xs sticky top-0 z-30 shrink-0">
+      <div className="no-print md:hidden bg-white text-slate-900 border-b border-slate-200/90 px-4 py-3 flex items-center justify-between shadow-xs sticky top-0 z-30 shrink-0">
         <Logo 
           to={logoHomePath} 
           subtitle={displayTitle} 
