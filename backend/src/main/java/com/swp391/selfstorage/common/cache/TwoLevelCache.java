@@ -44,8 +44,14 @@ public class TwoLevelCache implements Cache {
         if (l1Cache != null) {
             ValueWrapper l1Val = l1Cache.get(key);
             if (l1Val != null) {
-                log.trace("[L1 HIT] Cache key: '{}' in cache '{}'", key, name);
-                return l1Val;
+                Object cachedObj = l1Val.get();
+                if (cachedObj instanceof java.util.Map) {
+                    log.warn("[L1 CACHE CORRUPTION] Phát hiện giá trị L1 bị lỗi LinkedHashMap cho key '{}'. Đang evict.", key);
+                    l1Cache.evict(key);
+                } else {
+                    log.trace("[L1 HIT] Cache key: '{}' in cache '{}'", key, name);
+                    return l1Val;
+                }
             }
         }
 
@@ -54,9 +60,19 @@ public class TwoLevelCache implements Cache {
             try {
                 ValueWrapper l2Val = l2Cache.get(key);
                 if (l2Val != null) {
+                    Object cachedObj = l2Val.get();
+                    if (cachedObj instanceof java.util.Map) {
+                        log.warn("[L2 REDIS CORRUPTION] Phát hiện giá trị cache bị lỗi deserialization (LinkedHashMap) cho key '{}' trong cache '{}'. Đang evict key lỗi khỏi L2 và fallback sang DB.", key, name);
+                        try {
+                            l2Cache.evict(key);
+                        } catch (Exception evictEx) {
+                            log.debug("Không thể evict key lỗi khỏi L2: {}", evictEx.getMessage());
+                        }
+                        return null;
+                    }
                     log.debug("[L1 MISS, L2 HIT] Cache key: '{}' in cache '{}'. Đang nạp ngược vào L1.", key, name);
                     if (l1Cache != null) {
-                        l1Cache.put(key, l2Val.get());
+                        l1Cache.put(key, cachedObj);
                     }
                     return l2Val;
                 }
@@ -78,7 +94,9 @@ public class TwoLevelCache implements Cache {
         }
         Object value = wrapper.get();
         if (value != null && type != null && !type.isInstance(value)) {
-            throw new IllegalStateException("Giá trị cache không đúng kiểu [" + type.getName() + "]: " + value);
+            log.warn("[CACHE TYPE MISMATCH] Giá trị cache không đúng kiểu [{}]: {}. Đang evict và fallback null.", type.getName(), value);
+            evict(key);
+            return null;
         }
         return (T) value;
     }
