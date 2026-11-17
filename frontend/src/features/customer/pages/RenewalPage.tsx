@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -824,10 +825,10 @@ export const RenewalPage: React.FC = () => {
                   Gia hạn hợp đồng #{contract.contractNumber} thêm {renewalMonths} tháng
                 </p>
               </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold shrink-0">
-                <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-                <span>Hiệu lực phiên giao dịch:</span>
-                <span className="num text-xs text-amber-900 font-extrabold tracking-wider bg-amber-100/80 px-2 py-0.5 rounded border border-amber-300/60 shadow-2xs">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg shrink-0">
+                <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                <span className="text-sm font-medium text-amber-800">Hiệu lực phiên giao dịch:</span>
+                <span className="text-sm font-bold text-amber-900 tabular-nums tracking-wider">
                   {formatCountdown(countdownSeconds)}
                 </span>
               </div>
@@ -941,36 +942,24 @@ export const RenewalPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Tổng tiền & Action buttons */}
-                <div className="pt-5 border-t border-gray-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                  {/* Nút Hủy lệnh thanh toán */}
-                  {!showCancelDialog ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowCancelDialog(true)}
-                      className="w-full sm:w-auto text-gray-600 border-gray-300 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50"
-                    >
-                      <XCircle className="w-4 h-4 mr-1.5" />
-                      Hủy lệnh thanh toán
-                    </Button>
-                  ) : (
-                    <div className="flex flex-wrap items-center gap-2 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800">
-                      <span>Bạn có chắc muốn hủy lệnh thanh toán gia hạn này?</span>
-                      <Button size="sm" variant="outline" onClick={() => setShowCancelDialog(false)} className="text-xs py-1 px-2">
-                        Không
-                      </Button>
-                      <Button size="sm" onClick={handleCancelPayment} disabled={isCancelling}
-                        className="text-xs py-1 px-2 bg-rose-600 hover:bg-rose-700 text-white">
-                        {isCancelling ? 'Đang hủy...' : 'Xác nhận hủy'}
-                      </Button>
-                    </div>
-                  )}
+                {/* Footer thanh toán gọn gàng, không bị xô lệch layout */}
+                <div className="pt-5 border-t border-gray-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                  {/* Nút Hủy lệnh thanh toán (Ghost Button) */}
+                  <button
+                    type="button"
+                    onClick={() => setShowCancelDialog(true)}
+                    disabled={isProcessing || isPaidSuccess || isCancelling}
+                    className="inline-flex items-center justify-center md:justify-start gap-1.5 text-sm font-medium text-gray-500 hover:text-rose-600 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <XCircle className="w-4 h-4 shrink-0" />
+                    <span>Hủy lệnh thanh toán</span>
+                  </button>
 
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                    <div className="flex items-baseline justify-between sm:justify-end gap-2 px-1">
+                  {/* Khối bên phải: Tổng tiền + Nút Submit */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6">
+                    <div className="flex items-baseline justify-between sm:flex-col sm:items-end">
                       <span className="text-xs text-gray-500">Tổng thanh toán:</span>
-                      <span className="text-lg font-bold text-brand-700 tabular-nums">
+                      <span className="text-xl font-bold text-brand-600 tabular-nums">
                         {formatVND(pricing.finalTotal)}
                       </span>
                     </div>
@@ -983,7 +972,7 @@ export const RenewalPage: React.FC = () => {
                         setIsRedirectingVnpay(true);
                         window.location.href = vnpayPayHref(checkoutData.orderCode, selectedBankCode);
                       }}
-                      className="w-full sm:w-auto px-7 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-lg shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+                      className="w-full sm:w-auto px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-lg shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
                     >
                       {isRedirectingVnpay || isProcessing ? (
                         <>
@@ -1022,6 +1011,47 @@ export const RenewalPage: React.FC = () => {
           navigate('/customer/my-units');
         }}
       />
+
+      {/* Modal xác nhận hủy lệnh thanh toán (Destructive Action Popup) */}
+      {showCancelDialog &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+            onClick={() => !isCancelling && setShowCancelDialog(false)}
+          >
+            <div
+              className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-150"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-6 pt-6 pb-4 space-y-2">
+                <h3 className="text-lg font-bold text-gray-900">Hủy thanh toán?</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Bạn có chắc chắn muốn hủy giao dịch này? Lệnh thanh toán gia hạn hiện tại sẽ bị vô hiệu hóa và bạn sẽ quay về bước chọn kỳ hạn.
+                </p>
+              </div>
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={isCancelling}
+                  onClick={() => setShowCancelDialog(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Quay lại
+                </button>
+                <button
+                  type="button"
+                  disabled={isCancelling}
+                  onClick={handleCancelPayment}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {isCancelling ? 'Đang hủy...' : 'Xác nhận hủy'}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* Electronic Renewal Receipt Modal (E-Receipt) */}
       {renewalResult && (

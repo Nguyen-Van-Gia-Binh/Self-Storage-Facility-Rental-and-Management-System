@@ -80,4 +80,18 @@ describe('RenewalPage & RenewalExpiryBanner — Chuẩn hóa luồng Gia hạn 3
     // Ô nhập số tháng tùy chỉnh dạng Input Group liền mạch
     expect(content).toContain('border border-gray-300 rounded-lg overflow-hidden focus-within:border-brand-500');
   });
+
+  it('Bước 3 (Countdown & Hủy lệnh thanh toán): khung đếm ngược phẳng 1 lớp viền và nút Hủy mở Modal xác nhận giữa màn hình không xô lệch Footer', () => {
+    const content = fs.readFileSync(renewalPagePath, 'utf-8');
+
+    // Khung đếm ngược 1 lớp viền duy nhất (không còn khung lồng bg-amber-100/80 border-amber-300/60)
+    expect(content).not.toContain('border-amber-300/60');
+    expect(content).toContain('inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg');
+
+    // Không còn khối hồng chèn ngang phá vỡ layout footer; dùng Ghost button + Modal xác nhận
+    expect(content).not.toContain('flex flex-wrap items-center gap-2 p-3 bg-rose-50 border border-rose-200');
+    expect(content).toContain('Hủy thanh toán?');
+    expect(content).toContain('Quay lại');
+    expect(content).toContain('Xác nhận hủy');
+  });
 });
