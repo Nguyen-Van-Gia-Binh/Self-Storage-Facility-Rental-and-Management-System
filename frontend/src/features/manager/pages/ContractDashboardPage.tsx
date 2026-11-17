@@ -8,14 +8,7 @@ import {
   AlertCircle,
   Building2,
   CheckCircle2,
-  AlertTriangle,
   Layers,
-  LayoutGrid,
-  Table2,
-  ArrowRight,
-  Compass,
-  MapPin,
-  Phone,
   Plus,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
@@ -28,7 +21,6 @@ import {
 } from '../components/FacilityContractSummaryCard';
 import { Pagination } from '../components/Pagination';
 import { getFacilityRegion, type RegionFilter } from './FacilityListPage';
-import { getFacilityTheme } from '../utils/facilityTheme';
 import { CreateDirectContractModal } from '../components/CreateDirectContractModal';
 
 const REGION_TABS: { label: string; value: RegionFilter }[] = [
@@ -51,7 +43,6 @@ export const ContractDashboardPage: React.FC = () => {
   const [selectedRegion, setSelectedRegion] = useState<RegionFilter>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -169,27 +160,27 @@ export const ContractDashboardPage: React.FC = () => {
   }, [filteredFacilities, currentPage, pageSize]);
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-5 pb-12">
       {/* Page Header */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-2xs p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
               <FileCheck className="w-5 h-5" />
             </div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight">
               Giám sát hợp đồng — Danh sách Cơ sở
             </h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-gray-500 mt-1">
             Chọn cơ sở để theo dõi danh sách hợp đồng thuê, công nợ quá hạn và thủ tục nghiệm thu thanh lý
           </p>
         </div>
 
-        {/* Toolbar: Tìm kiếm cơ sở & Nút làm mới */}
-        <div className="flex items-center gap-3">
-          <div className="relative min-w-[260px]">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        {/* Toolbar: Tìm kiếm cơ sở, làm mới & Tạo HĐ trực tiếp */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative min-w-[240px] flex-1 md:flex-initial">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Tìm kiếm cơ sở..."
@@ -198,22 +189,24 @@ export const ContractDashboardPage: React.FC = () => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+              className="w-full pl-9 pr-3 py-1.5 bg-gray-50 hover:bg-white focus:bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
             />
           </div>
 
           <button
+            type="button"
             onClick={() => loadData(true)}
             disabled={refreshing}
-            className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer shrink-0"
+            className="p-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer shrink-0"
             title="Làm mới"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           </button>
 
           <button
+            type="button"
             onClick={() => setShowDirectContractModal(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-teal-700 to-brand-700 hover:from-teal-800 hover:to-brand-800 text-white rounded-xl text-xs font-bold shadow-2xs hover:shadow-md transition-all cursor-pointer shrink-0"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-bold shadow-2xs transition-colors cursor-pointer shrink-0"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Tạo HĐ trực tiếp</span>
@@ -221,70 +214,73 @@ export const ContractDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI Banner Tổng hợp trên đầu trang */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-2xl p-4 sm:p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-brand-300">
-            <Building2 className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-white">Tổng quan toàn hệ thống</h2>
-            <p className="text-xs text-slate-400">
-              {facilities.length} cơ sở được phân công quản lý
-            </p>
+      {/* Thanh Tổng quan toàn hệ thống (Nền trắng, viền xám, chấm tròn ngữ nghĩa) */}
+      <div className="bg-white border border-gray-200 rounded-xl px-5 py-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2.5">
+          <Building2 className="w-5 h-5 text-gray-400 shrink-0" />
+          <div className="flex flex-wrap items-baseline gap-2">
+            <h2 className="text-sm font-bold text-gray-900">Tổng quan toàn hệ thống</h2>
+            <span className="text-xs text-gray-500">
+              ({facilities.length} cơ sở được phân công quản lý)
+            </span>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 text-xs">
-          <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-xl">
-            <span className="text-slate-300">Tổng:</span>
-            <span className="num font-bold text-white text-sm">
-              {globalKpis.total} HĐ
-            </span>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-sm">
+          <div className="flex items-center gap-1.5">
+            <span className="text-gray-500">Tổng HĐ:</span>
+            <span className="font-bold text-gray-900 tabular-nums">{globalKpis.total}</span>
           </div>
 
-          <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-3 py-1.5 rounded-xl border border-emerald-500/30">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Đang hiệu lực:</span>
-            <span className="num font-bold text-white text-sm">
-              {globalKpis.active}
-            </span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+            <span className="text-gray-500">Đang hiệu lực:</span>
+            <span className="font-bold text-gray-900 tabular-nums">{globalKpis.active}</span>
           </div>
 
-          <div className="flex items-center gap-2 bg-rose-500/20 text-rose-300 px-3 py-1.5 rounded-xl border border-rose-500/30">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            <span>Quá hạn:</span>
-            <span className="num font-bold text-white text-sm">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+            <span className="text-gray-500">Quá hạn:</span>
+            <span
+              className={`font-bold tabular-nums ${
+                globalKpis.overdue > 0 ? 'text-rose-600' : 'text-gray-900'
+              }`}
+            >
               {globalKpis.overdue}
             </span>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-1.5 pl-4 border-l border-gray-200">
+            <span className="text-gray-500">Cơ sở:</span>
+            <span className="font-bold text-gray-900 tabular-nums">{facilities.length}</span>
           </div>
         </div>
       </div>
 
-      {/* Filter Tabs Khu vực & Layout Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Tabs Khu vực */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl overflow-x-auto">
+      {/* Filter Tabs Khu vực */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-1.5 p-1 bg-gray-100 rounded-xl overflow-x-auto">
           {REGION_TABS.map((tab) => {
             const isActive = selectedRegion === tab.value;
             const count = regionCounts[tab.value] || 0;
             return (
               <button
                 key={tab.value}
+                type="button"
                 onClick={() => {
                   setSelectedRegion(tab.value);
                   setCurrentPage(1);
                 }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
                   isActive
-                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                    ? 'bg-white text-gray-900 shadow-2xs font-bold'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/60'
                 }`}
               >
                 <span>{tab.label}</span>
                 <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                    isActive ? 'bg-brand-100 text-brand-800' : 'bg-slate-200/80 text-slate-600'
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full tabular-nums ${
+                    isActive ? 'bg-brand-100 text-brand-800' : 'bg-gray-200/80 text-gray-600'
                   }`}
                 >
                   {count}
@@ -293,73 +289,52 @@ export const ContractDashboardPage: React.FC = () => {
             );
           })}
         </div>
-
-        {/* Layout Switcher: Lưới Thẻ vs Bảng Danh Mục */}
-        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 self-end sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setViewMode('grid')}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-              viewMode === 'grid'
-                ? 'bg-white text-brand-700 shadow-2xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-            title="Xem dạng Lưới Thẻ Trực Quan"
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Lưới Thẻ</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('table')}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-              viewMode === 'table'
-                ? 'bg-white text-brand-700 shadow-2xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-            title="Xem dạng Bảng Danh Mục Mạng Lưới"
-          >
-            <Table2 className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Bảng Danh Mục</span>
-          </button>
-        </div>
       </div>
 
       {error && (
-        <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center justify-between shadow-2xs">
+        <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
             <span>{error}</span>
           </div>
-          <button onClick={() => loadData(true)} className="font-bold underline cursor-pointer">
+          <button type="button" onClick={() => loadData(true)} className="font-bold underline cursor-pointer">
             Thử lại
           </button>
         </div>
       )}
 
-      {/* Grid 3 cột Danh sách Cơ sở: Desktop >=1280px 3 cột, Tablet 768-1279px 2 cột, Mobile 1 cột */}
+      {/* Danh sách nén (Compact List) Cơ sở & Số liệu Hợp đồng */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-64 rounded-2xl bg-slate-100 animate-pulse border border-slate-200/80" />
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-2xs divide-y divide-gray-100">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-16 bg-gray-50/60 animate-pulse" />
           ))}
         </div>
       ) : filteredFacilities.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-2xs">
-          <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center shadow-2xs">
+          <div className="w-12 h-12 rounded-xl bg-gray-100 text-gray-400 flex items-center justify-center mx-auto mb-3">
             <Layers className="w-6 h-6" />
           </div>
-          <h3 className="text-sm font-bold text-slate-800">Không tìm thấy cơ sở nào</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+          <h3 className="text-sm font-bold text-gray-800">Không tìm thấy cơ sở nào</h3>
+          <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
             {searchTerm || selectedRegion !== 'ALL'
               ? 'Không có cơ sở nào phù hợp với bộ lọc và từ khóa tìm kiếm.'
               : 'Bạn chưa được phân công quản lý cơ sở nào trong hệ thống.'}
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="space-y-5">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-2xs">
+            {/* Dòng tiêu đề bảng */}
+            <div className="hidden md:grid md:grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <div className="col-span-4">Cơ sở lưu kho</div>
+              <div className="col-span-4">Địa chỉ</div>
+              <div className="col-span-3 text-center">Hợp đồng (Active / Quá hạn)</div>
+              <div className="col-span-1" />
+            </div>
+
+            {/* Các dòng cơ sở */}
+            <div className="divide-y divide-gray-100">
               {paginatedFacilities.map((facility) => (
                 <FacilityContractSummaryCard
                   key={facility.id}
@@ -369,104 +344,9 @@ export const ContractDashboardPage: React.FC = () => {
                 />
               ))}
             </div>
-          ) : (
-            <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-2xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
-                      <th className="py-3.5 px-4">Cơ sở lưu trữ</th>
-                      <th className="py-3.5 px-4">Khu vực / Tỉnh thành</th>
-                      <th className="py-3.5 px-4">Địa chỉ hoạt động</th>
-                      <th className="py-3.5 px-4">Hotline</th>
-                      <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                      <th className="py-3.5 px-4 text-right">Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {paginatedFacilities.map((facility) => {
-                      const theme = getFacilityTheme(facility);
-                      return (
-                        <tr
-                          key={facility.id}
-                          onClick={() => navigate(`/manager/contracts/facilities/${facility.id}`)}
-                          className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
-                        >
-                          <td className="py-3.5 px-4">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={`w-8 h-8 rounded-xl flex items-center justify-center border shadow-2xs shrink-0 ${theme.iconBg}`}
-                              >
-                                <Building2 className={`w-4 h-4 ${theme.iconColor}`} />
-                              </div>
-                              <div>
-                                <div className="font-bold text-slate-900 group-hover:text-brand-600 transition-colors">
-                                  {facility.name}
-                                </div>
-                                <span className="text-[10px] font-mono text-slate-500">
-                                  {facility.code}
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <span
-                              className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${theme.badgeBg} ${theme.badgeTextCol} ${theme.badgeBorder}`}
-                            >
-                              <Compass className="w-2.5 h-2.5" />
-                              {theme.regionLabel}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-4 text-slate-600 max-w-xs truncate">
-                            <div className="flex items-center gap-1.5">
-                              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                              <span className="truncate">{facility.address || 'Chưa cập nhật'}</span>
-                            </div>
-                          </td>
-                          <td className="py-3.5 px-4 font-mono text-slate-700">
-                            {facility.phone ? (
-                              <div className="flex items-center gap-1">
-                                <Phone className="w-3 h-3 text-slate-400 shrink-0" />
-                                <span>{facility.phone}</span>
-                              </div>
-                            ) : (
-                              <span className="text-slate-400 italic">--</span>
-                            )}
-                          </td>
-                          <td className="py-3.5 px-4 text-center">
-                            {facility.isActive ? (
-                              <span className="inline-block text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                                Hoạt động
-                              </span>
-                            ) : (
-                              <span className="inline-block text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-0.5 rounded-full">
-                                Tạm dừng
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3.5 px-4 text-right">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/manager/contracts/facilities/${facility.id}`);
-                              }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-brand-200 text-brand-600 hover:bg-brand-50 transition-colors font-bold text-xs cursor-pointer"
-                            >
-                              <span>Xem hợp đồng</span>
-                              <ArrowRight className="w-3.5 h-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+          </div>
 
-          {/* Phân trang: Hỗ trợ chuyển đổi số lượng/trang và luôn hiển thị điều hướng */}
+          {/* Phân trang */}
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -487,7 +367,7 @@ export const ContractDashboardPage: React.FC = () => {
       {/* Toast Notification */}
       {toastMessage && (
         <div
-          className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-2xl px-4 py-3 shadow-lg text-xs font-semibold animate-in slide-in-from-bottom-2 duration-200 ${
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl px-4 py-3 shadow-lg text-xs font-semibold animate-in slide-in-from-bottom-2 duration-200 ${
             toastMessage.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
           }`}
         >
