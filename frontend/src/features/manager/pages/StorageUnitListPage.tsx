@@ -7,13 +7,9 @@ import {
   Search,
   RefreshCw,
   AlertCircle,
-  AlertTriangle,
   Building2,
   Layers,
   Filter,
-  CheckCircle2,
-  TrendingUp,
-  Wrench,
   Calendar,
   MapPin,
   X,
@@ -82,6 +78,9 @@ export const StorageUnitListPage: React.FC = () => {
   const [selectedFloor, setSelectedFloor] = useState<number | 'ALL'>('ALL');
   const [startDate, setStartDate] = useState<string>(startDateParam);
   const [endDate, setEndDate] = useState<string>(endDateParam);
+  const [showDatePicker, setShowDatePicker] = useState<boolean>(
+    Boolean(startDateParam || endDateParam)
+  );
   const [searchTerm, setSearchTerm] = useState('');
 
   // Đồng bộ startDate và endDate khi URL query param thay đổi
@@ -377,274 +376,82 @@ export const StorageUnitListPage: React.FC = () => {
       />
 
       {/* Header bar */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
-        {/* Tầng 1: Tiêu đề & Các thao tác chính (Sơ đồ / Bảng, Làm mới, Thêm ô kho) */}
-        <div className="p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 border border-brand-200/80 flex items-center justify-center shrink-0">
-              <Building2 className="w-5 h-5" />
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
-                Danh sách Ô kho vật lý
-              </h1>
-              {unitType && (
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200/80">
-                  {cleanUnitTypeName(unitType.name)} ({unitType.areaM2} m²)
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5 shrink-0">
-            {/* Bộ chuyển đổi chế độ xem: Sơ đồ 2D vs Bảng danh sách */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
-              <button
-                type="button"
-                onClick={() => setViewMode('floorplan')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  viewMode === 'floorplan'
-                    ? 'bg-white text-slate-900 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <MapPin className={`w-3.5 h-3.5 ${viewMode === 'floorplan' ? 'text-teal-600' : 'text-slate-400'}`} />
-                <span>Sơ đồ 2D</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('table')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  viewMode === 'table'
-                    ? 'bg-white text-slate-900 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Table2 className={`w-3.5 h-3.5 ${viewMode === 'table' ? 'text-brand-600' : 'text-slate-400'}`} />
-                <span>Bảng danh sách</span>
-              </button>
-            </div>
-
-            {/* Nút Làm mới */}
-            <button
-              onClick={() => loadData(true)}
-              disabled={refreshing}
-              className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer shrink-0"
-              title="Làm mới"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </button>
-
-            {/* Nút Thêm ô kho vật lý */}
-            <button
-              onClick={() => setSuModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer shrink-0"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Thêm ô kho vật lý</span>
-            </button>
-          </div>
+      {/* Header phẳng chuẩn Enterprise: tiêu đề + phụ đề tóm tắt gọn, bỏ 5 thẻ Bento Box màu pastel */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-200">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+            Danh sách Ô kho vật lý
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-0.5 tabular-nums">
+            {unitType ? `${cleanUnitTypeName(unitType.name)} (${unitType.areaM2} m²)` : 'Tất cả loại kho'}
+            {' · '}Tổng: <strong className="font-semibold text-gray-700">{statsOverview.total} ô kho</strong>
+            {' · '}Trống: <strong className="font-semibold text-emerald-700">{statsOverview.available}</strong>
+            {' · '}Lấp đầy: <strong className="font-semibold text-gray-700">{statsOverview.occupancyRate.toFixed(0)}%</strong>
+          </p>
         </div>
 
-        {/* Tầng 2: Thanh lọc khoảng thời gian kiểm tra buồng kho */}
-        <div className="px-4 py-3 bg-slate-50/70 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="font-bold text-slate-700 flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-brand-600" />
-              Khoảng thời gian:
-            </span>
-            <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1 rounded-xl shadow-2xs">
-              <span className="text-slate-500 font-medium text-xs">Từ ngày:</span>
-              <DateField
-                value={startDate}
-                onChange={(next) => handleDateRangeChange(next, endDate)}
-                className="bg-transparent num font-bold text-slate-800 outline-none cursor-pointer"
-              />
-              <span className="text-slate-300">|</span>
-              <span className="text-slate-500 font-medium text-xs">Đến ngày:</span>
-              <DateField
-                value={endDate}
-                onChange={(next) => handleDateRangeChange(startDate, next)}
-                className="bg-transparent num font-bold text-slate-800 outline-none cursor-pointer"
-              />
-            </div>
-            {(startDate || endDate) && (
-              <button
-                type="button"
-                onClick={() => handleDateRangeChange('', '')}
-                className="px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-200 cursor-pointer text-xs flex items-center gap-1 transition-colors"
-                title="Quay lại hôm nay (thời gian thực)"
-              >
-                <X className="w-3.5 h-3.5" />
-                <span>Xem hôm nay</span>
-              </button>
-            )}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Bộ chuyển đổi chế độ xem: Sơ đồ 2D vs Bảng danh sách */}
+          <div className="inline-flex h-9 items-center bg-gray-100 p-0.5 rounded-md border border-gray-200 shrink-0">
+            <button
+              type="button"
+              onClick={() => setViewMode('floorplan')}
+              className={`h-full px-2.5 rounded text-xs font-semibold transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'floorplan'
+                  ? 'bg-white text-gray-900 shadow-2xs'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <MapPin className={`w-3.5 h-3.5 ${viewMode === 'floorplan' ? 'text-brand-700' : 'text-gray-400'}`} />
+              <span>Sơ đồ 2D</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={`h-full px-2.5 rounded text-xs font-semibold transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'table'
+                  ? 'bg-white text-gray-900 shadow-2xs'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Table2 className={`w-3.5 h-3.5 ${viewMode === 'table' ? 'text-brand-700' : 'text-gray-400'}`} />
+              <span>Bảng danh sách</span>
+            </button>
           </div>
 
-          <div className="text-xs text-slate-500">
-            {startDate && endDate ? (
-              <span>
-                Đang kiểm tra từ <strong className="num text-brand-700 font-bold">{formatVnDate(startDate)}</strong> đến <strong className="num text-brand-700 font-bold">{formatVnDate(endDate)}</strong>
-              </span>
-            ) : (
-              <span>Hiển thị hiện trạng theo thời gian thực (Hôm nay)</span>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={() => loadData(true)}
+            disabled={refreshing}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer shrink-0"
+            title="Làm mới"
+            aria-label="Làm mới"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSuModalOpen(true)}
+            className="inline-flex h-9 items-center gap-1.5 px-3 bg-brand-700 hover:bg-brand-800 text-white rounded-md text-xs font-semibold transition-colors cursor-pointer shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Thêm ô kho</span>
+          </button>
         </div>
       </div>
 
-      {/* KPI Summary Bar: Chỉ hiển thị trong chế độ Bảng danh sách để tránh trùng lặp thông tin với Sơ đồ 2D */}
-      {viewMode === 'table' && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
-          {/* 1. Tổng số ô */}
-          <div
-            onClick={() => setStatusFilter('ALL')}
-            className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer bg-white shadow-2xs hover:shadow-sm ${
-              statusFilter === 'ALL'
-                ? 'border-brand-500 ring-2 ring-brand-500/20 bg-brand-50/20'
-                : 'border-slate-200 hover:border-slate-300'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-slate-500">Tổng ô kho</span>
-              <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600">
-                <Layers className="w-3.5 h-3.5" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-xl font-bold num text-slate-900">{statsOverview.total}</span>
-              <span className="text-xs text-slate-400">ô</span>
-            </div>
-            <span className="text-[10px] text-slate-400 mt-1 block">Quy mô hiện tại</span>
-          </div>
-
-          {/* 2. Ô còn trống */}
-          <div
-            onClick={() => setStatusFilter('AVAILABLE')}
-            className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer bg-white shadow-2xs hover:shadow-sm ${
-              statusFilter === 'AVAILABLE'
-                ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/30'
-                : 'border-emerald-200/80 hover:border-emerald-300'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-emerald-700">Ô còn trống</span>
-              <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-emerald-600">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-xl font-bold num text-emerald-700">{statsOverview.available}</span>
-              <span className="text-xs text-emerald-600">ô</span>
-            </div>
-            <span className="text-[10px] text-emerald-600 font-medium mt-1 block">Sẵn sàng nhận khách</span>
-          </div>
-
-          {/* 3. Đang cho thuê */}
-          <div
-            onClick={() => setStatusFilter('OCCUPIED')}
-            className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer bg-white shadow-2xs hover:shadow-sm ${
-              statusFilter === 'OCCUPIED'
-                ? 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/30'
-                : 'border-amber-200/80 hover:border-amber-300'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-amber-700">Đang thuê</span>
-              <div className="w-7 h-7 rounded-lg bg-amber-50 border border-amber-200/80 flex items-center justify-center text-amber-600">
-                <AlertTriangle className="w-3.5 h-3.5" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-xl font-bold num text-amber-700">{statsOverview.occupied}</span>
-              <span className="text-xs text-amber-600">ô</span>
-            </div>
-            <span className="text-[10px] text-amber-600 font-medium mt-1 block">Hợp đồng hiệu lực</span>
-          </div>
-
-          {/* 4. Đang bảo trì */}
-          <div
-            onClick={() => setStatusFilter('MAINTENANCE')}
-            className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer bg-white shadow-2xs hover:shadow-sm ${
-              statusFilter === 'MAINTENANCE'
-                ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/30'
-                : 'border-rose-200/80 hover:border-rose-300'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-rose-700">Đang bảo trì</span>
-              <div className="w-7 h-7 rounded-lg bg-rose-50 border border-rose-200/80 flex items-center justify-center text-rose-600">
-                <Wrench className="w-3.5 h-3.5" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-xl font-bold num text-rose-700">{statsOverview.maintenance}</span>
-              <span className="text-xs text-rose-600">ô</span>
-            </div>
-            <span className="text-[10px] text-rose-600 font-medium mt-1 block">Tạm ngưng khai thác</span>
-          </div>
-
-          {/* 5. Tỷ lệ lấp đầy */}
-          <div className="col-span-2 md:col-span-4 lg:col-span-1 p-4 rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50 shadow-2xs flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
-                <TrendingUp className="w-3.5 h-3.5 text-slate-400" />
-                Tỷ lệ lấp đầy
-              </span>
-              <span
-                className={`text-xs num font-bold ${
-                  statsOverview.isFull
-                    ? 'text-rose-600'
-                    : statsOverview.isNearFull
-                    ? 'text-amber-600'
-                    : 'text-emerald-600'
-                }`}
-              >
-                {statsOverview.occupancyRate.toFixed(0)}%
-              </span>
-            </div>
-
-            <div className="my-2.5">
-              <div className="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    statsOverview.isFull
-                      ? 'bg-rose-500'
-                      : statsOverview.isNearFull
-                      ? 'bg-amber-500'
-                      : 'bg-emerald-500'
-                  }`}
-                  style={{ width: `${Math.min(100, Math.max(0, statsOverview.occupancyRate))}%` }}
-                />
-              </div>
-            </div>
-
-            <span className="text-[10px] text-slate-400">
-              {statsOverview.isFull
-                ? 'Đã kín chỗ 100%'
-                : statsOverview.isNearFull
-                ? 'Sắp lấp đầy (≥75%)'
-                : statsOverview.available > 0
-                ? `Còn ${statsOverview.available} ô sẵn sàng`
-                : '0 ô trống khả dụng'}
-            </span>
-          </div>
-        </div>
-      )}
-
       {error && (
-        <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center justify-between shadow-2xs">
+        <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-md p-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
             <span>{error}</span>
           </div>
-          <button onClick={() => loadData(true)} className="font-bold underline cursor-pointer">
+          <button type="button" onClick={() => loadData(true)} className="font-semibold underline cursor-pointer">
             Thử lại
           </button>
         </div>
       )}
-
-
 
       {/* Nội dung chính: Sơ đồ 2D mặt bằng vs Bảng danh sách chi tiết */}
       {viewMode === 'floorplan' ? (
@@ -665,52 +472,58 @@ export const StorageUnitListPage: React.FC = () => {
           onStatusChange={handleStatusChange}
         />
       ) : (
-        <>
+        <div className="space-y-3">
+          {/* Toolbar tập trung 1 hàng: Search + Status Tabs + Floor + Bộ lọc ngày thu gọn */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Ô tìm kiếm */}
+              <div className="relative w-full sm:w-56">
+                <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Tìm mã kho, khách thuê..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full h-9 pl-8 pr-3 bg-white border border-gray-300 rounded-md text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                />
+              </div>
 
-          {/* Tabs Filter theo Trạng thái & Dropdown Tầng & Bộ lọc Ngày & Ô tìm kiếm */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            {/* Left: Status Tabs + Floor Filter + Date Filter */}
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Status Tabs Bar */}
-              <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl overflow-x-auto">
+              {/* Status Tabs tích hợp Summary */}
+              <div className="inline-flex h-9 items-center bg-gray-100 p-0.5 rounded-md border border-gray-200 overflow-x-auto">
                 {STATUS_FILTERS.map((tab) => {
                   const isActive = statusFilter === tab.value;
                   const count = filterCounts[tab.value] || 0;
                   return (
                     <button
                       key={tab.value}
+                      type="button"
                       onClick={() => setStatusFilter(tab.value)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                      className={`h-full px-2.5 rounded text-xs transition-colors whitespace-nowrap cursor-pointer inline-flex items-center gap-1 ${
                         isActive
-                          ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                          ? 'bg-white text-gray-900 font-semibold shadow-2xs'
+                          : 'text-gray-600 font-medium hover:text-gray-900'
                       }`}
                     >
                       <span>{tab.label}</span>
-                      <span
-                        className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                          isActive ? 'bg-brand-100 text-brand-800' : 'bg-slate-200/80 text-slate-600'
-                        }`}
-                      >
-                        {count}
-                      </span>
+                      <span className="text-[11px] text-gray-400 tabular-nums">({count})</span>
                     </button>
                   );
                 })}
               </div>
 
-              {/* Floor Dropdown Filter */}
-              <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
-                <Filter className="w-3.5 h-3.5 text-slate-400" />
-                <span className="font-medium text-slate-500 whitespace-nowrap">Tầng:</span>
+              {/* Lọc theo Tầng */}
+              <div className="inline-flex h-9 items-center gap-1.5 text-xs text-gray-600 bg-white border border-gray-300 rounded-md px-2.5">
+                <Filter className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                <span className="text-gray-500 whitespace-nowrap">Tầng:</span>
                 <select
                   value={selectedFloor}
                   onChange={(e) =>
                     setSelectedFloor(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))
                   }
-                  className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
+                  aria-label="Lọc theo tầng"
+                  className="bg-transparent font-medium text-gray-800 focus:outline-none cursor-pointer"
                 >
-                  <option value="ALL">Tất cả các tầng</option>
+                  <option value="ALL">Tất cả</option>
                   {availableFloors.map((fl) => (
                     <option key={fl} value={fl}>
                       Tầng {fl}
@@ -720,27 +533,81 @@ export const StorageUnitListPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Input Tìm kiếm nhanh ô kho */}
-            <div className="relative min-w-[260px]">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Tìm mã ô, vị trí, khách thuê..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 shadow-2xs"
-              />
+            {/* Bộ lọc thời gian thu gọn (Bên phải) */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDatePicker((prev) => !prev)}
+                className={`inline-flex h-9 items-center gap-1.5 px-3 rounded-md border text-xs font-medium transition-colors cursor-pointer ${
+                  startDate || endDate || showDatePicker
+                    ? 'bg-brand-50/70 border-brand-300 text-brand-800'
+                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                <span>
+                  {startDate && endDate
+                    ? `Ngày: ${formatVnDate(startDate)} – ${formatVnDate(endDate)}`
+                    : startDate
+                    ? `Từ: ${formatVnDate(startDate)}`
+                    : 'Ngày: Hôm nay'}
+                </span>
+              </button>
+
+              {(startDate || endDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleDateRangeChange('', '');
+                    setShowDatePicker(false);
+                  }}
+                  className="inline-flex h-9 items-center gap-1 px-2.5 rounded-md bg-white border border-gray-300 text-xs font-medium text-gray-600 hover:text-rose-700 hover:border-rose-300 transition-colors cursor-pointer"
+                  title="Quay lại hôm nay"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>Hôm nay</span>
+                </button>
+              )}
             </div>
           </div>
 
+          {/* Popover / Thanh chọn khoảng ngày chỉ mở khi người dùng bấm vào nút Ngày */}
+          {showDatePicker && (
+            <div className="px-3.5 py-2.5 bg-white border border-gray-200 rounded-md flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="font-medium text-gray-600">Kiểm tra lịch trống:</span>
+                <div className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-md">
+                  <span className="text-gray-500">Từ:</span>
+                  <DateField
+                    value={startDate}
+                    onChange={(next) => handleDateRangeChange(next, endDate)}
+                    className="bg-transparent font-medium text-gray-900 outline-none cursor-pointer tabular-nums"
+                  />
+                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-500">Đến:</span>
+                  <DateField
+                    value={endDate}
+                    onChange={(next) => handleDateRangeChange(startDate, next)}
+                    className="bg-transparent font-medium text-gray-900 outline-none cursor-pointer tabular-nums"
+                  />
+                </div>
+              </div>
+              <span className="text-gray-500">
+                {startDate && endDate
+                  ? `Đang lọc theo khoảng ${formatVnDate(startDate)} – ${formatVnDate(endDate)}`
+                  : 'Mặc định hiển thị hiện trạng thời gian thực (Hôm nay)'}
+              </span>
+            </div>
+          )}
+
           {/* Table Danh sách Ô kho & Phân trang */}
           {loading ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3">
-              <div className="h-6 w-48 bg-slate-200 rounded-lg animate-pulse mx-auto" />
-              <div className="h-4 w-72 bg-slate-100 rounded-lg animate-pulse mx-auto" />
+            <div className="bg-white rounded-md border border-gray-200 p-8 text-center space-y-3">
+              <div className="h-5 w-48 bg-gray-200 rounded animate-pulse mx-auto" />
+              <div className="h-4 w-72 bg-gray-100 rounded animate-pulse mx-auto" />
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <StorageUnitTable
                 units={paginatedUnits}
                 contractsMap={contractsMap}
@@ -767,7 +634,7 @@ export const StorageUnitListPage: React.FC = () => {
               />
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* Modal Thêm ô kho vật lý */}

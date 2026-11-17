@@ -1,9 +1,8 @@
 // frontend/src/features/manager/components/StorageUnitTable.tsx
 import React from 'react';
-import { Box, User, Calendar, Eye, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import type { StorageUnitResponse, UnitStatus } from '@/types/unit';
 import type { ManagerContractItem } from '@/types/contractManager';
-import { StatusBadge } from './StatusBadge';
 
 export type StorageUnitSortField = 'code' | 'floor' | 'status' | 'customer' | 'endDate';
 export type SortDirection = 'asc' | 'desc';
@@ -18,6 +17,18 @@ interface StorageUnitTableProps {
   onSort?: (field: StorageUnitSortField) => void;
 }
 
+const FLAT_STATUS_META: Record<
+  string,
+  { label: string; dotClass: string; textClass: string }
+> = {
+  AVAILABLE: { label: 'Trống', dotClass: 'bg-emerald-600', textClass: 'text-emerald-700' },
+  OCCUPIED: { label: 'Đang thuê', dotClass: 'bg-blue-600', textClass: 'text-blue-700' },
+  RESERVED: { label: 'Đã đặt', dotClass: 'bg-sky-600', textClass: 'text-sky-700' },
+  MAINTENANCE: { label: 'Bảo trì', dotClass: 'bg-rose-600', textClass: 'text-rose-700' },
+  OVERDUE: { label: 'Quá hạn', dotClass: 'bg-rose-600', textClass: 'text-rose-700' },
+  LOCKED: { label: 'Đã khóa', dotClass: 'bg-rose-600', textClass: 'text-rose-700' },
+};
+
 export const StorageUnitTable: React.FC<StorageUnitTableProps> = ({
   units,
   contractsMap = {},
@@ -29,12 +40,9 @@ export const StorageUnitTable: React.FC<StorageUnitTableProps> = ({
 }) => {
   if (units.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200/90 p-12 text-center shadow-2xs">
-        <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
-          <Box className="w-6 h-6" />
-        </div>
-        <h3 className="text-sm font-bold text-slate-800">Không có ô kho nào phù hợp</h3>
-        <p className="text-xs text-slate-500 mt-1">
+      <div className="bg-white rounded-md border border-gray-200 py-10 px-6 text-center">
+        <h3 className="text-sm font-semibold text-gray-800">Không có ô kho nào phù hợp</h3>
+        <p className="text-xs text-gray-500 mt-1">
           Chưa có ô kho vật lý nào khớp với bộ lọc và từ khóa được chọn.
         </p>
       </div>
@@ -45,25 +53,26 @@ export const StorageUnitTable: React.FC<StorageUnitTableProps> = ({
     if (!onSort) return null;
     if (sortField === field) {
       return sortDirection === 'asc' ? (
-        <ArrowUp className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+        <ArrowUp className="w-3.5 h-3.5 text-brand-700 shrink-0" />
       ) : (
-        <ArrowDown className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+        <ArrowDown className="w-3.5 h-3.5 text-brand-700 shrink-0" />
       );
     }
-    return <ArrowUpDown className="w-3.5 h-3.5 text-slate-300 group-hover/col:text-slate-500 shrink-0" />;
+    return (
+      <ArrowUpDown className="w-3.5 h-3.5 text-gray-300 group-hover/col:text-gray-500 shrink-0" />
+    );
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+    <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50/75 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider select-none">
-              {/* Cột Mã ô kho */}
+            <tr className="bg-gray-50/90 border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase tracking-wider select-none">
               <th
                 onClick={() => onSort?.('code')}
-                className={`py-3.5 px-4 cursor-pointer hover:bg-slate-100/70 transition-colors group/col ${
-                  sortField === 'code' ? 'text-brand-600 bg-brand-50/30' : ''
+                className={`py-2.5 px-4 cursor-pointer hover:bg-gray-100/80 transition-colors group/col ${
+                  sortField === 'code' ? 'text-brand-700' : ''
                 }`}
               >
                 <div className="flex items-center gap-1.5">
@@ -72,11 +81,10 @@ export const StorageUnitTable: React.FC<StorageUnitTableProps> = ({
                 </div>
               </th>
 
-              {/* Cột Tầng / Vị trí */}
               <th
                 onClick={() => onSort?.('floor')}
-                className={`py-3.5 px-4 cursor-pointer hover:bg-slate-100/70 transition-colors group/col ${
-                  sortField === 'floor' ? 'text-brand-600 bg-brand-50/30' : ''
+                className={`py-2.5 px-4 cursor-pointer hover:bg-gray-100/80 transition-colors group/col ${
+                  sortField === 'floor' ? 'text-brand-700' : ''
                 }`}
               >
                 <div className="flex items-center gap-1.5">
@@ -85,11 +93,10 @@ export const StorageUnitTable: React.FC<StorageUnitTableProps> = ({
                 </div>
               </th>
 
-              {/* Cột Trạng thái */}
               <th
                 onClick={() => onSort?.('status')}
-                className={`py-3.5 px-4 cursor-pointer hover:bg-slate-100/70 transition-colors group/col ${
-                  sortField === 'status' ? 'text-brand-600 bg-brand-50/30' : ''
+                className={`py-2.5 px-4 cursor-pointer hover:bg-gray-100/80 transition-colors group/col ${
+                  sortField === 'status' ? 'text-brand-700' : ''
                 }`}
               >
                 <div className="flex items-center gap-1.5">
@@ -98,138 +105,134 @@ export const StorageUnitTable: React.FC<StorageUnitTableProps> = ({
                 </div>
               </th>
 
-              {/* Cột Khách thuê */}
               <th
                 onClick={() => onSort?.('customer')}
-                className={`py-3.5 px-4 cursor-pointer hover:bg-slate-100/70 transition-colors group/col ${
-                  sortField === 'customer' ? 'text-brand-600 bg-brand-50/30' : ''
+                className={`py-2.5 px-4 cursor-pointer hover:bg-gray-100/80 transition-colors group/col ${
+                  sortField === 'customer' ? 'text-brand-700' : ''
                 }`}
               >
                 <div className="flex items-center gap-1.5">
-                  <span>Khách thuê hiện tại</span>
+                  <span>Khách thuê</span>
                   {renderSortIcon('customer')}
                 </div>
               </th>
 
-              {/* Cột Hạn hợp đồng */}
               <th
                 onClick={() => onSort?.('endDate')}
-                className={`py-3.5 px-4 cursor-pointer hover:bg-slate-100/70 transition-colors group/col ${
-                  sortField === 'endDate' ? 'text-brand-600 bg-brand-50/30' : ''
+                className={`py-2.5 px-4 cursor-pointer hover:bg-gray-100/80 transition-colors group/col ${
+                  sortField === 'endDate' ? 'text-brand-700' : ''
                 }`}
               >
                 <div className="flex items-center gap-1.5">
-                  <span>Hạn hợp đồng</span>
+                  <span>Hạn HĐ</span>
                   {renderSortIcon('endDate')}
                 </div>
               </th>
 
-              {/* Cột Thao tác */}
-              <th className="py-3.5 px-4 text-right">Thao tác</th>
+              <th className="py-2.5 px-4 text-right">Thao tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-xs">
+
+          <tbody className="divide-y divide-gray-100 text-xs">
             {units.map((unit) => {
               const contract = contractsMap[unit.id];
               const isOccupied = unit.status === 'OCCUPIED';
+              const statusMeta = FLAT_STATUS_META[unit.status] || {
+                label: unit.status,
+                dotClass: 'bg-gray-400',
+                textClass: 'text-gray-600',
+              };
+              const floorLabel = `Tầng ${unit.floor ?? 1}`;
+              const locationDisplay = unit.position
+                ? `${floorLabel}, ${unit.position}`
+                : floorLabel;
 
               return (
                 <tr
                   key={unit.id}
                   onClick={() => onSelectUnit(unit)}
-                  className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                  className="hover:bg-gray-50/80 transition-colors cursor-pointer group"
                 >
-                  {/* Mã ô kho */}
-                  <td className="py-3.5 px-4">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-brand-50 group-hover:text-brand-600 text-slate-500 flex items-center justify-center transition-colors">
-                        <Box className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <span className="font-mono font-bold text-slate-900 group-hover:text-brand-600 transition-colors text-sm">
-                          {unit.code}
-                        </span>
-                        {unit.locationNote && (
-                          <p className="text-[10px] text-slate-400 truncate max-w-[150px]">
-                            {unit.locationNote}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+                  {/* Mã ô kho — gọn gàng, không lặp locationNote, không hộp icon thừa */}
+                  <td className="py-2.5 px-4 whitespace-nowrap">
+                    <span className="font-semibold text-gray-900 group-hover:text-brand-700 transition-colors text-sm">
+                      {unit.code}
+                    </span>
                   </td>
 
-                  {/* Tầng / Vị trí */}
-                  <td className="py-3.5 px-4">
-                    <div className="font-medium text-slate-800">Tầng {unit.floor ?? 1}</div>
-                    <div className="text-[11px] text-slate-500 font-mono">
-                      {unit.position || 'Chưa định vị'}
-                    </div>
+                  {/* Tầng / Vị trí — căn trái, rút gọn 1 dòng */}
+                  <td className="py-2.5 px-4 text-gray-700 whitespace-nowrap">
+                    {locationDisplay}
                   </td>
 
-                  {/* Trạng thái */}
-                  <td className="py-3.5 px-4">
-                    <StatusBadge status={unit.status} size="sm" />
+                  {/* Trạng thái — Flat UI (chấm nhỏ + chữ màu, không nền pastel) */}
+                  <td className="py-2.5 px-4 whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center gap-1.5 text-xs font-medium ${statusMeta.textClass}`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusMeta.dotClass}`}
+                        aria-hidden="true"
+                      />
+                      <span>{statusMeta.label}</span>
+                    </span>
                   </td>
 
                   {/* Khách thuê */}
-                  <td className="py-3.5 px-4">
+                  <td className="py-2.5 px-4 whitespace-nowrap">
                     {contract && isOccupied ? (
-                      <div>
-                        <div className="font-semibold text-slate-800 flex items-center gap-1.5">
-                          <User className="w-3 h-3 text-slate-400" />
-                          <span>{contract.customerName}</span>
-                        </div>
-                        <div className="text-[11px] text-slate-500">
-                          {contract.customerPhone}
-                        </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium text-gray-900">{contract.customerName}</span>
+                        {contract.customerPhone && (
+                          <span className="text-gray-400">({contract.customerPhone})</span>
+                        )}
                       </div>
                     ) : isOccupied ? (
-                      <span className="text-amber-600 font-semibold italic text-[11px]">Chưa gắn HĐ</span>
+                      <span className="text-amber-700 font-medium">Chưa gắn HĐ</span>
                     ) : (
-                      <span className="text-slate-400 italic">—</span>
+                      <span className="text-gray-400">—</span>
                     )}
                   </td>
 
                   {/* Hạn hợp đồng */}
-                  <td className="py-3.5 px-4">
+                  <td className="py-2.5 px-4 whitespace-nowrap tabular-nums">
                     {contract && isOccupied ? (
-                      <div>
-                        <div className="font-medium text-slate-700 flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-slate-400" />
-                          <span>{contract.endDateExclusive}</span>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-800">{contract.endDateExclusive}</span>
                         {contract.daysRemaining !== undefined && (
                           <span
-                            className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
+                            className={`text-[11px] font-medium ${
                               contract.status === 'OVERDUE'
-                                ? 'bg-rose-100 text-rose-800'
+                                ? 'text-rose-600'
                                 : contract.daysRemaining <= 7
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'text-slate-500'
+                                ? 'text-amber-700'
+                                : 'text-gray-500'
                             }`}
                           >
+                            (
                             {contract.daysRemaining >= 0
-                              ? `Còn ${contract.daysRemaining} ngày`
+                              ? `còn ${contract.daysRemaining} ngày`
                               : contract.status === 'OVERDUE'
-                              ? `Quá hạn ${Math.abs(contract.daysRemaining)} ngày`
+                              ? `quá hạn ${Math.abs(contract.daysRemaining)} ngày`
                               : contract.status === 'CLOSED'
-                              ? 'Đã tất toán'
+                              ? 'đã tất toán'
                               : contract.status === 'TERMINATED'
-                              ? 'Đã chấm dứt'
-                              : 'Hết hạn'}
+                              ? 'đã chấm dứt'
+                              : 'hết hạn'}
+                            )
                           </span>
                         )}
                       </div>
                     ) : isOccupied ? (
-                      <span className="text-amber-600 font-semibold italic text-[11px]">Chưa gắn HĐ</span>
+                      <span className="text-amber-700 font-medium">Chưa gắn HĐ</span>
                     ) : (
-                      <span className="text-slate-400 italic">—</span>
+                      <span className="text-gray-400">—</span>
                     )}
                   </td>
 
-                  {/* Thao tác */}
-                  <td className="py-3.5 px-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  {/* Thao tác — Text link tinh gọn, không viền hộp màu mè */}
+                  <td className="py-2.5 px-4 text-right whitespace-nowrap">
+                    <div className="inline-flex items-center justify-end gap-3">
                       {unit.status === 'AVAILABLE' && onStatusChange && (
                         <button
                           type="button"
@@ -237,7 +240,7 @@ export const StorageUnitTable: React.FC<StorageUnitTableProps> = ({
                             e.stopPropagation();
                             onStatusChange(unit, 'MAINTENANCE');
                           }}
-                          className="px-2 py-1 text-[11px] font-medium text-amber-700 hover:bg-amber-50 rounded-lg border border-amber-200 transition-colors cursor-pointer"
+                          className="text-xs font-medium text-gray-500 hover:text-amber-700 hover:underline underline-offset-2 transition-colors cursor-pointer"
                           title="Chuyển sang bảo trì"
                         >
                           Bảo trì
@@ -250,8 +253,8 @@ export const StorageUnitTable: React.FC<StorageUnitTableProps> = ({
                             e.stopPropagation();
                             onStatusChange(unit, 'AVAILABLE');
                           }}
-                          className="px-2 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-50 rounded-lg border border-emerald-200 transition-colors cursor-pointer"
-                          title="Hoàn tất bảo trì -> Sẵn sàng"
+                          className="text-xs font-medium text-gray-500 hover:text-emerald-700 hover:underline underline-offset-2 transition-colors cursor-pointer"
+                          title="Hoàn tất bảo trì → Sẵn sàng"
                         >
                           Sẵn sàng
                         </button>
@@ -262,10 +265,9 @@ export const StorageUnitTable: React.FC<StorageUnitTableProps> = ({
                           e.stopPropagation();
                           onSelectUnit(unit);
                         }}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-brand-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg border border-brand-200 transition-colors cursor-pointer"
+                        className="text-xs font-semibold text-brand-700 hover:text-brand-800 hover:underline underline-offset-2 transition-colors cursor-pointer"
                       >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Chi tiết</span>
+                        Chi tiết
                       </button>
                     </div>
                   </td>
