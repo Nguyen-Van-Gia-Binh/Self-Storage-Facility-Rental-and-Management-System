@@ -8,6 +8,7 @@ import type { ReturnContractDetail, InspectionCondition, ReturnInspectionRequest
 import { SignaturePad } from './SignaturePad';
 import { EvidencePhotoCapture } from './EvidencePhotoCapture';
 import { SettlementPreviewCard } from './SettlementPreviewCard';
+import { formatLocalDate } from './StaffWeekCalendarStrip';
 import { fetchSurcharges } from '@/api/pricing';
 import { getSettlementPreview } from '@/api/contract';
 import { catalogLineAmount, feeCategoryLabel } from '@/features/pricing/feeCategory';
@@ -129,7 +130,7 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
     }
 
     const payload: ReturnInspectionRequest = {
-      returnDate: new Date().toISOString().split('T')[0],
+      returnDate: formatLocalDate(new Date()),
       condition,
       damageNotes: condition !== 'GOOD' ? damageNotes : undefined,
       damageCost: 0,

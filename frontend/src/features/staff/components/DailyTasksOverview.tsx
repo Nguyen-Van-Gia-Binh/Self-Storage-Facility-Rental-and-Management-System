@@ -7,7 +7,7 @@ import {
   CheckCheck,
 } from 'lucide-react';
 import type { StaffDailyTaskReport, DailyIncidentTask, DailyCheckInTask, DailyReturnTask } from '@/types';
-import { StaffWeekCalendarStrip } from './StaffWeekCalendarStrip';
+import { StaffWeekCalendarStrip, formatLocalDate } from './StaffWeekCalendarStrip';
 import { StaffCheckInDetailView } from './StaffCheckInDetailView';
 import { StaffReturnDetailView } from './StaffReturnDetailView';
 import { StaffIncidentDetailView } from './StaffIncidentDetailView';
@@ -417,7 +417,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
       {/* Lịch ca trực tuần cuộn ngang - Chọn ngày hiển thị công việc tương ứng phía dưới */}
       {onDateChange && (
         <StaffWeekCalendarStrip
-          selectedDate={selectedDate || new Date().toISOString().split('T')[0]}
+          selectedDate={selectedDate || formatLocalDate(new Date())}
           onDateChange={onDateChange}
           totalTasksForSelectedDate={totalAllTasks}
         />
@@ -528,7 +528,9 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                 {q
                   ? 'Vui lòng kiểm tra lại từ khóa tìm kiếm (SĐT, Họ tên, Mã kho) hoặc làm mới danh sách.'
                   : statusFilter === 'PENDING'
-                  ? 'Tuyệt vời! Toàn bộ nhiệm vụ trong ca trực đã hoàn tất xuất sắc.'
+                  ? selectedDate && selectedDate < formatLocalDate(new Date())
+                    ? 'Ngày này đã qua — mọi công việc chưa hoàn tất đều tự động chuyển sang ca trực Hôm nay.'
+                    : 'Tuyệt vời! Toàn bộ nhiệm vụ trong ca trực đã hoàn tất xuất sắc.'
                   : 'Hiện tại chưa có công việc nào hoàn tất trong mục này.'}
               </p>
             </div>

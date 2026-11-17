@@ -221,11 +221,13 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         Set<Long> processedContractIds = new HashSet<>();
         LocalDate today = LocalDate.now(VN_ZONE);
         boolean isToday = date.isEqual(today);
+        boolean isPast = date.isBefore(today);
 
         List<StaffDailyAssignment> assignments = new ArrayList<>();
         if (isToday) {
+            int lookbackDays = Math.max(10, resolveCheckinGraceDays(null, cache));
             List<StaffDailyAssignment> windowList = staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(
-                    staffId, today.minusDays(10), today);
+                    staffId, today.minusDays(lookbackDays), today);
             if (windowList != null) {
                 assignments.addAll(windowList);
             }
@@ -233,13 +235,6 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
             List<StaffDailyAssignment> dateList = staffDailyAssignmentRepository.findByStaffIdAndWorkDate(staffId, date);
             if (dateList != null) {
                 assignments.addAll(dateList);
-            }
-            if (date.isAfter(today)) {
-                List<StaffDailyAssignment> windowList = staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(
-                        staffId, today.minusDays(10), today);
-                if (windowList != null) {
-                    assignments.addAll(windowList);
-                }
             }
         }
 
@@ -250,40 +245,48 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                 }
                 getContractCached(a.getReferenceId(), cache).ifPresent(c -> {
                     LocalDate workDate = a.getWorkDate() != null ? a.getWorkDate() : c.getStartDate();
+                    LocalDate scheduledDate = c.getStartDate() != null ? c.getStartDate() : workDate;
                     LocalDate createdDate = c.getCreatedAt() != null
                             ? c.getCreatedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
                             : null;
 
                     boolean isCompleted = c.getStatus() == ContractStatus.ACTIVE || c.getCheckinDate() != null;
-                    boolean isTodayTask;
+                    boolean isTodayTask = false;
                     boolean isLatePending = false;
 
                     if (!isCompleted && c.getStatus() == ContractStatus.PENDING_CHECK_IN) {
-                        if (workDate != null && workDate.isAfter(date)) {
-                            // Hẹn nhận kho ở tương lai (hoặc khách đã dời lịch sang tương lai): không thuộc ca trực ngày 'date'
+                        if (isPast) {
+                            // Ngày quá khứ không giữ việc PENDING — mọi việc chưa xong đã tự động dồn sang Hôm nay
                             isTodayTask = false;
                             isLatePending = false;
-                        } else {
-                            isTodayTask = (workDate != null && workDate.isEqual(date))
-                                    || (workDate == null && createdDate != null && createdDate.isEqual(date));
-                            isLatePending = isToday
-                                    && workDate != null
-                                    && workDate.isBefore(date)
+                        } else if (scheduledDate != null && scheduledDate.isAfter(date)) {
+                            // Hẹn nhận kho ở tương lai (hoặc khách đã dời lịch sang tương lai): không thuộc ngày 'date'
+                            isTodayTask = false;
+                            isLatePending = false;
+                        } else if (isToday) {
+                            isTodayTask = (scheduledDate != null && scheduledDate.isEqual(date))
+                                    || (scheduledDate == null && createdDate != null && createdDate.isEqual(date));
+                            isLatePending = !isTodayTask
+                                    && scheduledDate != null
+                                    && scheduledDate.isBefore(date)
                                     && isWithinGracePeriod(c, date, cache);
+                        } else {
+                            // Ngày tương lai: chỉ hiện đúng lịch hẹn của ngày đó, không carry-over việc trễ
+                            isTodayTask = scheduledDate != null && scheduledDate.isEqual(date);
                         }
                     } else {
                         LocalDate checkinDate = c.getCheckinDate();
                         isTodayTask = (checkinDate != null && checkinDate.isEqual(date))
-                                || (workDate != null && workDate.isEqual(date) && (checkinDate == null || checkinDate.isEqual(date)));
+                                || (checkinDate == null && workDate != null && workDate.isEqual(date));
                     }
 
                     if ((isTodayTask || isLatePending) && processedContractIds.add(c.getId())) {
                         if (!onlyPending || !isCompleted) {
                             DailyCheckInTaskDto dto = toCheckInDto(c, cache);
-                            if (isLatePending) {
+                            if (isLatePending && scheduledDate != null) {
                                 dto.setLate(true);
-                                long diff = java.time.temporal.ChronoUnit.DAYS.between(workDate, date);
-                                dto.setDaysLate((int) diff);
+                                long diff = java.time.temporal.ChronoUnit.DAYS.between(scheduledDate, date);
+                                dto.setDaysLate((int) Math.max(1, diff));
                             }
                             result.add(dto);
                         }
@@ -315,6 +318,7 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         Set<Long> processedContractIds = new HashSet<>();
         LocalDate today = LocalDate.now(VN_ZONE);
         boolean isToday = date.isEqual(today);
+        boolean isPast = date.isBefore(today);
 
         List<StaffDailyAssignment> assignments = new ArrayList<>();
         if (isToday) {
@@ -327,13 +331,6 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
             List<StaffDailyAssignment> dateList = staffDailyAssignmentRepository.findByStaffIdAndWorkDate(staffId, date);
             if (dateList != null) {
                 assignments.addAll(dateList);
-            }
-            if (date.isAfter(today)) {
-                List<StaffDailyAssignment> windowList = staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(
-                        staffId, today.minusDays(14), today);
-                if (windowList != null) {
-                    assignments.addAll(windowList);
-                }
             }
         }
 
@@ -368,26 +365,32 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                 boolean isCompleted = c.getStatus() == ContractStatus.RETURNED
                         || c.getStatus() == ContractStatus.CLOSED
                         || isInspected;
-                boolean isTodayTask;
+                boolean isTodayTask = false;
                 boolean isLatePending = false;
 
                 if (!isCompleted) {
-                    isTodayTask = (workDate != null && workDate.isEqual(date))
-                            || (targetReturnDate != null && targetReturnDate.isEqual(date))
-                            || (returnCreatedDate != null && returnCreatedDate.isEqual(date));
+                    if (isPast) {
+                        // Ngày quá khứ không giữ việc trả kho PENDING — đã dồn sang Hôm nay
+                        isTodayTask = false;
+                        isLatePending = false;
+                    } else if (isToday) {
+                        isTodayTask = (workDate != null && workDate.isEqual(date))
+                                || (targetReturnDate != null && targetReturnDate.isEqual(date))
+                                || (returnCreatedDate != null && returnCreatedDate.isEqual(date));
 
-                    // Một nhiệm vụ trả kho chỉ bị tính là Trễ (isLatePending) khi:
-                    // 1) Hợp đồng đang OVERDUE (đã qua hạn kết thúc c.getEndDateExclusive())
-                    // 2) HOẶC ngày hẹn trả kho (targetReturnDate) đã trôi qua trước ngày đang xét
-                    // VÀ hôm nay không phải ngày hẹn trả kho (!isTodayTask).
-                    if (!isTodayTask) {
-                        if (c.getStatus() == ContractStatus.OVERDUE) {
-                            LocalDate overdueBase = c.getEndDateExclusive() != null ? c.getEndDateExclusive() : workDate;
-                            isLatePending = overdueBase != null && overdueBase.isBefore(date);
-                        } else if (c.getStatus() == ContractStatus.PENDING_RETURN) {
-                            LocalDate deadline = targetReturnDate != null ? targetReturnDate : workDate;
-                            isLatePending = deadline != null && deadline.isBefore(date);
+                        if (!isTodayTask) {
+                            if (c.getStatus() == ContractStatus.OVERDUE) {
+                                LocalDate overdueBase = c.getEndDateExclusive() != null ? c.getEndDateExclusive() : workDate;
+                                isLatePending = overdueBase != null && overdueBase.isBefore(date);
+                            } else if (c.getStatus() == ContractStatus.PENDING_RETURN) {
+                                LocalDate deadline = targetReturnDate != null ? targetReturnDate : workDate;
+                                isLatePending = deadline != null && deadline.isBefore(date);
+                            }
                         }
+                    } else {
+                        // Ngày tương lai: chỉ hiện đúng lịch hẹn trả kho của ngày đó, không carry-over việc trễ
+                        isTodayTask = (workDate != null && workDate.isEqual(date))
+                                || (targetReturnDate != null && targetReturnDate.isEqual(date));
                     }
                 } else {
                     LocalDate inspectedDate = isInspected
@@ -445,24 +448,30 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                         boolean isContractCompleted = c.getStatus() == ContractStatus.RETURNED
                                 || c.getStatus() == ContractStatus.CLOSED
                                 || req.getInspectedAt() != null;
-                        boolean include;
+                        boolean include = false;
                         boolean isLate = false;
                         LocalDate targetReturnDate = c.getReturnDate() != null
                                 ? c.getReturnDate()
                                 : req.getRequestedReturnDate();
                         LocalDate refDate = targetReturnDate != null ? targetReturnDate : returnCreatedDate;
                         if (!isContractCompleted) {
-                            boolean isTodayRef = refDate != null && refDate.isEqual(date);
-                            boolean isLatePending = false;
-                            if (!isTodayRef) {
-                                if (c.getStatus() == ContractStatus.OVERDUE && c.getEndDateExclusive() != null) {
-                                    isLatePending = c.getEndDateExclusive().isBefore(date);
-                                } else if (refDate != null) {
-                                    isLatePending = refDate.isBefore(date);
+                            if (isPast) {
+                                include = false;
+                            } else if (isToday) {
+                                boolean isTodayRef = refDate != null && refDate.isEqual(date);
+                                boolean isLatePending = false;
+                                if (!isTodayRef) {
+                                    if (c.getStatus() == ContractStatus.OVERDUE && c.getEndDateExclusive() != null) {
+                                        isLatePending = c.getEndDateExclusive().isBefore(date);
+                                    } else if (refDate != null) {
+                                        isLatePending = refDate.isBefore(date);
+                                    }
                                 }
+                                include = isTodayRef || isLatePending;
+                                isLate = !isTodayRef && isLatePending;
+                            } else {
+                                include = refDate != null && refDate.isEqual(date);
                             }
-                            include = isTodayRef || isLatePending;
-                            isLate = !isTodayRef && isLatePending;
                         } else {
                             include = (inspectedDate != null && inspectedDate.isEqual(date))
                                     || (inspectedDate == null && returnCreatedDate != null && returnCreatedDate.isEqual(date));
@@ -500,6 +509,7 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         Set<Long> processedRequestIds = new HashSet<>();
         LocalDate today = LocalDate.now(VN_ZONE);
         boolean isToday = date.isEqual(today);
+        boolean isPast = date.isBefore(today);
 
         // Sự cố được phân công trực tiếp cho staff
         List<SupportRequest> assignedRequests = supportRequestRepository.findAllByAssignedStaffId(staffId);
@@ -512,17 +522,26 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                 continue;
             }
             boolean isCompleted = isSupportWorkDone(sr, cache);
-            boolean include = true;
-            if (sr.getCreatedAt() != null) {
-                LocalDate createdDate = sr.getCreatedAt().atZoneSameInstant(VN_ZONE).toLocalDate();
-                LocalDate resolvedDate = sr.getResolvedAt() != null
-                        ? sr.getResolvedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
-                        : null;
-                if (!isCompleted) {
-                    include = createdDate.isEqual(date) || (isToday && !createdDate.isAfter(date));
+            boolean include;
+            LocalDate createdDate = sr.getCreatedAt() != null
+                    ? sr.getCreatedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
+                    : null;
+            LocalDate resolvedDate = sr.getResolvedAt() != null
+                    ? sr.getResolvedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
+                    : null;
+
+            if (!isCompleted) {
+                if (isPast) {
+                    // Ngày quá khứ không giữ sự cố PENDING — sự cố chưa xong luôn nằm ở ca trực Hôm nay
+                    include = false;
+                } else if (isToday) {
+                    include = createdDate == null || !createdDate.isAfter(date);
                 } else {
-                    include = createdDate.isEqual(date) || (resolvedDate != null && resolvedDate.isEqual(date));
+                    include = createdDate != null && createdDate.isEqual(date);
                 }
+            } else {
+                include = (resolvedDate != null && resolvedDate.isEqual(date))
+                        || (resolvedDate == null && createdDate != null && createdDate.isEqual(date));
             }
             if (include && processedRequestIds.add(sr.getId())) {
                 if (!onlyPending || !isCompleted) {
@@ -544,6 +563,9 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                             return;
                         }
                         boolean isCompleted = isSupportWorkDone(sr, cache);
+                        if (isPast && !isCompleted) {
+                            return;
+                        }
                         if (!onlyPending || !isCompleted) {
                             result.add(toSupportDto(sr, cache));
                         }

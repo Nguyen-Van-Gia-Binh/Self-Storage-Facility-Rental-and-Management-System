@@ -113,114 +113,10 @@ export async function getStaffDailyTasks(
     return cached.data;
   }
 
-  // Tái sử dụng dữ liệu hôm nay đã có sẵn trong cache để merge carry-over mà không cần gọi lại mạng
-  const todayCacheKey = `${staffId}:${todayStr}`;
-  let todayData: any = staffTasksCache.get(todayCacheKey)?.data;
-
-  const [res, todayRes] = await Promise.all([
-    apiClient<ApiResponse<any>>(`/reports/staff/${staffId}/daily-tasks?date=${queryDate}`),
-    queryDate > todayStr && !todayData
-      ? apiClient<ApiResponse<any>>(`/reports/staff/${staffId}/daily-tasks?date=${todayStr}`).catch(() => null)
-      : Promise.resolve(null),
-  ]);
-  let data = res?.data;
-
-  if (todayRes?.data) {
-    todayData = todayRes.data;
-    staffTasksCache.set(todayCacheKey, { data: todayData, timestamp: Date.now() });
-  }
-
-  // Actionable Carry-over Inbox (Gối đầu công việc tồn đọng):
-  // Nếu xem ngày tương lai (queryDate > todayStr), tự động nạp các việc chưa hoàn thành từ hôm nay
-  if (queryDate > todayStr && todayRes?.data) {
-    try {
-      const todayData = todayRes.data;
-      if (todayData) {
-        const diffDays = Math.max(
-          1,
-          Math.round((new Date(queryDate).getTime() - new Date(todayStr).getTime()) / (1000 * 60 * 60 * 24))
-        );
-
-        // 1. Trả kho (pendingReturns / returnTasks)
-        const currentReturns = data?.returnTasks || data?.pendingReturns || [];
-        const existingReturnIds = new Set(currentReturns.map((r: any) => r.contractId || r.id));
-        const todayReturns = todayData?.returnTasks || todayData?.pendingReturns || [];
-
-        const carryOverReturns = todayReturns
-          .filter((r: any) => {
-            const isDone =
-              r.completed ||
-              r.status === 'COMPLETED' ||
-              r.status === 'INSPECTED' ||
-              r.status === 'RETURNED';
-            return !isDone && !existingReturnIds.has(r.contractId || r.id);
-          })
-          .map((r: any) => ({
-            ...r,
-            late: true,
-            isLate: true,
-            daysLate: diffDays,
-          }));
-
-        if (carryOverReturns.length > 0) {
-          const merged = [...currentReturns, ...carryOverReturns];
-          data = {
-            ...data,
-            returnTasks: merged,
-            pendingReturns: merged,
-          };
-        }
-
-        // 2. Nhận kho (pendingCheckIns / checkInTasks)
-        const currentCheckIns = data?.checkInTasks || data?.pendingCheckIns || [];
-        const existingCheckInIds = new Set(
-          currentCheckIns.map((c: any) => c.reservationId || c.contractId || c.id)
-        );
-        const todayCheckIns = todayData?.checkInTasks || todayData?.pendingCheckIns || [];
-
-        const carryOverCheckIns = todayCheckIns
-          .filter((c: any) => {
-            const isDone = c.completed || c.status === 'COMPLETED' || c.status === 'ACTIVE';
-            return !isDone && !existingCheckInIds.has(c.reservationId || c.contractId || c.id);
-          })
-          .map((c: any) => ({
-            ...c,
-            late: true,
-            isLate: true,
-            daysLate: diffDays,
-          }));
-
-        if (carryOverCheckIns.length > 0) {
-          const merged = [...currentCheckIns, ...carryOverCheckIns];
-          data = {
-            ...data,
-            checkInTasks: merged,
-            pendingCheckIns: merged,
-          };
-        }
-
-        // 3. Sự cố (supportTasks / openSupportRequests)
-        const currentSupport = data?.supportTasks || data?.openSupportRequests || [];
-        const existingSupportIds = new Set(currentSupport.map((s: any) => s.ticketId || s.id));
-        const todaySupport = todayData?.supportTasks || todayData?.openSupportRequests || [];
-
-        const carryOverSupport = todaySupport.filter((s: any) => {
-          return !isSupportTaskDone(s) && !existingSupportIds.has(s.ticketId || s.id);
-        });
-
-        if (carryOverSupport.length > 0) {
-          const merged = [...currentSupport, ...carryOverSupport];
-          data = {
-            ...data,
-            supportTasks: merged,
-            openSupportRequests: merged,
-          };
-        }
-      }
-    } catch {
-      // ignore network errors
-    }
-  }
+  const res = await apiClient<ApiResponse<any>>(
+    `/reports/staff/${staffId}/daily-tasks?date=${queryDate}`
+  );
+  const data = res?.data;
 
   const rawList = data?.supportTasks || data?.openSupportRequests || [];
   const rawCheckIns: any[] = data?.checkInTasks || data?.pendingCheckIns || [];
@@ -260,9 +156,6 @@ export async function getStaffDailyTasks(
   };
 
   staffTasksCache.set(cacheKey, { data: result, timestamp: Date.now() });
-  if (queryDate === todayStr) {
-    staffTasksCache.set(todayCacheKey, { data: result, timestamp: Date.now() });
-  }
 
   return result;
 }

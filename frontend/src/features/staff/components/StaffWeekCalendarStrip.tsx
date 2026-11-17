@@ -42,7 +42,7 @@ export const StaffWeekCalendarStrip: React.FC<StaffWeekCalendarStripProps> = ({
   onDateChange,
   totalTasksForSelectedDate,
 }) => {
-  const todayStr = useMemo(() => formatLocalDate(new Date()), []);
+  const todayStr = formatLocalDate(new Date());
 
   // Ngày Thứ Hai của tuần đang hiển thị
   const [viewingMonday, setViewingMonday] = useState<Date>(() => {

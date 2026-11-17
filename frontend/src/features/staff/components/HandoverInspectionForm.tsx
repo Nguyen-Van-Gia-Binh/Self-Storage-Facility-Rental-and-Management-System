@@ -3,6 +3,7 @@ import { AlertOctagon, AlertTriangle, Info, KeyRound, Check } from 'lucide-react
 import type { CheckInContract, CheckInSubmitRequest } from '../../../types';
 import { SignaturePad } from './SignaturePad';
 import { EvidencePhotoCapture } from './EvidencePhotoCapture';
+import { formatLocalDate } from './StaffWeekCalendarStrip';
 export interface HandoverInspectionFormProps {
   contract: CheckInContract;
   onSubmitHandover: (request: CheckInSubmitRequest) => Promise<void>;
@@ -73,7 +74,7 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
     if (!canSubmit) return;
 
     const request: CheckInSubmitRequest = {
-      checkinDate: new Date().toISOString().split('T')[0],
+      checkinDate: formatLocalDate(new Date()),
       conditionNote: conditionNote || 'Mặt bằng ô kho hoàn toàn đạt chuẩn nghiệm thu lúc bàn giao.',
       customerConfirmed: true,
       notes: `Nhân viên tiếp đón trực tiếp tại cơ sở. Ô kho ${contract.storageUnitCode}.`,

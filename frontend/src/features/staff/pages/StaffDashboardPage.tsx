@@ -5,6 +5,7 @@ import type { StaffDailyTaskReport } from '@/types';
 import { getStaffDailyTasks, invalidateStaffTasksCache } from '@/api/staff';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import { DailyTasksOverview } from '../components/DailyTasksOverview';
+import { formatLocalDate } from '../components/StaffWeekCalendarStrip';
 import { useCurrentUser } from '@/utils/useCurrentUser';
 
 export const StaffDashboardPage: React.FC = () => {
@@ -12,7 +13,7 @@ export const StaffDashboardPage: React.FC = () => {
   const staffId = user?.id as number | undefined;
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialDate = searchParams.get('date') || new Date().toISOString().split('T')[0];
+  const initialDate = searchParams.get('date') || formatLocalDate(new Date());
   const initialFacilityId = Number(searchParams.get('facilityId')) || 0;
 
   const [tasks, setTasks] = useState<StaffDailyTaskReport | null>(null);
