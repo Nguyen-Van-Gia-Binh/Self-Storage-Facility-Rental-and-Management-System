@@ -6,25 +6,21 @@ import {
   RefreshCw,
   AlertCircle,
   Box,
+  Snowflake,
   Building2,
   ArrowUpDown,
   LayoutGrid,
   Table2,
-  ArrowRight,
-  Sparkles,
+  ChevronRight,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
-import {
-  fetchUnitTypes,
-  fetchStorageUnits,
-} from '@/api/unit';
+import { fetchUnitTypes, fetchStorageUnits } from '@/api/unit';
 import type { FacilityListItem } from '@/types';
 import type { UnitTypeResponse } from '@/types/unit';
 import { Breadcrumb } from '../components/Breadcrumb';
-import { UnitTypeCard, cleanUnitTypeName } from '../components/UnitTypeCard';
+import { UnitTypeCard, cleanUnitTypeName, isClimateType } from '../components/UnitTypeCard';
 import type { UnitTypeBreakdownStats } from '../components/UnitTypeCard';
 import { Pagination } from '../components/Pagination';
-import { getUnitTypeTheme } from '../utils/unitTypeTheme';
 
 export type UnitTypeSortOption =
   | 'name-asc'
@@ -54,7 +50,8 @@ export const UnitTypeListPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<UnitTypeSortOption>('name-asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [showInactive, setShowInactive] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  // Mặc định mở dạng Bảng (ERP/WMS) giúp FM quét nhanh và so sánh thông số
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -68,17 +65,14 @@ export const UnitTypeListPage: React.FC = () => {
       setError(null);
 
       try {
-        // 1. Lấy thông tin cơ sở
         const facList = await fetchMyAssignedFacilities();
         const currentFac = facList.find((f) => f.id === facilityIdNum) || null;
         setFacility(currentFac);
 
-        // 2. Lấy danh sách loại ô kho
         const utRes = await fetchUnitTypes(facilityIdNum, { size: 100 });
         const types = utRes?.content || [];
         setUnitTypes(types);
 
-        // 3. Lấy danh sách toàn bộ ô kho của cơ sở để tính mini-stats theo từng loại
         const suRes = await fetchStorageUnits(facilityIdNum, {
           size: 500,
         });
@@ -110,16 +104,13 @@ export const UnitTypeListPage: React.FC = () => {
     loadData();
   }, [loadData]);
 
-  // Reset về trang 1 khi đổi bộ lọc hoặc từ khóa
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, sortBy, showInactive]);
 
   const isTypeActive = (t: UnitTypeResponse) => t.isActive ?? t.active ?? true;
 
-  // Lọc và Sắp xếp
   const processedTypes = useMemo(() => {
-    // 1. Filter
     const filtered = unitTypes
       .filter((t) => (showInactive ? true : isTypeActive(t)))
       .filter((t) => {
@@ -132,7 +123,6 @@ export const UnitTypeListPage: React.FC = () => {
         );
       });
 
-    // 2. Sort
     return filtered.sort((a, b) => {
       const statsA = typeStatsMap[a.id];
       const statsB = typeStatsMap[b.id];
@@ -154,7 +144,6 @@ export const UnitTypeListPage: React.FC = () => {
     });
   }, [unitTypes, showInactive, typeStatsMap, searchTerm, sortBy]);
 
-  // Phân trang
   const totalPages = Math.ceil(processedTypes.length / PAGE_SIZE) || 1;
   const paginatedTypes = useMemo(() => {
     const startIndex = (currentPage - 1) * PAGE_SIZE;
@@ -173,112 +162,53 @@ export const UnitTypeListPage: React.FC = () => {
         ]}
       />
 
-      {/* Header bar */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Page Header phẳng chuẩn Enterprise SaaS */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-5 border-b border-gray-200">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
               Danh sách Loại ô kho
             </h1>
-            {facility && (
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200/80">
-                {facility.name} ({facility.code})
-              </span>
-            )}
+            <span className="text-sm text-gray-500 tabular-nums">
+              · {processedTypes.length} loại
+            </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Chọn một loại ô kho để xem và quản lý danh sách các ô kho vật lý tại cơ sở
+          <p className="text-sm text-gray-500 mt-1">
+            {facility ? `${facility.name} (${facility.code})` : `Cơ sở #${facilityIdNum}`} · Danh mục chuẩn (chỉ đọc) — chọn một loại kho để quản lý các ô vật lý.
           </p>
         </div>
 
-        {/* Actions Toolbar */}
-        <div className="flex flex-wrap items-center gap-3">
+        {/* Actions & View Controls */}
+        <div className="flex flex-wrap items-center gap-2.5">
           <div className="relative min-w-[220px]">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Tìm kiếm loại ô kho..."
+              placeholder="Tìm tên, mã loại kho..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+              className="w-full pl-9 pr-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
             />
           </div>
 
-          <label className="flex items-center gap-2 text-xs font-medium text-slate-600 cursor-pointer select-none px-2 py-1.5 rounded-xl border border-slate-200 bg-slate-50">
+          <label className="inline-flex items-center gap-2 text-xs font-medium text-gray-600 cursor-pointer select-none px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
             <input
               type="checkbox"
               checked={showInactive}
               onChange={(e) => setShowInactive(e.target.checked)}
-              className="w-3.5 h-3.5 accent-brand-500 rounded cursor-pointer"
+              className="w-3.5 h-3.5 accent-brand-600 rounded cursor-pointer"
             />
             <span>Hiện loại vô hiệu</span>
           </label>
 
-          <button
-            onClick={() => loadData(true)}
-            disabled={refreshing}
-            className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer shrink-0"
-            title="Làm mới"
-          >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-          </button>
-
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-semibold border border-slate-200">
-            <span className="w-2 h-2 rounded-full bg-brand-500"></span>
-            <span>Master Catalog do BOM ban hành (Chỉ đọc)</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Toolbar: Counter & Layout Switcher & Sort Dropdown */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Left: Tổng số loại ô kho */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200/80">
-            Tổng số: <strong className="text-slate-900">{processedTypes.length}</strong> loại ô kho
-          </span>
-        </div>
-
-        {/* Right: Layout Switcher + Sort Dropdown */}
-        <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto">
-          {/* Layout Mode Switcher */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
-            <button
-              type="button"
-              onClick={() => setViewMode('grid')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                viewMode === 'grid'
-                  ? 'bg-white text-brand-700 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-              title="Xem dạng Lưới Thẻ Trực Quan"
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Lưới Thẻ</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('table')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                viewMode === 'table'
-                  ? 'bg-white text-brand-700 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-              title="Xem dạng Bảng Ma Trận Thông Số Kỹ Thuật"
-            >
-              <Table2 className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Bảng Thông Số</span>
-            </button>
-          </div>
-
           {/* Sort Dropdown */}
-          <div className="flex items-center gap-2 text-xs text-slate-600">
-            <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-            <span className="font-medium text-slate-500 whitespace-nowrap">Sắp xếp:</span>
+          <div className="inline-flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5">
+            <ArrowUpDown className="w-3.5 h-3.5 text-gray-400 shrink-0" />
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as UnitTypeSortOption)}
-              className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 cursor-pointer shadow-2xs"
+              aria-label="Sắp xếp loại ô kho"
+              className="bg-transparent text-xs font-medium text-gray-700 focus:outline-none cursor-pointer"
             >
               {SORT_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -287,45 +217,205 @@ export const UnitTypeListPage: React.FC = () => {
               ))}
             </select>
           </div>
+
+          {/* Layout Mode Switcher: Bảng | Lưới */}
+          <div className="inline-flex items-center bg-gray-100 p-0.5 rounded-lg border border-gray-200">
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'table'
+                  ? 'bg-white text-gray-900 shadow-2xs'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+              title="Xem dạng Bảng"
+            >
+              <Table2 className="w-3.5 h-3.5" />
+              <span>Bảng</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-white text-gray-900 shadow-2xs'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+              title="Xem dạng Lưới"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>Lưới</span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => loadData(true)}
+            disabled={refreshing}
+            className="p-2 rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition-colors cursor-pointer shrink-0"
+            title="Làm mới"
+            aria-label="Làm mới"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
         </div>
       </div>
 
       {error && (
-        <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center justify-between shadow-2xs">
+        <div className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
             <span>{error}</span>
           </div>
-          <button onClick={() => loadData(true)} className="font-bold underline cursor-pointer">
+          <button
+            type="button"
+            onClick={() => loadData(true)}
+            className="font-semibold underline cursor-pointer"
+          >
             Thử lại
           </button>
         </div>
       )}
 
-      {/* Danh sách Loại ô kho: Lưới Thẻ Showcase hoặc Bảng Ma Trận Kỹ Thuật */}
+      {/* Danh sách Loại ô kho: Bảng chuẩn ERP/WMS (Mặc định) hoặc Lưới thẻ phẳng */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-64 rounded-2xl bg-slate-100 animate-pulse border border-slate-200/80" />
+        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-12 rounded-lg bg-gray-100 animate-pulse" />
           ))}
         </div>
       ) : processedTypes.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-2xs">
-          <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
-            <Box className="w-6 h-6" />
+        <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
+          <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center mx-auto mb-3">
+            <Box className="w-5 h-5" />
           </div>
-          <h3 className="text-sm font-bold text-slate-800">Không tìm thấy loại ô kho nào</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+          <h3 className="text-sm font-semibold text-gray-900">Không tìm thấy loại ô kho nào</h3>
+          <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
             {searchTerm
               ? 'Không có loại ô kho nào phù hợp với từ khóa tìm kiếm.'
-              : 'Cơ sở này chưa được cấu hình loại ô kho nào. Hãy bấm "+ Thêm loại ô kho" để bắt đầu.'}
+              : 'Cơ sở này hiện chưa được cấu hình loại ô kho nào.'}
           </p>
         </div>
       ) : (
         <div className="space-y-6">
-          {viewMode === 'grid' ? (
-            /* Lưới thẻ sinh động với Visual Theme & Micro-animations */
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {viewMode === 'table' ? (
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      <th className="py-3 px-4">Tên loại kho</th>
+                      <th className="py-3 px-4">Mã</th>
+                      <th className="py-3 px-4">Phân loại</th>
+                      <th className="py-3 px-4 text-right">Diện tích</th>
+                      <th className="py-3 px-4 text-right">Kích thước</th>
+                      <th className="py-3 px-4 text-right">Quy mô</th>
+                      <th className="py-3 px-4">Trạng thái</th>
+                      <th className="py-3 px-4 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {paginatedTypes.map((type) => {
+                      const isClimate = isClimateType(type);
+                      const Icon = isClimate ? Snowflake : Box;
+                      const active = isTypeActive(type);
+                      const stats = typeStatsMap[type.id];
+                      const totalUnits = stats ? stats.total : (type.totalUnits ?? 0);
+                      const availableUnits = stats ? stats.available : 0;
+                      const area =
+                        type.areaM2 ||
+                        (type.widthM && type.depthM
+                          ? Number((type.widthM * type.depthM).toFixed(1))
+                          : 0);
+                      const dimensionsText =
+                        type.widthM && type.depthM && type.heightM
+                          ? `${type.widthM}×${type.depthM}×${type.heightM}m`
+                          : '—';
+
+                      return (
+                        <tr
+                          key={type.id}
+                          onClick={() =>
+                            navigate(`/manager/facilities/${facilityIdNum}/unit-types/${type.id}`)
+                          }
+                          className="hover:bg-gray-50 transition-colors cursor-pointer group"
+                        >
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-2.5">
+                              <Icon className="w-4 h-4 text-gray-400 group-hover:text-brand-600 transition-colors shrink-0" />
+                              <span className="font-semibold text-gray-900 group-hover:text-brand-700 transition-colors">
+                                {cleanUnitTypeName(type.name)}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="py-3.5 px-4 font-mono text-xs text-gray-500">
+                            {type.code || 'UT-STD'}
+                          </td>
+
+                          <td className="py-3.5 px-4 text-gray-600">
+                            {isClimate ? 'Máy lạnh' : 'Tiêu chuẩn'}
+                          </td>
+
+                          <td className="py-3.5 px-4 text-right font-semibold text-gray-900 tabular-nums">
+                            {area} m²
+                          </td>
+
+                          <td className="py-3.5 px-4 text-right text-gray-600 tabular-nums whitespace-nowrap">
+                            {dimensionsText}
+                          </td>
+
+                          <td className="py-3.5 px-4 text-right font-medium text-gray-700 tabular-nums">
+                            {totalUnits} ô
+                          </td>
+
+                          <td className="py-3.5 px-4">
+                            {!active ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                                Vô hiệu
+                              </span>
+                            ) : availableUnits > 0 ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 tabular-nums">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                Còn {availableUnits} ô trống
+                              </span>
+                            ) : totalUnits > 0 ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                                Hết ô
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200">
+                                Chưa có ô
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-3.5 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(
+                                  `/manager/facilities/${facilityIdNum}/unit-types/${type.id}`
+                                );
+                              }}
+                              className="inline-flex items-center gap-0.5 text-xs font-semibold text-brand-600 hover:text-brand-700 hover:underline cursor-pointer"
+                            >
+                              <span>Xem chi tiết</span>
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {paginatedTypes.map((type) => (
                 <UnitTypeCard
                   key={type.id}
@@ -336,102 +426,6 @@ export const UnitTypeListPage: React.FC = () => {
                   }
                 />
               ))}
-            </div>
-          ) : (
-            /* Bảng Ma Trận So Sánh Thông Số Kỹ Thuật (Technical Specs Matrix) */
-            <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-2xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
-                      <th className="py-3.5 px-4">Loại ô kho</th>
-                      <th className="py-3.5 px-4">Phân loại & Tiện ích</th>
-                      <th className="py-3.5 px-4 text-center">Kích thước (R×S×C)</th>
-                      <th className="py-3.5 px-4 text-center">Diện tích</th>
-                      <th className="py-3.5 px-4 text-center">Tổng quy mô</th>
-                      <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                      <th className="py-3.5 px-4 text-right">Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {paginatedTypes.map((type) => {
-                      const theme = getUnitTypeTheme(type);
-                      const Icon = theme.icon;
-                      const isTypeActive = type.isActive ?? type.active ?? true;
-                      const area = type.areaM2 || (type.widthM && type.depthM ? Number((type.widthM * type.depthM).toFixed(1)) : 0);
-                      return (
-                        <tr
-                          key={type.id}
-                          onClick={() =>
-                            navigate(`/manager/facilities/${facilityIdNum}/unit-types/${type.id}`)
-                          }
-                          className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
-                        >
-                          <td className="py-3.5 px-4">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center border shadow-2xs shrink-0 ${theme.iconBg}`}>
-                                <Icon className={`w-4 h-4 ${theme.iconColor}`} />
-                              </div>
-                              <div>
-                                <div className="font-bold text-slate-900 group-hover:text-brand-600 transition-colors">
-                                  {cleanUnitTypeName(type.name)}
-                                </div>
-                                <span className="text-[10px] font-mono text-slate-500">
-                                  {type.code || 'UT-STD'}
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <div className="flex flex-col gap-1 items-start">
-                              <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${theme.badgeBg} ${theme.badgeTextCol} ${theme.badgeBorder}`}>
-                                <Sparkles className="w-2.5 h-2.5" />
-                                {theme.categoryLabel}
-                              </span>
-                              <span className="text-[10px] text-slate-400">
-                                {theme.badgeText}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-3.5 px-4 text-center num font-medium text-slate-700">
-                            {type.widthM}m × {type.depthM}m × {type.heightM}m
-                          </td>
-                          <td className="py-3.5 px-4 text-center">
-                            <span className="num font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
-                              {area} m²
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-4 text-center num font-bold text-slate-700">
-                            {type.totalUnits ?? 0} ô
-                          </td>
-                          <td className="py-3.5 px-4 text-center">
-                            {isTypeActive ? (
-                              <span className="inline-block text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                Hoạt động
-                              </span>
-                            ) : (
-                              <span className="inline-block text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200 px-2 py-0.5 rounded-full">
-                                Vô hiệu
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3.5 px-4 text-right">
-                            <button
-                              type="button"
-                              onClick={() => navigate(`/manager/facilities/${facilityIdNum}/unit-types/${type.id}`)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-brand-200 text-brand-600 hover:bg-brand-50 transition-colors cursor-pointer text-xs font-semibold"
-                              title="Vào xem danh sách ô kho"
-                            >
-                              <span>Quản lý ô</span>
-                              <ArrowRight className="w-3.5 h-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
             </div>
           )}
 
