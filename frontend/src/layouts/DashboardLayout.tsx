@@ -54,7 +54,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
 // Portal label by role
 const ROLE_PORTAL_LABEL: Record<UserRole, string> = {
   ADMIN:    'System Admin',
-  MANAGER:  'Facility Manager',
+  MANAGER:  'Quản lý cơ sở',
   STAFF:    'Nhân viên vận hành',
   BOM:      'BOM Operations',
   CUSTOMER: 'Customer Portal',

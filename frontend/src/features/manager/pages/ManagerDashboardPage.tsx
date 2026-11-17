@@ -1,154 +1,283 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Layers, FileText, Users, ArrowRight, Wrench, Building2, ClipboardCheck } from 'lucide-react';
+import {
+  Layers,
+  FileText,
+  Users,
+  Wrench,
+  ClipboardCheck,
+  ChevronRight,
+  RefreshCw,
+} from 'lucide-react';
+import { fetchMyAssignedFacilities } from '@/api/facility';
+import { fetchStorageUnits } from '@/api/unit';
+import { listReservations } from '@/api/reservation';
+import { getManagerContracts } from '@/api/contract';
+import { getManagementSupportRequests } from '../api/staffAssignmentApi';
 
-const NAV_CARDS = [
+interface QuickAccessItem {
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  desc: string;
+}
+
+const QUICK_ACCESS_CARDS: QuickAccessItem[] = [
   {
     to: '/manager/allocation',
     icon: ClipboardCheck,
-    color: 'teal',
-    iconBg: 'from-teal-500 to-teal-600',
-    hoverBorder: 'hover:border-teal-400',
-    hoverShadow: 'hover:shadow-teal-100',
-    textColor: 'text-teal-600',
     label: 'Gán ô kho',
-    subtitle: 'Phân ô cho đơn đã thanh toán',
-    desc: 'Chọn ô trống cùng hạng kho cho khách trước ngày nhận kho.',
-    cta: 'Mở Gán ô kho',
+    desc: 'Phân bổ ô kho trống cùng hạng cho đơn đã thanh toán trước ngày nhận kho.',
   },
   {
     to: '/manager/contracts',
     icon: FileText,
-    color: 'blue',
-    iconBg: 'from-blue-500 to-blue-600',
-    hoverBorder: 'hover:border-blue-400',
-    hoverShadow: 'hover:shadow-blue-100',
-    textColor: 'text-blue-600',
     label: 'Hợp đồng & Khách thuê',
-    subtitle: 'Quản lý vòng đời thuê',
     desc: 'Theo dõi hợp đồng đang thuê, danh sách chờ bàn giao, đổi ô kho ngoại lệ và quyết toán hoàn cọc.',
-    cta: 'Mở Giám sát hợp đồng',
   },
   {
     to: '/manager/facilities',
     icon: Layers,
-    color: 'emerald',
-    iconBg: 'from-emerald-500 to-emerald-600',
-    hoverBorder: 'hover:border-emerald-400',
-    hoverShadow: 'hover:shadow-emerald-100',
-    textColor: 'text-emerald-600',
     label: 'Danh mục Ô kho & Sơ đồ',
-    subtitle: 'Danh mục cơ sở & mặt bằng',
     desc: 'Quản lý danh sách ô kho vật lý, phân loại kích thước và kiểm soát trạng thái sẵn sàng.',
-    cta: 'Mở Quản lý ô kho',
   },
   {
-    to: '/manager/staff-assignment',
+    to: '/manager/staff-schedule',
     icon: Users,
-    color: 'purple',
-    iconBg: 'from-purple-500 to-purple-600',
-    hoverBorder: 'hover:border-purple-400',
-    hoverShadow: 'hover:shadow-purple-100',
-    textColor: 'text-purple-600',
     label: 'Phân công Nhân sự',
-    subtitle: 'Điều phối công việc nhân sự',
     desc: 'Cân bằng tải nhân viên, điều phối bàn giao nhận kho, trả kho và niêm phong khóa ngoài.',
-    cta: 'Mở Bàn phân công',
   },
   {
     to: '/manager/incidents',
     icon: Wrench,
-    color: 'amber',
-    iconBg: 'from-amber-500 to-orange-500',
-    hoverBorder: 'hover:border-amber-400',
-    hoverShadow: 'hover:shadow-amber-100',
-    textColor: 'text-amber-600',
     label: 'Xử lý Sự cố & Phiếu hỗ trợ',
-    subtitle: 'Bàn điều phối kỹ thuật',
     desc: 'Tiếp nhận khiếu nại, phân công nhân viên kiểm tra thực địa và xử lý kẹt khóa, thấm dột.',
-    cta: 'Mở Bàn điều phối',
   },
 ];
 
-const STAGGER = ['stagger-1', 'stagger-2', 'stagger-3', 'stagger-4', 'stagger-5'];
+interface DashboardKpiSummary {
+  availableUnits: number;
+  pendingAllocation: number;
+  todayAppointments: number;
+  openIncidents: number;
+}
+
+function formatUpdatedTimestamp(date: Date): string {
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  const weekday = date.toLocaleDateString('vi-VN', { weekday: 'long' });
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${hh}:${mm} - ${weekday}, ${day}/${month}/${year}`;
+}
+
+function getLocalTodayIso(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 export const ManagerDashboardPage: React.FC = () => {
-  const now = new Date();
-  const hour = now.getHours();
-  const greeting = hour < 12 ? 'Chào buổi sáng' : hour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối';
+  const [kpi, setKpi] = useState<DashboardKpiSummary>({
+    availableUnits: 0,
+    pendingAllocation: 0,
+    todayAppointments: 0,
+    openIncidents: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<Date>(() => new Date());
+
+  const loadSummary = useCallback(async (isManual = false) => {
+    if (isManual) setRefreshing(true);
+    else setLoading(true);
+
+    try {
+      const facilities = await fetchMyAssignedFacilities();
+      const assignedIds = new Set(facilities.map((f) => f.id));
+      const todayIso = getLocalTodayIso(new Date());
+
+      const [unitResults, reservationsResult, contractsResult, incidentsResult] =
+        await Promise.allSettled([
+          Promise.allSettled(
+            facilities.map((f) => fetchStorageUnits(f.id, { status: 'AVAILABLE', size: 1 }))
+          ),
+          listReservations({ status: 'PAID', size: 100 }),
+          getManagerContracts({ status: 'ALL' }),
+          getManagementSupportRequests({}),
+        ]);
+
+      let availableUnits = 0;
+      if (unitResults.status === 'fulfilled') {
+        for (const res of unitResults.value) {
+          if (res.status === 'fulfilled') {
+            availableUnits += Number(res.value?.totalElements ?? 0);
+          }
+        }
+      }
+
+      let pendingAllocation = 0;
+      if (reservationsResult.status === 'fulfilled') {
+        pendingAllocation = reservationsResult.value.filter(
+          (r) =>
+            (assignedIds.size === 0 || assignedIds.has(r.facilityId)) &&
+            !r.storageUnitId
+        ).length;
+      }
+
+      let todayAppointments = 0;
+      if (contractsResult.status === 'fulfilled') {
+        todayAppointments = contractsResult.value.filter((c) => {
+          if (assignedIds.size > 0 && c.facilityId && !assignedIds.has(c.facilityId)) {
+            return false;
+          }
+          const st = String(c.status || '').toUpperCase();
+          if (st === 'PENDING_CHECK_IN' || st === 'PENDING_CHECKIN') {
+            return !c.startDate || String(c.startDate).slice(0, 10) === todayIso;
+          }
+          return st === 'PENDING_RETURN' || st === 'NOTICE_SUBMITTED';
+        }).length;
+      }
+
+      let openIncidents = 0;
+      if (incidentsResult.status === 'fulfilled') {
+        openIncidents = incidentsResult.value.filter((t) => {
+          if (assignedIds.size > 0 && t.facilityId && !assignedIds.has(t.facilityId)) {
+            return false;
+          }
+          return t.status === 'OPEN' || t.status === 'IN_PROGRESS';
+        }).length;
+      }
+
+      setKpi({
+        availableUnits,
+        pendingAllocation,
+        todayAppointments,
+        openIncidents,
+      });
+      setUpdatedAt(new Date());
+    } catch (err) {
+      console.error('Lỗi tải dữ liệu tổng quan cơ sở:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSummary(false);
+  }, [loadSummary]);
+
+  const kpiCards = [
+    {
+      label: 'Ô kho trống',
+      value: kpi.availableUnits,
+      to: '/manager/facilities',
+      valueClass: 'text-gray-900',
+    },
+    {
+      label: 'Chờ gán ô kho',
+      value: kpi.pendingAllocation,
+      to: '/manager/allocation',
+      valueClass: kpi.pendingAllocation > 0 ? 'text-amber-600' : 'text-gray-900',
+    },
+    {
+      label: 'Lịch hẹn hôm nay',
+      value: kpi.todayAppointments,
+      to: '/manager/staff-schedule',
+      valueClass: 'text-gray-900',
+    },
+    {
+      label: 'Sự cố cần xử lý',
+      value: kpi.openIncidents,
+      to: '/manager/incidents',
+      valueClass: kpi.openIncidents > 0 ? 'text-rose-600' : 'text-gray-900',
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Hero Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-6 sm:p-8 text-white shadow-xl">
-        {/* Background decoration */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: 'radial-gradient(circle at 20% 50%, #6366f1 0%, transparent 50%), radial-gradient(circle at 80% 20%, #8b5cf6 0%, transparent 40%)',
-        }} />
-        <div className="absolute top-0 right-0 w-64 h-64 opacity-5">
-          <Building2 className="w-full h-full" />
-        </div>
-
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white/10 text-blue-200 px-3 py-1 rounded-full border border-white/20">
-              <Building2 className="w-3.5 h-3.5" />
-              Cổng Quản lý Cơ sở
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-            {greeting}! 👋
-          </h1>
-          <p className="text-blue-200 text-sm mt-1.5 max-w-lg">
-            Tổng quan điều phối cơ sở kho. Chọn phân hệ bên dưới để bắt đầu quản lý vận hành hôm nay.
+    <div className="space-y-8">
+      {/* Header phẳng, tối giản */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Tổng quan Cơ sở</h1>
+          <p className="text-sm text-gray-500 mt-1 tabular-nums">
+            Cập nhật lúc: {formatUpdatedTimestamp(updatedAt)}
           </p>
-          <div className="flex items-center gap-1.5 mt-4 text-xs text-blue-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Hệ thống đang hoạt động bình thường · {now.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-          </div>
         </div>
+        <button
+          type="button"
+          onClick={() => loadSummary(true)}
+          disabled={refreshing}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer self-start sm:self-auto"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 text-gray-500 ${refreshing ? 'animate-spin' : ''}`} />
+          <span>Làm mới</span>
+        </button>
       </div>
 
-      {/* Module Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {NAV_CARDS.map((card, idx) => {
-          const Icon = card.icon;
-          return (
+      {/* Khối Thống kê trong ngày (KPI Summary) */}
+      <section className="space-y-3">
+        <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+          Tóm tắt trong ngày
+        </h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {kpiCards.map((item) => (
             <Link
-              key={card.to}
-              to={card.to}
-              className={[
-                'p-5 rounded-2xl border border-slate-200 bg-white',
-                'hover:-translate-y-1 hover:shadow-xl transition-all duration-200 group flex flex-col justify-between',
-                card.hoverBorder,
-                card.hoverShadow,
-                STAGGER[idx] || '',
-              ].join(' ')}
+              key={item.label}
+              to={item.to}
+              className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:bg-white transition-colors block"
             >
-              <div>
-                <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${card.iconBg} text-white flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-transform duration-200`}>
-                  <Icon className="w-5 h-5" />
-                </div>
-                <div className="flex items-center gap-1.5 mb-1">
-                  <h3 className={`font-bold text-slate-900 text-sm group-hover:${card.textColor} transition-colors`}>
-                    {card.label}
-                  </h3>
-                </div>
-                <span className={`text-[10px] font-semibold ${card.textColor} bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100`}>
-                  {card.subtitle}
-                </span>
-                <p className="text-xs text-slate-500 leading-relaxed mt-2">
-                  {card.desc}
+              <p className="text-sm text-gray-500 mb-1">{item.label}</p>
+              {loading ? (
+                <div className="h-8 w-14 rounded bg-gray-200/80 animate-pulse" />
+              ) : (
+                <p className={`text-2xl font-bold tabular-nums ${item.valueClass}`}>
+                  {item.value}
                 </p>
-              </div>
-              <div className={`mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs ${card.textColor} font-semibold`}>
-                <span>{card.cta}</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
+              )}
             </Link>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Lưới Truy cập nhanh (Đơn sắc, không nền màu icon, không text lặp "Mở...") */}
+      <section className="space-y-4">
+        <h2 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+          Truy cập nhanh
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {QUICK_ACCESS_CARDS.map((card) => {
+            const Icon = card.icon;
+            return (
+              <Link
+                key={card.to}
+                to={card.to}
+                className="text-left bg-white border border-gray-200 rounded-xl p-5 hover:border-brand-500 hover:shadow-sm transition-all group flex flex-col justify-between min-h-[152px]"
+              >
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <Icon className="w-5 h-5 text-gray-400 group-hover:text-brand-600 transition-colors shrink-0" />
+                    <h3 className="font-bold text-gray-900 text-base group-hover:text-brand-700 transition-colors">
+                      {card.label}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-gray-500 leading-relaxed">
+                    {card.desc}
+                  </p>
+                </div>
+
+                <div className="w-full flex justify-end pt-3">
+                  <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-brand-600 group-hover:translate-x-0.5 transition-all" />
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 };

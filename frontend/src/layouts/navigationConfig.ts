@@ -42,7 +42,7 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
     ],
   },
   MANAGER: {
-    portalTitle: 'Facility Manager',
+    portalTitle: 'Quản lý cơ sở',
     role: 'MANAGER',
     badgeColor: 'bg-purple-500',
     navItems: [
