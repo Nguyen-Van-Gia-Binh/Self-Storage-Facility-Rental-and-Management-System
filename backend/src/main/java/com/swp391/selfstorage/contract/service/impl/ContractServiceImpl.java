@@ -319,6 +319,18 @@ public class ContractServiceImpl implements ContractService {
                         });
                 }
 
+                Long effectiveStaffId = staffId;
+                if (staffId != null && userRepository != null) {
+                        AppUser operatorUser = userRepository.findById(staffId).orElse(null);
+                        if (operatorUser != null && (operatorUser.getRole() == UserRole.FACILITY_STAFF
+                                        || operatorUser.getRole() == UserRole.FACILITY_MANAGER
+                                        || operatorUser.getRole() == UserRole.SYSTEM_ADMINISTRATOR)) {
+                                effectiveStaffId = operatorUser.getId();
+                        } else {
+                                effectiveStaffId = null;
+                        }
+                }
+
                 String action = (request != null && request.getRejectionAction() != null && !request.getRejectionAction().isBlank())
                                 ? request.getRejectionAction().toUpperCase().trim()
                                 : "RELOCATE";
@@ -327,8 +339,9 @@ public class ContractServiceImpl implements ContractService {
 
                 if (isRelocate) {
                         // NHÁNH 1: KHÁCH ĐỒNG Ý ĐỔI Ô KHO
-                        // Giữ nguyên trạng thái PENDING_CHECK_IN để khách tiếp tục thuê
+                        // Giữ nguyên trạng thái PENDING_CHECK_IN để khách tiếp tục thuê, giải phóng ô kho bị hỏng
                         contract.setStatus(ContractStatus.PENDING_CHECK_IN);
+                        contract.setStorageUnitId(null);
                         contractRepository.save(contract);
 
                         // Không tạo Ticket Sự Cố (SupportRequest) cho nhân viên trực bàn giao.
@@ -337,7 +350,7 @@ public class ContractServiceImpl implements ContractService {
                         // Upsert: cập nhật record cũ nếu đã tồn tại, tránh vi phạm uq_handover_record_contract_id
                         HandoverRecord relocateRecord = handoverRecordRepository.findByContractId(contractId)
                                         .orElse(HandoverRecord.builder().contractId(contractId).build());
-                        relocateRecord.setStaffId(staffId);
+                        relocateRecord.setStaffId(effectiveStaffId);
                         relocateRecord.setHandoverAt(OffsetDateTime.now());
                         relocateRecord.setRejected(true);
                         relocateRecord.setRejectionReason(request.getRejectionReason());
@@ -352,6 +365,7 @@ public class ContractServiceImpl implements ContractService {
                 } else {
                         // NHÁNH 2: KHÁCH HỦY THUÊ & HOÀN TIỀN 100%
                         contract.setStatus(ContractStatus.TERMINATED);
+                        contract.setStorageUnitId(null);
                         contract.setEndDateExclusive(LocalDate.now()); // Ngày kết thúc chính là ngày check-in!
                         contract.setRelocationSupportRequestId(null);
                         contractRepository.save(contract);
@@ -369,7 +383,7 @@ public class ContractServiceImpl implements ContractService {
                                                                                 ? " — " + request.getReportedDefects()
                                                                                 : ""))
                                                 .inspectedAt(OffsetDateTime.now())
-                                                .inspectedBy(staffId)
+                                                .inspectedBy(effectiveStaffId)
                                                 .damageCost(0L)
                                                 .depositRefundAmount(contract.getDepositAmount())
                                                 .build());
@@ -378,7 +392,7 @@ public class ContractServiceImpl implements ContractService {
                         // Upsert: cập nhật record cũ nếu đã tồn tại, tránh vi phạm uq_handover_record_contract_id
                         HandoverRecord cancelRecord = handoverRecordRepository.findByContractId(contractId)
                                         .orElse(HandoverRecord.builder().contractId(contractId).build());
-                        cancelRecord.setStaffId(staffId);
+                        cancelRecord.setStaffId(effectiveStaffId);
                         cancelRecord.setHandoverAt(OffsetDateTime.now());
                         cancelRecord.setRejected(true);
                         cancelRecord.setRejectionReason(request.getRejectionReason());

@@ -13,6 +13,12 @@ export const isStorageUnitAssigned = (unitNumber?: string | null): boolean => {
     normalized !== 'chua chon o' &&
     normalized !== 'chua gan o' &&
     normalized !== 'chua gan' &&
+    normalized !== 'chờ đổi ô' &&
+    normalized !== 'chờ cấp ô mới' &&
+    normalized !== 'chờ phân bổ' &&
+    normalized !== 'cho doi o' &&
+    normalized !== 'cho cap o moi' &&
+    normalized !== 'cho phan bo' &&
     normalized !== 'tba' &&
     normalized !== '---' &&
     normalized !== 'null' &&

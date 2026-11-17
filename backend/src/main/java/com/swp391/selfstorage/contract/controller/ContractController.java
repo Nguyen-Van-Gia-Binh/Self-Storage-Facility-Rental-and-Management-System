@@ -154,17 +154,29 @@ public class ContractController {
         return ResponseEntity.ok(ApiResponse.success(response, "Bàn giao kho thành công"));
     }
 
-    /** T3.6 từ chối: Unit MAINTENANCE, Contract TERMINATED */
+    /** T3.6 từ chối: Unit MAINTENANCE, Contract TERMINATED hoặc PENDING_CHECK_IN (RELOCATE) */
     @PostMapping("/{id}/handover-rejection")
-    @PreAuthorize("hasAnyRole('STAFF', 'MANAGER', 'ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Ghi nhận khách từ chối nhận kho")
     public ResponseEntity<ApiResponse<HandoverRejectionResponse>> rejectHandover(
             @PathVariable Long id,
             @Valid @RequestBody HandoverRejectionRequest request,
             @AuthenticationPrincipal UserPrincipal currentUser) {
-        Long staffId = requireUserId(currentUser);
+        if (currentUser == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED);
+        }
+        Long operatorId = requireUserId(currentUser);
         List<Long> facilities = scopeForContract(currentUser, id);
-        HandoverRejectionResponse response = contractService.rejectHandover(id, request, staffId, facilities);
+
+        if (currentUser.getRole() == UserRole.STORAGE_CUSTOMER) {
+            ContractResponse contract = contractService.getContractById(id, List.of());
+            if (!contract.getCustomerId().equals(currentUser.getId())) {
+                throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không có quyền thao tác trên hợp đồng này");
+            }
+            facilities = List.of();
+        }
+
+        HandoverRejectionResponse response = contractService.rejectHandover(id, request, operatorId, facilities);
         return ResponseEntity.ok(ApiResponse.success(response, "Đã ghi nhận từ chối nhận kho"));
     }
 

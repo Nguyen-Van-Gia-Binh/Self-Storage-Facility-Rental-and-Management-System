@@ -36,6 +36,8 @@ export interface RentedUnitCardProps {
   onCancelReturn?: (contract: RentedContract) => void;
   onReschedulePeriod?: (contract: RentedContract) => void;
   onCancelPendingCheckIn?: (contract: RentedContract) => void;
+  onRefresh?: () => void;
+  onCheckInSuccess?: () => void;
   renewalNoticeDays?: number;
 }
 
@@ -47,6 +49,8 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   onCancelReturn,
   onReschedulePeriod,
   onCancelPendingCheckIn,
+  onRefresh,
+  onCheckInSuccess,
   renewalNoticeDays,
 }) => {
   const [showPin, setShowPin] = useState(false);
@@ -310,7 +314,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 <QrCode className="w-3.5 h-3.5 mr-1 text-slate-500" />
                 Vé nhận kho
               </Button>
-              {isStorageUnitAssigned(contract.unitNumber) && (
+              {isStorageUnitAssigned(contract.unitNumber) && !contract.relocationEligible && (
                 <Button
                   variant="primary"
                   size="sm"
@@ -538,6 +542,23 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
         initialMode={passMode}
         contractId={contract.id}
         passData={moveInPassData}
+        onSuccessCheckIn={() => {
+          contract.status = 'ACTIVE';
+          onCheckInSuccess?.();
+          onRefresh?.();
+        }}
+        onRejectHandover={(action, reason) => {
+          if (action === 'RELOCATE') {
+            contract.relocationEligible = true;
+            contract.unitNumber = 'Chờ đổi ô';
+          } else {
+            (contract.status as any) = 'TERMINATED';
+            contract.handoverRejected = true;
+            contract.rejectionReason = reason;
+            contract.unitNumber = '-';
+          }
+          onRefresh?.();
+        }}
       />
     </>
   );

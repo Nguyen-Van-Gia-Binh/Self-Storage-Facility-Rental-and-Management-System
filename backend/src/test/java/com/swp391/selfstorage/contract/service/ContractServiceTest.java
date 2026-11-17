@@ -313,6 +313,7 @@ class ContractServiceTest {
         assertEquals(StorageUnitStatus.MAINTENANCE, response.getStorageUnitStatus());
         assertEquals(ContractStatus.TERMINATED, contract.getStatus());
         assertEquals(StorageUnitStatus.MAINTENANCE, unit.getStatus());
+        assertNull(contract.getStorageUnitId());
         assertEquals(LocalDate.now(), contract.getEndDateExclusive());
     }
 
@@ -341,6 +342,7 @@ class ContractServiceTest {
         assertEquals(StorageUnitStatus.MAINTENANCE, response.getStorageUnitStatus());
         assertEquals(ContractStatus.PENDING_CHECK_IN, contract.getStatus());
         assertEquals(StorageUnitStatus.MAINTENANCE, unit.getStatus());
+        assertNull(contract.getStorageUnitId());
         verify(supportRequestRepository, never()).save(any());
     }
 
@@ -912,6 +914,7 @@ class ContractServiceTest {
         assertNotNull(res);
         assertEquals(ContractStatus.PENDING_CHECK_IN, contract.getStatus());
         assertEquals(StorageUnitStatus.MAINTENANCE, oldUnit.getStatus());
+        assertNull(contract.getStorageUnitId());
     }
 
     @Test
