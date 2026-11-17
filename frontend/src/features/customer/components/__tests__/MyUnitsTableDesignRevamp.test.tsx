@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 /// <reference types="node" />
 import '@testing-library/jest-dom/vitest';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { MyUnitsTable } from '../MyUnitsTable';
 import type { RentedContract } from '../../types';
@@ -30,6 +30,10 @@ const makeContract = (overrides: Partial<RentedContract>): RentedContract =>
   }) as RentedContract;
 
 describe('MyUnitsTable — Chuẩn hóa 4 Nhóm Trạng thái Ngữ nghĩa & Thứ bậc Nút Thao tác', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   const tablePath = path.resolve(
     process.cwd(),
     'src/features/customer/components/MyUnitsTable.tsx'
@@ -122,5 +126,63 @@ describe('MyUnitsTable — Chuẩn hóa 4 Nhóm Trạng thái Ngữ nghĩa & Th�
     const closedRow = screen.getByText('U-CLOSED').closest('tr');
     expect(closedRow?.className).toContain('opacity-');
     expect(closedRow?.className).toContain('bg-gray-50');
+  });
+
+  it('Modal Chính sách Gia hạn muộn (T-20): bỏ mã BR nội bộ, Header trắng, 2 Card lựa chọn phẳng và nút Đóng trung tính', () => {
+    const content = fs.readFileSync(tablePath, 'utf-8');
+    // Lỗi 2: không dùng Header nền xanh đen bg-slate-900 cho modal T-20
+    expect(content).not.toContain('bg-slate-900 text-white');
+
+    const today = new Date();
+    const in5Days = new Date(today.getTime() + 5 * 86400000).toISOString().slice(0, 10);
+    const onScheduleReturn = vi.fn();
+    const t20Contract = makeContract({
+      id: '33',
+      unitNumber: 'Q1-AC-M201',
+      facilityName: 'Cơ sở Quận 1 - TP.HCM',
+      status: 'ACTIVE',
+      endDate: in5Days,
+    });
+
+    render(
+      <MemoryRouter>
+        <MyUnitsTable
+          contracts={[t20Contract]}
+          {...noopProps}
+          onScheduleReturn={onScheduleReturn}
+        />
+      </MemoryRouter>
+    );
+
+    // Mở modal bằng nút Khóa online (T-20)
+    fireEvent.click(screen.getByText('Khóa online (T-20)'));
+
+    // Header trắng sạch + thông tin ô kho
+    expect(screen.getByText('Chính sách Gia hạn muộn (T-20)')).toBeInTheDocument();
+    expect(screen.getByText(/Chính sách quan trọng/i)).toBeInTheDocument();
+
+    // Lỗi 1: tuyệt đối không lộ mã BR-REN-01 hoặc BR-REN-10 ra giao diện khách hàng
+    expect(screen.queryByText(/BR-REN-01/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/BR-REN-10/i)).not.toBeInTheDocument();
+
+    // Lỗi 3 & 4: 2 Card lựa chọn riêng biệt với nút hành động chuẩn thứ bậc
+    expect(screen.getByText('Bạn muốn tiếp tục thuê?')).toBeInTheDocument();
+    const callLink = screen.getByRole('link', { name: /Gọi 1900 8888/i });
+    expect(callLink).toHaveAttribute('href', 'tel:19008888');
+    expect(callLink.className).toContain('bg-brand-600');
+
+    expect(screen.getByText('Bạn muốn trả kho?')).toBeInTheDocument();
+    const returnBtn = screen.getByRole('button', { name: /^Báo trả kho$/i });
+    expect(returnBtn.className).toContain('bg-white');
+
+    // Footer chỉ còn nút Đóng trung tính (không còn nút xanh "Đã hiểu")
+    const closeBtn = screen.getByText('Đóng').closest('button');
+    expect(closeBtn).not.toBeNull();
+    expect(closeBtn?.className).not.toContain('bg-brand-600');
+    expect(screen.queryByRole('button', { name: /Đã hiểu/i })).not.toBeInTheDocument();
+
+    // Click Báo trả kho gọi đúng callback onScheduleReturn
+    fireEvent.click(returnBtn);
+    expect(onScheduleReturn).toHaveBeenCalledWith(t20Contract);
   });
 });

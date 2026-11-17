@@ -516,7 +516,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                 setLateRenewalContract(contract);
                               }}
                               className="text-[11px] font-medium text-gray-500 hover:text-amber-700 underline underline-offset-2 cursor-pointer transition-colors"
-                              title="Cổng tự gia hạn online đã đóng theo BR-REN-01. Bấm để xem hướng dẫn liên hệ Quản lý cơ sở (FM)"
+                              title="Cổng tự gia hạn online đã đóng. Bấm để xem hướng dẫn liên hệ Quản lý cơ sở"
                             >
                               Khóa online (T-20)
                             </button>
@@ -1137,100 +1137,112 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
         />
       )}
 
-      {/* Modal Hướng dẫn Gia hạn Ngoại lệ T-20 ngày (BR-REN-01 & BR-REN-10) */}
+      {/* Modal Hướng dẫn Chính sách Gia hạn muộn (T-20) */}
       {lateRenewalContract && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden flex flex-col animate-in zoom-in-95 duration-150">
-            {/* Header */}
-            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                  <AlertTriangle className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold">Chính Sách Gia Hạn Khung T-20 Ngày</h3>
-                  <p className="text-xs text-slate-400">
-                    Ô kho: <span className="text-amber-400 font-bold">{lateRenewalContract.unitNumber}</span> ({lateRenewalContract.facilityName})
-                  </p>
-                </div>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setLateRenewalContract(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-xl w-full overflow-hidden flex flex-col animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header sáng sủa, gọn gàng */}
+            <div className="px-6 py-5 border-b border-gray-200 bg-white flex justify-between items-start gap-4 shrink-0">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Chính sách Gia hạn muộn (T-20)</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Ô kho: <span className="font-semibold text-gray-700">{lateRenewalContract.unitNumber}</span> ({lateRenewalContract.facilityName})
+                </p>
               </div>
               <button
                 type="button"
+                aria-label="Đóng"
                 onClick={() => setLateRenewalContract(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Body */}
-            <div className="p-6 space-y-4 text-xs text-slate-700">
-              <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-xl space-y-1.5 text-amber-950">
-                <p className="font-bold text-sm flex items-center gap-1.5 text-amber-900">
-                  <span>Cổng tự phục vụ Online đã đóng (BR-REN-01)</span>
-                </p>
-                <p className="leading-relaxed">
-                  Hợp đồng thuê của Quý khách hiện còn dưới 20 ngày trước khi hết hạn. Theo quy chế cơ sở, hệ thống đã khóa tính năng tự gia hạn trên portal để bắt đầu chuẩn bị giải phóng mặt bằng và ưu tiên danh sách chờ.
-                </p>
-              </div>
-
-              <div className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <p className="font-bold text-slate-900 text-xs uppercase tracking-wider">Lựa chọn của Quý khách:</p>
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center shrink-0 text-[11px]">1</span>
-                    <p className="leading-relaxed">
-                      <strong>Nếu muốn tiếp tục thuê ô kho này:</strong> Vui lòng liên hệ Quản lý cơ sở (FM) qua Hotline bên dưới. FM sẽ kiểm tra nếu ô kho chưa có khách mới đặt cọc, FM sẽ duyệt <strong>Gia hạn Ngoại lệ (Force Renewal)</strong> và cấp cổng thanh toán trực tuyến cho Quý khách (áp dụng phụ phí hành chính 200.000 VNĐ theo BR-REN-10).
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-rose-100 text-rose-800 font-bold flex items-center justify-center shrink-0 text-[11px]">2</span>
-                    <p className="leading-relaxed">
-                      <strong>Nếu muốn trả kho đúng hạn:</strong> Quý khách vui lòng nhấn nút <strong>"Báo trả kho"</strong> để lên lịch dọn đồ và nghiệm thu trước ngày hết hạn nhằm tránh phát sinh phí phạt quá hạn.
-                    </p>
-                  </div>
+            {/* Khối cảnh báo chính sách phẳng */}
+            <div className="px-6 pt-5 pb-4">
+              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-100 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div className="text-sm text-amber-800 leading-relaxed">
+                  <p className="font-bold text-amber-900 mb-1">Chính sách quan trọng</p>
+                  <p>
+                    Hợp đồng của bạn còn dưới 20 ngày. Hệ thống đã khóa tính năng tự gia hạn online để ưu tiên danh sách khách hàng đang chờ thuê.
+                  </p>
                 </div>
-              </div>
-
-              <div className="p-3 bg-brand-50 border border-brand-200 rounded-xl flex items-center justify-between text-brand-950">
-                <div>
-                  <span className="text-[11px] text-brand-700 block font-medium">Hotline Ban Quản lý Cơ sở:</span>
-                  <a href="tel:19008888" className="text-base font-black text-brand-800 hover:underline">1900 8888</a>
-                </div>
-                <a
-                  href="tel:19008888"
-                  className="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
-                >
-                  <Phone className="w-3.5 h-3.5" />
-                  <span>Gọi ngay</span>
-                </a>
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const c = lateRenewalContract;
-                  setLateRenewalContract(null);
-                  onScheduleReturn(c);
-                }}
-                className="text-xs font-bold text-rose-600 border-rose-200 hover:bg-rose-50"
-              >
-                <LogOut className="w-3.5 h-3.5 mr-1" />
-                Lên lịch Báo trả kho
-              </Button>
+            {/* Hai lựa chọn hành động dạng Card phẳng riêng biệt */}
+            <div className="px-6 pb-6 space-y-3.5">
+              <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                Vui lòng chọn hành động của bạn:
+              </h4>
 
-              <Button
-                variant="primary"
-                size="sm"
+              {/* Lựa chọn 1: Gia hạn ngoại lệ */}
+              <div className="border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-brand-300 transition-colors bg-white">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-bold text-gray-900">Bạn muốn tiếp tục thuê?</h5>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1 leading-relaxed">
+                      Liên hệ Quản lý cơ sở để được duyệt gia hạn ngoại lệ. Phí hành chính:{' '}
+                      <strong className="font-semibold text-gray-900 tabular-nums">200.000 đ</strong>.
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href="tel:19008888"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-lg shadow-xs transition-colors whitespace-nowrap"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>Gọi 1900 8888</span>
+                </a>
+              </div>
+
+              {/* Lựa chọn 2: Báo trả kho */}
+              <div className="border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-gray-300 transition-colors bg-white">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <LogOut className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-bold text-gray-900">Bạn muốn trả kho?</h5>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1 leading-relaxed">
+                      Lên lịch dọn đồ và nghiệm thu trước ngày hết hạn. Không phát sinh phí phạt.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const c = lateRenewalContract;
+                    setLateRenewalContract(null);
+                    onScheduleReturn(c);
+                  }}
+                  className="w-full sm:w-auto px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+                >
+                  Báo trả kho
+                </button>
+              </div>
+            </div>
+
+            {/* Footer chỉ giữ nút Đóng trung tính */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end shrink-0">
+              <button
+                type="button"
                 onClick={() => setLateRenewalContract(null)}
-                className="text-xs font-bold"
+                className="px-6 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
               >
-                Đã hiểu
-              </Button>
+                Đóng
+              </button>
             </div>
           </div>
         </div>
