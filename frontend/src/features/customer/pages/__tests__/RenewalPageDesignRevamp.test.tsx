@@ -76,6 +76,9 @@ describe('RenewalPage & RenewalExpiryBanner — Chuẩn hóa luồng Gia hạn 3
     expect(content).toContain('absolute -top-2.5 -right-2');
     expect(content).toContain('bg-amber-100 text-amber-700 border-amber-200');
     expect(content).toContain('bg-emerald-100 text-emerald-700 border-emerald-200');
+    // Không bị viền kép 2 vòng khi click chọn (bỏ focus:ring-offset-2 + focus:ring-2 trùng border-2)
+    expect(content).not.toContain('focus:ring-offset-2');
+    expect(content).not.toContain('focus:ring-2 focus:ring-brand-500');
 
     // Ô nhập số tháng tùy chỉnh dạng Input Group liền mạch
     expect(content).toContain('border border-gray-300 rounded-lg overflow-hidden focus-within:border-brand-500');

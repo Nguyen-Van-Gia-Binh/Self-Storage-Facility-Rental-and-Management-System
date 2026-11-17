@@ -518,7 +518,7 @@ export const RenewalPage: React.FC = () => {
                             type="button"
                             disabled={isRenewalBlocked}
                             onClick={() => setRenewalMonths(months)}
-                            className={`relative flex items-center justify-center py-3 px-4 rounded-lg text-center transition-all focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 ${
+                            className={`relative flex items-center justify-center py-3 px-4 rounded-lg text-center transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/35 ${
                               isRenewalBlocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
                             } ${
                               isSelected
