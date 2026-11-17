@@ -307,7 +307,7 @@ export const RenewalPage: React.FC = () => {
           }`}>
             {currentStep > 1 ? <Check className="w-3.5 h-3.5" /> : '1'}
           </span>
-          <span>1. Chọn kỳ hạn & Kiểm tra</span>
+          <span>Chọn kỳ hạn & Kiểm tra</span>
         </div>
 
         <div className="h-px bg-slate-200 flex-1 mx-3 hidden sm:block" />
@@ -341,7 +341,7 @@ export const RenewalPage: React.FC = () => {
           }`}>
             {currentStep > 2 ? <Check className="w-3.5 h-3.5" /> : '2'}
           </span>
-          <span>2. Bảng kê tài chính</span>
+          <span>Bảng kê tài chính</span>
         </div>
 
         <div className="h-px bg-slate-200 flex-1 mx-3 hidden sm:block" />
@@ -360,7 +360,7 @@ export const RenewalPage: React.FC = () => {
           }`}>
             3
           </span>
-          <span>3. Thanh toán VNPay</span>
+          <span>Thanh toán VNPay</span>
         </div>
       </div>
 
@@ -467,65 +467,72 @@ export const RenewalPage: React.FC = () => {
               </div>
 
               {/* Renewal Duration Selector (BR-REN-03 & BR-REN-07) */}
-              <div className="pt-3 border-t border-slate-100 space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="block text-sm font-bold text-[#0a1614]">
-                    Chọn kỳ hạn muốn gia hạn thêm:
-                  </label>
-                  <span className="text-xs text-slate-500">
-                    Kỳ hạn từ {policy?.renewalMinMonths ?? '…'} đến {policy?.renewalMaxMonths ?? '…'} tháng
-                  </span>
+              <div className="pt-4 border-t border-gray-100 space-y-5">
+                <div>
+                  <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900">
+                        Chọn kỳ hạn muốn gia hạn thêm:
+                      </label>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Kỳ hạn từ {policy?.renewalMinMonths ?? '…'} đến {policy?.renewalMaxMonths ?? '…'} tháng
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`grid gap-3 pt-2 ${
+                      termMonths.length === 3
+                        ? 'grid-cols-3'
+                        : termMonths.length === 2
+                        ? 'grid-cols-2'
+                        : 'grid-cols-2 sm:grid-cols-4'
+                    }`}
+                  >
+                    {termMonths.map((months) => {
+                      const tag = discountTag(months, 'reduce');
+                      const badgeLabel = tag || (months === 3 ? 'Phổ biến' : null);
+                      const isSelected = renewalMonths === months;
+                      return (
+                        <button
+                          key={months}
+                          type="button"
+                          disabled={isRenewalBlocked}
+                          onClick={() => setRenewalMonths(months)}
+                          className={`relative flex items-center justify-center py-3 px-4 rounded-lg text-center transition-all focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 ${
+                            isRenewalBlocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+                          } ${
+                            isSelected
+                              ? 'border-2 border-brand-500 bg-brand-50/50 text-brand-700'
+                              : 'border border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 text-gray-700'
+                          }`}
+                        >
+                          {badgeLabel && (
+                            <span
+                              className={`absolute -top-2.5 -right-2 px-2 py-0.5 text-[10px] font-bold rounded-full border shadow-xs uppercase tracking-wide whitespace-nowrap ${
+                                tag
+                                  ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                                  : 'bg-amber-100 text-amber-700 border-amber-200'
+                              }`}
+                            >
+                              {badgeLabel}
+                            </span>
+                          )}
+                          <span className={`font-bold text-sm ${isSelected ? 'text-brand-700' : 'text-gray-700'}`}>
+                            {months} Tháng
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {termMonths.map((months) => {
-                    const tag = discountTag(months, 'reduce');
-                    const badgeLabel = tag || (months === 3 ? 'Phổ biến' : null);
-                    const isSelected = renewalMonths === months;
-                    return (
-                      <button
-                        key={months}
-                        type="button"
-                        disabled={isRenewalBlocked}
-                        onClick={() => setRenewalMonths(months)}
-                        className={`flex flex-col items-center justify-center p-3.5 rounded-lg text-center transition-colors ${
-                          isRenewalBlocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-                        } ${
-                          isSelected
-                            ? 'border-2 border-brand-500 bg-brand-50 text-brand-700 shadow-2xs'
-                            : 'border border-gray-200 bg-white hover:border-brand-400 text-gray-900'
-                        }`}
-                      >
-                        <span className={`font-bold text-sm ${isSelected ? 'text-brand-700' : 'text-gray-900'}`}>
-                          {months} Tháng
-                        </span>
-                        {badgeLabel ? (
-                          <span
-                            className={`mt-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${
-                              tag
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : isSelected
-                                ? 'bg-brand-600 text-white uppercase'
-                                : 'bg-brand-50 text-brand-700 uppercase'
-                            }`}
-                          >
-                            {badgeLabel}
-                          </span>
-                        ) : (
-                          <span className="mt-1.5 text-[10px] py-0.5 select-none" aria-hidden="true">
-                            &nbsp;
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="pt-1">
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">
-                    Hoặc nhập số tháng tùy chỉnh
+                {/* Ô nhập số tháng tùy chỉnh dạng Input Group liền mạch */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Hoặc nhập số tháng tùy chỉnh:
                   </label>
-                  <div className="flex items-center gap-3">
+                  <div className="inline-flex items-center w-52 border border-gray-300 rounded-lg overflow-hidden focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500 bg-white">
                     <button
                       type="button"
                       disabled={isRenewalBlocked || renewalMonths <= (policy?.renewalMinMonths ?? 1)}
@@ -534,10 +541,10 @@ export const RenewalPage: React.FC = () => {
                           clampRenewalMonths(current - 1, policy?.renewalMinMonths, policy?.renewalMaxMonths)
                         )
                       }
-                      className="w-8 h-8 flex items-center justify-center border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                      className="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-r border-gray-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                       aria-label="Giảm 1 tháng"
                     >
-                      <Minus className="w-3.5 h-3.5" />
+                      <Minus className="w-4 h-4" />
                     </button>
                     <input
                       type="number"
@@ -554,7 +561,7 @@ export const RenewalPage: React.FC = () => {
                           )
                         )
                       }
-                      className="w-20 h-8 text-center border border-slate-300 rounded-md font-semibold text-slate-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 disabled:opacity-40"
+                      className="w-full text-center border-none focus:outline-none focus:ring-0 text-gray-900 font-bold tabular-nums py-2 px-1 bg-transparent disabled:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       aria-label="Số tháng gia hạn"
                     />
                     <button
@@ -565,12 +572,14 @@ export const RenewalPage: React.FC = () => {
                           clampRenewalMonths(current + 1, policy?.renewalMinMonths, policy?.renewalMaxMonths)
                         )
                       }
-                      className="w-8 h-8 flex items-center justify-center border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                      className="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-l border-gray-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                       aria-label="Tăng 1 tháng"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      <Plus className="w-4 h-4" />
                     </button>
-                    <span className="text-sm text-slate-600">Tháng</span>
+                    <span className="px-3 py-2 bg-gray-50 text-gray-600 font-medium border-l border-gray-300 text-sm shrink-0">
+                      Tháng
+                    </span>
                   </div>
                 </div>
               </div>

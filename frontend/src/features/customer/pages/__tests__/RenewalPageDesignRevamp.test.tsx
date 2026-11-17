@@ -61,9 +61,23 @@ describe('RenewalPage & RenewalExpiryBanner — Chuẩn hóa luồng Gia hạn 3
     expect(screen.getByText(/Q1-C201/)).toBeInTheDocument();
   });
 
-  it('Lỗi 4 (Nút chọn kỳ hạn Bước 1): badge nằm gọn bên trong nút flex-col, không dùng absolute đè lên viền trên', () => {
+  it('Lỗi 4 (Bước 1): Radio Card kỳ hạn gọn với Badge góc trên phải (Amber/Emerald), Input Group tùy chỉnh liền mạch và Stepper bỏ số trùng lặp', () => {
     const content = fs.readFileSync(renewalPagePath, 'utf-8');
-    expect(content).not.toContain('-top-2.5 -right-2');
-    expect(content).toContain('flex flex-col items-center justify-center');
+
+    // Stepper không lặp số ở phần text ("1. Chọn kỳ hạn..." -> "Chọn kỳ hạn...")
+    expect(content).not.toContain('<span>1. Chọn kỳ hạn & Kiểm tra</span>');
+    expect(content).not.toContain('<span>2. Bảng kê tài chính</span>');
+    expect(content).not.toContain('<span>3. Thanh toán VNPay</span>');
+    expect(content).toContain('<span>Chọn kỳ hạn & Kiểm tra</span>');
+    expect(content).toContain('<span>Bảng kê tài chính</span>');
+    expect(content).toContain('<span>Thanh toán VNPay</span>');
+
+    // Radio Card kỳ hạn gọn với Badge góc trên phải (Amber cho Phổ biến, Emerald cho Giảm giá)
+    expect(content).toContain('absolute -top-2.5 -right-2');
+    expect(content).toContain('bg-amber-100 text-amber-700 border-amber-200');
+    expect(content).toContain('bg-emerald-100 text-emerald-700 border-emerald-200');
+
+    // Ô nhập số tháng tùy chỉnh dạng Input Group liền mạch
+    expect(content).toContain('border border-gray-300 rounded-lg overflow-hidden focus-within:border-brand-500');
   });
 });
