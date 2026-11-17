@@ -9,6 +9,7 @@ import com.swp391.selfstorage.contract.dto.SettlementApprovalResponse;
 import com.swp391.selfstorage.contract.dto.SettlementPreviewResponse;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.service.ContractService;
+import com.swp391.selfstorage.support.repository.StaffDailyAssignmentRepository;
 import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.entity.UserStatus;
 import org.junit.jupiter.api.AfterEach;
@@ -51,6 +52,9 @@ class ContractSettlementControllerTest {
 
     @MockBean(name = "facilitySecurity")
     private FacilitySecurityService facilitySecurityService;
+
+    @MockBean
+    private StaffDailyAssignmentRepository staffDailyAssignmentRepository;
 
     private UserPrincipal managerPrincipal;
 

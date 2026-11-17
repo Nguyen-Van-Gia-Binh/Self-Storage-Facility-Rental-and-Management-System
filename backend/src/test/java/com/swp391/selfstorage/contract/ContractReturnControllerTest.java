@@ -8,6 +8,7 @@ import com.swp391.selfstorage.contract.dto.*;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.ReturnRequestStatus;
 import com.swp391.selfstorage.contract.service.ContractService;
+import com.swp391.selfstorage.support.repository.StaffDailyAssignmentRepository;
 import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.entity.UserStatus;
 import org.junit.jupiter.api.AfterEach;
@@ -27,6 +28,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -51,6 +53,9 @@ class ContractReturnControllerTest {
     @MockBean(name = "facilitySecurity")
     private FacilitySecurityService facilitySecurityService;
 
+    @MockBean
+    private StaffDailyAssignmentRepository staffDailyAssignmentRepository;
+
     private UserPrincipal staffPrincipal;
 
     @BeforeEach
@@ -60,6 +65,9 @@ class ContractReturnControllerTest {
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(staffPrincipal, null, staffPrincipal.getAuthorities())
         );
+        when(staffDailyAssignmentRepository
+                .findByReferenceTypeAndReferenceIdAndTaskType(any(), any(), any()))
+                .thenReturn(Optional.empty());
     }
 
     @AfterEach
