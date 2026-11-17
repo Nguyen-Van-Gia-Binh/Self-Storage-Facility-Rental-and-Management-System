@@ -1,10 +1,6 @@
 // frontend/src/features/bom/pages/BomPricingManagementPage.tsx
 import React, { useState, useEffect } from 'react';
 import {
-  DollarSign,
-  Tag,
-  ShieldCheck,
-  Percent,
   CheckCircle2,
   AlertCircle,
   ChevronDown,
@@ -451,67 +447,49 @@ export const BomPricingManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* Tầng 1: Header & Tabs Navigation (Điều hướng phân hệ) */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+      {/* Tầng 1: Header & Full-width Underline Tab Navigation (hạn chế icon trang trí) */}
+      <div className="space-y-3">
         <div>
-          <h1 className="text-lg font-bold text-slate-900 tracking-tight">
-            Quản lý Bảng giá & Phụ phí
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+            Quản lý Bảng giá &amp; Phụ phí
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-gray-500 mt-0.5">
             Thiết lập khung giá thuê theo m², biểu phí dịch vụ và chính sách tài chính
           </p>
         </div>
 
-        {/* 4 Tabs Điều hướng phân hệ */}
-        <div className="flex flex-wrap items-center gap-1 text-sm">
-          <button
-            type="button"
-            onClick={() => setActiveTab('PRICING')}
-            className={`flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 ${
-              activeTab === 'PRICING'
-                ? 'font-semibold text-brand-600 border-brand-500'
-                : 'font-medium text-slate-500 border-transparent hover:text-slate-800'
-            }`}
-          >
-            <DollarSign className="w-3.5 h-3.5" />
-            <span>Khung giá thuê ô kho</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('SURCHARGES')}
-            className={`flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 ${
-              activeTab === 'SURCHARGES'
-                ? 'font-semibold text-brand-600 border-brand-500'
-                : 'font-medium text-slate-500 border-transparent hover:text-slate-800'
-            }`}
-          >
-            <Tag className="w-3.5 h-3.5" />
-            <span>Biểu phí & Phụ thu</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('POLICIES')}
-            className={`flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 ${
-              activeTab === 'POLICIES'
-                ? 'font-semibold text-brand-600 border-brand-500'
-                : 'font-medium text-slate-500 border-transparent hover:text-slate-800'
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Chính sách cọc & Quá hạn</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('DISCOUNTS')}
-            className={`flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 ${
-              activeTab === 'DISCOUNTS'
-                ? 'font-semibold text-brand-600 border-brand-500'
-                : 'font-medium text-slate-500 border-transparent hover:text-slate-800'
-            }`}
-          >
-            <Percent className="w-3.5 h-3.5" />
-            <span>Khuyến mãi & Giảm giá</span>
-          </button>
+        {/* 4 Tabs Điều hướng phân hệ dạng Underline chuẩn Enterprise */}
+        <div
+          role="tablist"
+          aria-label="Phân hệ quản lý bảng giá và phụ phí"
+          className="flex flex-wrap items-center gap-1 border-b border-gray-200 text-sm"
+        >
+          {(
+            [
+              { key: 'PRICING', label: 'Bảng giá thuê' },
+              { key: 'SURCHARGES', label: 'Biểu phí & Phụ thu' },
+              { key: 'POLICIES', label: 'Chính sách cọc & Quá hạn' },
+              { key: 'DISCOUNTS', label: 'Khuyến mãi & Giảm giá' },
+            ] as const
+          ).map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-4 py-2.5 -mb-px border-b-2 transition-colors cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 ${
+                  isActive
+                    ? 'font-semibold text-brand-700 border-brand-600'
+                    : 'font-medium text-gray-500 border-transparent hover:text-gray-800 hover:border-gray-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -621,6 +599,15 @@ export const BomPricingManagementPage: React.FC = () => {
             setIsDiscountModalOpen(true);
           }}
           onToggleStatus={handleToggleDiscountStatus}
+          onRefresh={async () => {
+            setIsLoadingDiscounts(true);
+            try {
+              const res = await fetchDiscountPrograms({ page: 0, size: 100 });
+              setDiscountPrograms(res.content || []);
+            } finally {
+              setIsLoadingDiscounts(false);
+            }
+          }}
           isLoading={isLoadingDiscounts}
         />
       )}

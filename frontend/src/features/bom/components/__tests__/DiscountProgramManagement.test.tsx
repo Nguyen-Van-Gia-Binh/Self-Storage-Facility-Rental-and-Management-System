@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import React from 'react';
-import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, act, cleanup, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { DiscountProgramTable } from '../DiscountProgramTable';
 import { DiscountProgramModal } from '../DiscountProgramModal';
@@ -72,13 +72,15 @@ describe('BOM Discount Program Management Components', () => {
       expect(screen.getByText('≥ 6 tháng')).toBeInTheDocument();
       expect(screen.getByText('≥ 12 tháng')).toBeInTheDocument();
 
+      const table = within(screen.getByRole('table'));
+
       // Kiểm tra phạm vi
-      expect(screen.getByText('Toàn hệ thống')).toBeInTheDocument();
-      expect(screen.getByText('Cơ sở Cầu Giấy')).toBeInTheDocument();
+      expect(table.getByText('Toàn hệ thống')).toBeInTheDocument();
+      expect(table.getByText('Cơ sở Cầu Giấy')).toBeInTheDocument();
 
       // Kiểm tra trạng thái
-      expect(screen.getByText('Đang áp dụng')).toBeInTheDocument();
-      expect(screen.getByText('Tạm dừng')).toBeInTheDocument();
+      expect(table.getByText('Đang áp dụng')).toBeInTheDocument();
+      expect(table.getByText('Tạm dừng')).toBeInTheDocument();
     });
 
     it('gọi onOpenModal khi bấm nút thêm chương trình', () => {
@@ -96,6 +98,42 @@ describe('BOM Discount Program Management Components', () => {
       fireEvent.click(addBtn);
 
       expect(onOpenModal).toHaveBeenCalledTimes(1);
+    });
+
+    it('chuẩn Enterprise: bỏ banner icon màu cam, bỏ pill ở Mức giảm, thêm Toolbar tìm kiếm/lọc và Toggle Switch 1-click ở Trạng thái', () => {
+      const onToggleStatus = vi.fn();
+      const onEdit = vi.fn();
+      const { container } = render(
+        <DiscountProgramTable
+          programs={mockPrograms}
+          onOpenModal={vi.fn()}
+          onEdit={onEdit}
+          onToggleStatus={onToggleStatus}
+        />
+      );
+
+      // Không còn banner icon màu cam và không còn nút Power thừa
+      expect(container.innerHTML).not.toContain('bg-amber-50');
+      expect(container.innerHTML).not.toContain('lucide-power');
+
+      // Mức giảm hiển thị dạng giá trị in đậm, không dùng pill xanh lá như Status
+      const discountCell = screen.getByText('Giảm 5%');
+      expect(discountCell.className).not.toContain('rounded-full');
+      expect(discountCell.className).not.toContain('bg-emerald-50');
+
+      // Cột Trạng thái dùng Toggle Switch (role="switch") gọi onToggleStatus 1-click
+      const switches = screen.getAllByRole('switch');
+      expect(switches).toHaveLength(2);
+      expect(switches[0]).toHaveAttribute('aria-checked', 'true');
+      expect(switches[1]).toHaveAttribute('aria-checked', 'false');
+      fireEvent.click(switches[1]);
+      expect(onToggleStatus).toHaveBeenCalledWith(mockPrograms[1]);
+
+      // Toolbar tìm kiếm & bộ lọc hoạt động trực tiếp trên bảng
+      const searchInput = screen.getByPlaceholderText(/Tìm kiếm chương trình/i);
+      fireEvent.change(searchInput, { target: { value: 'Cầu Giấy' } });
+      expect(screen.getByText('Ưu đãi cơ sở Cầu Giấy (10%)')).toBeInTheDocument();
+      expect(screen.queryByText('Ưu đãi thuê từ 6 tháng (5%)')).not.toBeInTheDocument();
     });
   });
 
