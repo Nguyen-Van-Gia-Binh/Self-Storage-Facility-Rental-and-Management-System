@@ -222,8 +222,8 @@ describe('AllocationPage Component (Gán ô kho)', () => {
       expect(screen.getByRole('heading', { name: /Xác nhận phân bổ ô kho/i })).toBeDefined();
     });
 
-    // Kiểm tra thông tin khách hàng được hiển thị rõ ràng trên form modal
-    expect(screen.getByText('Thông tin khách hàng')).toBeDefined();
+    // Kiểm tra thông tin đơn hàng & khách hàng được hiển thị phẳng, rõ ràng trên form modal
+    expect(screen.getByText('Thông tin đơn hàng')).toBeDefined();
     expect(screen.getAllByText('Nguyễn Văn Gia Bình').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('0901234567').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('binh.nguyen@example.com')).toBeDefined();
@@ -622,7 +622,7 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     );
   });
 
-  it('12. Chuẩn hóa UI Enterprise SaaS: không còn cầu vồng nút cam/tím, bỏ emoji thừa và đồng bộ Soft Badges', async () => {
+  it('12. Chuẩn hóa UI Enterprise SaaS: không còn cầu vồng nút cam/tím, bỏ emoji thừa, bỏ Box Soup trong Modal và đồng bộ Soft Badges', async () => {
     const fs = await import('node:fs');
     const path = await import('node:path');
     const pagePath = path.resolve(
@@ -635,5 +635,8 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     expect(content).not.toContain('bg-amber-600');
     expect(content).not.toContain('🏢');
     expect(content).not.toContain('💡');
+    // Modal Xác nhận phân bổ ô kho đã làm phẳng: không còn khung xanh nhạt bg-sky-50 hay hộp mã đơn/mã kho
+    expect(content).not.toContain('bg-sky-50/70');
+    expect(content).toContain('<hr className="border-gray-100 my-4" />');
   });
 });
