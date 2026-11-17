@@ -41,5 +41,6 @@ public class PolicyResponse {
     private Integer supportUrgentSlaHours;
     private Integer supportAutoCloseWorkingDays;
     private Long publishedBy;
+    private String publishedByName;
     private OffsetDateTime createdAt;
 }

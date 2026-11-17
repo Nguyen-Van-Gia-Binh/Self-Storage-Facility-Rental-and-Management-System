@@ -311,6 +311,7 @@ export interface PolicyVersionListItem {
   effectiveDate: string;
   status: PolicyVersionStatus;
   publishedBy?: number;
+  publishedByName?: string | null;
   rawPolicy?: any;
 }
 
@@ -326,7 +327,7 @@ function vietnamCalendarDate(value?: string | null): string {
 }
 
 export async function fetchPolicyVersions(): Promise<PolicyVersionListItem[]> {
-  const page = await apiClient<{ content?: Array<{ id?: number; versionNo?: number; effectiveFrom?: string; publishedBy?: number }> }>(
+  const page = await apiClient<{ content?: Array<{ id?: number; versionNo?: number; effectiveFrom?: string; publishedBy?: number; publishedByName?: string | null }> }>(
     '/policies?page=0&size=50&sort=versionNo,desc'
   );
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
@@ -337,6 +338,7 @@ export async function fetchPolicyVersions(): Promise<PolicyVersionListItem[]> {
       versionNo: item.versionNo as number,
       effectiveDate: vietnamCalendarDate(item.effectiveFrom),
       publishedBy: item.publishedBy,
+      publishedByName: item.publishedByName ?? null,
       rawPolicy: item,
     }));
   const applied = rows
