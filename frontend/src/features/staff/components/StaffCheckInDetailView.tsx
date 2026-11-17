@@ -105,7 +105,7 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
             isAwaitingRelocation: false,
             relocationEligible: false,
           });
-          showToast('success', `🎉 Quản lý cơ sở đã cấp ô mới ${detail.storageUnitCode}! Bạn có thể tiếp tục bàn giao kho.`);
+          showToast('success', `Quản lý cơ sở đã cấp ô mới ${detail.storageUnitCode}. Bạn có thể tiếp tục bàn giao kho.`);
         }
       } catch (err) {
         console.debug('Polling check-in contract:', err);

@@ -42,4 +42,13 @@ describe('ISS-84: HandoverInspectionForm Action Footer Clean Scroll Fix', () => 
     expect(content).toMatch(/Đã ghi nhận sự cố & chờ Quản lý đổi ô kho/);
     expect(content).toMatch(/!isAwaitingRelocation/);
   });
+
+  it('Chuẩn hóa UI phẳng Enterprise SaaS: banner sự cố viền trái amber-500, badge chờ đổi kho màu xanh Info (blue-50) và phân tách 4 mục bằng đường kẻ ngang', () => {
+    const content = fs.readFileSync(handoverInspectionFormPath, 'utf-8');
+    expect(content).toContain('border-l-4 border-amber-500 bg-amber-50');
+    expect(content).toContain('bg-blue-50 text-blue-700 border border-blue-100');
+    expect(content).not.toContain('bg-amber-100/70');
+    expect(content).toMatch(/3\. Ảnh chụp hiện trạng bàn giao kho/i);
+    expect(content).toMatch(/4\. Chữ ký xác nhận của khách hàng/i);
+  });
 });
