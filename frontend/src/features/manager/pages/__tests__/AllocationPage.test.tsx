@@ -84,6 +84,24 @@ vi.mock('@/features/manager/components/FacilityFloorPlanMapModal', () => ({
         >
           Chọn ô Q7-AC-M205
         </button>
+        <button
+          type="button"
+          data-testid="select-mock-upgrade-unit-btn"
+          onClick={() =>
+            onSelectUnit({
+              id: 95,
+              code: 'Q7-AC-XL101',
+              facilityId: 2,
+              unitTypeId: 8,
+              unitTypeName: 'Kho Máy Lạnh XL',
+              floor: 1,
+              position: 'Khu A',
+              status: 'AVAILABLE',
+            } as StorageUnitResponse)
+          }
+        >
+          Chọn ô Q7-AC-XL101
+        </button>
         <button type="button" onClick={onClose}>
           Đóng sơ đồ
         </button>
@@ -638,5 +656,63 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     // Modal Xác nhận phân bổ ô kho đã làm phẳng: không còn khung xanh nhạt bg-sky-50 hay hộp mã đơn/mã kho
     expect(content).not.toContain('bg-sky-50/70');
     expect(content).toContain('<hr className="border-gray-100 my-4" />');
+  });
+
+  it('13. Modal điều chuyển ô kho (sự cố + nâng hạng): bỏ icon đũa thần Sparkles, bỏ bôi đỏ ngày bắt đầu, hiện rõ chuyển từ ô cũ -> ô mới và dùng nút Primary Xanh dương', async () => {
+    vi.mocked(reservationApi.listReservations).mockResolvedValue([]);
+    vi.mocked(contractApi.getManagerContracts).mockResolvedValue([
+      {
+        id: 6357,
+        code: 'CTR-20261111-6357',
+        facilityId: 2,
+        facilityName: 'Cơ sở Quận 7 - TP.HCM',
+        customerId: 11,
+        customerName: 'Lê Thanh Tùng',
+        customerPhone: '0868268970',
+        customerEmail: 'thanhtung22012006@gmail.com',
+        storageUnitId: 501,
+        storageUnitCode: 'Q7-STD-501',
+        unitTypeId: 5,
+        unitTypeName: 'Kho Máy Lạnh M',
+        startDate: '2026-11-14',
+        endDateExclusive: '2027-02-14',
+        rentalMonths: 3,
+        status: 'RELOCATION_PENDING',
+        relocationEligible: true,
+        assignedStaffId: 9,
+        assignedStaffName: 'Trần Văn Hùng',
+      } as ManagerContractItem,
+    ]);
+
+    render(<AllocationPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('CTR-20261111-6357')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Gán ô kho/i }));
+    await waitFor(() => expect(screen.getByTestId('select-mock-upgrade-unit-btn')).toBeDefined());
+    fireEvent.click(screen.getByTestId('select-mock-upgrade-unit-btn'));
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /Xác nhận điều chuyển ô kho/i })).toBeDefined();
+    });
+
+    // Không còn icon Sparkles (đũa thần AI Slop) trong modal
+    expect(document.body.innerHTML).not.toContain('lucide-sparkles');
+    // Hiển thị chuyển dịch từ ô cũ (Q7-STD-501) sang ô mới (Q7-AC-XL101)
+    expect(screen.getByText('Q7-STD-501')).toBeDefined();
+    expect(screen.getByText('Q7-AC-XL101')).toBeDefined();
+
+    // Ngày bắt đầu hợp đồng dùng text đen/xám chuẩn, KHÔNG bôi đỏ như lỗi
+    const contractDateEl = screen.getByTestId('modal-contract-date');
+    expect(contractDateEl.textContent).toBe('14/11/2026');
+    expect(contractDateEl.className).not.toContain('text-rose-700');
+    expect(contractDateEl.className).not.toContain('bg-rose-50');
+
+    // Nút xác nhận điều chuyển dùng màu Primary Xanh dương (bg-blue-600)
+    const confirmBtn = screen.getByRole('button', { name: /Xác nhận điều chuyển/i });
+    expect(confirmBtn.className).toContain('bg-blue-600');
+    expect(confirmBtn.className).toContain('text-white');
   });
 });
