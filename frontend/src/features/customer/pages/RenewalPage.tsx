@@ -20,13 +20,15 @@ import {
   Loader2,
   XCircle,
   PlusCircle,
-  RotateCcw
+  RotateCcw,
+  Landmark,
+  CreditCard,
 } from 'lucide-react';
 import { getCustomerContracts } from '@/api/customerRentals';
 import { formatVND } from '../utils/pricing';
 import type { RentedContract } from '../types';
 import { RenewalExpiryBanner } from '../components/RenewalExpiryBanner';
-import { VnpayPayLinks } from '../components/VnpayPayLinks';
+import { vnpayPayHref } from '../components/VnpayPayLinks';
 import { RenewalReceiptModal } from '../components/RenewalReceiptModal';
 import { ScheduleReturnModal } from '../components/ScheduleReturnModal';
 import { tokenStorage } from '@/utils/tokenStorage';
@@ -64,6 +66,8 @@ export const RenewalPage: React.FC = () => {
     return urlStep === '3' ? 3 : 1;
   });
   const [renewalMonths, setRenewalMonths] = useState<number>(3);
+  const [selectedBankCode, setSelectedBankCode] = useState<'VNBANK' | 'INTCARD'>('VNBANK');
+  const [isRedirectingVnpay, setIsRedirectingVnpay] = useState<boolean>(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
 
   useEffect(() => {
@@ -126,7 +130,6 @@ export const RenewalPage: React.FC = () => {
     isLoadingCheckout,
     checkoutError,
     isPaidSuccess,
-    isVerifying,
     paymentNotice,
     setPaymentNotice,
     isCancelling,
@@ -139,7 +142,6 @@ export const RenewalPage: React.FC = () => {
     confirmedRenewal,
     showReceiptModal,
     setShowReceiptModal,
-    handleCheckPaymentAndRenew,
     handleCancelPayment,
   } = payment;
 
@@ -362,8 +364,8 @@ export const RenewalPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Dynamic Expiry & Eligibility Banner */}
-      <RenewalExpiryBanner contract={contract} />
+      {/* Dynamic Expiry & Eligibility Banner (Ẩn ở Bước 3 khi khách đã sang màn hình thanh toán) */}
+      {currentStep !== 3 && <RenewalExpiryBanner contract={contract} />}
 
       {/* MÀN HÌNH CẢNH BÁO XUNG ĐỘT TRÙNG LỊCH ĐẶT TRƯỚC (Availability Conflict) */}
       {isCapacityConflict ? (
@@ -475,36 +477,45 @@ export const RenewalPage: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {termMonths.map((months) => {
-                    const pkg = {
-                      months,
-                      label: `${months} Tháng`,
-                      discountTag: discountTag(months, 'reduce'),
-                    };
-                    const isSelected = renewalMonths === pkg.months;
+                    const tag = discountTag(months, 'reduce');
+                    const badgeLabel = tag || (months === 3 ? 'Phổ biến' : null);
+                    const isSelected = renewalMonths === months;
                     return (
                       <button
-                        key={pkg.months}
+                        key={months}
                         type="button"
                         disabled={isRenewalBlocked}
-                        onClick={() => setRenewalMonths(pkg.months)}
-                        className={`p-3.5 rounded-xl border text-center relative transition-all ${
+                        onClick={() => setRenewalMonths(months)}
+                        className={`flex flex-col items-center justify-center p-3.5 rounded-lg text-center transition-colors ${
                           isRenewalBlocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
                         } ${
                           isSelected
-                            ? 'border-brand-600 bg-brand-50/60'
-                            : 'border-slate-200 bg-white hover:border-slate-300'
+                            ? 'border-2 border-brand-500 bg-brand-50 text-brand-700 shadow-2xs'
+                            : 'border border-gray-200 bg-white hover:border-brand-400 text-gray-900'
                         }`}
                       >
-                        {pkg.discountTag && (
-                          <span className="absolute -top-2.5 -right-2 px-2 py-0.5 bg-brand-50 text-brand-700 text-[10px] font-semibold rounded-full whitespace-nowrap">
-                            {pkg.discountTag}
+                        <span className={`font-bold text-sm ${isSelected ? 'text-brand-700' : 'text-gray-900'}`}>
+                          {months} Tháng
+                        </span>
+                        {badgeLabel ? (
+                          <span
+                            className={`mt-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${
+                              tag
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : isSelected
+                                ? 'bg-brand-600 text-white uppercase'
+                                : 'bg-brand-50 text-brand-700 uppercase'
+                            }`}
+                          >
+                            {badgeLabel}
+                          </span>
+                        ) : (
+                          <span className="mt-1.5 text-[10px] py-0.5 select-none" aria-hidden="true">
+                            &nbsp;
                           </span>
                         )}
-                        <span className={`block font-semibold text-sm ${isSelected ? 'text-brand-700' : 'text-slate-900'}`}>
-                          {pkg.label}
-                        </span>
                       </button>
                     );
                   })}
@@ -778,7 +789,7 @@ export const RenewalPage: React.FC = () => {
                 variant="primary"
                 disabled={isRenewalBlocked}
                 onClick={() => !isRenewalBlocked && setCurrentStep(3)}
-                className={`px-6 py-2.5 flex items-center gap-2 shadow-xs ${
+                className={`px-6 py-2.5 flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-bold shadow-xs ${
                   isRenewalBlocked ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
@@ -836,9 +847,75 @@ export const RenewalPage: React.FC = () => {
                   </div>
                 )}
 
-                <VnpayPayLinks orderCode={checkoutData?.orderCode} />
+                {/* Chọn phương thức thanh toán VNPay dạng thẻ phẳng (Không lộ công cụ Dev/Test) */}
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    Chọn phương thức thanh toán qua VNPay
+                  </h3>
 
-                {/* Thông báo đối soát / chưa thanh toán */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label
+                      className={`relative flex items-start gap-3 p-4 rounded-xl border transition-all cursor-pointer ${
+                        selectedBankCode === 'VNBANK'
+                          ? 'border-2 border-brand-500 bg-brand-50/30 shadow-2xs'
+                          : 'border-gray-200 bg-white hover:border-brand-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="renewal-vnpay-method"
+                        value="VNBANK"
+                        checked={selectedBankCode === 'VNBANK'}
+                        onChange={() => setSelectedBankCode('VNBANK')}
+                        className="mt-1 h-4 w-4 accent-brand-600 cursor-pointer"
+                      />
+                      <div className="w-9 h-9 rounded-lg bg-brand-100 text-brand-700 flex items-center justify-center shrink-0">
+                        <Landmark className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-bold text-gray-900">Thẻ ATM / Tài khoản nội địa</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brand-100 text-brand-700">
+                            Khuyên dùng
+                          </span>
+                        </div>
+                        <span className="block text-xs text-gray-500 mt-1">
+                          Hỗ trợ 40+ ngân hàng nội địa Việt Nam
+                        </span>
+                      </div>
+                    </label>
+
+                    <label
+                      className={`relative flex items-start gap-3 p-4 rounded-xl border transition-all cursor-pointer ${
+                        selectedBankCode === 'INTCARD'
+                          ? 'border-2 border-brand-500 bg-brand-50/30 shadow-2xs'
+                          : 'border-gray-200 bg-white hover:border-brand-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="renewal-vnpay-method"
+                        value="INTCARD"
+                        checked={selectedBankCode === 'INTCARD'}
+                        onChange={() => setSelectedBankCode('INTCARD')}
+                        className="mt-1 h-4 w-4 accent-brand-600 cursor-pointer"
+                      />
+                      <div className="w-9 h-9 rounded-lg bg-gray-100 text-gray-700 flex items-center justify-center shrink-0">
+                        <CreditCard className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="block text-sm font-bold text-gray-900">
+                          Thẻ Quốc tế (Visa / Master)
+                        </span>
+                        <span className="block text-xs text-gray-500 mt-1">
+                          Thanh toán bằng thẻ tín dụng / ghi nợ quốc tế
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Thông báo đối soát / lỗi */}
                 {paymentNotice && (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center justify-between gap-2 shadow-xs">
                     <div className="flex items-center gap-2">
@@ -855,21 +932,21 @@ export const RenewalPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Action buttons */}
-                <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                {/* Tổng tiền & Action buttons */}
+                <div className="pt-5 border-t border-gray-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                   {/* Nút Hủy lệnh thanh toán */}
                   {!showCancelDialog ? (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setShowCancelDialog(true)}
-                      className="w-full sm:w-auto text-rose-600 border-rose-200 hover:bg-rose-50"
+                      className="w-full sm:w-auto text-gray-600 border-gray-300 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50"
                     >
                       <XCircle className="w-4 h-4 mr-1.5" />
                       Hủy lệnh thanh toán
                     </Button>
                   ) : (
-                    <div className="flex items-center gap-2 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800">
+                    <div className="flex flex-wrap items-center gap-2 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800">
                       <span>Bạn có chắc muốn hủy lệnh thanh toán gia hạn này?</span>
                       <Button size="sm" variant="outline" onClick={() => setShowCancelDialog(false)} className="text-xs py-1 px-2">
                         Không
@@ -881,18 +958,28 @@ export const RenewalPage: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <Button
-                      variant="primary"
-                      size="md"
-                      disabled={isProcessing || isVerifying || isPaidSuccess}
-                      onClick={handleCheckPaymentAndRenew}
-                      className="w-full sm:w-auto px-6 py-2.5 flex items-center justify-center gap-2 cursor-pointer shadow-sm text-xs font-bold whitespace-nowrap"
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                    <div className="flex items-baseline justify-between sm:justify-end gap-2 px-1">
+                      <span className="text-xs text-gray-500">Tổng thanh toán:</span>
+                      <span className="text-lg font-bold text-brand-700 tabular-nums">
+                        {formatVND(pricing.finalTotal)}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={isProcessing || isPaidSuccess || isRedirectingVnpay || !checkoutData?.orderCode}
+                      onClick={() => {
+                        if (!checkoutData?.orderCode) return;
+                        setIsRedirectingVnpay(true);
+                        window.location.href = vnpayPayHref(checkoutData.orderCode, selectedBankCode);
+                      }}
+                      className="w-full sm:w-auto px-7 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-lg shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
                     >
-                      {isProcessing || isVerifying ? (
+                      {isRedirectingVnpay || isProcessing ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>Đang đối soát...</span>
+                          <span>Đang chuyển hướng sang VNPay...</span>
                         </>
                       ) : isPaidSuccess ? (
                         <>
@@ -901,11 +988,11 @@ export const RenewalPage: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>Tôi đã hoàn tất chuyển khoản</span>
+                          <span>Thanh toán an toàn qua VNPay</span>
+                          <ArrowRight className="w-4 h-4" />
                         </>
                       )}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </>

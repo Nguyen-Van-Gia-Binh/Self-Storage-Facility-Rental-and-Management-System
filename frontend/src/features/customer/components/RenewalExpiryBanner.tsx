@@ -201,31 +201,14 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
     );
   }
 
-  // 4. Trường hợp sắp hết hạn (<= 30 ngày): Nhắc nhở chủ động (BR-REN-01 & BR-REN-02 mới)
+  // 4. Trường hợp sắp hết hạn (<= 30 ngày): Nhắc nhở gọn nhẹ 1 dòng, không chiếm diện tích
   if (daysRemaining <= 30) {
     return (
-      <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-4 sm:p-5 shadow-xs">
-        <div className="flex items-start gap-3.5">
-          <div className="p-2 bg-amber-100 rounded-lg text-amber-700 flex-shrink-0 mt-0.5">
-            <Clock className="w-5 h-5" />
-          </div>
-          <div className="space-y-1 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 uppercase tracking-wider">
-                Nhắc nhở gia hạn (Còn {daysRemaining} ngày)
-              </span>
-              <span className="text-xs font-semibold text-amber-800">
-                Hết hạn: {contract.endDate}
-              </span>
-            </div>
-            <h3 className="text-base font-bold text-amber-950">
-              Hãy gia hạn sớm để giữ vị trí ô kho {contract.unitNumber}!
-            </h3>
-            <p className="text-xs sm:text-sm text-amber-800 leading-relaxed">
-              Hợp đồng sắp kết thúc. Quý khách vui lòng hoàn tất gia hạn sớm để giữ ô kho trước khi khách hàng khác có thể đặt giữ chỗ cho chu kỳ tiếp theo. Kỳ hạn mới sẽ nối tiếp trực tiếp sau ngày {contract.endDate}.
-            </p>
-          </div>
-        </div>
+      <div className="flex items-center gap-2.5 px-4 py-2.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-xs sm:text-sm">
+        <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+        <span>
+          <strong>Nhắc nhở:</strong> Hợp đồng còn <strong>{daysRemaining} ngày</strong> (hết hạn {contract.endDate}). Vui lòng gia hạn sớm để giữ vị trí ô kho <strong>{contract.unitNumber}</strong>.
+        </span>
       </div>
     );
   }
