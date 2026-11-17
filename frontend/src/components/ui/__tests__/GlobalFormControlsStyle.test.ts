@@ -66,4 +66,35 @@ describe('Global Form Controls & Focus Ring Enterprise Standards', () => {
     );
     expect(forgotContent).toContain('px-4 py-3 rounded-xl bg-slate-50 border border-slate-200');
   });
+
+  it('đồng bộ hoàn toàn font Inter toàn hệ thống: không ép tnum toàn cục lên html/body, không dùng font-mono trên WorkItemCard và bỏ font cũ Be Vietnam Pro trên HomePage', () => {
+    const css = fs.readFileSync(path.join(srcRoot, 'index.css'), 'utf-8');
+    expect(css).not.toContain("font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';");
+    expect(css).toContain('code,');
+    expect(css).toContain('.font-mono {');
+
+    const workItemCard = fs.readFileSync(
+      path.join(srcRoot, 'features/manager/components/WorkItemCard.tsx'),
+      'utf-8'
+    );
+    expect(workItemCard).not.toContain('font-mono');
+
+    const shiftPage = fs.readFileSync(
+      path.join(srcRoot, 'features/manager/pages/ShiftCalendarPage.tsx'),
+      'utf-8'
+    );
+    expect(shiftPage).not.toContain('font-mono');
+
+    const homePage = fs.readFileSync(
+      path.join(srcRoot, 'features/customer/pages/HomePage.tsx'),
+      'utf-8'
+    );
+    expect(homePage).not.toContain('Be Vietnam Pro');
+
+    const homeHero = fs.readFileSync(
+      path.join(srcRoot, 'features/customer/components/HomeHeroSection.tsx'),
+      'utf-8'
+    );
+    expect(homeHero).not.toContain('Be Vietnam Pro');
+  });
 });

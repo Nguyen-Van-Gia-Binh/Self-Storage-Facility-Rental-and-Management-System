@@ -6,15 +6,24 @@
   html {
     scroll-behavior: smooth;
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
-    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
   body {
     @apply bg-[#f2f9f7] text-[#0a1614] antialiased selection:bg-brand-500 selection:text-white;
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
-    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+}
+
+/* Đảm bảo toàn bộ các mã hợp đồng/ô kho gắn class font-mono hiển thị đồng bộ Inter (trừ bản in @media print) */
+.font-mono {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* Số tiền, %, số đếm: Inter (kế thừa), chữ số cùng độ rộng, khít nhẹ. */

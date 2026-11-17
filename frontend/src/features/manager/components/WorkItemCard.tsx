@@ -111,7 +111,7 @@ export const WorkItemCard: React.FC<WorkItemCardProps> = ({
         {/* Hàng 2: Mã tham chiếu + Tiêu đề rút gọn & thông tin dạng Text gọn gàng */}
         <div className="pl-0 sm:pl-10 space-y-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs sm:text-sm text-gray-600">
-            <span className="font-mono font-semibold text-gray-900">
+            <span className="font-semibold text-gray-900">
               {task.referenceCode || `Task #${task.id}`}
             </span>
             {task.title && !task.title.includes(task.referenceCode || '') && (
@@ -131,7 +131,7 @@ export const WorkItemCard: React.FC<WorkItemCardProps> = ({
             </span>
             <span className="text-gray-300">•</span>
             <span>
-              Kho: <strong className="font-mono font-medium text-gray-800">{task.unitCode}</strong>
+              Kho: <strong className="font-medium text-gray-800">{task.unitCode}</strong>
             </span>
             <span className="text-gray-300">•</span>
             <span>

@@ -617,7 +617,7 @@ export const ShiftCalendarPage: React.FC = () => {
                               </div>
                               <div>
                                 <p className="font-bold text-sm text-gray-900">{st.staffName}</p>
-                                <p className="text-xs text-gray-500 font-mono">
+                                <p className="text-xs text-gray-500">
                                   {st.staffPhone || 'Chưa cập nhật'}
                                 </p>
                               </div>
