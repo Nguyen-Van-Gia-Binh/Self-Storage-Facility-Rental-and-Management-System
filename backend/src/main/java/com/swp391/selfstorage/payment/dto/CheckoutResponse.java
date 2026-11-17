@@ -1,5 +1,6 @@
 package com.swp391.selfstorage.payment.dto;
 
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,4 +23,5 @@ public class CheckoutResponse {
     private String accountNumber;
     private String bin;
     private String status;
+    private Instant expiresAt;
 }

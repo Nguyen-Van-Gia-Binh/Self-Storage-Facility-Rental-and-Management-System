@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, RotateCcw } from 'lucide-react';
+import { Building2, RotateCcw, Search } from 'lucide-react';
 import type { StaffDailyTaskReport } from '@/types';
 import { getStaffDailyTasks, invalidateStaffTasksCache } from '@/api/staff';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import { DailyTasksOverview } from '../components/DailyTasksOverview';
+import { formatLocalDate } from '../components/StaffWeekCalendarStrip';
 import { useCurrentUser } from '@/utils/useCurrentUser';
 
 export const StaffDashboardPage: React.FC = () => {
@@ -12,7 +13,7 @@ export const StaffDashboardPage: React.FC = () => {
   const staffId = user?.id as number | undefined;
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialDate = searchParams.get('date') || new Date().toISOString().split('T')[0];
+  const initialDate = searchParams.get('date') || formatLocalDate(new Date());
   const initialFacilityId = Number(searchParams.get('facilityId')) || 0;
 
   const [tasks, setTasks] = useState<StaffDailyTaskReport | null>(null);
@@ -156,12 +157,12 @@ export const StaffDashboardPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             {/* Thông tin ca trực & Nhân viên */}
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  {greeting}, {user?.fullName || 'Nhân viên'}! 👋
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                  {greeting}, {user?.fullName || 'Nhân viên'}
                 </h1>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Đang trong ca trực
                 </span>
               </div>
@@ -176,12 +177,13 @@ export const StaffDashboardPage: React.FC = () => {
           <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
             {/* Ô tìm kiếm nhanh trên danh sách ca trực */}
             <div className="relative flex-1 max-w-md">
+              <Search className="w-3.5 h-3.5 text-slate-400 pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="🔍 Tìm nhanh: SĐT, Tên khách, Mã kho (A-102), Mã HĐ..."
-                className="w-full pl-3.5 pr-8 py-2 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-teal-500 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition"
+                placeholder="Tìm nhanh: SĐT, Tên khách, Mã kho (A-102), Mã HĐ..."
+                className="w-full pl-8 pr-8 py-2 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-brand-500 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
               />
               {searchQuery && (
                 <button

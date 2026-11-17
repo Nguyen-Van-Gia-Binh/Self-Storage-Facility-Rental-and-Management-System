@@ -215,10 +215,7 @@ export const HomeHeroSection: React.FC<HomeHeroSectionProps> = ({
 
           {/* Nội dung Hero duy nhất: Mobile xếp trên ảnh nền xanh đậm; Desktop nằm trên vùng scrim tối góc trái */}
           <div className="relative z-10 w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-10 pt-8 pb-6 md:pt-10 lg:pt-12 xl:pt-14 md:pb-0">
-            <div
-              style={{ fontFamily: "'Be Vietnam Pro', 'Plus Jakarta Sans', sans-serif" }}
-              className="max-w-xl lg:max-w-[580px] space-y-4"
-            >
+            <div className="max-w-xl lg:max-w-[580px] space-y-4">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#041f3d]/45 backdrop-blur-xs border border-white/35 text-xs font-medium uppercase tracking-[0.08em] text-white shadow-2xs">
                 <span className="w-2 h-2 rounded-full bg-emerald-300 pixel-beacon" />
                 <span className="font-pixel text-[13px] tracking-[0.06em]">SmartStorage Việt Nam</span>

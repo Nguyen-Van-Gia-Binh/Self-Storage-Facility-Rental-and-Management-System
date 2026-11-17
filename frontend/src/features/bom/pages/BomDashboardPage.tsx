@@ -1,10 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   TrendingUp,
   BarChart3,
   AlertTriangle,
   Building2,
   FileSpreadsheet,
+  FileText,
+  Download,
+  ChevronDown,
+  Loader2,
+  CheckCircle2,
   FilterX,
   ReceiptText,
 } from 'lucide-react';
@@ -22,7 +27,12 @@ import {
 } from '@/api/report';
 import { fetchFacilities } from '@/api/facility';
 import { tokenStorage } from '@/utils/tokenStorage';
-import { Button } from '@/components/ui/Button';
+import { downloadBlobFile } from '@/utils/format';
+import {
+  buildExportFilename,
+  buildMultiSheetXlsx,
+  buildRevenueCsv,
+} from '../utils/reportDataExport';
 import { BomFilterBar } from '../components/BomFilterBar';
 import { BomKpiSummary } from '../components/BomKpiSummary';
 import { RevenueTrendCharts } from '../components/RevenueTrendCharts';
@@ -181,13 +191,93 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
   const preparedBy = tokenStorage.getUser()?.fullName || 'Ban vận hành kinh doanh';
   const preparedOn = new Date().toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
 
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [exportToast, setExportToast] = useState<{ status: 'loading' | 'done'; text: string } | null>(null);
+  const exportMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isExportMenuOpen) return;
+    const handleOutside = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setIsExportMenuOpen(false);
+      }
+    };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsExportMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isExportMenuOpen]);
+
+  const handleQuickExport = (targetFormat: 'PDF' | 'XLSX' | 'CSV') => {
+    setIsExportMenuOpen(false);
+    if (targetFormat === 'PDF') {
+      handlePrintReport(filters.facilityId);
+      return;
+    }
+
+    setExportToast({
+      status: 'loading',
+      text: 'Đang khởi tạo file... Vui lòng chờ trong giây lát',
+    });
+
+    window.setTimeout(() => {
+      try {
+        const exportDate = todayInHoChiMinh();
+        if (targetFormat === 'XLSX') {
+          const bytes = buildMultiSheetXlsx({
+            revenue: revenueData,
+            occupancy: occupancyData,
+            overdue: overdueData,
+            from: filters.from,
+            to: filters.to,
+            scopeName: selectedFacilityName,
+          });
+          const blob = new Blob([bytes.buffer as ArrayBuffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          });
+          const filename = buildExportFilename('xlsx', exportDate, filters.facilityId);
+          downloadBlobFile(blob, filename);
+          setExportToast({ status: 'done', text: `Đã tải xuống ${filename}` });
+        } else {
+          const csvContent = buildRevenueCsv(revenueData, occupancyData);
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const filename = buildExportFilename('csv', exportDate, filters.facilityId);
+          downloadBlobFile(blob, filename);
+          setExportToast({ status: 'done', text: `Đã tải xuống ${filename}` });
+        }
+      } finally {
+        window.setTimeout(() => setExportToast(null), 3200);
+      }
+    }, 150);
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      {/* Export Toast Notification */}
+      {exportToast && (
+        <div
+          role="status"
+          className="no-print fixed bottom-5 right-5 z-50 flex items-center gap-2.5 px-4 py-2.5 bg-white border border-gray-200 rounded-md shadow-lg text-xs font-medium text-gray-800"
+        >
+          {exportToast.status === 'loading' ? (
+            <Loader2 className="w-4 h-4 text-brand-600 animate-spin shrink-0" />
+          ) : (
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          )}
+          <span>{exportToast.text}</span>
+        </div>
+      )}
+
       {/* Header trang (ẩn khi in) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-            Giám Sát Doanh Thu & Hiệu Quả Vận Hành
+            Giám Sát Doanh Thu &amp; Hiệu Quả Vận Hành
           </h1>
         </div>
 
@@ -197,15 +287,65 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
               Cập nhật lúc: {lastRefreshed}
             </span>
           )}
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => setIsExportModalOpen(true)}
-            className="flex items-center gap-2 text-xs py-2 px-3.5 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-lg shadow-sm"
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            Trích xuất báo cáo
-          </Button>
+
+          {/* Enterprise Export Dropdown Menu */}
+          <div className="relative" ref={exportMenuRef}>
+            <button
+              type="button"
+              onClick={() => setIsExportMenuOpen((prev) => !prev)}
+              aria-haspopup="menu"
+              aria-expanded={isExportMenuOpen}
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-md transition-colors cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Xuất dữ liệu</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isExportMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isExportMenuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 mt-1.5 w-64 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-40"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => handleQuickExport('PDF')}
+                  className="w-full px-3.5 py-2.5 text-left hover:bg-gray-50 flex items-start gap-2.5 transition-colors cursor-pointer"
+                >
+                  <FileText className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" />
+                  <div>
+                    <div className="text-xs font-semibold text-gray-900">Xuất PDF</div>
+                    <div className="text-[11px] text-gray-500">In ấn, trình ký (Ledger đơn sắc A4)</div>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => handleQuickExport('XLSX')}
+                  className="w-full px-3.5 py-2.5 text-left hover:bg-gray-50 flex items-start gap-2.5 transition-colors cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                  <div>
+                    <div className="text-xs font-semibold text-gray-900">Xuất Excel (.xlsx)</div>
+                    <div className="text-[11px] text-gray-500">4 sheet dữ liệu thô cho kế toán</div>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => handleQuickExport('CSV')}
+                  className="w-full px-3.5 py-2.5 text-left hover:bg-gray-50 flex items-start gap-2.5 transition-colors cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" />
+                  <div>
+                    <div className="text-xs font-semibold text-gray-900">Xuất CSV (Dữ liệu thô)</div>
+                    <div className="text-[11px] text-gray-500">UTF-8 BOM, sẵn sàng import</div>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

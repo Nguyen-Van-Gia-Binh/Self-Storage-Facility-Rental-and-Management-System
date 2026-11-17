@@ -32,6 +32,10 @@ import com.swp391.selfstorage.policy.entity.PolicyVersion;
 import com.swp391.selfstorage.policy.mapper.PolicyMapper;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.policy.service.impl.PolicyServiceImpl;
+import com.swp391.selfstorage.user.entity.AppUser;
+import com.swp391.selfstorage.user.entity.UserRole;
+import com.swp391.selfstorage.user.entity.UserStatus;
+import com.swp391.selfstorage.user.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 class PolicyServiceTest {
@@ -39,13 +43,16 @@ class PolicyServiceTest {
     @Mock
     private PolicyVersionRepository policyVersionRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     private final PolicyMapper policyMapper = new PolicyMapper();
 
     private PolicyService policyService;
 
     @BeforeEach
     void setUp() {
-        policyService = new PolicyServiceImpl(policyVersionRepository, policyMapper);
+        policyService = new PolicyServiceImpl(policyVersionRepository, policyMapper, userRepository);
     }
 
     private PolicyVersion buildMockEntity(Long id, Integer versionNo) {
@@ -229,17 +236,23 @@ class PolicyServiceTest {
     }
 
     @Test
-    @DisplayName("Phân trang danh sách chính sách thành công")
+    @DisplayName("Phân trang danh sách chính sách thành công và ánh xạ tên người ban hành theo lô")
     void testGetPolicies_pagination_success() {
         PolicyVersion entity = buildMockEntity(1L, 1);
         Page<PolicyVersion> page = new PageImpl<>(List.of(entity));
         when(policyVersionRepository.findAll(any(Pageable.class))).thenReturn(page);
+
+        AppUser publisher = new AppUser("bom@smartstorage.vn", "hash", "Huỳnh Nhật", "0900000000", null,
+                UserRole.BUSINESS_OPERATIONS_MANAGER, UserStatus.ACTIVE);
+        publisher.setId(100L);
+        when(userRepository.findAllById(any())).thenReturn(List.of(publisher));
 
         PageResponse<PolicyResponse> response = policyService.getPolicies(PageRequest.of(0, 10));
 
         assertNotNull(response);
         assertEquals(1, response.getContent().size());
         assertEquals(1, response.getTotalElements());
+        assertEquals("Huỳnh Nhật", response.getContent().get(0).getPublishedByName());
     }
 
     @Test

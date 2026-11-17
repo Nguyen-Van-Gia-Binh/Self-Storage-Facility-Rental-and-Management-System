@@ -1,13 +1,9 @@
 // frontend/src/features/bom/pages/BomPricingManagementPage.tsx
 import React, { useState, useEffect } from 'react';
 import {
-  DollarSign,
-  Tag,
-  ShieldCheck,
-  Percent,
   CheckCircle2,
   AlertCircle,
-  ChevronDown,
+  Building2,
   Plus,
 } from 'lucide-react';
 import { fetchFacilities, fetchUnitTypes } from '@/api/facility';
@@ -46,6 +42,7 @@ import { PolicySummaryCard } from '../components/PolicySummaryCard';
 import { PolicyDrawer } from '../components/PolicyDrawer';
 import { DiscountProgramTable } from '../components/DiscountProgramTable';
 import { DiscountProgramModal } from '../components/DiscountProgramModal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 type PricingTab = 'PRICING' | 'SURCHARGES' | 'POLICIES' | 'DISCOUNTS';
 
@@ -70,6 +67,8 @@ export const BomPricingManagementPage: React.FC = () => {
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState<DiscountProgramItem | null>(null);
   const [isSavingDiscount, setIsSavingDiscount] = useState(false);
+  const [pendingToggleDiscount, setPendingToggleDiscount] = useState<DiscountProgramItem | null>(null);
+  const [isTogglingDiscount, setIsTogglingDiscount] = useState(false);
 
   // Drawer Price Update State (Single & Bulk)
   const [priceDrawerUnitType, setPriceDrawerUnitType] = useState<UnitTypeCatalog | null>(null);
@@ -398,10 +397,15 @@ export const BomPricingManagementPage: React.FC = () => {
     }
   };
 
-  const handleToggleDiscountStatus = async (item: DiscountProgramItem) => {
-    const actionText = item.isActive ? 'Tạm dừng áp dụng' : 'Kích hoạt lại';
-    const confirmed = window.confirm(`${actionText} chương trình "${item.name}"?`);
-    if (!confirmed) return;
+  const handleToggleDiscountStatus = (item: DiscountProgramItem) => {
+    setPendingToggleDiscount(item);
+  };
+
+  const handleConfirmToggleDiscountStatus = async () => {
+    if (!pendingToggleDiscount) return;
+    const item = pendingToggleDiscount;
+    const actionText = item.isActive ? 'tạm dừng áp dụng' : 'kích hoạt lại';
+    setIsTogglingDiscount(true);
     try {
       await updateDiscountProgram(item.id, {
         name: item.name,
@@ -415,12 +419,15 @@ export const BomPricingManagementPage: React.FC = () => {
         unitTypeId: item.unitTypeId,
         isActive: !item.isActive,
       });
-      showToast(`Đã ${actionText.toLowerCase()} chương trình "${item.name}".`);
+      showToast(`Đã ${actionText} chương trình "${item.name}".`);
       const res = await fetchDiscountPrograms();
       setDiscountPrograms(res.content || []);
+      setPendingToggleDiscount(null);
     } catch (err: unknown) {
       const errorObj = err as { message?: string };
       showToast(errorObj.message || 'Không thay đổi được trạng thái', 'error');
+    } finally {
+      setIsTogglingDiscount(false);
     }
   };
 
@@ -432,7 +439,7 @@ export const BomPricingManagementPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4 max-w-[1600px] mx-auto pb-12 animate-fade-in">
+    <div className="space-y-3 max-w-[1600px] mx-auto pb-12 animate-fade-in">
       {/* Toast Alert */}
       {toastMessage && (
         <div
@@ -451,112 +458,97 @@ export const BomPricingManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* Tầng 1: Header & Tabs Navigation (Điều hướng phân hệ) */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+      {/* Tầng 1: Header & Full-width Underline Tab Navigation (hạn chế icon trang trí) */}
+      <div className="space-y-3">
         <div>
-          <h1 className="text-lg font-bold text-slate-900 tracking-tight">
-            Quản lý Bảng giá & Phụ phí
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+            Quản lý Bảng giá &amp; Phụ phí
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-gray-500 mt-0.5">
             Thiết lập khung giá thuê theo m², biểu phí dịch vụ và chính sách tài chính
           </p>
         </div>
 
-        {/* 4 Tabs Điều hướng phân hệ */}
-        <div className="flex flex-wrap items-center gap-1 text-sm">
-          <button
-            type="button"
-            onClick={() => setActiveTab('PRICING')}
-            className={`flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 ${
-              activeTab === 'PRICING'
-                ? 'font-semibold text-brand-600 border-brand-500'
-                : 'font-medium text-slate-500 border-transparent hover:text-slate-800'
-            }`}
-          >
-            <DollarSign className="w-3.5 h-3.5" />
-            <span>Khung giá thuê ô kho</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('SURCHARGES')}
-            className={`flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 ${
-              activeTab === 'SURCHARGES'
-                ? 'font-semibold text-brand-600 border-brand-500'
-                : 'font-medium text-slate-500 border-transparent hover:text-slate-800'
-            }`}
-          >
-            <Tag className="w-3.5 h-3.5" />
-            <span>Biểu phí & Phụ thu</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('POLICIES')}
-            className={`flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 ${
-              activeTab === 'POLICIES'
-                ? 'font-semibold text-brand-600 border-brand-500'
-                : 'font-medium text-slate-500 border-transparent hover:text-slate-800'
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Chính sách cọc & Quá hạn</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('DISCOUNTS')}
-            className={`flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 ${
-              activeTab === 'DISCOUNTS'
-                ? 'font-semibold text-brand-600 border-brand-500'
-                : 'font-medium text-slate-500 border-transparent hover:text-slate-800'
-            }`}
-          >
-            <Percent className="w-3.5 h-3.5" />
-            <span>Khuyến mãi & Giảm giá</span>
-          </button>
+        {/* 4 Tabs Điều hướng phân hệ dạng Underline chuẩn Enterprise */}
+        <div
+          role="tablist"
+          aria-label="Phân hệ quản lý bảng giá và phụ phí"
+          className="flex flex-wrap items-center gap-1 border-b border-gray-200 text-sm"
+        >
+          {(
+            [
+              { key: 'PRICING', label: 'Bảng giá thuê' },
+              { key: 'SURCHARGES', label: 'Biểu phí & Phụ thu' },
+              { key: 'POLICIES', label: 'Chính sách cọc & Quá hạn' },
+              { key: 'DISCOUNTS', label: 'Khuyến mãi & Giảm giá' },
+            ] as const
+          ).map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-4 py-2.5 -mb-px border-b-2 transition-colors cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 ${
+                  isActive
+                    ? 'font-semibold text-brand-700 border-brand-600'
+                    : 'font-medium text-gray-500 border-transparent hover:text-gray-800 hover:border-gray-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Tầng 2: Context Bar (Bộ lọc không gian - Cơ sở) - Chỉ hiển thị khi ở tab Khung giá thuê */}
+      {/* Tầng 2: Toolbar Bộ lọc Cơ sở (trái) & Hành động chính (phải) - Tab Bảng giá thuê */}
       {activeTab === 'PRICING' && (
-        <div className="bg-slate-50/90 border border-slate-200/80 px-4 py-3 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-2xs animate-fade-in">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs font-semibold text-slate-600">Đang xem bảng giá tại:</span>
-            <div className="relative">
-              <select
-                value={selectedFacilityId}
-                onChange={(e) => selectFacility(Number(e.target.value))}
-                className="appearance-none text-xs font-bold bg-white border border-slate-300 text-slate-900 rounded-xl pl-3 pr-9 py-1.5 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 cursor-pointer"
-                title="Chọn cơ sở xem bảng giá"
-              >
-                {facilities.map((fac) => (
-                  <option key={fac.id} value={fac.id}>
-                    {fac.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+        <div className="bg-white border border-gray-200 px-3.5 py-2.5 rounded-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+          <div className="flex flex-wrap items-center gap-3 min-w-0">
+            <div className="inline-flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-500 whitespace-nowrap">Cơ sở:</span>
+              <div className="inline-flex items-center gap-1.5 bg-white border border-gray-300 hover:border-gray-400 rounded-md pl-2.5 pr-1.5 py-1 transition-colors shadow-2xs">
+                <Building2 className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                <select
+                  aria-label="Chọn cơ sở xem bảng giá"
+                  value={selectedFacilityId}
+                  onChange={(e) => selectFacility(Number(e.target.value))}
+                  className="text-xs font-semibold bg-transparent text-gray-900 border-0 outline-none cursor-pointer py-0.5 pr-6"
+                  title="Chọn cơ sở xem bảng giá"
+                >
+                  {facilities.map((fac) => (
+                    <option key={fac.id} value={fac.id}>
+                      {fac.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsUnitTypeModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer shrink-0 ml-1"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Thêm loại kho mới</span>
-            </button>
+
+            {currentFacility && (
+              <div className="text-xs text-gray-500 flex flex-wrap items-center gap-2">
+                <span className="font-medium text-gray-600 tabular-nums">
+                  {currentFacility.code || `#${currentFacility.id}`}
+                </span>
+                <span className="text-gray-300">·</span>
+                <span className="tabular-nums">
+                  <strong className="font-semibold text-gray-700">{unitTypes.length}</strong> loại ô kho
+                </span>
+              </div>
+            )}
           </div>
-          {currentFacility && (
-            <div className="text-xs text-slate-500 flex items-center gap-3 font-medium">
-              <span>Mã CS: <strong className="text-slate-700 font-mono">{currentFacility.code || `#${currentFacility.id}`}</strong></span>
-              <span>·</span>
-              <span>Đang quản lý: <strong className="text-slate-700 tabular-nums">{unitTypes.length} loại ô kho</strong></span>
-              {currentFacility.address && (
-                <>
-                  <span>·</span>
-                  <span className="text-slate-400 line-clamp-1 max-w-sm">{currentFacility.address}</span>
-                </>
-              )}
-            </div>
-          )}
+
+          <button
+            type="button"
+            onClick={() => setIsUnitTypeModalOpen(true)}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-md text-xs font-semibold transition-colors cursor-pointer shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Thêm loại kho mới</span>
+          </button>
         </div>
       )}
 
@@ -621,6 +613,16 @@ export const BomPricingManagementPage: React.FC = () => {
             setIsDiscountModalOpen(true);
           }}
           onToggleStatus={handleToggleDiscountStatus}
+          pendingToggleId={pendingToggleDiscount?.id ?? null}
+          onRefresh={async () => {
+            setIsLoadingDiscounts(true);
+            try {
+              const res = await fetchDiscountPrograms({ page: 0, size: 100 });
+              setDiscountPrograms(res.content || []);
+            } finally {
+              setIsLoadingDiscounts(false);
+            }
+          }}
           isLoading={isLoadingDiscounts}
         />
       )}
@@ -694,6 +696,44 @@ export const BomPricingManagementPage: React.FC = () => {
           onSubmit={handleCreateUnitType}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(pendingToggleDiscount)}
+        title={
+          pendingToggleDiscount?.isActive
+            ? 'Tạm dừng chương trình khuyến mãi'
+            : 'Kích hoạt chương trình khuyến mãi'
+        }
+        description={
+          pendingToggleDiscount ? (
+            <>
+              Bạn có chắc chắn muốn{' '}
+              {pendingToggleDiscount.isActive ? 'tạm dừng áp dụng' : 'kích hoạt lại'} chương trình{' '}
+              <strong className="font-semibold text-gray-900">
+                "{pendingToggleDiscount.name}"
+              </strong>{' '}
+              không?
+            </>
+          ) : undefined
+        }
+        note={
+          pendingToggleDiscount?.isActive
+            ? 'Chương trình sẽ ngừng áp dụng cho các đơn đặt chỗ và hợp đồng mới. Các hợp đồng đã ký không bị ảnh hưởng.'
+            : 'Chương trình sẽ ngay lập tức được áp dụng cho các đơn đặt chỗ và hợp đồng đủ điều kiện.'
+        }
+        confirmLabel={
+          pendingToggleDiscount?.isActive ? 'Xác nhận tạm dừng' : 'Xác nhận kích hoạt'
+        }
+        cancelLabel="Hủy bỏ"
+        variant={pendingToggleDiscount?.isActive ? 'warning' : 'success'}
+        isLoading={isTogglingDiscount}
+        onConfirm={handleConfirmToggleDiscountStatus}
+        onCancel={() => {
+          if (!isTogglingDiscount) {
+            setPendingToggleDiscount(null);
+          }
+        }}
+      />
     </div>
   );
 };

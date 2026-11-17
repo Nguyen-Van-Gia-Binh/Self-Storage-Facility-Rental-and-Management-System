@@ -57,4 +57,25 @@ describe('getStaffDailyTasks (real API mode)', () => {
 
     await expect(getStaffDailyTasks(9999, '2026-09-25')).rejects.toMatchObject({ status: 404 });
   });
+
+  it('khi xem ngày tương lai chỉ gọi đúng 1 API cho ngày đó, không tự nhân bản việc tồn đọng của hôm nay sang tương lai', async () => {
+    const spy = vi.spyOn(clientModule, 'apiClient').mockResolvedValue({
+      success: true,
+      data: {
+        staffId: 88,
+        date: '2099-12-31',
+        checkInTasks: [],
+        returnTasks: [],
+        supportTasks: [],
+      },
+    } as any);
+
+    const result = await getStaffDailyTasks(88, '2099-12-31');
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith('/reports/staff/88/daily-tasks?date=2099-12-31');
+    expect(result.pendingCheckIns).toEqual([]);
+    expect(result.pendingReturns).toEqual([]);
+    expect(result.openSupportRequests).toEqual([]);
+  });
 });

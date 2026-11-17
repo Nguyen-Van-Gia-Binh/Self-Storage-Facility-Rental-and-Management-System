@@ -126,7 +126,7 @@ class StaffDailyTaskServiceTest {
     @Test
     @DisplayName("Staff xem bảng công việc của chính mình thành công (đủ 3 nhóm Check-in, Return, Support)")
     void shouldGetDailyTasks_successfully_forCurrentStaff() {
-        LocalDate today = LocalDate.of(2026, 10, 1);
+        LocalDate today = LocalDate.now(StaffDailyTaskServiceImpl.VN_ZONE);
 
         when(userRepository.findById(8L)).thenReturn(Optional.of(sampleStaff));
         when(userFacilityAssignmentRepository.findFacilityIdsByUserId(8L)).thenReturn(List.of(1L));
@@ -160,7 +160,8 @@ class StaffDailyTaskServiceTest {
                 .referenceId(502L)
                 .build();
 
-        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDate(8L, today))
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(
+                org.mockito.ArgumentMatchers.eq(8L), any(), org.mockito.ArgumentMatchers.eq(today)))
                 .thenReturn(List.of(checkInAssignment, returnAssignment));
         when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(checkInContract));
         when(rentalContractRepository.findById(502L)).thenReturn(Optional.of(returnContract));
@@ -275,7 +276,7 @@ class StaffDailyTaskServiceTest {
     @Test
     @DisplayName("Lọc trạng thái chưa xử lý (pendingOnly = true) chỉ trả về việc chưa hoàn thành")
     void shouldFilterPendingOnly_whenPendingOnlyIsTrue() {
-        LocalDate today = LocalDate.of(2026, 10, 1);
+        LocalDate today = LocalDate.now(StaffDailyTaskServiceImpl.VN_ZONE);
 
         when(userRepository.findById(8L)).thenReturn(Optional.of(sampleStaff));
         when(userFacilityAssignmentRepository.findFacilityIdsByUserId(8L)).thenReturn(List.of(1L));
@@ -295,7 +296,9 @@ class StaffDailyTaskServiceTest {
                 .id(2L).staffId(8L).facilityId(1L).workDate(today).taskType(AssignmentTaskType.HANDOVER)
                 .referenceType("CONTRACT").referenceId(502L).build();
 
-        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDate(8L, today)).thenReturn(List.of(a1, a2));
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(
+                org.mockito.ArgumentMatchers.eq(8L), any(), org.mockito.ArgumentMatchers.eq(today)))
+                .thenReturn(List.of(a1, a2));
         when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(pendingContract));
         when(rentalContractRepository.findById(502L)).thenReturn(Optional.of(completedContract));
         when(supportRequestRepository.findAllByAssignedStaffId(8L)).thenReturn(Collections.emptyList());
@@ -494,6 +497,89 @@ class StaffDailyTaskServiceTest {
 
         StaffDailyTasksResponse pendingOnly = staffDailyTaskService.getDailyTasks(8L, today, true, staffPrincipal);
         assertThat(pendingOnly.getSupportTasks()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Phân tách thời gian tuyệt đối: Quá khứ không hiện việc PENDING (chỉ hiện lịch sử đã xong), Hôm nay gom việc trễ hạn, Tương lai không nhân bản việc trễ")
+    void shouldPartitionTasksStrictlyAcrossPastTodayAndFuture_withZeroOverlap() {
+        LocalDate today = LocalDate.now(StaffDailyTaskServiceImpl.VN_ZONE);
+        LocalDate yesterday = today.minusDays(1);
+        LocalDate tomorrow = today.plusDays(1);
+
+        when(userRepository.findById(8L)).thenReturn(Optional.of(sampleStaff));
+        when(userFacilityAssignmentRepository.findFacilityIdsByUserId(8L)).thenReturn(List.of(1L));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(sampleFacility));
+        when(userRepository.findById(15L)).thenReturn(Optional.of(sampleCustomer));
+        when(storageUnitRepository.findById(101L)).thenReturn(Optional.of(sampleUnit));
+
+        // 1. Check-in hẹn hôm qua nhưng chưa nhận kho (PENDING)
+        RentalContract pendingCheckInYesterday = createContract(901L, "CTR-PENDING-YEST", 5001L, 15L, 1L, 101L,
+                yesterday, yesterday.plusMonths(1), ContractStatus.PENDING_CHECK_IN, null, null);
+        // 2. Check-in hẹn hôm qua và ĐÃ bàn giao đúng hôm qua (COMPLETED)
+        RentalContract completedCheckInYesterday = createContract(902L, "CTR-DONE-YEST", 5002L, 15L, 1L, 101L,
+                yesterday, yesterday.plusMonths(1), ContractStatus.ACTIVE, yesterday, null);
+        // 3. Trả kho hẹn hôm qua nhưng chưa nghiệm thu (PENDING)
+        RentalContract pendingReturnYesterday = createContract(903L, "CTR-RET-YEST", 5003L, 15L, 1L, 101L,
+                yesterday.minusMonths(1), yesterday, ContractStatus.PENDING_RETURN, yesterday.minusMonths(1), yesterday);
+
+        StaffDailyAssignment aPendingCheckIn = StaffDailyAssignment.builder()
+                .id(11L).staffId(8L).facilityId(1L).workDate(yesterday).taskType(AssignmentTaskType.HANDOVER)
+                .referenceType("CONTRACT").referenceId(901L).build();
+        StaffDailyAssignment aDoneCheckIn = StaffDailyAssignment.builder()
+                .id(12L).staffId(8L).facilityId(1L).workDate(yesterday).taskType(AssignmentTaskType.HANDOVER)
+                .referenceType("CONTRACT").referenceId(902L).build();
+        StaffDailyAssignment aPendingReturn = StaffDailyAssignment.builder()
+                .id(13L).staffId(8L).facilityId(1L).workDate(yesterday).taskType(AssignmentTaskType.RETURN)
+                .referenceType("CONTRACT").referenceId(903L).build();
+
+        // 4. Sự cố mở từ hôm qua chưa xong
+        SupportRequest openTicketYesterday = SupportRequest.builder()
+                .id(904L).code("SUP-OPEN-YEST").customerId(15L).storageUnitId(101L)
+                .category(SupportCategory.LOCK_ACCESS).description("Kẹt khóa")
+                .status(SupportStatus.ASSIGNED).assignedStaffId(8L)
+                .createdAt(yesterday.atStartOfDay(StaffDailyTaskServiceImpl.VN_ZONE).toOffsetDateTime())
+                .build();
+
+        when(rentalContractRepository.findById(901L)).thenReturn(Optional.of(pendingCheckInYesterday));
+        when(rentalContractRepository.findById(902L)).thenReturn(Optional.of(completedCheckInYesterday));
+        when(rentalContractRepository.findById(903L)).thenReturn(Optional.of(pendingReturnYesterday));
+        when(supportRequestRepository.findAllByAssignedStaffId(8L)).thenReturn(List.of(openTicketYesterday));
+
+        // --- A. XEM QUÁ KHỨ (HÔM QUA): Chỉ hiện việc ĐÃ XONG đúng hôm qua, KHÔNG hiện bất kỳ việc PENDING nào ---
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDate(8L, yesterday))
+                .thenReturn(List.of(aPendingCheckIn, aDoneCheckIn, aPendingReturn));
+        StaffDailyTasksResponse pastRes = staffDailyTaskService.getDailyTasks(8L, yesterday, false, staffPrincipal);
+
+        assertThat(pastRes.getCheckInTasks()).extracting("contractCode").containsExactly("CTR-DONE-YEST");
+        assertThat(pastRes.getReturnTasks()).isEmpty();
+        assertThat(pastRes.getSupportTasks()).isEmpty();
+        assertThat(pastRes.getSummary().getPendingTasks()).isZero();
+
+        // --- B. XEM HÔM NAY: Tự động dồn toàn bộ việc PENDING từ hôm qua sang với cờ trễ 1 ngày, không lẫn việc đã xong hôm qua ---
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(
+                org.mockito.ArgumentMatchers.eq(8L), any(), org.mockito.ArgumentMatchers.eq(today)))
+                .thenReturn(List.of(aPendingCheckIn, aDoneCheckIn, aPendingReturn));
+        StaffDailyTasksResponse todayRes = staffDailyTaskService.getDailyTasks(8L, today, false, staffPrincipal);
+
+        assertThat(todayRes.getCheckInTasks()).hasSize(1);
+        assertThat(todayRes.getCheckInTasks().get(0).getContractCode()).isEqualTo("CTR-PENDING-YEST");
+        assertThat(todayRes.getCheckInTasks().get(0).isLate()).isTrue();
+        assertThat(todayRes.getCheckInTasks().get(0).getDaysLate()).isEqualTo(1);
+        assertThat(todayRes.getReturnTasks()).hasSize(1);
+        assertThat(todayRes.getReturnTasks().get(0).getContractCode()).isEqualTo("CTR-RET-YEST");
+        assertThat(todayRes.getReturnTasks().get(0).isLate()).isTrue();
+        assertThat(todayRes.getReturnTasks().get(0).getDaysLate()).isEqualTo(1);
+        assertThat(todayRes.getSupportTasks()).hasSize(1);
+        assertThat(todayRes.getSupportTasks().get(0).getCode()).isEqualTo("SUP-OPEN-YEST");
+
+        // --- C. XEM TƯƠNG LAI (NGÀY MAI): KHÔNG kéo việc trễ từ hôm qua/hôm nay sang ngày mai ---
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDate(8L, tomorrow))
+                .thenReturn(Collections.emptyList());
+        StaffDailyTasksResponse futureRes = staffDailyTaskService.getDailyTasks(8L, tomorrow, false, staffPrincipal);
+
+        assertThat(futureRes.getCheckInTasks()).isEmpty();
+        assertThat(futureRes.getReturnTasks()).isEmpty();
+        assertThat(futureRes.getSupportTasks()).isEmpty();
     }
 
     private SupportRequest closedContractTicket(LocalDate today) {

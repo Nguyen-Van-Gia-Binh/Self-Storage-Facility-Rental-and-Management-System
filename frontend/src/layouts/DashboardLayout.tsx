@@ -54,7 +54,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
 // Portal label by role
 const ROLE_PORTAL_LABEL: Record<UserRole, string> = {
   ADMIN:    'System Admin',
-  MANAGER:  'Facility Manager',
+  MANAGER:  'Quản lý cơ sở',
   STAFF:    'Nhân viên vận hành',
   BOM:      'BOM Operations',
   CUSTOMER: 'Customer Portal',
@@ -157,7 +157,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   return (
     <div className="app-shell h-screen bg-[#f2f9f7] flex flex-col md:flex-row overflow-hidden">
       {/* Mobile Header */}
-      <div className="md:hidden bg-white text-slate-900 border-b border-slate-200/90 px-4 py-3 flex items-center justify-between shadow-xs sticky top-0 z-30 shrink-0">
+      <div className="no-print md:hidden bg-white text-slate-900 border-b border-slate-200/90 px-4 py-3 flex items-center justify-between shadow-xs sticky top-0 z-30 shrink-0">
         <Logo 
           to={logoHomePath} 
           subtitle={displayTitle} 
@@ -241,22 +241,22 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 }}
                 title={!sidebarOpen ? item.label : undefined}
                 className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold
-                  transition-all duration-150 group relative
+                  flex items-center gap-3 px-3 py-2.5 rounded-md text-sm
+                  transition-colors duration-150 group relative
                   ${isActive
-                    ? 'bg-brand-500 text-white shadow-sm shadow-brand-500/25 font-bold'
-                    : 'text-slate-600 hover:text-brand-700 hover:bg-brand-50/70'
+                    ? "bg-gray-100/90 text-brand-700 font-bold before:content-[''] before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-r before:bg-brand-600"
+                    : 'text-gray-500 font-medium hover:text-gray-900 hover:bg-gray-100/70'
                   }
                 `}
               >
-                <Icon className={`w-4.5 h-4.5 flex-shrink-0 transition-transform group-hover:scale-105 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-brand-600'}`} />
+                <Icon className={`w-4.5 h-4.5 flex-shrink-0 ${isActive ? 'text-brand-700' : 'text-gray-400 group-hover:text-gray-700'}`} />
                 <span className={`truncate transition-all duration-300 ${sidebarOpen ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'}`}>
                   {item.label}
                 </span>
                 {item.badge && sidebarOpen && (
-                  <span className={`ml-auto text-xs px-2 py-0.5 rounded-full font-bold ${
-                    isActive 
-                      ? 'bg-white/20 text-white' 
+                  <span className={`ml-auto text-xs px-2 py-0.5 rounded font-semibold ${
+                    isActive
+                      ? 'bg-brand-100 text-brand-800'
                       : 'bg-brand-50 text-brand-700 border border-brand-200/60'
                   }`}>
                     {item.badge}

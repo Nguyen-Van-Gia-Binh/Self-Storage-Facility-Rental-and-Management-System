@@ -5,10 +5,8 @@ import {
   Phone,
   Clock,
   CheckCircle,
-  Calendar,
   RefreshCw,
   Search,
-  FileText,
   Archive,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
@@ -17,8 +15,15 @@ import {
   rejectWaitlist,
 } from '@/api/waitlist';
 import { CreateDirectContractModal } from '@/features/manager/components/CreateDirectContractModal';
+import { formatDateVN } from '@/features/customer/utils/unitPickerHelpers';
 import type { WaitlistResponse } from '@/types/waitlist';
 import type { FacilityListItem } from '@/types';
+
+function formatDisplayDate(iso?: string): string {
+  if (!iso) return '—';
+  const trimmed = iso.trim();
+  return /^\d{4}-\d{2}-\d{2}/.test(trimmed) ? formatDateVN(trimmed.slice(0, 10)) : trimmed;
+}
 
 export const WaitlistInboxPage: React.FC = () => {
   const navigate = useNavigate();
@@ -156,10 +161,10 @@ export const WaitlistInboxPage: React.FC = () => {
         </div>
 
         {/* Facility Selector */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Cơ sở:</label>
           <select
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none"
+            className="h-9 rounded-lg border border-gray-300 bg-white pl-3 pr-9 text-sm text-gray-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 cursor-pointer"
             value={selectedFacilityId ?? ''}
             onChange={(e) => setSelectedFacilityId(Number(e.target.value))}
           >
@@ -174,9 +179,11 @@ export const WaitlistInboxPage: React.FC = () => {
             )}
           </select>
           <button
+            type="button"
             onClick={() => selectedFacilityId && loadWaitlists(selectedFacilityId)}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 shadow-2xs hover:bg-gray-50 transition-colors cursor-pointer shrink-0"
             title="Làm mới dữ liệu"
+            aria-label="Làm mới dữ liệu"
           >
             <RefreshCw className="h-4 w-4" />
           </button>
@@ -190,7 +197,7 @@ export const WaitlistInboxPage: React.FC = () => {
             <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Khách đang chờ</span>
             <Clock className="h-5 w-5 text-amber-500" />
           </div>
-          <div className="mt-2 text-2xl font-bold text-gray-900">{countActive}</div>
+          <div className="mt-2 text-2xl font-bold text-gray-900 tabular-nums">{countActive}</div>
           <p className="mt-1 text-xs text-gray-400">Khách hàng cần phục vụ trong danh sách chờ</p>
         </div>
 
@@ -199,7 +206,7 @@ export const WaitlistInboxPage: React.FC = () => {
             <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Đã chốt hợp đồng</span>
             <CheckCircle className="h-5 w-5 text-emerald-500" />
           </div>
-          <div className="mt-2 text-2xl font-bold text-emerald-600">{countConverted}</div>
+          <div className="mt-2 text-2xl font-bold text-emerald-600 tabular-nums">{countConverted}</div>
           <p className="mt-1 text-xs text-gray-400">Đã tạo hợp đồng thành công từ danh sách chờ</p>
         </div>
 
@@ -208,7 +215,7 @@ export const WaitlistInboxPage: React.FC = () => {
             <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Đã lưu trữ / Gỡ bỏ</span>
             <Archive className="h-5 w-5 text-slate-400" />
           </div>
-          <div className="mt-2 text-2xl font-bold text-slate-600">{countArchived}</div>
+          <div className="mt-2 text-2xl font-bold text-slate-600 tabular-nums">{countArchived}</div>
           <p className="mt-1 text-xs text-gray-400">Dữ liệu được lưu trữ an toàn, không bị xóa</p>
         </div>
       </div>
@@ -295,11 +302,11 @@ export const WaitlistInboxPage: React.FC = () => {
             <table className="w-full text-left text-sm text-gray-600">
               <thead className="bg-gray-50 text-xs font-semibold uppercase text-gray-500 border-b border-gray-200">
                 <tr>
-                  <th className="px-4 py-3">Khách hàng</th>
+                  <th className="px-6 py-3">Khách hàng</th>
                   <th className="px-4 py-3">Loại kho nhu cầu</th>
                   <th className="px-4 py-3">Ngày mong muốn</th>
                   <th className="px-4 py-3">Trạng thái</th>
-                  <th className="px-4 py-3 text-right">Thao tác</th>
+                  <th className="px-6 py-3 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -308,88 +315,106 @@ export const WaitlistInboxPage: React.FC = () => {
                     item.status === 'WAITING' ||
                     item.status === 'CONTACTING' ||
                     item.status === 'PENDING_FOLLOW_UP';
+                  const isContacting = item.status === 'CONTACTING';
                   const isConverted = item.status === 'CONVERTED';
-                  const isArchived = item.status === 'REJECTED' || item.status === 'CANCELLED';
+                  const isArchived =
+                    item.status === 'REJECTED' ||
+                    item.status === 'CANCELLED' ||
+                    item.status === 'EXPIRED';
 
                   return (
-                    <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={item.id}
+                      className={`transition-colors ${
+                        isArchived ? 'bg-gray-50 opacity-75' : 'hover:bg-gray-50/70'
+                      }`}
+                    >
                       {/* Customer Info */}
-                      <td className="px-4 py-3">
-                        <div className="font-semibold text-gray-900">{item.customerName || 'Khách hàng'}</div>
-                        <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                          <Phone className="h-3 w-3 text-teal-600" />
-                          <a href={`tel:${item.customerPhone}`} className="hover:underline font-mono">
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-gray-900">
+                          {item.customerName || 'Khách hàng'}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                          <Phone className="h-3 w-3 text-gray-400 shrink-0" />
+                          <a
+                            href={`tel:${item.customerPhone}`}
+                            className="hover:text-brand-600 hover:underline tabular-nums"
+                          >
                             {item.customerPhone || 'Chưa có SĐT'}
                           </a>
                         </div>
                         {item.customerEmail && (
-                          <div className="text-xs text-gray-400 truncate max-w-xs">{item.customerEmail}</div>
+                          <div className="text-xs text-gray-400 truncate max-w-xs mt-0.5">
+                            {item.customerEmail}
+                          </div>
                         )}
                       </td>
 
-                      {/* Unit Type */}
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900">{item.unitTypeName}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">Thuê {item.rentalMonths} tháng</div>
+                      {/* Unit Type (Không dùng badge đỏ chói hay emoji) */}
+                      <td className="px-4 py-4">
+                        <div className="text-sm font-semibold text-gray-900">
+                          {item.unitTypeName}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          Thuê {item.rentalMonths} tháng
+                        </div>
                         {(item.unassignedReservationCount ?? 0) > 0 ? (
-                          <div className="mt-1">
-                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 border border-amber-200">
-                              ⚠️ Ưu tiên {item.unassignedReservationCount} đơn đặt trước
-                            </span>
+                          <div className="text-xs font-medium text-amber-700 mt-1">
+                            Ưu tiên {item.unassignedReservationCount} đơn đặt trước
                           </div>
                         ) : (item.availableCapacity ?? 0) <= 0 ? (
-                          <div className="mt-1">
-                            <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700 border border-rose-200">
-                              Hết ô trống (0)
-                            </span>
+                          <div className="text-xs font-medium text-gray-400 mt-1">
+                            Tạm hết ô trống
                           </div>
                         ) : (
-                          <div className="mt-1">
-                            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
-                              Còn {item.availableCapacity} ô trống
-                            </span>
+                          <div className="text-xs font-medium text-emerald-700 mt-1">
+                            Còn {item.availableCapacity} ô trống
                           </div>
                         )}
                       </td>
 
-                      {/* Target Date */}
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
-                          <Calendar className="h-3.5 w-3.5 text-gray-400" />
-                          {item.targetStartDate}
-                        </div>
+                      {/* Target Date (Định dạng DD/MM/YYYY chuẩn Việt Nam) */}
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className="text-sm font-medium text-gray-900 tabular-nums">
+                          {formatDisplayDate(item.targetStartDate)}
+                        </span>
                       </td>
 
-                      {/* Clean Status */}
-                      <td className="px-4 py-3">
+                      {/* Semantic Soft Badges + Status Dot */}
+                      <td className="px-4 py-4 whitespace-nowrap">
                         {isConverted ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
-                            <CheckCircle className="h-3.5 w-3.5" />
-                            Đã tạo HĐ
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            Đã chốt
                           </span>
                         ) : isArchived ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 border border-slate-200">
-                            <Archive className="h-3 w-3 text-slate-400" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
                             Đã lưu trữ
                           </span>
+                        ) : isContacting ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                            Đang tư vấn
+                          </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
-                            <Clock className="h-3.5 w-3.5" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                             Đang chờ
                           </span>
                         )}
                       </td>
 
-                      {/* Actions */}
-                      <td className="px-4 py-3 text-right">
+                      {/* Actions (Phân cấp chuẩn Primary Mint / Disabled / Secondary Outline) */}
+                      <td className="px-6 py-4 text-right whitespace-nowrap">
                         {isActive ? (
                           <div className="flex items-center justify-end gap-2">
                             {(item.unassignedReservationCount ?? 0) > 0 ? (
                               <button
                                 type="button"
                                 onClick={() => navigate(`/manager/allocation?facilityId=${selectedFacilityId}`)}
-                                className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-700 flex items-center gap-1 shrink-0"
-                                title={`Đang có ${item.unassignedReservationCount} khách đặt trước chưa gán ô kho. Theo quy chế ưu tiên, cần hoàn tất gán ô kho cho khách đặt trước tại mục "Gán ô kho"!`}
+                                className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-semibold shadow-2xs transition-colors cursor-pointer shrink-0"
+                                title={`Đang có ${item.unassignedReservationCount} khách đặt trước chưa gán ô kho. Cần hoàn tất gán ô kho tại mục Gán ô kho trước.`}
                               >
                                 Gán ô kho ({item.unassignedReservationCount})
                               </button>
@@ -397,26 +422,24 @@ export const WaitlistInboxPage: React.FC = () => {
                               <button
                                 type="button"
                                 disabled
-                                className="rounded-lg bg-slate-100 border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-400 shadow-none cursor-not-allowed flex items-center gap-1.5 shrink-0"
-                                title="Hạng kho này hiện chưa có ô trống khả dụng. Không thể tạo hợp đồng trực tiếp khi chưa có ô kho trả!"
+                                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-400 text-xs sm:text-sm font-medium cursor-not-allowed shrink-0"
+                                title="Không còn ô kho trống phù hợp"
                               >
-                                <FileText className="h-3.5 w-3.5 text-slate-400" />
-                                Hết ô trống
+                                Tạo HĐ
                               </button>
                             ) : (
                               <button
                                 type="button"
                                 onClick={() => openDirectContractModal(item)}
                                 disabled={actionLoading}
-                                className="rounded-lg bg-teal-700 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-teal-800 disabled:opacity-50 flex items-center gap-1.5 shrink-0"
+                                className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-semibold shadow-2xs disabled:opacity-50 transition-colors cursor-pointer shrink-0"
                                 title="Tạo hợp đồng trực tiếp cho khách hàng từ danh sách chờ"
                               >
-                                <FileText className="h-3.5 w-3.5" />
-                                Tạo HĐ trực tiếp
+                                Tạo HĐ
                               </button>
                             )}
 
-                            {/* Nút Remove / Lưu trữ: Chuyển sang mục lưu trữ, không xóa mất dữ liệu khách hàng */}
+                            {/* Nút phụ: Gỡ / Lưu trữ */}
                             <button
                               type="button"
                               onClick={() => {
@@ -424,21 +447,21 @@ export const WaitlistInboxPage: React.FC = () => {
                                 setArchiveReason('');
                               }}
                               disabled={actionLoading}
-                              className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-rose-600 flex items-center gap-1 transition-colors shrink-0"
-                              title="Gỡ khỏi danh sách chờ và chuyển sang mục lưu trữ an toàn (không xóa dữ liệu)"
+                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-rose-600 text-xs sm:text-sm font-medium transition-colors cursor-pointer shrink-0"
+                              title="Gỡ khỏi danh sách chờ và chuyển sang mục lưu trữ an toàn"
                             >
-                              <Archive className="h-3.5 w-3.5" />
-                              Gỡ / Lưu trữ
+                              <Archive className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                              <span>Gỡ</span>
                             </button>
                           </div>
                         ) : isConverted ? (
-                          <span className="text-xs text-teal-700 font-semibold bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-md inline-block">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 tabular-nums">
                             {item.convertedContractId
                               ? `HĐ #${item.convertedContractId}`
                               : item.convertedReservationCode || 'Đã tạo HĐ'}
                           </span>
                         ) : isArchived ? (
-                          <span className="text-xs text-slate-500 italic bg-slate-50 border border-slate-200 px-2 py-1 rounded-md inline-block">
+                          <span className="text-xs text-gray-500">
                             {item.contactNotes || 'Đã lưu trữ'}
                           </span>
                         ) : null}

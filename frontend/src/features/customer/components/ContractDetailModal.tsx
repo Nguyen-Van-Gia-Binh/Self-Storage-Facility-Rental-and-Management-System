@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
 import {
-  FileText,
   Calendar,
   KeyRound,
   ShieldCheck,
@@ -16,8 +15,10 @@ import {
   Clock,
   AlertTriangle,
   Layers,
+  Info,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
+import { formatDateVN } from '../utils/unitPickerHelpers';
 import { isStorageUnitAssigned } from '../utils/unitAssignment';
 import { getMyRentalDetail, type CustomerRentalDetail } from '@/api/customerRentals';
 import { getContractRenewalHistory, type ContractRenewalHistoryItem } from '@/api/contract';
@@ -94,6 +95,15 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const formatDisplayDate = (value?: string | null): string => {
+    if (!value) return '—';
+    const trimmed = value.trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+      return formatDateVN(trimmed.slice(0, 10));
+    }
+    return trimmed;
   };
 
   // Chỉ chấp nhận detail khi ID hoặc mã hợp đồng trùng khớp hoàn toàn với contract prop hiện tại (chống stale state giữa các HĐ khác nhau)
@@ -241,548 +251,560 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Thông tin hợp đồng & Trạng thái */}
-        <div className="bg-gradient-to-r from-[#0a483c] via-[#0d6050] to-[#14937a] p-5 text-white relative">
+        <div className="px-6 py-4 border-b border-gray-200 bg-white flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-brand-600 mb-1">
+              HỢP ĐỒNG THUÊ Ô KHO THÔNG MINH &amp; BIÊN BẢN BÀN GIAO ĐIỆN TỬ
+            </p>
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+              Ô kho {effectiveUnitNumber}
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Mã HĐ: <span className="font-mono font-semibold text-gray-700">{effectiveContractNumber}</span> · {effectiveFacilityName}
+            </p>
+          </div>
           <button
             type="button"
             onClick={handleClose}
-            className="absolute top-4 right-4 text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+            aria-label="Đóng"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
-
-          <div className="pr-10">
-            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-200 mb-1">
-              <FileText className="w-3.5 h-3.5 text-amber-300" />
-              HỢP ĐỒNG THUÊ Ô KHO THÔNG MINH & BIÊN BẢN BÀN GIAO ĐIỆN TỬ
-            </p>
-            <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2 mt-0.5">
-              Ô kho {effectiveUnitNumber}
-            </h3>
-          </div>
-        </div>
-
-        {/* Subheader */}
-        <div className="flex items-center border-b border-slate-200 px-5 pt-3 bg-slate-50/50 gap-4 text-xs font-bold">
-          <div className="pb-3 px-1 border-b-2 border-brand-600 text-brand-700 flex items-center gap-1.5">
-            <FileText className="w-4 h-4" />
-            <span>Văn bản hợp đồng & Biên bản bàn giao</span>
-          </div>
         </div>
 
         {/* Modal Content */}
-        <div className="p-5 sm:p-6 max-h-[72vh] overflow-y-auto space-y-4 relative">
-          <div className="space-y-4 text-xs relative z-10">
+        <div className="p-6 max-h-[74vh] overflow-y-auto bg-white relative">
+          <div className="space-y-6 text-xs relative z-10">
               {/* Chỉ hiển thị 1 banner trạng thái quan trọng nhất tại 1 thời điểm */}
               {(effectiveStatus === 'TERMINATED' || isCancelledAtHandover) ? (
                 isOverdueTerminated ? (
                   /* Trường hợp 3A: Quá hạn D+7 cưỡng chế chấm dứt & Niêm phong Kho Tổng */
-                  <div className="p-3.5 rounded-xl bg-purple-50 border border-purple-300 space-y-1.5 animate-in fade-in duration-200 shadow-xs">
-                    <div className="flex items-center justify-between">
+                  <div className="p-4 rounded-lg bg-purple-50 border border-purple-200 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 text-purple-900 font-bold text-xs uppercase">
-                        <AlertTriangle className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                        <AlertTriangle className="w-4 h-4 text-purple-600 shrink-0" />
                         <span>Hợp đồng chấm dứt quá hạn D+7 (Niêm phong Kho Tổng)</span>
                       </div>
-                      <span className="text-[10.5px] font-mono font-bold bg-purple-200 text-purple-900 px-2 py-0.5 rounded">
+                      <span className="text-[11px] font-semibold bg-purple-100 text-purple-800 border border-purple-200 px-2.5 py-0.5 rounded-md shrink-0">
                         Đã niêm phong
                       </span>
                     </div>
-                    <div className="text-[11px] text-purple-950 flex flex-wrap gap-x-4 gap-y-1 pt-0.5">
+                    <div className="text-xs text-purple-900 flex flex-wrap gap-x-4 gap-y-1 pt-0.5">
                       <span>• Cấn trừ cọc: <strong>100%</strong> (55% nợ quá hạn + 45% phí lưu Kho Tổng)</span>
                       <span>• Chuộc đồ: <strong>Trong 30 ngày</strong> tại Kho Tổng</span>
                     </div>
                   </div>
                 ) : isHandoverRejected ? (
                   /* Trường hợp 3B: Từ chối nhận kho tại chỗ -> Hủy & Hoàn 100% */
-                  <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-300 space-y-1.5 animate-in fade-in duration-200 shadow-xs">
-                    <div className="flex items-center justify-between">
+                  <div className="p-4 rounded-lg bg-rose-50 border border-rose-200 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 text-rose-900 font-bold text-xs uppercase">
-                        <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                         <span>Từ chối nhận kho do lỗi cơ sở (BR-CHK-06)</span>
                       </div>
-                      <span className="text-[11px] num font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded">
+                      <span className="text-[11px] font-semibold bg-rose-100 text-rose-800 border border-rose-200 px-2.5 py-0.5 rounded-md shrink-0">
                         Hoàn tiền 100%
                       </span>
                     </div>
-                    <p className="text-[11px] text-rose-950">
+                    <p className="text-xs text-rose-900">
                       Lý do: <strong>{contract.rejectionReason || 'Khiếm khuyết kỹ thuật tại ô kho'}</strong>. Cơ sở hoàn trả <strong>100% tiền thuê + 100% tiền cọc</strong> trong 3 ngày làm việc.
                     </p>
                   </div>
                 ) : (!isStorageUnitAssigned(contract.unitNumber) || contract.unitNumber === 'Chưa gán ô kho' || contract.contractNumber?.includes('NO-UNIT')) ? (
                   /* Trường hợp 3C: Chưa gán kho mà đã hủy */
-                  <div className="p-3.5 rounded-xl bg-orange-50 border border-orange-300 space-y-1.5 animate-in fade-in duration-200 shadow-xs">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-orange-900 font-bold text-xs uppercase">
-                        <AlertTriangle className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                  <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                         <span>Hủy đặt chỗ trước khi nhận ô kho</span>
                       </div>
-                      <span className="text-[11px] num font-bold bg-orange-200 text-orange-950 px-2 py-0.5 rounded">
+                      <span className="text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200 px-2.5 py-0.5 rounded-md shrink-0">
                         Hoàn cọc 100%
                       </span>
                     </div>
-                    <p className="text-[11px] text-orange-950">
+                    <p className="text-xs text-amber-900">
                       Giao dịch đã hủy trước khi nhận ô vật lý. Tiền cọc {formatVND(detail?.depositAmount || contract.depositHeld)} được hoàn trả trọn vẹn.
                     </p>
                   </div>
                 ) : (
                   /* Trường hợp 3D: Đã gán ô nhưng hủy trước nhận kho (giải phóng ô) */
-                  <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-300 space-y-1.5 animate-in fade-in duration-200 shadow-xs">
-                    <div className="flex items-center justify-between">
+                  <div className="p-4 rounded-lg bg-rose-50 border border-rose-200 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 text-rose-900 font-bold text-xs uppercase">
-                        <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                         <span>Hủy nhận kho &amp; Giải phóng ô kho (BR-CAN)</span>
                       </div>
-                      <span className="text-[10.5px] font-mono font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded">
+                      <span className="text-[11px] font-semibold bg-rose-100 text-rose-800 border border-rose-200 px-2.5 py-0.5 rounded-md shrink-0">
                         Đã giải phóng ô
                       </span>
                     </div>
-                    <p className="text-[11px] text-rose-950">
+                    <p className="text-xs text-rose-900">
                       Ô kho <strong>{effectiveUnitNumber}</strong> đã giải phóng. Hoàn trả 100% tiền thuê; cọc đối soát theo thời điểm hủy.
                     </p>
                   </div>
                 )
               ) : isClosed ? (
                 /* Banner Hợp đồng đã hoàn tất & tất toán */
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 animate-in fade-in duration-200 shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-slate-800 font-extrabold text-xs uppercase tracking-wide">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                      <span>Hợp đồng đã kết thúc &amp; hoàn tất tất toán</span>
+                <div className="p-4 rounded-lg bg-gray-50 border border-gray-200 flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-gray-900 font-bold text-xs uppercase tracking-wide">
+                        Hợp đồng đã kết thúc &amp; hoàn tất tất toán
+                      </p>
+                      <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
+                        Hợp đồng đã hoàn thành chu kỳ thuê, nghiệm thu và quyết toán toàn bộ nghĩa vụ tài chính.
+                      </p>
                     </div>
-                    <span className="text-[11px] font-mono font-bold bg-slate-200/80 text-slate-700 px-2 py-0.5 rounded">
-                      Đã tất toán
-                    </span>
                   </div>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Hợp đồng đã hoàn thành chu kỳ thuê, nghiệm thu và quyết toán toàn bộ nghĩa vụ tài chính.
-                  </p>
+                  <span className="text-[11px] font-semibold bg-gray-200 text-gray-700 px-2.5 py-0.5 rounded-md shrink-0">
+                    Đã tất toán
+                  </span>
                 </div>
               ) : effectiveStatus === 'PENDING_RETURN' ? (
                 /* Banner Hợp đồng đang báo trả kho & chờ nghiệm thu */
-                <div className="p-4 rounded-xl bg-indigo-50/90 border-2 border-indigo-200 space-y-2 animate-in fade-in duration-200 shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-indigo-900 font-extrabold text-xs uppercase tracking-wide">
-                      <Clock className="w-4 h-4 text-indigo-600 flex-shrink-0" />
-                      <span>
+                <div className="p-4 rounded-lg bg-blue-50 border border-blue-100 flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5">
+                    <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-blue-900 font-bold text-xs uppercase tracking-wide">
                         {contract.inspectionDone
                           ? 'ĐÃ NGHIỆM THU TRẢ KHO — CHỜ QUYẾT TOÁN HOÀN CỌC'
                           : 'ĐANG YÊU CẦU TRẢ KHO & CHỜ NGHIỆM THU'}
-                      </span>
+                      </p>
+                      <p className="text-xs text-blue-700 mt-0.5 leading-relaxed">
+                        Ô kho của bạn đang trong quy trình nghiệm thu.
+                      </p>
                     </div>
-                    <span className="text-[11px] font-mono font-bold bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded">
-                      {contract.inspectionDone ? 'Chờ hoàn cọc' : 'Chờ nghiệm thu trả kho'}
-                    </span>
                   </div>
-                  <p className="text-xs text-indigo-900 leading-relaxed">
-                    Ô kho của bạn đang trong quy trình nghiệm thu.
-                  </p>
+                  <span className="px-2.5 py-0.5 bg-amber-100 text-amber-700 border border-amber-200 text-xs font-semibold rounded-md shrink-0">
+                    {contract.inspectionDone ? 'Chờ hoàn cọc' : 'Chờ nghiệm thu trả kho'}
+                  </span>
                 </div>
               ) : (isRelocating || Boolean(contract.relocationEligible || detail?.relocationEligible)) && !relocationId ? (
                 /* Banner Chờ phân bổ lại ô kho mới khi khách từ chối ô cũ và chọn Đổi ô kho */
-                <div className="p-4 rounded-xl bg-amber-50/90 border-2 border-amber-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs uppercase tracking-wide">
-                      <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
-                      <span>ĐANG BỐ TRÍ ĐỔI Ô KHO MỚI</span>
+                <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5">
+                    <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-amber-900 font-bold text-xs uppercase tracking-wide">
+                        ĐANG BỐ TRÍ ĐỔI Ô KHO MỚI
+                      </p>
+                      <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                        Quản lý cơ sở đang điều phối và cấp ô kho mới cho quý khách ({effectiveDetail?.rejectionReason || contract.rejectionReason || 'Sự cố kỹ thuật tại ô ban đầu'}).
+                      </p>
                     </div>
-                    <span className="text-[11px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded">
-                      Chờ cấp ô mới
-                    </span>
                   </div>
-                  <p className="text-xs text-amber-900 leading-relaxed">
-                    Quản lý cơ sở đang điều phối và cấp ô kho mới cho quý khách ({effectiveDetail?.rejectionReason || contract.rejectionReason || 'Sự cố kỹ thuật tại ô ban đầu'}).
-                  </p>
+                  <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 text-xs font-semibold rounded-md shrink-0">
+                    Chờ cấp ô mới
+                  </span>
                 </div>
               ) : relocationId ? (
                 /* Banner Phụ lục điều chuyển ô kho do sự cố kỹ thuật (nếu đã điều chuyển xong) */
-                <div className="p-4 rounded-xl bg-amber-50/90 border-2 border-amber-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs uppercase tracking-wide">
-                      <ShieldCheck className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                      <span>PHỤ LỤC ĐIỀU CHUYỂN Ô KHO (SỰ CỐ KỸ THUẬT)</span>
+                <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5">
+                    <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-amber-900 font-bold text-xs uppercase tracking-wide">
+                        PHỤ LỤC ĐIỀU CHUYỂN Ô KHO (SỰ CỐ KỸ THUẬT)
+                      </p>
+                      <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                        Ô kho đã được Ban Quản lý cơ sở điều chuyển từ ô ban đầu sang <strong>Ô KHO MỚI: {effectiveUnitNumber}</strong>.
+                      </p>
                     </div>
-                    <span className="text-[11px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded">
-                      {relocationCode}
-                    </span>
                   </div>
-                  <p className="text-xs text-amber-900 leading-relaxed">
-                    Ô kho đã được Ban Quản lý cơ sở điều chuyển từ ô ban đầu sang <strong>Ô KHO MỚI: {effectiveUnitNumber}</strong>.
-                  </p>
+                  <span className="font-mono px-2.5 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 text-xs font-semibold rounded-md shrink-0">
+                    {relocationCode}
+                  </span>
                 </div>
               ) : null}
 
               {/* Điều 1: Các bên tham gia hợp đồng */}
-              <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
-                <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs uppercase tracking-wider pb-1.5 border-b border-slate-100">
-                  <Building2 className="w-4 h-4 text-brand-600" />
+              <section className="space-y-3">
+                <h4 className="font-bold text-gray-900 flex items-center gap-2 text-xs uppercase tracking-wider">
+                  <Building2 className="w-4 h-4 text-brand-600 shrink-0" />
                   <span>ĐIỀU 1: CÁC BÊN THAM GIA HỢP ĐỒNG</span>
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
                   {/* Bên A: Bên Cho Thuê */}
-                  <div className="space-y-1 bg-slate-50/80 p-3 rounded-lg border border-slate-200/80">
-                    <span className="text-[11px] font-bold text-brand-800 uppercase block mb-1">
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
                       Bên Cho Thuê (Bên A)
                     </span>
-                    <p className="font-bold text-slate-800">{effectiveFacilityName}</p>
-                    <p className="text-slate-500 text-[11px]">Đ/c: {effectiveFacilityAddress}</p>
-                    <p className="text-slate-500 text-[11px]">Hotline: <strong className="text-slate-700">{effectiveFacilityPhone}</strong></p>
+                    <p className="text-sm font-semibold text-gray-900">{effectiveFacilityName}</p>
+                    <p className="text-gray-600">Đ/c: {effectiveFacilityAddress}</p>
+                    <p className="text-gray-600">
+                      Hotline: <strong className="font-semibold text-gray-800 tabular-nums">{effectiveFacilityPhone}</strong>
+                    </p>
                   </div>
 
                   {/* Bên B: Bên Thuê */}
-                  <div className="space-y-1 bg-slate-50/80 p-3 rounded-lg border border-slate-200/80">
-                    <span className="text-[11px] font-bold text-brand-800 uppercase block mb-1">
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
                       Bên Thuê Kho (Bên B)
                     </span>
-                    <p className="font-bold text-slate-800">{effectiveCustomerName}</p>
-                    <p className="text-slate-500 text-[11px]">Số ĐT: <strong className="text-slate-700">{effectiveCustomerPhone}</strong></p>
-                    <p className="text-slate-500 text-[11px]">Số CCCD: <strong className="font-mono text-slate-700">{effectiveCustomerIdentity}</strong></p>
-                    <p className="text-slate-500 text-[11px]">Email: {effectiveCustomerEmail}</p>
+                    <p className="text-sm font-semibold text-gray-900">{effectiveCustomerName}</p>
+                    <p className="text-gray-600">
+                      Số ĐT: <strong className="font-semibold text-gray-800 tabular-nums">{effectiveCustomerPhone}</strong>
+                    </p>
+                    <p className="text-gray-600">
+                      Số CCCD: <strong className="font-mono font-semibold text-gray-800">{effectiveCustomerIdentity}</strong>
+                    </p>
+                    <p className="text-gray-600">Email: {effectiveCustomerEmail}</p>
                   </div>
                 </div>
-              </div>
+              </section>
+
+              <hr className="border-gray-200" />
 
               {/* Điều 2: Đối tượng & Thời hạn thuê */}
-              <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
-                <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs uppercase tracking-wider pb-1.5 border-b border-slate-100">
-                  <Calendar className="w-4 h-4 text-brand-600" />
+              <section className="space-y-4">
+                <h4 className="font-bold text-gray-900 flex items-center gap-2 text-xs uppercase tracking-wider">
+                  <Calendar className="w-4 h-4 text-brand-600 shrink-0" />
                   <span>ĐIỀU 2: ĐỐI TƯỢNG VÀ THỜI HẠN THUÊ KHO</span>
                 </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50/60 p-3 rounded-lg border border-slate-200/80">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-4 gap-x-6 text-xs">
                   <div>
-                    <span className="text-slate-400 block text-[11px]">Mã ô kho:</span>
-                    <span className="font-black text-brand-700 text-sm">{effectiveUnitNumber}</span>
+                    <span className="text-gray-500 block text-[11px] mb-0.5">Mã ô kho</span>
+                    <span className="font-bold text-brand-700 text-sm">{effectiveUnitNumber}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[11px]">Loại kho:</span>
-                    <span className="font-bold text-slate-800">{effectiveUnitTypeName}</span>
+                    <span className="text-gray-500 block text-[11px] mb-0.5">Loại kho</span>
+                    <span className="font-semibold text-gray-900">{effectiveUnitTypeName}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[11px]">Kích thước:</span>
-                    <span className="font-semibold text-slate-800">{effectiveDimensions}</span>
+                    <span className="text-gray-500 block text-[11px] mb-0.5">Kích thước</span>
+                    <span className="font-semibold text-gray-900 tabular-nums">{effectiveDimensions}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[11px]">Vị trí tầng:</span>
-                    <span className="font-semibold text-slate-800">Tầng {effectiveFloor} ({effectivePosition})</span>
+                    <span className="text-gray-500 block text-[11px] mb-0.5">Vị trí tầng</span>
+                    <span className="font-semibold text-gray-900">Tầng {effectiveFloor} ({effectivePosition})</span>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
                   <div>
-                    <span className="text-slate-400 block text-[11px]">Số hợp đồng:</span>
-                    <span className="font-mono font-bold text-slate-800">{effectiveContractNumber}</span>
+                    <span className="text-gray-500 block text-[11px] mb-0.5">Số hợp đồng</span>
+                    <span className="font-mono font-semibold text-gray-900">{effectiveContractNumber}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[11px]">Thời hạn thuê ban đầu:</span>
-                    <span className="font-bold text-slate-800">{originalRentalMonths} tháng</span>
+                    <span className="text-gray-500 block text-[11px] mb-0.5">Thời hạn thuê ban đầu</span>
+                    <span className="font-semibold text-gray-900">{originalRentalMonths} tháng</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[11px]">Ngày bắt đầu thuê:</span>
-                    <span className="font-bold text-slate-800">{contract.startDate}</span>
+                    <span className="text-gray-500 block text-[11px] mb-0.5">Ngày bắt đầu thuê</span>
+                    <span className="font-semibold text-gray-900 tabular-nums">{formatDisplayDate(contract.startDate)}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[11px]">
-                      {renewals.length > 0 ? 'Hạn kết thúc ban đầu:' : 'Ngày kết thúc hợp đồng:'}
+                    <span className="text-gray-500 block text-[11px] mb-0.5">
+                      {renewals.length > 0 ? 'Hạn kết thúc ban đầu' : 'Ngày kết thúc hợp đồng'}
                     </span>
-                    <span className="font-bold text-slate-800">{originalEndDate}</span>
+                    <span className="font-semibold text-gray-900 tabular-nums">{formatDisplayDate(originalEndDate)}</span>
                     {renewals.length > 0 && (
-                      <span className="text-[10px] text-emerald-700 font-semibold block mt-0.5">
-                        (Đã gia hạn đến {contract.endDate})
+                      <span className="text-[11px] text-emerald-700 font-medium block mt-0.5 tabular-nums">
+                        (Đã gia hạn đến {formatDisplayDate(contract.endDate)})
                       </span>
                     )}
                   </div>
                 </div>
-              </div>
+              </section>
+
+              <hr className="border-gray-200" />
 
               {/* Điều 3: Tài chính & Tiền cọc bảo đảm */}
-              <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-2.5">
-                <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs uppercase tracking-wider pb-1.5 border-b border-slate-100">
-                  <CreditCard className="w-4 h-4 text-brand-600" />
-                  <span>ĐIỀU 3: TÀI CHÍNH & TIỀN CỌC BẢO ĐẢM</span>
+              <section className="space-y-3">
+                <h4 className="font-bold text-gray-900 flex items-center gap-2 text-xs uppercase tracking-wider">
+                  <CreditCard className="w-4 h-4 text-brand-600 shrink-0" />
+                  <span>ĐIỀU 3: TÀI CHÍNH &amp; TIỀN CỌC BẢO ĐẢM</span>
                 </h4>
 
-                <div className="space-y-2">
+                <div className="space-y-2.5 text-xs">
                   <div className="flex justify-between items-center py-1">
-                    <span className="text-slate-600">Đơn giá thuê hàng tháng:</span>
-                    <span className="font-bold text-brand-700 text-sm">
+                    <span className="text-gray-600">Đơn giá thuê hàng tháng</span>
+                    <span className="font-semibold text-gray-900 text-sm tabular-nums">
                       {formatVND(effectiveMonthlyRent)}/tháng
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-center py-1 border-t border-slate-100">
-                    <span className="text-slate-700 font-semibold">
-                      Tổng tiền thuê ban đầu ({originalRentalMonths} tháng):
+                  <div className="flex justify-between items-center py-1 border-t border-gray-100">
+                    <span className="text-gray-600">
+                      Tổng tiền thuê ban đầu ({originalRentalMonths} tháng)
                     </span>
-                    <span className="font-bold text-slate-800 text-sm">
+                    <span className="font-semibold text-gray-900 text-sm tabular-nums">
                       {formatVND(effectiveTotalRentalFee)}
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-center py-1 border-t border-slate-100">
+                  <div className="flex justify-between items-start py-1 border-t border-gray-100 gap-4">
                     <div>
-                      <span className="text-slate-700 font-semibold block">Tiền cọc bảo đảm:</span>
-                      <span className="text-[10px] text-slate-400 italic">
+                      <span className="text-gray-600 block">Tiền cọc bảo đảm</span>
+                      <span className="text-[11px] text-gray-400">
                         Bảo lưu tại tài khoản ngân hàng, quyết toán hoàn cọc sau nghiệm thu trả kho
                       </span>
                     </div>
-                    <span className="font-bold text-emerald-700 text-sm">
+                    <span className="font-semibold text-emerald-700 text-sm tabular-nums shrink-0">
                       {formatVND(effectiveDeposit)}
                     </span>
                   </div>
 
                   {/* Tổng giá trị hợp đồng ban đầu / Tổng tiền */}
-                  <div className="flex justify-between items-center p-3 rounded-xl bg-brand-50 border border-brand-200 mt-2">
+                  <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                     <div>
-                      <span className="text-brand-900 font-extrabold text-xs uppercase tracking-wider block">
-                        Tổng giá trị hợp đồng (Tổng tiền ban đầu):
+                      <span className="text-gray-900 font-bold text-xs uppercase tracking-wider block">
+                        Tổng giá trị hợp đồng (Tổng tiền ban đầu)
                       </span>
                       {renewals.length > 0 && (
-                        <span className="text-[10.5px] text-emerald-800 font-medium">
+                        <span className="text-[11px] text-gray-500">
                           (Chưa bao gồm các khoản nộp gia hạn tại Phụ lục Điều 5)
                         </span>
                       )}
                     </div>
-                    <span className="font-black text-brand-800 text-base sm:text-lg">
+                    <span className="font-bold text-brand-700 text-base sm:text-lg tabular-nums">
                       {formatVND(effectiveTotalContractAmount)}
                     </span>
                   </div>
 
                   {contract.overdueFee ? (
-                    <div className="flex justify-between text-rose-700 font-semibold border-t border-rose-100 pt-1">
-                      <span>Phí phạt quá hạn phát sinh:</span>
-                      <span>+{formatVND(contract.overdueFee)}</span>
+                    <div className="flex justify-between items-center text-rose-600 font-semibold border-t border-gray-100 pt-2">
+                      <span>Phí phạt quá hạn phát sinh</span>
+                      <span className="tabular-nums">+{formatVND(contract.overdueFee)}</span>
                     </div>
                   ) : null}
                 </div>
-              </div>
+              </section>
+
+              <hr className="border-gray-200" />
 
               {/* Điều 4: Biên bản bàn giao & Nghiệm thu tại chỗ */}
-              <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
-                  <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs uppercase tracking-wider">
-                    <CheckSquare className="w-4 h-4 text-brand-600" />
-                    <span>ĐIỀU 4: BIÊN BẢN BÀN GIAO & NGHIỆM THU TẠI CHỖ</span>
+              <section className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="font-bold text-gray-900 flex items-center gap-2 text-xs uppercase tracking-wider">
+                    <CheckSquare className="w-4 h-4 text-brand-600 shrink-0" />
+                    <span>ĐIỀU 4: BIÊN BẢN BÀN GIAO &amp; NGHIỆM THU TẠI CHỖ</span>
                   </h4>
                   {isClosed && (
-                    <span className="text-[10px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                      Đã nghiệm thu & tất toán
+                    <span className="text-[11px] font-semibold text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded-md border border-gray-200">
+                      Đã nghiệm thu &amp; tất toán
                     </span>
                   )}
                   {isOverdueTerminated && (
-                    <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                    <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-md border border-purple-200">
                       Bị niêm phong
                     </span>
                   )}
                   {isPendingCheckin && (
-                    <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                    <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-200">
                       {isRelocating ? 'Chờ đổi ô kho' : 'Chờ nghiệm thu tại quầy'}
                     </span>
                   )}
                   {isCancelledAtHandover && (
-                    <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                    <span className="text-[11px] font-semibold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-md border border-rose-200">
                       Từ chối nhận kho do sự cố
                     </span>
                   )}
                 </div>
 
                 {isPendingCheckin && !isRelocating && (
-                  <div className="p-3 bg-amber-50/70 rounded-lg border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
-                    <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="p-3.5 bg-amber-50 rounded-lg border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
+                    <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <div className="space-y-1">
                       <p className="font-semibold text-amber-900">Ô kho đang ở trạng thái Chờ nhận kho</p>
-                      <p className="text-[11px] text-amber-800 leading-relaxed">
+                      <p className="text-xs text-amber-800 leading-relaxed">
                         Quý khách vui lòng xuất trình CCCD và thẻ nhận kho điện tử tại quầy lễ tân cơ sở để đồng kiểm 4 tiêu chí nghiệm thu thực địa.
                       </p>
                     </div>
                   </div>
                 )}
 
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2 text-[11px]">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-slate-600">
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 space-y-3 text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-gray-600">
                     <span>
                       Thời điểm hoàn tất bàn giao:{' '}
-                      <strong className={isHandoverCompleted ? 'text-slate-800' : 'text-amber-800 font-semibold'}>
-                        {effectiveCheckinDate}
+                      <strong className={isHandoverCompleted ? 'text-gray-900 tabular-nums' : 'text-amber-700 font-semibold'}>
+                        {formatDisplayDate(effectiveCheckinDate)}
                       </strong>
                     </span>
                     <span>
-                      Nhân viên đón tiếp & lập biên bản:{' '}
-                      <strong className={isHandoverCompleted ? 'text-brand-800' : 'text-slate-500 font-normal italic'}>
+                      Nhân viên đón tiếp &amp; lập biên bản:{' '}
+                      <strong className={isHandoverCompleted ? 'text-gray-900' : 'text-gray-500 font-normal italic'}>
                         {effectiveHandoverStaff}
                       </strong>
                     </span>
                   </div>
 
-                  <div className="pt-2 border-t border-slate-200/80">
-                    <p className="font-bold text-slate-700 mb-1.5">
+                  <div className="pt-2.5 border-t border-gray-200/80">
+                    <p className="font-semibold text-gray-800 mb-2">
                       Kết quả kiểm tra 4 tiêu chí nghiệm thu vật lý bàn giao:
                     </p>
                     {isHandoverCompleted ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-emerald-800 font-medium">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-emerald-800 font-medium">
                         <div className="flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                           <span>Mặt bằng kho sạch sẽ, thông thoáng, không vật cản</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Cửa cuốn & cơ cấu khóa vận hành an toàn, trơn tru</span>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span>Cửa cuốn &amp; cơ cấu khóa vận hành an toàn, trơn tru</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Sàn tường khô ráo, phòng chống ẩm mốc & PCCC đạt chuẩn</span>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span>Sàn tường khô ráo, phòng chống ẩm mốc &amp; PCCC đạt chuẩn</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                           <span>Khóa điện tử IoT đã sẵn sàng, cấp mã PIN mở cửa 24/7</span>
                         </div>
                       </div>
                     ) : isCancelledAtHandover ? (
-                      <div className="p-2.5 bg-rose-50/70 border border-rose-200 rounded-lg text-rose-800 text-[11px] font-semibold flex items-center gap-2">
+                      <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs font-semibold flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                         <span>Biên bản tạm dừng nhận kho do sự cố tại hiện trường.</span>
                       </div>
                     ) : isRelocating ? (
-                      <div className="p-2.5 bg-amber-50/70 border border-amber-200 rounded-lg text-amber-800 text-[11px] font-semibold flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-amber-600 shrink-0 animate-pulse" />
+                      <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs font-semibold flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-amber-600 shrink-0" />
                         <span>Đang điều phối đổi sang ô kho đạt chuẩn khác cùng loại.</span>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-slate-600 font-medium">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-600 font-medium">
                         <div className="flex items-center gap-1.5">
-                          <Circle className="w-3.5 h-3.5 text-amber-500" />
+                          <Circle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                           <span>Mặt bằng kho sạch sẽ (Chờ đồng kiểm tại quầy)</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <Circle className="w-3.5 h-3.5 text-amber-500" />
-                          <span>Cửa cuốn & cơ cấu khóa (Chờ đồng kiểm tại quầy)</span>
+                          <Circle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <span>Cửa cuốn &amp; cơ cấu khóa (Chờ đồng kiểm tại quầy)</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <Circle className="w-3.5 h-3.5 text-amber-500" />
-                          <span>Sàn tường & PCCC đạt chuẩn (Chờ đồng kiểm tại quầy)</span>
+                          <Circle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <span>Sàn tường &amp; PCCC đạt chuẩn (Chờ đồng kiểm tại quầy)</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <Circle className="w-3.5 h-3.5 text-amber-500" />
-                          <span>Khóa điện tử IoT & cấp mã PIN (Kích hoạt khi nhận kho)</span>
+                          <Circle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <span>Khóa điện tử IoT &amp; cấp mã PIN (Kích hoạt khi nhận kho)</span>
                         </div>
                       </div>
                     )}
                   </div>
 
-                  <div className="pt-2 border-t border-slate-200/80 text-slate-600">
+                  <div className="pt-2.5 border-t border-gray-200/80 text-gray-600">
                     <span>Ghi chú hiện trường: </span>
-                    <em className={isHandoverCompleted ? 'text-slate-800 font-semibold' : 'text-slate-600 font-medium'}>
+                    <em className={isHandoverCompleted ? 'text-gray-900 font-medium' : 'text-gray-600'}>
                       {effectiveHandoverNote}
                     </em>
                   </div>
                 </div>
 
                 {/* Chữ ký số 2 bên */}
-                <div className="grid grid-cols-2 gap-4 pt-2 text-center text-xs">
-                  <div className="p-3 bg-slate-50/80 rounded-lg border border-slate-200">
-                    <p className="font-bold text-slate-800">ĐẠI DIỆN BÊN CHO THUÊ</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Ban Quản lý cơ sở</p>
+                <div className="grid grid-cols-2 gap-6 pt-2 text-center text-xs">
+                  <div className="p-3">
+                    <p className="font-bold text-gray-800">ĐẠI DIỆN BÊN CHO THUÊ</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">Ban Quản lý cơ sở</p>
                     {isHandoverCompleted ? (
                       <>
-                        <div className="my-3 py-1 px-2 inline-block border border-dashed border-emerald-400 bg-emerald-50/60 rounded text-[11px] font-bold text-emerald-800">
+                        <div className="my-3 py-1 px-2.5 inline-block border border-dashed border-emerald-400 bg-emerald-50/70 rounded text-[11px] font-bold text-emerald-800">
                           ✓ ĐÃ KÝ SỐ ĐIỆN TỬ
                         </div>
-                        <p className="font-semibold text-slate-700 text-[11px]">{effectiveHandoverStaff}</p>
+                        <p className="font-semibold text-gray-700 text-xs">{effectiveHandoverStaff}</p>
                       </>
                     ) : isCancelledAtHandover ? (
                       <>
-                        <div className="my-3 py-1 px-2 inline-block border border-dashed border-rose-300 bg-rose-50 rounded text-[11px] font-bold text-rose-700">
+                        <div className="my-3 py-1 px-2.5 inline-block border border-dashed border-rose-300 bg-rose-50 rounded text-[11px] font-bold text-rose-700">
                           HỦY NHẬN DO SỰ CỐ
                         </div>
-                        <p className="font-semibold text-slate-600 text-[11px]">{effectiveHandoverStaff}</p>
+                        <p className="font-semibold text-gray-600 text-xs">{effectiveHandoverStaff}</p>
                       </>
                     ) : isRelocating ? (
                       <>
-                        <div className="my-3 py-1 px-2 inline-block border border-dashed border-amber-300 bg-amber-50 rounded text-[11px] font-bold text-amber-700">
+                        <div className="my-3 py-1 px-2.5 inline-block border border-dashed border-amber-300 bg-amber-50 rounded text-[11px] font-bold text-amber-700">
                           ĐANG ĐỢI ĐỔI Ô MỚI
                         </div>
-                        <p className="font-semibold text-slate-600 text-[11px]">{effectiveHandoverStaff}</p>
+                        <p className="font-semibold text-gray-600 text-xs">{effectiveHandoverStaff}</p>
                       </>
                     ) : (
                       <>
-                        <div className="my-3 py-1 px-2 inline-block border border-dashed border-slate-300 bg-slate-100 rounded text-[11px] font-bold text-slate-500">
-                          CHỜ TIẾP ĐÓN & KÝ TẠI QUẦY
+                        <div className="my-3 py-1 px-2.5 inline-block border border-dashed border-gray-300 bg-gray-50 rounded text-[11px] font-bold text-gray-500">
+                          CHỜ TIẾP ĐÓN &amp; KÝ TẠI QUẦY
                         </div>
-                        <p className="font-medium text-slate-400 text-[11px]">Chưa ký biên bản bàn giao</p>
+                        <p className="font-medium text-gray-400 text-xs">Chưa ký biên bản bàn giao</p>
                       </>
                     )}
                   </div>
 
-                  <div className="p-3 bg-slate-50/80 rounded-lg border border-slate-200">
-                    <p className="font-bold text-slate-800">ĐẠI DIỆN BÊN THUÊ KHO</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Khách hàng xác nhận</p>
+                  <div className="p-3">
+                    <p className="font-bold text-gray-800">ĐẠI DIỆN BÊN THUÊ KHO</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">Khách hàng xác nhận</p>
                     {isHandoverCompleted ? (
                       <>
-                        <div className="my-3 py-1 px-2 inline-block border border-dashed border-emerald-400 bg-emerald-50/60 rounded text-[11px] font-bold text-emerald-800">
+                        <div className="my-3 py-1 px-2.5 inline-block border border-dashed border-emerald-400 bg-emerald-50/70 rounded text-[11px] font-bold text-emerald-800">
                           ✓ ĐÃ XÁC NHẬN BÀN GIAO
                         </div>
-                        <p className="font-semibold text-slate-700 text-[11px]">{effectiveCustomerName}</p>
+                        <p className="font-semibold text-gray-700 text-xs">{effectiveCustomerName}</p>
                       </>
                     ) : (contract.status === 'TERMINATED' || isCancelledAtHandover) ? (
                       (contract.handoverRejected || contract.contractNumber?.includes('REJ') || contract.contractNumber?.includes('REFUND') || isCancelledAtHandover) ? (
                         <>
-                          <div className="my-3 py-1 px-2 inline-block border border-dashed border-rose-300 bg-rose-50 rounded text-[11px] font-bold text-rose-700">
+                          <div className="my-3 py-1 px-2.5 inline-block border border-dashed border-rose-300 bg-rose-50 rounded text-[11px] font-bold text-rose-700">
                             TỪ CHỐI NHẬN (HOÀN 100%)
                           </div>
-                          <p className="font-semibold text-slate-700 text-[11px]">{effectiveCustomerName}</p>
+                          <p className="font-semibold text-gray-700 text-xs">{effectiveCustomerName}</p>
                         </>
                       ) : (!isStorageUnitAssigned(contract.unitNumber) || contract.unitNumber === 'Chưa gán ô kho' || contract.contractNumber?.includes('NO-UNIT')) ? (
                         <>
-                          <div className="my-3 py-1 px-2 inline-block border border-dashed border-orange-300 bg-orange-50 rounded text-[11px] font-bold text-orange-800">
+                          <div className="my-3 py-1 px-2.5 inline-block border border-dashed border-amber-300 bg-amber-50 rounded text-[11px] font-bold text-amber-800">
                             HỦY ĐẶT CHỖ (HOÀN CỌC 100%)
                           </div>
-                          <p className="font-semibold text-slate-700 text-[11px]">{effectiveCustomerName}</p>
+                          <p className="font-semibold text-gray-700 text-xs">{effectiveCustomerName}</p>
                         </>
                       ) : (
                         <>
-                          <div className="my-3 py-1 px-2 inline-block border border-dashed border-rose-300 bg-rose-50 rounded text-[11px] font-bold text-rose-700">
+                          <div className="my-3 py-1 px-2.5 inline-block border border-dashed border-rose-300 bg-rose-50 rounded text-[11px] font-bold text-rose-700">
                             HỦY GIỮ CHỖ (GIẢI PHÓNG Ô)
                           </div>
-                          <p className="font-semibold text-slate-700 text-[11px]">{effectiveCustomerName}</p>
+                          <p className="font-semibold text-gray-700 text-xs">{effectiveCustomerName}</p>
                         </>
                       )
                     ) : (contract.relocationEligible || detail?.relocationEligible || isRelocating) ? (
                       <>
-                        <div className="my-3 py-1 px-2 inline-block border border-dashed border-amber-300 bg-amber-50 rounded text-[11px] font-bold text-amber-700">
+                        <div className="my-3 py-1 px-2.5 inline-block border border-dashed border-amber-300 bg-amber-50 rounded text-[11px] font-bold text-amber-700">
                           CHỜ BÀN GIAO Ô MỚI
                         </div>
-                        <p className="font-semibold text-slate-700 text-[11px]">{effectiveCustomerName}</p>
+                        <p className="font-semibold text-gray-700 text-xs">{effectiveCustomerName}</p>
                       </>
                     ) : (
                       <>
-                        <div className="my-3 py-1 px-2 inline-block border border-dashed border-amber-300 bg-amber-50/80 rounded text-[11px] font-bold text-amber-700">
+                        <div className="my-3 py-1 px-2.5 inline-block border border-dashed border-amber-300 bg-amber-50 rounded text-[11px] font-bold text-amber-700">
                           CHỜ XÁC NHẬN KHI NHẬN KHO
                         </div>
-                        <p className="font-semibold text-slate-700 text-[11px]">{effectiveCustomerName}</p>
+                        <p className="font-semibold text-gray-700 text-xs">{effectiveCustomerName}</p>
                       </>
                     )}
                   </div>
                 </div>
-              </div>
+              </section>
+
+              <hr className="border-gray-200" />
 
               {/* Điều 5: Phụ lục hợp đồng & Thỏa thuận bổ sung */}
-              <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
-                  <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs uppercase tracking-wider">
-                    <Layers className="w-4 h-4 text-brand-600" />
+              <section className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="font-bold text-gray-900 flex items-center gap-2 text-xs uppercase tracking-wider">
+                    <Layers className="w-4 h-4 text-brand-600 shrink-0" />
                     <span>ĐIỀU 5: PHỤ LỤC HỢP ĐỒNG &amp; THỎA THUẬN BỔ SUNG</span>
                   </h4>
-                  <span className="text-[10px] font-semibold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+                  <span className="text-[11px] font-semibold text-gray-600 bg-gray-100 px-2.5 py-0.5 rounded-md border border-gray-200">
                     {hasAnyAddenda
                       ? `${addendaCount} phụ lục hiệu lực`
                       : 'Hợp đồng gốc'}
                   </span>
                 </div>
 
-                <p className="text-[11px] text-slate-500 italic leading-relaxed">
+                <p className="text-[11px] text-gray-500 italic leading-relaxed">
                   (Căn cứ Điều 403 Bộ luật Dân sự 2015: Phụ lục hợp đồng là bộ phận không thể tách rời, có hiệu lực pháp lý xác lập các biến động về thời hạn thuê, điều chỉnh đơn giá hoặc điều chuyển ô kho)
                 </p>
 
                 {/* Danh sách các phụ lục gia hạn (nếu có) */}
                 {renewals.length > 0 && (
-                  <div className="space-y-2.5 pt-1">
+                  <div className="space-y-3 pt-1">
                     {renewals.map((renewal, index) => {
                       const isPriceChanged = renewal.monthlyPriceSnapshot && renewal.monthlyPriceSnapshot !== effectiveMonthlyRent;
                       const priceDiff = (renewal.monthlyPriceSnapshot || effectiveMonthlyRent) - effectiveMonthlyRent;
@@ -791,48 +813,48 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                       return (
                         <div
                           key={renewal.id || index}
-                          className="bg-slate-50/90 rounded-xl p-3.5 border border-slate-200 space-y-2"
+                          className="bg-gray-50 rounded-lg p-4 border border-gray-200 space-y-2.5"
                         >
-                          <div className="flex flex-wrap items-center justify-between gap-1.5 pb-2 border-b border-slate-200">
+                          <div className="flex flex-wrap items-center justify-between gap-1.5 pb-2 border-b border-gray-200">
                             <div className="flex items-center gap-2">
-                              <span className="font-mono text-[11px] font-black bg-brand-100 text-brand-900 px-2 py-0.5 rounded">
+                              <span className="font-mono text-[11px] font-bold bg-brand-100 text-brand-800 px-2 py-0.5 rounded">
                                 PL-{renewalAddendumNum}
                               </span>
-                              <span className="font-bold text-slate-800 text-xs">
+                              <span className="font-semibold text-gray-900 text-xs">
                                 Phụ lục Gia hạn thời hạn &amp; Biểu giá thuê
                               </span>
                             </div>
-                            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
                               +{renewal.renewalMonths} tháng
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
                             <div>
-                              <span className="text-slate-400 block text-[10.5px]">Khoảng thời gian gia hạn:</span>
-                              <span className="font-semibold text-slate-800">
-                                {renewal.previousEndDate} → <strong className="text-brand-700">{renewal.newEndDate}</strong>
+                              <span className="text-gray-500 block text-[11px]">Khoảng thời gian gia hạn</span>
+                              <span className="font-semibold text-gray-900 tabular-nums">
+                                {formatDisplayDate(renewal.previousEndDate)} → <strong className="text-brand-700">{formatDisplayDate(renewal.newEndDate)}</strong>
                               </span>
                             </div>
 
                             <div>
-                              <span className="text-slate-400 block text-[10.5px]">Đơn giá thuê chu kỳ mới:</span>
+                              <span className="text-gray-500 block text-[11px]">Đơn giá thuê chu kỳ mới</span>
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-bold text-slate-900 text-xs">
+                                <span className="font-semibold text-gray-900 tabular-nums">
                                   {formatVND(renewal.monthlyPriceSnapshot || effectiveMonthlyRent)}/tháng
                                 </span>
                                 {isPriceChanged ? (
                                   <span
-                                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                                    className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
                                       priceDiff > 0
-                                        ? 'text-amber-800 bg-amber-50 border-amber-200'
-                                        : 'text-emerald-800 bg-emerald-50 border-emerald-200'
+                                        ? 'text-amber-700 bg-amber-50 border-amber-200'
+                                        : 'text-emerald-700 bg-emerald-50 border-emerald-200'
                                     }`}
                                   >
                                     {priceDiff > 0 ? `+${formatVND(priceDiff)}` : `-${formatVND(Math.abs(priceDiff))}`} (Giá mới BOM)
                                   </span>
                                 ) : (
-                                  <span className="text-[10px] text-slate-500 font-medium">
+                                  <span className="text-[11px] text-gray-500">
                                     (Giữ nguyên đơn giá gốc)
                                   </span>
                                 )}
@@ -840,36 +862,36 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                             </div>
 
                             <div>
-                              <span className="text-slate-400 block text-[10.5px]">Tổng tiền gia hạn đã nộp:</span>
-                              <span className="font-bold text-brand-800">
+                              <span className="text-gray-500 block text-[11px]">Tổng tiền gia hạn đã nộp</span>
+                              <span className="font-semibold text-brand-700 tabular-nums">
                                 {formatVND(renewal.totalPaid || renewal.rentalFeeAmount)}
                               </span>
-                              <span className="text-[10px] text-slate-400 ml-1">
+                              <span className="text-[11px] text-gray-400 ml-1">
                                 ({renewal.paymentMethod || 'Thanh toán trực tuyến'})
                               </span>
                             </div>
 
                             <div>
-                              <span className="text-slate-400 block text-[10.5px]">Tiền cọc bảo đảm (BR-DEP-01):</span>
-                              <span className="font-medium text-emerald-700">
+                              <span className="text-gray-500 block text-[11px]">Tiền cọc bảo đảm (BR-DEP-01)</span>
+                              <span className="font-medium text-emerald-700 tabular-nums">
                                 Bảo lưu {formatVND(effectiveDeposit)} (Miễn thu bổ sung)
                               </span>
                             </div>
                           </div>
 
                           {isPriceChanged && (
-                            <div className="text-[10.5px] text-slate-500 bg-white p-2 rounded border border-slate-100 flex items-start gap-1.5">
+                            <div className="text-[11px] text-gray-600 bg-white p-2.5 rounded border border-gray-200 flex items-start gap-1.5">
                               <ShieldCheck className="w-3.5 h-3.5 text-brand-600 shrink-0 mt-0.5" />
                               <span>
-                                <strong>Nguyên tắc không hồi tố (Điều 403 BLDS):</strong> Đơn giá điều chỉnh chỉ áp dụng cho kỳ gia hạn từ ngày {renewal.previousEndDate}. Chu kỳ thuê trước đó không bị truy thu chênh lệch.
+                                <strong>Nguyên tắc không hồi tố (Điều 403 BLDS):</strong> Đơn giá điều chỉnh chỉ áp dụng cho kỳ gia hạn từ ngày {formatDisplayDate(renewal.previousEndDate)}. Chu kỳ thuê trước đó không bị truy thu chênh lệch.
                               </span>
                             </div>
                           )}
 
-                          <div className="flex items-center justify-between pt-1.5 text-[10.5px] text-slate-500 border-t border-slate-200/60">
-                            <span>Ký kết điện tử: <strong>Đã xác nhận tự động qua cổng thanh toán</strong></span>
-                            <span className="text-emerald-700 font-bold flex items-center gap-1">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <div className="flex items-center justify-between pt-2 text-[11px] text-gray-500 border-t border-gray-200/80">
+                            <span>Ký kết điện tử: <strong className="text-gray-700">Đã xác nhận tự động qua cổng thanh toán</strong></span>
+                            <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                               Hiệu lực pháp lý đầy đủ
                             </span>
                           </div>
@@ -881,37 +903,37 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
                 {/* Phụ lục điều chuyển ô kho kỹ thuật (nếu có) */}
                 {relocationCode && (
-                  <div className="bg-amber-50/70 rounded-xl p-3.5 border border-amber-200 space-y-2">
+                  <div className="bg-amber-50/70 rounded-lg p-4 border border-amber-200 space-y-2.5">
                     <div className="flex items-center justify-between pb-2 border-b border-amber-200">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[11px] font-black bg-amber-200 text-amber-900 px-2 py-0.5 rounded">
+                        <span className="font-mono text-[11px] font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded">
                           {relocationCode}
                         </span>
-                        <span className="font-bold text-amber-950 text-xs">
+                        <span className="font-semibold text-amber-950 text-xs">
                           Phụ lục Điều chuyển Ô kho Kỹ thuật Hiện trường
                         </span>
                       </div>
-                      <span className="text-[10.5px] font-bold text-amber-800 bg-white px-2 py-0.5 rounded border border-amber-300">
+                      <span className="text-[11px] font-semibold text-amber-800 bg-white px-2.5 py-0.5 rounded-md border border-amber-200">
                         Sự cố kỹ thuật
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
                       <div>
-                        <span className="text-amber-800/80 block text-[10.5px]">Ô kho mới điều chuyển:</span>
-                        <span className="font-black text-amber-950 text-xs">
+                        <span className="text-amber-800/80 block text-[11px]">Ô kho mới điều chuyển</span>
+                        <span className="font-bold text-amber-950">
                           {effectiveUnitNumber} ({effectiveUnitTypeName} - Tầng {effectiveFloor})
                         </span>
                       </div>
                       <div>
-                        <span className="text-amber-800/80 block text-[10.5px]">Lý do điều chuyển:</span>
+                        <span className="text-amber-800/80 block text-[11px]">Lý do điều chuyển</span>
                         <span className="font-medium text-amber-900">
                           {relocationReason || effectiveDetail?.rejectionReason || 'Sự cố vật lý tại ô ban đầu'}
                         </span>
                       </div>
                       <div className="sm:col-span-2">
-                        <span className="text-amber-800/80 block text-[10.5px]">Cam kết tài chính:</span>
-                        <span className="font-semibold text-emerald-800">
+                        <span className="text-amber-800/80 block text-[11px]">Cam kết tài chính</span>
+                        <span className="font-medium text-emerald-800">
                           Giữ nguyên 100% đơn giá thuê ({formatVND(effectiveMonthlyRent)}/tháng) và tiền cọc ({formatVND(effectiveDeposit)}), không phát sinh phụ phí.
                         </span>
                       </div>
@@ -921,51 +943,51 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
                 {/* Phụ lục / Thỏa thuận chấm dứt trước hạn & Bàn giao trả kho sớm */}
                 {isReturnScheduled && (
-                  <div className="bg-indigo-50/80 rounded-xl p-3.5 border border-indigo-200 space-y-2">
-                    <div className="flex items-center justify-between pb-2 border-b border-indigo-200">
+                  <div className="bg-blue-50/70 rounded-lg p-4 border border-blue-100 space-y-2.5">
+                    <div className="flex items-center justify-between pb-2 border-b border-blue-200/70">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[11px] font-black bg-indigo-200 text-indigo-900 px-2 py-0.5 rounded">
+                        <span className="font-mono text-[11px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
                           PL-RETURN
                         </span>
-                        <span className="font-bold text-indigo-950 text-xs">
+                        <span className="font-semibold text-blue-950 text-xs">
                           Phụ lục Thỏa thuận Trả kho Sớm &amp; Chấm dứt Hợp đồng
                         </span>
                       </div>
-                      <span className="text-[10.5px] font-bold text-indigo-800 bg-white px-2 py-0.5 rounded border border-indigo-300">
+                      <span className="text-[11px] font-semibold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-md border border-amber-200">
                         {contract.inspectionDone ? 'Đã nghiệm thu' : 'Chờ nghiệm thu'}
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
                       <div>
-                        <span className="text-indigo-800/80 block text-[10.5px]">Ngày đề nghị trả kho thực tế:</span>
-                        <span className="font-bold text-indigo-950">
-                          {scheduledReturnDate}
+                        <span className="text-blue-800/80 block text-[11px]">Ngày đề nghị trả kho thực tế</span>
+                        <span className="font-semibold text-blue-950 tabular-nums">
+                          {formatDisplayDate(scheduledReturnDate)}
                         </span>
-                        <span className="text-[10px] text-slate-500 block">
-                          (Thời hạn kết thúc ban đầu: {contract.endDate})
+                        <span className="text-[11px] text-gray-500 block tabular-nums">
+                          (Thời hạn kết thúc ban đầu: {formatDisplayDate(contract.endDate)})
                         </span>
                       </div>
 
                       <div>
-                        <span className="text-indigo-800/80 block text-[10.5px]">Chính sách hoàn cọc bảo đảm:</span>
-                        <span className="font-semibold text-emerald-800">
+                        <span className="text-blue-800/80 block text-[11px]">Chính sách hoàn cọc bảo đảm</span>
+                        <span className="font-semibold text-emerald-700 tabular-nums">
                           Hoàn trả 100% ({formatVND(effectiveDeposit)}) sau khi nghiệm thu
                         </span>
                       </div>
 
                       <div className="sm:col-span-2">
-                        <span className="text-indigo-800/80 block text-[10.5px]">Quyết toán tiền thuê &amp; nghĩa vụ (BR-RET-06):</span>
-                        <span className="text-slate-700">
+                        <span className="text-blue-800/80 block text-[11px]">Quyết toán tiền thuê &amp; nghĩa vụ (BR-RET-06)</span>
+                        <span className="text-gray-700 leading-relaxed">
                           Hai bên đồng thuận chấm dứt hợp đồng sớm hơn thời hạn ban đầu. Tiền thuê chưa sử dụng (nếu có) và tiền cọc sẽ được Ban Quản lý lập biên bản quyết toán hoàn trả đầy đủ sau khi hoàn tất kiểm tra hiện trường 4 tiêu chí.
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-1.5 text-[10.5px] text-slate-500 border-t border-indigo-200/60">
-                      <span>Xác lập: <strong>Đã ghi nhận yêu cầu trả kho điện tử</strong></span>
-                      <span className="text-indigo-700 font-bold flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    <div className="flex items-center justify-between pt-2 text-[11px] text-gray-500 border-t border-blue-200/60">
+                      <span>Xác lập: <strong className="text-gray-700">Đã ghi nhận yêu cầu trả kho điện tử</strong></span>
+                      <span className="text-blue-700 font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                         Có hiệu lực pháp lý
                       </span>
                     </div>
@@ -974,24 +996,24 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
                 {/* Phụ lục Quyết toán Tài chính & Tất toán Thanh lý Hợp đồng */}
                 {hasSettlement && (
-                  <div className="bg-emerald-50/90 rounded-xl p-3.5 border-2 border-emerald-300 space-y-2.5">
+                  <div className="bg-emerald-50/70 rounded-lg p-4 border border-emerald-200 space-y-3">
                     <div className="flex items-center justify-between pb-2 border-b border-emerald-200">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[11px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded shadow-xs">
+                        <span className="font-mono text-[11px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded">
                           PL-SETTLEMENT
                         </span>
-                        <span className="font-bold text-emerald-950 text-xs">
+                        <span className="font-semibold text-emerald-950 text-xs">
                           Biên bản Quyết toán Tài chính &amp; Tất toán Hợp đồng
                         </span>
                       </div>
-                      <span className="text-[10.5px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-300 flex items-center gap-1">
+                      <span className="text-[11px] font-semibold text-emerald-800 bg-white px-2.5 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                         {settledAt ? 'Đã duyệt' : 'Đang đối soát'}
                       </span>
                     </div>
 
                     {/* Kịch bản quyết toán 1 dòng ngắn gọn */}
-                    <div className="text-[11px] text-emerald-950 bg-white/80 px-2.5 py-1 rounded border border-emerald-200/60 font-medium">
+                    <div className="text-xs text-emerald-900 bg-white px-3 py-2 rounded border border-emerald-100 font-medium">
                       {settlementType === 'NORMAL' && '• Trả kho đúng hạn (BR-RET-04) — Bảo toàn 100% tiền cọc gốc'}
                       {settlementType === 'EARLY_RETURN' && '• Trả kho sớm > 30 ngày (BR-RET-06) — Hoàn 100% tiền thuê chưa dùng'}
                       {settlementType === 'OVERDUE_TERMINATED' && '• Quá hạn D+7 niêm phong Kho Tổng (BR-OVD-07) — Khấu trừ 100% cọc'}
@@ -1000,86 +1022,86 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                     </div>
 
                     {/* Bảng kê dòng tiền quyết toán */}
-                    <div className="bg-white rounded-lg p-2.5 border border-emerald-200 text-[11px] space-y-1.5 font-mono">
-                      <div className="flex justify-between items-center text-slate-700">
+                    <div className="bg-white rounded-lg p-3 border border-emerald-200/80 text-xs space-y-1.5 tabular-nums">
+                      <div className="flex justify-between items-center text-gray-700">
                         <span>1. Tiền đặt cọc ban đầu (Deposit):</span>
-                        <span className="font-bold text-slate-900">+{formatVND(effectiveDeposit)}</span>
+                        <span className="font-semibold text-gray-900">+{formatVND(effectiveDeposit)}</span>
                       </div>
                       {settlementEarlyRentRefund > 0 && (
                         <div className="flex justify-between items-center text-emerald-700">
                           <span>2. Tiền thuê chưa dùng hoàn lại:</span>
-                          <span className="font-bold">+{formatVND(settlementEarlyRentRefund)}</span>
+                          <span className="font-semibold">+{formatVND(settlementEarlyRentRefund)}</span>
                         </div>
                       )}
                       {settlementDepositForfeited > 0 && (
                         <div className="flex justify-between items-center text-amber-700">
                           <span>3. Phạt cọc giữ phòng trống / hủy kho:</span>
-                          <span className="font-bold">-{formatVND(settlementDepositForfeited)}</span>
+                          <span className="font-semibold">-{formatVND(settlementDepositForfeited)}</span>
                         </div>
                       )}
                       {settlementDamage > 0 && (
                         <div className="flex justify-between items-center text-rose-700">
                           <span>4. Khấu trừ bồi thường hư hại ô kho:</span>
-                          <span className="font-bold">-{formatVND(settlementDamage)}</span>
+                          <span className="font-semibold">-{formatVND(settlementDamage)}</span>
                         </div>
                       )}
                       {settlementOverdue > 0 && (
                         <div className="flex justify-between items-center text-rose-700">
                           <span>5. Khấu trừ phạt nợ quá hạn lưu kho:</span>
-                          <span className="font-bold">-{formatVND(settlementOverdue)}</span>
+                          <span className="font-semibold">-{formatVND(settlementOverdue)}</span>
                         </div>
                       )}
                       {settlementSealingFee > 0 && (
                         <div className="flex justify-between items-center text-purple-700">
                           <span>6. Khấu trừ phí niêm phong Kho Tổng:</span>
-                          <span className="font-bold">-{formatVND(settlementSealingFee)}</span>
+                          <span className="font-semibold">-{formatVND(settlementSealingFee)}</span>
                         </div>
                       )}
 
                       {/* Dòng tổng kết */}
-                      <div className="pt-2 mt-1 border-t border-slate-200 flex justify-between items-center text-xs font-bold">
+                      <div className="pt-2 mt-1 border-t border-gray-200 flex justify-between items-center text-xs font-bold">
                         {settlementPayable > 0 ? (
                           <>
-                            <span className="text-rose-800">Số tiền Khách hàng nộp bù:</span>
-                            <span className="text-rose-800 text-sm">{formatVND(settlementPayable)} (Đã thu)</span>
+                            <span className="text-rose-700">Số tiền Khách hàng nộp bù:</span>
+                            <span className="text-rose-700 text-sm">{formatVND(settlementPayable)} (Đã thu)</span>
                           </>
                         ) : (
                           <>
-                            <span className="text-emerald-800">Số tiền Công ty hoàn trả Khách hàng:</span>
-                            <span className="text-emerald-800 text-sm">+{formatVND(settlementRefund)}</span>
+                            <span className="text-emerald-700">Số tiền Công ty hoàn trả Khách hàng:</span>
+                            <span className="text-emerald-700 text-sm">+{formatVND(settlementRefund)}</span>
                           </>
                         )}
                       </div>
                     </div>
 
                     {/* Footer phê duyệt */}
-                    <div className="flex flex-wrap items-center justify-between pt-1 text-[10.5px] text-slate-500 border-t border-emerald-200/60">
-                      <span>Người duyệt: <strong>{settledByName}</strong> {settledAt ? `(${new Date(settledAt).toLocaleDateString('vi-VN')})` : ''}</span>
-                      <span className="text-slate-600 italic">Căn cứ: {settlementNote}</span>
+                    <div className="flex flex-wrap items-center justify-between pt-1 text-[11px] text-gray-500 border-t border-emerald-200/60">
+                      <span>Người duyệt: <strong className="text-gray-700">{settledByName}</strong> {settledAt ? `(${new Date(settledAt).toLocaleDateString('vi-VN')})` : ''}</span>
+                      <span className="text-gray-600 italic">Căn cứ: {settlementNote}</span>
                     </div>
                   </div>
                 )}
 
                 {/* Nếu chưa phát sinh phụ lục nào */}
                 {!hasAnyAddenda && (
-                  <div className="p-3 bg-slate-50 rounded-lg border border-dashed border-slate-200 text-slate-500 text-center text-[11px]">
+                  <p className="py-3 text-gray-500 text-xs">
                     Hợp đồng đang thực hiện theo các điều khoản nguyên bản. Chưa phát sinh phụ lục gia hạn hoặc điều chuyển kho.
-                  </div>
+                  </p>
                 )}
-              </div>
+              </section>
             </div>
         </div>
 
         {/* Footer với nút In hợp đồng, Đổi PIN, Báo trả kho và Đóng */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3.5 cursor-pointer text-xs font-semibold text-slate-700 border-slate-300 hover:bg-slate-100"
+              className="flex items-center gap-1.5 px-3.5 cursor-pointer text-xs font-semibold text-gray-700 bg-white border-gray-300 hover:bg-gray-100"
             >
-              <Printer className="w-4 h-4 text-slate-600" />
+              <Printer className="w-4 h-4 text-gray-600" />
               <span>In hợp đồng</span>
             </Button>
 
@@ -1091,7 +1113,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                   handleClose();
                   onChangePin(contract);
                 }}
-                className="flex items-center gap-1.5 px-3 cursor-pointer text-xs font-semibold text-brand-700 border-brand-200 hover:bg-brand-50"
+                className="flex items-center gap-1.5 px-3 cursor-pointer text-xs font-semibold text-brand-700 bg-white border-brand-200 hover:bg-brand-50"
               >
                 <KeyRound className="w-3.5 h-3.5" />
                 <span>Đổi PIN</span>
@@ -1108,7 +1130,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                     handleClose();
                     onScheduleReturn(contract);
                   }}
-                  className="flex items-center gap-1.5 px-3 cursor-pointer text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50"
+                  className="flex items-center gap-1.5 px-3 cursor-pointer text-xs font-semibold text-rose-600 bg-white border-rose-200 hover:bg-rose-50"
                 >
                   <span>Báo trả kho</span>
                 </Button>
@@ -1132,11 +1154,11 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                 }
                 className={`flex items-center gap-1.5 px-3 text-xs font-semibold ${
                   (effectiveDetail?.rescheduleCount ?? contract.rescheduleCount ?? 0) >= 1
-                    ? 'opacity-50 cursor-not-allowed text-slate-400 bg-slate-100 border-slate-200'
-                    : 'cursor-pointer text-emerald-700 border-emerald-300 hover:bg-emerald-50'
+                    ? 'opacity-50 cursor-not-allowed text-gray-400 bg-gray-100 border-gray-200'
+                    : 'cursor-pointer text-brand-700 bg-white border-brand-200 hover:bg-brand-50'
                 }`}
               >
-                <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                <Calendar className="w-3.5 h-3.5 text-brand-600" />
                 <span>
                   {(effectiveDetail?.rescheduleCount ?? contract.rescheduleCount ?? 0) >= 1
                     ? 'Đã dời lịch (1/1)'
@@ -1150,7 +1172,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
             variant="primary"
             size="sm"
             onClick={handleClose}
-            className="px-5 cursor-pointer text-xs font-semibold"
+            className="px-5 cursor-pointer text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white"
           >
             Đóng
           </Button>

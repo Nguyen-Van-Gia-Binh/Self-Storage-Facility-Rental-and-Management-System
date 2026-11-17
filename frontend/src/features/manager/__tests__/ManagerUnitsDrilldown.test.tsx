@@ -116,7 +116,7 @@ describe('Quản lý ô kho — Kiến trúc Drill-down 4 Cấp độ (FM-01)', 
 
     expect(html).toContain('Kho Nhỏ');
     expect(html).toContain('4 m²');
-    expect(html).toContain('Xem danh sách ô');
+    expect(html).toContain('Xem chi tiết');
   });
 
   it('3. Cấp 3 (StorageUnitTable): Hiển thị bảng sortable columns, mã ô, tầng, khách và hạn hợp đồng', () => {

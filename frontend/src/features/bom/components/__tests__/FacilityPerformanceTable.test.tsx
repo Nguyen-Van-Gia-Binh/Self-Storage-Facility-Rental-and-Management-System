@@ -125,7 +125,7 @@ describe('FacilityPerformanceTable Component', () => {
     expect(screen.queryByText('Cơ sở Cầu Giấy - Hà Nội')).not.toBeInTheDocument();
   });
 
-  it('calls onOpenDetail when clicking the [Chi tiết] ghost button', () => {
+  it('calls onOpenDetail when clicking compact chevron icon button and renders occupancy progress bars', () => {
     const onOpenDetailMock = vi.fn();
     render(
       <FacilityPerformanceTable
@@ -135,8 +135,14 @@ describe('FacilityPerformanceTable Component', () => {
       />
     );
 
+    // Compact horizontal progress bars for occupancy rate
+    const progressBars = screen.getAllByRole('progressbar');
+    expect(progressBars.length).toBe(2);
+
+    // Compact chevron icon button instead of verbose "Chi tiết" text inside every cell
     const detailButtons = screen.getAllByRole('button', { name: /Chi tiết/i });
     expect(detailButtons.length).toBe(2);
+    expect(detailButtons[0].textContent?.trim()).toBe('');
 
     fireEvent.click(detailButtons[0]);
     expect(onOpenDetailMock).toHaveBeenCalledTimes(1);

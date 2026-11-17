@@ -2,17 +2,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   AlertCircle,
-  Building2,
-  Calendar,
+  ArrowLeftRight,
+  ArrowRight,
   Check,
   CheckCircle2,
-  Layers,
-  Mail,
+  Info,
   MapPin,
-  Phone,
   RefreshCw,
-  Sparkles,
-  User,
   X,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
@@ -21,7 +17,6 @@ import { getManagerContracts, reassignStorageUnit } from '@/api/contract';
 import type { ManagerContractItem } from '@/types/contractManager';
 import { getStaffWorkload } from '@/features/manager/api/staffAssignmentApi';
 import type { StaffWorkloadItem } from '@/features/manager/types/staffAssignment';
-import { Badge } from '@/components/ui/Badge';
 import type { FacilityListItem } from '@/types';
 import type { StorageUnitResponse } from '@/types/unit';
 import { tokenStorage } from '@/utils/tokenStorage';
@@ -568,33 +563,26 @@ export const AllocationPage: React.FC = () => {
         </div>
       )}
 
-      {/* Header bar gọn gàng, hiện đại */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 border border-brand-200/80 flex items-center justify-center shrink-0">
-            <Building2 className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
-                Nhiệm vụ Gán ô kho
-              </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200/80">
-                {queue.length} đơn chờ xử lý
-              </span>
-            </div>
-          </div>
+      {/* Header phẳng gọn gàng chuẩn Enterprise SaaS */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+            Nhiệm vụ Gán ô kho
+          </h1>
+          <p className="text-sm text-gray-500 mt-0.5 tabular-nums">
+            {queue.length} đơn chờ xử lý
+          </p>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
           {facilitiesLoading ? (
-            <div className="h-9 px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 text-xs sm:text-sm font-semibold text-slate-400 flex items-center gap-2 animate-pulse">
-              <span className="w-2 h-2 rounded-full bg-slate-300" />
+            <div className="h-9 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-xs sm:text-sm font-medium text-gray-400 flex items-center gap-2 animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-gray-300" />
               <span>Đang tải cơ sở...</span>
             </div>
           ) : facilities.length > 0 ? (
             <select
-              className="border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm bg-white shadow-2xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
+              className="border border-gray-200 rounded-lg px-3 py-2 text-xs sm:text-sm bg-white font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
               value={facilityId ?? 'ALL'}
               onChange={(e) => {
                 const val = e.target.value === 'ALL' ? null : Number(e.target.value);
@@ -602,7 +590,7 @@ export const AllocationPage: React.FC = () => {
                 localStorage.setItem('manager_selected_facility_id', val != null ? String(val) : 'ALL');
               }}
             >
-              <option value="ALL">🏢 Tất cả cơ sở quản lý</option>
+              <option value="ALL">Tất cả cơ sở quản lý</option>
               {facilities.map((fac) => (
                 <option key={fac.id} value={fac.id}>
                   {fac.name}
@@ -615,75 +603,69 @@ export const AllocationPage: React.FC = () => {
             type="button"
             onClick={() => loadQueue(facilityId, true)}
             disabled={refreshing || loading}
-            className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 bg-white text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
             title="Làm mới danh sách"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 text-gray-500 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Làm mới</span>
           </button>
         </div>
       </div>
 
-      {/* Danh sách nhiệm vụ gán ô kho từ trên xuống (Full-width Vertical Task List) */}
-      <section className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
-        <div className="px-4 py-3.5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/70">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="font-bold text-sm text-slate-800">
-              Danh sách đơn chờ tiếp đón & gán ô
-            </span>
-            {/* Bộ lọc phân loại đơn */}
-            <div className="flex items-center bg-slate-200/80 p-0.5 rounded-xl text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setFilterTab('ALL')}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                  filterTab === 'ALL'
-                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Tất cả ({queue.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilterTab('UNASSIGNED')}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                  filterTab === 'UNASSIGNED'
-                    ? 'bg-white text-amber-900 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Chưa gán ô / Cần đổi ({unassignedCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilterTab('ASSIGNED')}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                  filterTab === 'ASSIGNED'
-                    ? 'bg-white text-emerald-900 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Đã gán ô (Có thể đổi) ({assignedCount})
-              </button>
-            </div>
-          </div>
+      {/* Danh sách nhiệm vụ gán ô kho */}
+      <section className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        {/* Underline Tabs chuẩn Enterprise SaaS */}
+        <div className="px-6 border-b border-gray-200 flex items-center gap-6 overflow-x-auto bg-white">
+          <button
+            type="button"
+            onClick={() => setFilterTab('ALL')}
+            className={`py-3.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+              filterTab === 'ALL'
+                ? 'border-brand-600 text-brand-700'
+                : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            Tất cả ({queue.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterTab('UNASSIGNED')}
+            className={`py-3.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+              filterTab === 'UNASSIGNED'
+                ? 'border-brand-600 text-brand-700'
+                : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            Chưa gán ô / Cần đổi ({unassignedCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterTab('ASSIGNED')}
+            className={`py-3.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+              filterTab === 'ASSIGNED'
+                ? 'border-brand-600 text-brand-700'
+                : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            Đã gán ô ({assignedCount})
+          </button>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50/90 text-slate-600 text-xs font-semibold border-b border-slate-100 uppercase tracking-wider">
+            <thead className="bg-gray-50 text-gray-500 text-xs font-semibold border-b border-gray-200 uppercase tracking-wider">
               <tr>
-                <th className="px-4 py-3 w-[28%]">Mã đơn & Khách hàng</th>
-                <th className="px-4 py-3 w-[24%]">Hạng kho khách đặt</th>
-                <th className="px-4 py-3 w-[20%]">Ngày nhận kho</th>
-                <th className="px-4 py-3 w-[16%]">Trạng thái</th>
-                <th className="px-4 py-3 w-[12%] text-right">Thao tác</th>
+                <th className="px-6 py-3 w-[32%]">Mã đơn &amp; Khách hàng</th>
+                <th className="px-6 py-3 w-[18%]">Hạng kho</th>
+                <th className="px-6 py-3 w-[18%]">Ngày nhận kho</th>
+                <th className="px-6 py-3 w-[18%]">Trạng thái</th>
+                <th className="px-6 py-3 w-[14%] text-right">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-slate-500 text-center">
+                  <td colSpan={5} className="px-6 py-12 text-gray-500 text-center">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <RefreshCw className="w-5 h-5 animate-spin text-brand-600" />
                       <span className="text-xs font-medium">Đang tải danh sách nhiệm vụ gán ô...</span>
@@ -692,19 +674,17 @@ export const AllocationPage: React.FC = () => {
                 </tr>
               ) : displayedQueue.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-14 text-center">
-                    <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                        <CheckCircle2 className="w-6 h-6" />
-                      </div>
-                      <h4 className="text-sm font-bold text-slate-800 mt-1">
+                  <td colSpan={5} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center gap-1.5 max-w-sm mx-auto">
+                      <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                      <h4 className="text-sm font-semibold text-gray-800 mt-1">
                         {filterTab === 'UNASSIGNED'
                           ? 'Không có đơn nào chưa gán ô'
                           : filterTab === 'ASSIGNED'
                           ? 'Chưa có đơn nào đã gán ô'
                           : 'Không có đơn nào chờ gán ô'}
                       </h4>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-gray-500">
                         {filterTab === 'UNASSIGNED'
                           ? 'Toàn bộ đơn trong danh sách hiện đã được phân bổ ô kho sẵn sàng.'
                           : facilityId == null
@@ -716,115 +696,130 @@ export const AllocationPage: React.FC = () => {
                 </tr>
               ) : (
                 displayedQueue.map((row) => {
-                  const urgent = daysUntil(row.startDate) < 3;
+                  const daysLeft = daysUntil(row.startDate);
+                  const isTodayOrPast = daysLeft <= 0;
+                  const isSoon = daysLeft > 0 && daysLeft < 3;
+                  const needsImmediateAllocation =
+                    row.kind === 'CONTRACT_RELOCATION' || !row.isAssigned;
+
                   return (
                     <tr
                       key={row.id}
-                      className="hover:bg-slate-50/80 transition-colors group"
+                      className="hover:bg-gray-50/70 transition-colors"
                     >
-                      {/* Cột 1: Mã đơn & Khách hàng */}
-                      <td className="px-4 py-3.5">
+                      {/* Cột 1: Mã đơn & Khách hàng (Stacked 3 tầng rõ ràng) */}
+                      <td className="px-6 py-4">
                         <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/80 text-xs w-fit">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-gray-900 font-mono text-sm">
                               {row.code}
                             </span>
                             {row.kind === 'CONTRACT_RELOCATION' && (
-                              <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-rose-50 text-rose-700 text-[10px] font-semibold rounded">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                                 Sự cố bàn giao
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500 mt-0.5">
-                            <Building2 className="w-3 h-3 text-brand-600 shrink-0" />
-                            <span>{row.facilityName || `Cơ sở #${row.facilityId}`}</span>
+                          <div className="text-sm text-gray-700">
+                            <span className="font-medium text-gray-800">{row.customerName}</span>
+                            <span className="text-gray-300 mx-1.5">·</span>
+                            <span className="text-gray-500">
+                              {row.facilityName || `Cơ sở #${row.facilityId}`}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-800 font-semibold mt-0.5">
-                            <User className="w-3.5 h-3.5 text-brand-600 shrink-0" />
-                            <span>{row.customerName}</span>
-                          </div>
-                          <span className="text-[11px] text-slate-500 font-mono">
+                          <div className="text-xs text-gray-400 tabular-nums">
                             {row.customerPhone}
-                          </span>
+                          </div>
                         </div>
                       </td>
 
                       {/* Cột 2: Hạng kho */}
-                      <td className="px-4 py-3.5">
-                        <div
-                          className="flex items-center gap-1.5 font-medium text-slate-800"
+                      <td className="px-6 py-4">
+                        <span
+                          className="font-medium text-gray-800"
                           title={row.rentalMonths ? `Thời hạn thuê: ${row.rentalMonths} tháng` : undefined}
                         >
-                          <Layers className="w-4 h-4 text-brand-600 shrink-0" />
-                          <span>{cleanUnitTypeName(row.unitTypeName) || `Loại kho #${row.unitTypeId}`}</span>
-                        </div>
+                          {cleanUnitTypeName(row.unitTypeName) || `Loại kho #${row.unitTypeId}`}
+                        </span>
                       </td>
 
-                      {/* Cột 3: Ngày hẹn nhận kho */}
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-2">
-                          <span className={`num text-xs font-bold ${urgent ? 'text-rose-600' : 'text-slate-700'}`}>
+                      {/* Cột 3: Ngày nhận kho (Text cảnh báo gọn thay cho Badge to) */}
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-gray-900 tabular-nums">
                             {formatDate(row.startDate)}
                           </span>
-                          {urgent && (
-                            <span className="text-[10px] bg-rose-50 border border-rose-200 text-rose-700 px-2 py-0.5 rounded-full font-bold">
-                              Gấp ({daysUntil(row.startDate) <= 0 ? 'Hôm nay' : `${daysUntil(row.startDate)} ngày`})
+                          {isTodayOrPast && (
+                            <span className="text-xs font-semibold text-rose-600 mt-0.5 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3 shrink-0" />
+                              Gấp (Hôm nay)
+                            </span>
+                          )}
+                          {isSoon && (
+                            <span className="text-xs font-semibold text-amber-600 mt-0.5 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3 shrink-0" />
+                              Gấp ({daysLeft} ngày)
                             </span>
                           )}
                         </div>
                       </td>
 
-                      {/* Cột 4: Trạng thái */}
-                      <td className="px-4 py-3.5">
+                      {/* Cột 4: Trạng thái (Soft Badges đồng bộ toàn bộ trạng thái) */}
+                      <td className="px-6 py-4">
                         {row.kind === 'CONTRACT_RELOCATION' ? (
                           <div className="flex flex-col gap-1 items-start">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse" />
-                              Khách báo sự cố (Cần đổi ô)
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                              Cần đổi ô (Sự cố)
                             </span>
                             {row.assignedStaffName && (
-                              <span className="text-[11px] text-slate-500 font-medium">
+                              <span className="text-xs text-gray-500">
                                 NV: {row.assignedStaffName}
                               </span>
                             )}
                           </div>
                         ) : row.isAssigned ? (
                           <div className="flex flex-col gap-1 items-start">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                              Ô: {row.storageUnitCode || `ID ${row.storageUnitId}`}
+                              Đã gán: {row.storageUnitCode || `ID ${row.storageUnitId}`}
                             </span>
                             {row.assignedStaffName && (
-                              <span className="text-[11px] text-slate-500 font-medium">
+                              <span className="text-xs text-gray-500">
                                 NV: {row.assignedStaffName}
                               </span>
                             )}
                           </div>
                         ) : (
-                          <Badge variant="warning">Chờ gán ô</Badge>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            Chờ gán ô
+                          </span>
                         )}
                       </td>
 
-                      {/* Cột 5: Nút hành động mở Sơ đồ 2D */}
-                      <td className="px-4 py-3.5 text-right">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenFloorPlan(row)}
-                          className={`inline-flex items-center justify-center w-[108px] gap-1.5 px-3 py-2 rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer ${
-                            row.kind === 'CONTRACT_RELOCATION'
-                              ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                              : row.isAssigned
-                              ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                              : 'bg-brand-600 hover:bg-brand-700 text-white'
-                          }`}
-                        >
-                          {row.isAssigned && row.kind !== 'CONTRACT_RELOCATION' ? (
-                            <RefreshCw className="w-3.5 h-3.5 text-white" />
+                      {/* Cột 5: Nút thao tác theo đúng Action Hierarchy (Primary Mint vs Secondary Outline) */}
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end">
+                          {needsImmediateAllocation ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenFloorPlan(row)}
+                              className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
+                            >
+                              Gán ô kho
+                            </button>
                           ) : (
-                            <MapPin className="w-3.5 h-3.5 text-white" />
+                            <button
+                              type="button"
+                              onClick={() => handleOpenFloorPlan(row)}
+                              className="px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm font-medium rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+                            >
+                              Đổi ô
+                            </button>
                           )}
-                          <span>{row.kind === 'CONTRACT_RELOCATION' || row.isAssigned ? 'Đổi ô kho' : 'Gán ô kho'}</span>
-                        </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -863,158 +858,166 @@ export const AllocationPage: React.FC = () => {
               }
             }}
           >
-          <div className="bg-white rounded-2xl shadow-2xl max-w-xl sm:max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-200 my-auto">
-            {/* Modal Header (luôn cố định phía trên, không bị tràn màn hình) */}
-            <div className="shrink-0 px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="p-2 bg-brand-50 text-brand-700 rounded-xl border border-brand-200/80 shrink-0">
-                  <MapPin className="w-5 h-5 text-brand-600" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-bold text-slate-900 text-sm sm:text-base truncate">
+          <div className="bg-white rounded-xl shadow-2xl max-w-xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-gray-200 animate-in fade-in zoom-in-95 duration-200 my-auto">
+            {/* Modal Header trắng sạch */}
+            <div className="shrink-0 px-6 py-4 border-b border-gray-200 flex items-start justify-between gap-4 bg-white">
+              <div className="min-w-0">
+                <h3 className="font-bold text-gray-900 text-base sm:text-lg flex items-center gap-2">
+                  {selected.kind === 'CONTRACT_RELOCATION' || selected.isAssigned ? (
+                    <ArrowLeftRight className="w-4.5 h-4.5 text-blue-600 shrink-0" />
+                  ) : (
+                    <MapPin className="w-4.5 h-4.5 text-brand-600 shrink-0" />
+                  )}
+                  <span className="truncate">
                     {selected.kind === 'CONTRACT_RELOCATION'
-                      ? 'Xác nhận phân bổ lại ô kho (Đổi ô sự cố)'
+                      ? 'Xác nhận điều chuyển ô kho'
                       : selected.isAssigned
                       ? 'Xác nhận đổi ô kho trước ngày nhận'
                       : 'Xác nhận phân bổ ô kho'}
-                  </h3>
-                  <p className="text-xs text-slate-500 truncate">
-                    {selected.kind === 'CONTRACT_RELOCATION'
-                      ? 'Chỉ định ô vật lý mới trên sơ đồ 2D để nhân viên tiếp tục bàn giao cho khách'
-                      : selected.isAssigned
-                      ? 'Đổi sang ô kho khả dụng khác theo BR-AVL-04. Ô cũ sẽ tự động trở về trạng thái Khả dụng.'
-                      : 'Chỉ định ô vật lý và phân công nhân viên cơ sở phụ trách tiếp đón'}
-                  </p>
-                </div>
+                  </span>
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                  {selected.kind === 'CONTRACT_RELOCATION'
+                    ? 'Chỉ định vị trí mới để nhân viên tiếp tục bàn giao cho khách.'
+                    : selected.isAssigned
+                    ? 'Đổi sang ô kho khả dụng khác. Ô cũ sẽ tự động trở về trạng thái Khả dụng.'
+                    : 'Chỉ định vị trí và phân công nhân viên cơ sở phụ trách tiếp đón.'}
+                </p>
               </div>
               <button
                 type="button"
+                aria-label="Đóng"
                 onClick={() => setModalUnit(null)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer shrink-0 ml-3"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Modal Body (cho phép cuộn độc lập mượt mà nếu màn hình thấp, không bao giờ che mất nút bấm) */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 text-sm">
-              {/* Thông tin khách hàng */}
-              <div className="p-3 bg-sky-50/70 rounded-xl border border-sky-100/90 flex flex-col gap-2">
-                <div className="flex items-center justify-between flex-wrap gap-1">
-                  <span className="text-[11px] font-bold text-sky-800 uppercase tracking-wider flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                    <span>Thông tin khách hàng</span>
-                  </span>
-                  <strong className="text-slate-900 text-sm font-semibold">
-                    {selected.customerName}
-                  </strong>
-                </div>
-                <div className="flex items-center gap-4 text-xs text-slate-700 flex-wrap">
-                  <div className="flex items-center gap-1.5 font-medium">
-                    <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span>{selected.customerPhone}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 font-medium">
-                    <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span>{selected.customerEmail}</span>
-                  </div>
-                </div>
-              </div>
+            {/* Modal Body phẳng, chia 3 khối rõ ràng */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Khối 1: Thông tin đơn hàng (Grid 2 cột căn thẳng hàng) */}
+              <div className="px-6 py-5 bg-white">
+                <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4">
+                  Thông tin đơn hàng
+                </h4>
 
-              {/* Thẻ tóm tắt thông tin đơn và ô được chọn (Grid 2 cột rõ ràng, chống co vỡ chữ) */}
-              <div className="p-3.5 bg-slate-50/90 rounded-xl border border-slate-200/90 grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-stretch">
-                {/* Cột 1: Thông tin đơn / hợp đồng gốc */}
-                <div className="flex flex-col justify-between space-y-1.5">
-                  <div className="space-y-1">
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                      {selected.kind === 'CONTRACT_RELOCATION' ? 'Hợp đồng cần đổi ô' : 'Đơn đặt chỗ'} / Hạng kho
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-gray-500 mb-1">Khách hàng</span>
+                    <span className="font-semibold text-gray-900">{selected.customerName}</span>
+                    <span className="text-xs text-gray-500 tabular-nums mt-0.5">{selected.customerPhone}</span>
+                    {selected.customerEmail && (
+                      <span className="text-xs text-gray-400 truncate">{selected.customerEmail}</span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col">
+                    <span className="text-xs text-gray-500 mb-1">
+                      {selected.kind === 'CONTRACT_RELOCATION' ? 'Mã hợp đồng' : 'Mã đơn đặt chỗ'}
                     </span>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono font-bold text-slate-900 text-xs bg-white px-2.5 py-1 rounded-lg border border-slate-200 whitespace-nowrap shadow-2xs">
-                        {selected.code}
-                      </span>
-                      <span className="text-xs text-slate-700 font-semibold">
-                        {cleanUnitTypeName(selected.unitTypeName)}
-                      </span>
-                    </div>
+                    <span className="font-semibold text-gray-900 font-mono">{selected.code}</span>
                   </div>
-                  {selected.isAssigned && selected.storageUnitCode && (
-                    <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-200/60">
-                      Ô đang gán hiện tại: <strong className="text-slate-800 font-mono">{selected.storageUnitCode}</strong>
-                    </div>
-                  )}
-                </div>
 
-                {/* Cột 2: Ô kho mới được chọn */}
-                <div className="sm:border-l sm:border-slate-200 sm:pl-3.5 flex flex-col justify-between space-y-1.5">
-                  <div className="space-y-1">
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                      {selected.isAssigned ? 'Ô kho mới được chọn' : 'Ô kho được chọn'}
+                  <div className="flex flex-col">
+                    <span className="text-xs text-gray-500 mb-1">Hạng kho</span>
+                    <span className="font-medium text-gray-900">
+                      {cleanUnitTypeName(selected.unitTypeName)}
                     </span>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono font-bold text-brand-700 text-sm bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-200 whitespace-nowrap shadow-2xs">
-                        {modalUnit.code}
+                  </div>
+
+                  <div className="flex flex-col">
+                    <span className="text-xs text-gray-500 mb-1">
+                      {selected.kind === 'CONTRACT_RELOCATION' || selected.isAssigned
+                        ? 'Ô kho mới được chọn'
+                        : 'Ô kho được chọn'}
+                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {(selected.kind === 'CONTRACT_RELOCATION' || selected.isAssigned) &&
+                        selected.storageUnitCode &&
+                        selected.storageUnitCode !== 'Chưa gán' && (
+                          <>
+                            <span className="font-mono text-xs text-gray-400 line-through">
+                              {selected.storageUnitCode}
+                            </span>
+                            <ArrowRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                          </>
+                        )}
+                      <span
+                        className={`inline-flex items-center gap-1 font-mono font-bold ${
+                          selected.kind === 'CONTRACT_RELOCATION' || selected.isAssigned
+                            ? 'text-blue-700'
+                            : 'text-brand-700'
+                        }`}
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                        <span>{modalUnit.code}</span>
                       </span>
-                      <span className="text-xs font-semibold text-slate-600 bg-slate-200/80 px-2 py-0.5 rounded-md whitespace-nowrap">
-                        Tầng {modalUnit.floor}
+                      <span className="text-gray-500 text-xs">(Tầng {modalUnit.floor})</span>
+                    </div>
+                    {modalUnit.unitTypeId !== selected.unitTypeId && (
+                      <span className="inline-block w-fit mt-1.5 px-2 py-0.5 rounded bg-gray-100 border border-gray-200 text-[11px] font-medium text-gray-700">
+                        Nâng hạng ({modalUnit.unitTypeName || 'Size lớn hơn'})
                       </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Khối 2: Lưu ý & Chính sách đền bù nếu nâng hạng */}
+                {modalUnit.unitTypeId !== selected.unitTypeId && (
+                  <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
+                    <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                    <div className="leading-relaxed">
+                      <strong>Chính sách Đền bù Nâng hạng:</strong> Khách hàng được nâng cấp sang ô kho kích thước lớn hơn mà không phải trả thêm bất kỳ khoản phí chênh lệch nào.
                     </div>
                   </div>
-                  {modalUnit.unitTypeId !== selected.unitTypeId && (
-                    <div className="pt-0.5">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md border border-amber-300">
-                        <Sparkles className="w-3 h-3 text-amber-600 shrink-0" />
-                        <span>Nâng hạng ({modalUnit.unitTypeName || 'Size lớn hơn'})</span>
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
+                )}
 
-              {/* Thông báo chính sách đền bù nếu nâng hạng */}
-              {modalUnit.unitTypeId !== selected.unitTypeId && (
-                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5">
-                  <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <strong>Chính sách Đền bù Nâng hạng:</strong> Khách hàng được nâng cấp sang ô kho kích thước lớn hơn mà <u>không phải trả thêm bất kỳ khoản phí chênh lệch nào</u>. Đơn giá và tiền cọc được hệ thống bảo lưu nguyên vẹn theo hợp đồng ban đầu.
-                  </div>
-                </div>
-              )}
+                <hr className="border-gray-100 my-4" />
 
-              {/* Ngày hẹn nhận kho / bắt đầu hợp đồng */}
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-brand-600 shrink-0" />
-                  <span className="font-bold text-slate-700">
+                {/* Khối 3: Thời gian hợp đồng / nhận kho (text chuẩn, không bôi đỏ vô lý) */}
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-sm font-medium text-gray-700">
                     {selected.kind === 'CONTRACT_RELOCATION' ? 'Ngày bắt đầu hợp đồng:' : 'Ngày hẹn nhận kho:'}
                   </span>
-                  <span className="num font-bold text-slate-900 text-sm">
+                  <span
+                    data-testid="modal-contract-date"
+                    className="font-semibold text-sm text-gray-900 tabular-nums"
+                  >
                     {formatDate(selected.startDate)}
                   </span>
                 </div>
-                <span className="text-[11px] text-slate-500 font-medium shrink-0">
-                  {selected.kind === 'CONTRACT_RELOCATION' ? '(Thời hạn thuê được bảo lưu)' : '(Theo ngày khách đặt chỗ nhận kho)'}
-                </span>
+                <p className="text-xs text-gray-400 text-right mt-1">
+                  {selected.kind === 'CONTRACT_RELOCATION'
+                    ? '(Thời hạn thuê được bảo lưu)'
+                    : '(Theo ngày khách đặt chỗ nhận kho)'}
+                </p>
               </div>
 
-              {/* Dropdown nhân viên tiếp đón */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-brand-600" />
-                    <span>Nhân viên cơ sở tiếp đón khách {selected.kind === 'RESERVATION' && !selected.isAssigned && <span className="text-rose-600">*</span>}</span>
+              {/* Phần phân công nhân sự */}
+              <div className="px-6 py-4 bg-gray-50 border-y border-gray-100 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <label className="block text-sm font-semibold text-gray-900">
+                    Nhân viên cơ sở tiếp đón khách{' '}
+                    {selected.kind === 'RESERVATION' && !selected.isAssigned && (
+                      <span className="text-rose-500">*</span>
+                    )}
+                  </label>
+                  <span className="text-xs text-gray-400">
+                    {selected.isAssigned
+                      ? 'Tùy chọn'
+                      : selected.kind === 'RESERVATION'
+                      ? 'Bắt buộc'
+                      : 'Tùy chọn'}
                   </span>
-                  <span className="text-[11px] text-slate-400 font-normal">
-                    {selected.isAssigned ? 'Tùy chọn (đã có NV phụ trách)' : selected.kind === 'RESERVATION' ? 'Bắt buộc' : 'Tùy chọn'}
-                  </span>
-                </label>
+                </div>
 
                 <select
                   aria-label="Chọn nhân viên tiếp đón"
-                  className={`w-full border rounded-xl px-3.5 py-2 text-xs sm:text-sm bg-white focus:outline-none focus:ring-2 cursor-pointer font-medium transition-all ${
+                  className={`w-full border rounded-lg px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 cursor-pointer font-medium transition-colors ${
                     staffError
                       ? 'border-rose-400 ring-2 ring-rose-100 text-rose-900'
-                      : 'border-slate-300 focus:ring-brand-500 focus:border-brand-500 text-slate-900'
+                      : 'border-gray-300 focus:ring-brand-500 focus:border-brand-500 text-gray-900'
                   }`}
                   value={selectedStaffId ?? ''}
                   onChange={(e) => {
@@ -1023,9 +1026,17 @@ export const AllocationPage: React.FC = () => {
                     if (val) setStaffError(null);
                   }}
                 >
-                  <option value="">-- {selected.kind === 'CONTRACT_RELOCATION' || selected.isAssigned ? 'Giữ nguyên nhân viên hiện tại hoặc chỉ định mới' : 'Chọn nhân viên tiếp đón (Bắt buộc)'} --</option>
+                  <option value="">
+                    --{' '}
+                    {selected.kind === 'CONTRACT_RELOCATION' || selected.isAssigned
+                      ? 'Giữ nguyên nhân viên hiện tại hoặc chỉ định mới'
+                      : 'Chọn nhân viên tiếp đón (Bắt buộc)'}{' '}
+                    --
+                  </option>
                   {staffMembers.map((staff) => {
-                    const cleanName = (staff.staffName || '').replace(/\s*\(\d+\s*việc[^)]*\)/gi, '').trim();
+                    const cleanName = (staff.staffName || '')
+                      .replace(/\s*\(\d+\s*việc[^)]*\)/gi, '')
+                      .trim();
                     return (
                       <option key={staff.staffId} value={staff.staffId}>
                         {cleanName} ({staff.staffPhone || staff.staffEmail})
@@ -1035,24 +1046,26 @@ export const AllocationPage: React.FC = () => {
                 </select>
 
                 {staffError ? (
-                  <p className="text-xs text-rose-600 mt-1 font-semibold flex items-center gap-1">
+                  <p className="text-xs text-rose-600 font-semibold flex items-center gap-1">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                     <span>{staffError}</span>
                   </p>
                 ) : (
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    💡 <em>Lưu ý: {selected.kind === 'CONTRACT_RELOCATION' || selected.isAssigned ? 'Sau khi đổi ô kho mới thành công, nhân viên tại quầy sẽ thấy ô mới và tiến hành bàn giao ngay.' : 'Bắt buộc chọn nhân viên phụ trách nhận kho để hệ thống tạo lịch trực.'}</em>
+                  <p className="text-xs text-gray-500">
+                    {selected.kind === 'CONTRACT_RELOCATION' || selected.isAssigned
+                      ? 'Hệ thống sẽ tự động gửi thông báo cho nhân viên tiếp nhận sau khi xác nhận.'
+                      : 'Hệ thống sẽ tự động ghi nhận lịch trực tiếp đón cho nhân viên này.'}
                   </p>
                 )}
               </div>
             </div>
 
-            {/* Modal Footer (luôn cố định dưới cùng, không bao giờ bị che khuất) */}
-            <div className="shrink-0 px-5 py-3.5 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50/80">
+            {/* Modal Footer nền trắng sạch */}
+            <div className="shrink-0 px-6 py-4 flex items-center justify-end gap-3 bg-white">
               <button
                 type="button"
                 onClick={() => setModalUnit(null)}
-                className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-200 text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors cursor-pointer"
                 disabled={assigningUnitId != null}
               >
                 Hủy bỏ
@@ -1061,12 +1074,10 @@ export const AllocationPage: React.FC = () => {
                 type="button"
                 onClick={handleConfirmAssignment}
                 disabled={assigningUnitId != null || (!selectedStaffId && !selected.assignedStaffId && selected.kind === 'RESERVATION')}
-                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-xs hover:shadow-sm disabled:opacity-50 transition-all cursor-pointer ${
-                  selected.kind === 'CONTRACT_RELOCATION'
-                    ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                    : selected.isAssigned
-                    ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                    : 'bg-brand-600 hover:bg-brand-700 text-white'
+                className={`inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer ${
+                  selected.kind === 'CONTRACT_RELOCATION' || selected.isAssigned
+                    ? 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-brand-600 hover:bg-brand-700'
                 }`}
               >
                 {assigningUnitId != null ? (
@@ -1075,7 +1086,7 @@ export const AllocationPage: React.FC = () => {
                     <span>Đang lưu...</span>
                   </>
                 ) : selected.kind === 'CONTRACT_RELOCATION' ? (
-                  <span>Xác nhận đổi ô kho mới</span>
+                  <span>Xác nhận điều chuyển</span>
                 ) : selected.isAssigned ? (
                   <span>Xác nhận đổi sang ô {modalUnit.code}</span>
                 ) : (

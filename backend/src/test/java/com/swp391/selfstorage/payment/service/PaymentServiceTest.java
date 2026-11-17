@@ -507,12 +507,61 @@ class PaymentServiceTest {
                 .description("GH100T12")
                 .build();
 
-        paymentService.createCheckoutLink(request);
+        CheckoutResponse response = paymentService.createCheckoutLink(request);
 
         ArgumentCaptor<PaymentTransaction> saved = ArgumentCaptor.forClass(PaymentTransaction.class);
         verify(paymentTransactionRepository).save(saved.capture());
         assertEquals(3, saved.getValue().getRenewalMonths());
         assertEquals("CONTRACT_RENEWAL", saved.getValue().getTransactionType());
+        assertNotNull(response.getExpiresAt(), "CheckoutResponse phải trả về expiresAt thật từ server");
+    }
+
+    @Test
+    @DisplayName("Tái sử dụng phiên thanh toán gia hạn PENDING trả về đúng expiresAt gốc (không reset đồng hồ khi thoát ra vào lại)")
+    void createCheckoutLink_ContractRenewal_ReusePreservesOriginalExpiresAt() {
+        com.swp391.selfstorage.contract.entity.RentalContract contract =
+                new com.swp391.selfstorage.contract.entity.RentalContract();
+        contract.setId(100L);
+
+        Instant createdTwoHoursAgo = Instant.now().minus(2, java.time.temporal.ChronoUnit.HOURS);
+        PaymentTransaction existingPending = PaymentTransaction.builder()
+                .id(88L)
+                .contractId(100L)
+                .transactionType("CONTRACT_RENEWAL")
+                .status("PENDING")
+                .orderCode(999888L)
+                .amount(2_400_000L)
+                .renewalMonths(3)
+                .providerReference("SBX-999888")
+                .build();
+        existingPending.setCreatedAt(createdTwoHoursAgo);
+
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(renewalService.getRenewalQuote(eq(100L), any()))
+                .thenReturn(RenewalQuoteResponse.builder().totalAmount(2_400_000L).build());
+        when(paymentTransactionRepository.findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(100L, "CONTRACT_RENEWAL"))
+                .thenReturn(Optional.of(existingPending));
+        when(paymentGateway.createPayment(any(PaymentCheckoutCommand.class)))
+                .thenReturn(PaymentCheckoutResult.builder()
+                        .orderCode(999888L)
+                        .amount(2_400_000L)
+                        .checkoutUrl("http://localhost/payment/checkout")
+                        .build());
+
+        CheckoutRequest request = CheckoutRequest.builder()
+                .referenceType("CONTRACT_RENEWAL")
+                .referenceId(100L)
+                .renewalMonths(3)
+                .build();
+
+        CheckoutResponse response = paymentService.createCheckoutLink(request);
+
+        assertEquals(999888L, response.getOrderCode());
+        assertEquals(
+                createdTwoHoursAgo.plus(48, java.time.temporal.ChronoUnit.HOURS),
+                response.getExpiresAt(),
+                "expiresAt phải giữ nguyên theo createdAt gốc trong DB, tuyệt đối không reset theo thời điểm gọi lại"
+        );
     }
 
     @Test

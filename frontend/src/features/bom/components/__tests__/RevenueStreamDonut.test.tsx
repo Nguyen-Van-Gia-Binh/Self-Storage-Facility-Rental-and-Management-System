@@ -24,16 +24,21 @@ describe('RevenueStreamDonut Component', () => {
     cleanup();
   });
 
-  it('renders SVG Donut Chart with correct aria-label and total amount', () => {
+  it('renders SVG Donut Chart without fake gray ring and uses overflow-safe right-aligned reconciliation layout', () => {
     render(<RevenueStreamDonut revenue={mockRevenue} />);
 
-    // SVG Donut Chart
+    // SVG Donut Chart without artificial gray background circle
     const svg = screen.getByLabelText('Biểu đồ tròn cơ cấu nguồn thu');
     expect(svg).toBeInTheDocument();
+    expect(svg.querySelector('circle[stroke="#f1f5f9"]')).toBeNull();
 
-    // Kiểm tra dòng tiền Net Cash Flow
+    // Kiểm tra dòng tiền Net Cash Flow với layout chống tràn + tooltip title + tabular-nums
     expect(screen.getByText(/Đối soát hoàn tiền & thực nhận ròng:/i)).toBeInTheDocument();
-    expect(screen.getByText(/- 44\.840\.000/i)).toBeInTheDocument();
+    const refundEl = screen.getByText(/- 44\.840\.000/i);
+    expect(refundEl).toBeInTheDocument();
+    expect(refundEl.className).toContain('tabular-nums');
+    expect(refundEl.className).toContain('truncate');
+    expect(refundEl).toHaveAttribute('title');
   });
 
   it('renders revenue stream legend items with accurate metrics and labels', () => {

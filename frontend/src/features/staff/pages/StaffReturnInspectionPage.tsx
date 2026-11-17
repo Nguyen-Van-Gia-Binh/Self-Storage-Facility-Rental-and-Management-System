@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, Building2, User, Phone, ShieldCheck, RefreshCw,
-  UserCheck, ClipboardList,
+  UserCheck, ClipboardList, AlertCircle, X,
 } from 'lucide-react';
 import type { ReturnContractDetail, ReturnInspectionRequest } from '@/types';
 import { getReturnContracts, getReturnContractById, submitReturnInspection, completeUnitCleaning } from '@/api/contract';
@@ -29,6 +29,7 @@ export const StaffReturnInspectionPage: React.FC = () => {
   const [selectedContract, setSelectedContract] = useState<ReturnContractDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [successData, setSuccessData] = useState<{
     isOpen: boolean;
@@ -116,6 +117,7 @@ export const StaffReturnInspectionPage: React.FC = () => {
   const handleSubmitInspection = async (data: ReturnInspectionRequest) => {
     if (!selectedContract) return;
     setSubmitting(true);
+    setSubmitError(null);
     try {
       const res = await submitReturnInspection(selectedContract.id, data, staffId);
       const finishedContract = selectedContract;
@@ -132,7 +134,11 @@ export const StaffReturnInspectionPage: React.FC = () => {
       });
     } catch (err) {
       console.error('Lỗi khi nộp biên bản nghiệm thu:', err);
-      alert('Đã xảy ra lỗi khi nộp biên bản nghiệm thu.');
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : 'Đã xảy ra lỗi khi nộp biên bản nghiệm thu. Vui lòng thử lại.';
+      setSubmitError(message);
     } finally {
       setSubmitting(false);
     }
@@ -209,6 +215,27 @@ export const StaffReturnInspectionPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Thông báo lỗi nộp biên bản (thay thế native alert) */}
+      {submitError && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 px-4 py-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-lg text-sm"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span className="font-medium">{submitError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSubmitError(null)}
+            aria-label="Đóng thông báo lỗi"
+            className="p-1 text-rose-500 hover:text-rose-800 hover:bg-rose-100 rounded transition-colors cursor-pointer shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Nội dung danh sách & Form nghiệm thu */}
       {myAssignedContracts.length === 0 ? (

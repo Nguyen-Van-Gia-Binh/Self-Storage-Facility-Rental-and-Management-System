@@ -2,6 +2,13 @@
 import React from 'react';
 import { AlertTriangle, Receipt, ShieldAlert, CheckCircle2, Lock } from 'lucide-react';
 import type { ManagerContractItem } from '@/types/contractManager';
+import { formatDateVN } from '@/features/customer/utils/unitPickerHelpers';
+
+function formatDisplayDate(iso?: string | null): string {
+  if (!iso) return 'gần đây';
+  const trimmed = iso.trim();
+  return /^\d{4}-\d{2}-\d{2}/.test(trimmed) ? formatDateVN(trimmed.slice(0, 10)) : trimmed;
+}
 
 interface OverdueAlertBannerProps {
   contract: ManagerContractItem;
@@ -52,7 +59,7 @@ export const OverdueAlertBanner: React.FC<OverdueAlertBannerProps> = ({
           </div>
 
           <p className="text-xs text-amber-900/80 mt-1">
-            Hợp đồng quá hạn từ ngày <strong className="font-semibold text-amber-950">{contract.endDateExclusive || 'gần đây'}</strong>. Chế tài cưỡng chế về Kho Tổng tự động kích hoạt tại mốc <strong className="font-semibold text-rose-700">D+7</strong> nếu khách không tất toán.
+            Hợp đồng quá hạn từ ngày <strong className="font-semibold text-amber-950 tabular-nums">{formatDisplayDate(contract.endDateExclusive)}</strong>. Chế tài cưỡng chế về Kho Tổng tự động kích hoạt tại mốc <strong className="font-semibold text-rose-700">D+7</strong> nếu khách không tất toán.
           </p>
 
           {/* 3 Thẻ thống kê tài chính gọn gàng (Equal height & clean metrics) */}

@@ -408,7 +408,7 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
                   aria-checked={is247}
                   aria-label="Truy cập 24/7"
                   onClick={() => handle247Change(!is247)}
-                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 ${
+                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${
                     is247 ? 'bg-brand-500' : 'bg-slate-200'
                   }`}
                 >

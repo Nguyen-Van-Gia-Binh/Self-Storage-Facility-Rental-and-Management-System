@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, AlertCircle, ShieldCheck, Receipt } from 'lucide-react';
+import { X, AlertCircle, Receipt } from 'lucide-react';
 import type { ContractFinancialSummary } from '@/types/contractManager';
 import { getContractFinancialDetail } from '@/api/contract';
 
@@ -9,6 +9,8 @@ interface ContractFinancialModalProps {
   contractId: number | null;
   onClose: () => void;
 }
+
+const formatMoney = (amount: number) => `${amount.toLocaleString('vi-VN')} đ`;
 
 export const ContractFinancialModal: React.FC<ContractFinancialModalProps> = ({
   isOpen,
@@ -36,129 +38,178 @@ export const ContractFinancialModal: React.FC<ContractFinancialModalProps> = ({
   if (!isOpen || !contractId) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-              <Receipt className="w-4 h-4 text-emerald-400" />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="financial-modal-title"
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-200 flex flex-col max-h-[90vh]"
+      >
+        {/* Header nền trắng, đường kẻ chân mảnh */}
+        <div className="px-6 py-4 bg-white border-b border-gray-200 flex items-start justify-between gap-3 shrink-0">
+          <div className="min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Receipt className="w-4 h-4 text-gray-500 shrink-0" />
+              <h3 id="financial-modal-title" className="font-bold text-base text-gray-900 tracking-tight">
+                Chi tiết tài chính &amp; Công nợ
+              </h3>
+              {data?.contractCode && (
+                <span className="px-2 py-0.5 rounded bg-gray-100 border border-gray-200 font-mono text-xs font-medium text-gray-700">
+                  Mã HĐ: {data.contractCode}
+                </span>
+              )}
             </div>
-            <div>
-              <h3 className="font-bold text-base">Chi tiết tài chính & Công nợ</h3>
-              <p className="text-xs text-slate-300">
-                Theo dõi tiền cọc, phí quá hạn và các khoản phụ phí phát sinh
-              </p>
-            </div>
+            <p className="text-xs text-gray-500">
+              Theo dõi tiền cọc, phí quá hạn và các khoản phụ phí phát sinh.
+            </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
+            aria-label="Đóng cửa sổ"
+            className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 space-y-4 flex-1 overflow-y-auto">
+        {/* Body dạng Sổ cái (Ledger Style) */}
+        <div className="p-6 space-y-5 flex-1 overflow-y-auto bg-white">
           {loading ? (
-            <div className="py-8 text-center text-slate-400 text-xs animate-pulse">
+            <div className="py-10 text-center text-gray-400 text-xs animate-pulse">
               Đang tải dữ liệu tài chính...
             </div>
           ) : error ? (
-            <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
+            <div className="p-4 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
               <span>{error}</span>
             </div>
           ) : data ? (
             <>
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex justify-between items-center">
-                <span className="text-slate-500">Mã hợp đồng:</span>
-                <span className="font-mono font-bold text-slate-800">{data.contractCode}</span>
-              </div>
+              {/* Nhóm 1: Thông tin thanh toán */}
+              <section className="space-y-3">
+                <h4 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                  THÔNG TIN THANH TOÁN
+                </h4>
+                <div className="divide-y divide-gray-100">
+                  <div className="py-2 flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">Tổng tiền thuê</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Đã thanh toán trước</p>
+                    </div>
+                    <span className="text-sm font-semibold text-gray-900 tabular-nums text-right shrink-0 whitespace-nowrap">
+                      {formatMoney(data.totalRentalFee)}
+                    </span>
+                  </div>
 
-              {/* Grid 4 chỉ số chính */}
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl">
-                  <span className="text-emerald-700 font-medium block mb-1 flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5" /> Tiền cọc giữ
-                  </span>
-                  <span className="text-base font-bold text-emerald-900">
-                    {data.depositAmount.toLocaleString('vi-VN')} đ
-                  </span>
-                  <span className="text-[11px] text-emerald-600 block mt-0.5">
-                    Số dư: {data.depositBalance.toLocaleString('vi-VN')} đ
+                  <div className="py-2 flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">Tiền cọc giữ</p>
+                      <p className="text-xs text-gray-500 mt-0.5 tabular-nums">
+                        Số dư: {formatMoney(data.depositBalance)}
+                      </p>
+                    </div>
+                    <span className="text-sm font-semibold text-gray-900 tabular-nums text-right shrink-0 whitespace-nowrap">
+                      {formatMoney(data.depositAmount)}
+                    </span>
+                  </div>
+                </div>
+              </section>
+
+              {/* Nhóm 2: Phát sinh & Công nợ */}
+              <section className="pt-4 border-t border-gray-200 space-y-3">
+                <h4 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                  PHÁT SINH &amp; CÔNG NỢ
+                </h4>
+                <div className="py-1 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">Phí quá hạn phát sinh</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Áp dụng phạt 5%/ngày (Ngày 1–3) và 10%/ngày (từ ngày 4)
+                    </p>
+                  </div>
+                  <span
+                    className={`text-sm font-semibold tabular-nums text-right shrink-0 whitespace-nowrap ${
+                      data.overdueFeeAccrued > 0 ? 'text-rose-600' : 'text-gray-900'
+                    }`}
+                  >
+                    {formatMoney(data.overdueFeeAccrued)}
                   </span>
                 </div>
+              </section>
 
-                <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl">
-                  <span className="text-blue-700 font-medium block mb-1">Tổng tiền thuê</span>
-                  <span className="text-base font-bold text-blue-900">
-                    {data.totalRentalFee.toLocaleString('vi-VN')} đ
-                  </span>
-                  <span className="text-[11px] text-blue-600 block mt-0.5">Đã thanh toán trước</span>
+              {/* Nhóm 3: Tổng kết (Hero Element) */}
+              <section className="pt-4 border-t border-gray-200 flex items-baseline justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-900">
+                    TỔNG CÔNG NỢ CẦN THU
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {data.totalOutstandingDebt > 0 ? 'Chưa thanh toán' : 'Đã thanh toán đầy đủ'}
+                  </p>
                 </div>
+                <span
+                  className={`text-2xl font-bold tabular-nums text-right shrink-0 whitespace-nowrap tracking-tight ${
+                    data.totalOutstandingDebt > 0 ? 'text-rose-600' : 'text-gray-900'
+                  }`}
+                >
+                  {formatMoney(data.totalOutstandingDebt)}
+                </span>
+              </section>
 
-                <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl">
-                  <span className="text-amber-700 font-medium block mb-1">Phí quá hạn phát sinh</span>
-                  <span className="text-base font-bold text-amber-900">
-                    {data.overdueFeeAccrued.toLocaleString('vi-VN')} đ
-                  </span>
-                  <span className="text-[11px] text-amber-600 block mt-0.5">5%/ngày (D+1..3) • 10%/ngày (D+4..6)</span>
-                </div>
-
-                <div className="p-3 bg-rose-50/70 border border-rose-200 rounded-xl">
-                  <span className="text-rose-700 font-medium block mb-1">Tổng công nợ cần thu</span>
-                  <span className="text-base font-bold text-rose-700">
-                    {data.totalOutstandingDebt.toLocaleString('vi-VN')} đ
-                  </span>
-                  <span className="text-[11px] text-rose-500 block mt-0.5">Chưa thanh toán</span>
-                </div>
-              </div>
-
-              {/* Danh sách phụ phí */}
-              <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+              {/* Danh mục phụ phí phát sinh */}
+              <section className="pt-4 border-t border-gray-200 space-y-2.5">
+                <h4 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
                   Danh mục phụ phí phát sinh ({data.extraCharges.length})
                 </h4>
                 {data.extraCharges.length === 0 ? (
-                  <p className="text-xs text-slate-400 italic">Không có phụ phí phát sinh.</p>
+                  <div className="py-4 px-3 rounded-lg bg-gray-50/70 border border-dashed border-gray-200 text-center">
+                    <p className="text-xs text-gray-400 italic">
+                      Không có phụ phí phát sinh nào khác.
+                    </p>
+                  </div>
                 ) : (
-                  <div className="space-y-2 max-h-36 overflow-y-auto">
+                  <div className="divide-y divide-gray-100 border border-gray-200 rounded-lg max-h-40 overflow-y-auto">
                     {data.extraCharges.map((charge) => (
                       <div
                         key={charge.id}
-                        className="p-2.5 rounded-lg border border-slate-200 bg-white flex items-center justify-between text-xs"
+                        className="px-3.5 py-2.5 bg-white flex items-start justify-between gap-4 text-xs"
                       >
-                        <div>
-                          <p className="font-medium text-slate-800">{charge.reason}</p>
-                          <span className="text-[10px] text-slate-400">{charge.createdAt}</span>
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-800">{charge.reason}</p>
+                          <span className="text-[11px] text-gray-400">{charge.createdAt}</span>
                         </div>
-                        <div className="text-right">
-                          <span className="num font-bold text-slate-800">
-                            {charge.amount.toLocaleString('vi-VN')} đ
+                        <div className="text-right shrink-0">
+                          <span className="font-semibold text-gray-900 tabular-nums whitespace-nowrap">
+                            {formatMoney(charge.amount)}
                           </span>
                           <span
-                            className={`block text-[10px] font-semibold ${
+                            className={`block text-[10px] font-semibold mt-0.5 ${
                               charge.status === 'PAID' ? 'text-emerald-600' : 'text-rose-600'
                             }`}
                           >
-                            {charge.status === 'PAID' ? 'ĐÃ TRẢ' : 'CHƯA TRẢ'}
+                            {charge.status === 'PAID' ? 'Đã trả' : 'Chưa trả'}
                           </span>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-              </div>
+              </section>
             </>
           ) : null}
         </div>
 
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
+        {/* Footer căn phải */}
+        <div className="px-6 py-4 bg-white border-t border-gray-200 flex justify-end shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 rounded-xl border border-slate-300 transition-colors shadow-sm cursor-pointer"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-lg border border-gray-300 transition-colors cursor-pointer"
           >
             Đóng
           </button>

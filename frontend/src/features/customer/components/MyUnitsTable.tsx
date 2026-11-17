@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import {
@@ -36,6 +35,18 @@ import { DigitalMoveInPassModal } from './DigitalMoveInPassModal';
 import { DirectContractPaymentModal } from './DirectContractPaymentModal';
 import { tokenStorage } from '@/utils/tokenStorage';
 import { useActivePolicy } from '@/hooks/useActivePolicy';
+
+// 4 nhóm màu trạng thái ngữ nghĩa chuẩn Enterprise SaaS (Emerald / Amber / Rose / Gray)
+const SEMANTIC_BADGE = {
+  success:
+    'inline-flex items-center justify-center w-[140px] px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200',
+  warning:
+    'inline-flex items-center justify-center w-[140px] px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200',
+  danger:
+    'inline-flex items-center justify-center w-[140px] px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200',
+  neutral:
+    'inline-flex items-center justify-center w-[140px] px-2.5 py-1 rounded-md text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200',
+} as const;
 
 export interface ReservationCountdownBadgeProps {
   holdExpiresAt?: string;
@@ -79,14 +90,13 @@ export const ReservationCountdownBadge: React.FC<ReservationCountdownBadgeProps>
   }, [secondsLeft, isExpired]);
 
   return (
-    <Badge
-      variant="overdue"
-      className="min-w-[136px] justify-center gap-1 font-bold text-xs"
+    <span
+      className={`${isExpired ? SEMANTIC_BADGE.danger : SEMANTIC_BADGE.warning} gap-1 tabular-nums`}
       title={isExpired ? 'Đơn giữ chỗ đã hết hạn thanh toán' : `Thời gian giữ chỗ còn lại: ${formattedCountdown}`}
     >
-      <Clock className={`w-3 h-3 text-rose-600 ${isExpired ? '' : 'animate-pulse'}`} />
+      <Clock className={`w-3 h-3 ${isExpired ? 'text-rose-600' : 'text-amber-600 animate-pulse'}`} />
       <span>{formattedCountdown}</span>
-    </Badge>
+    </span>
   );
 };
 
@@ -252,7 +262,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                 const isMenuOpen = openMenuId === `rsv-${rsv.id}`;
 
                 return (
-                <tr key={`rsv-${rsv.id}`} className="hover:bg-rose-50/30 transition-colors">
+                <tr key={`rsv-${rsv.id}`} className="bg-white hover:bg-gray-50/80 transition-colors">
                   {/* Cột 1: Ô & Loại ô (Gộp 2 dòng) */}
                   <td className="py-3 px-4 whitespace-nowrap">
                     <div className="flex flex-col">
@@ -297,7 +307,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                         <Button
                           variant="primary"
                           size="sm"
-                          className="h-7 w-[112px] justify-center text-xs px-2.5 font-bold cursor-pointer whitespace-nowrap shadow-xs"
+                          className="h-7 w-[124px] justify-center text-xs px-2.5 font-semibold bg-brand-600 hover:bg-brand-700 text-white cursor-pointer whitespace-nowrap shadow-2xs"
                         >
                           <span>Thanh toán</span>
                           <ArrowRight className="w-3 h-3 ml-1" />
@@ -363,7 +373,6 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                 (renewalNoticeDays && renewalNoticeDays > 0 ? renewalNoticeDays : 30) + 7;
               const isExpiringSoon =
                 contract.status === 'ACTIVE' && daysRemaining > 0 && daysRemaining <= noticeThreshold;
-              const isUrgentExpiring = isExpiringSoon && daysRemaining <= 7;
               const overdueDays =
                 contract.overdueDays !== undefined && contract.overdueDays > 0
                   ? contract.overdueDays
@@ -396,13 +405,9 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
               const isRevealed = Boolean(revealedPins[contract.id]);
               const isMenuOpen = openMenuId === `contract-${contract.id}`;
 
-              // Kiểm tra xem hàng có thao tác phụ hay không
-              const hasSecondaryActions =
+              const isPendingCheckIn =
                 contract.status === 'PENDING_CHECKIN' ||
-                (contract.status as string) === 'PENDING_CHECK_IN' ||
-                contract.status === 'ACTIVE' ||
-                (contract.status === 'PENDING_RETURN' && !contract.inspectionDone) ||
-                contract.status === 'OVERDUE';
+                (contract.status as string) === 'PENDING_CHECK_IN';
 
               const isClosed =
                 contract.status === 'CLOSED' ||
@@ -410,31 +415,47 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                 (contract.status as string) === 'CANCELLED';
               const isRelocating =
                 Boolean(contract.relocationEligible) &&
-                (contract.status === 'PENDING_CHECKIN' ||
-                  (contract.status as string) === 'PENDING_CHECK_IN' ||
-                  contract.status === 'ACTIVE');
+                (isPendingCheckIn || contract.status === 'ACTIVE');
+
+              const canOnlineCheckInPrimary =
+                isPendingCheckIn &&
+                !contract.hasPendingInitialPayment &&
+                !isRelocating &&
+                isStorageUnitAssigned(contract.unitNumber);
+
+              const hasNonDetailPrimaryAction =
+                Boolean(contract.hasPendingInitialPayment) ||
+                (contract.status === 'OVERDUE' && penaltyFee > 0) ||
+                settlementDeficit > 0 ||
+                (canRenewOnline && isExpiringSoon) ||
+                Boolean(contract.hasPendingRenewal) ||
+                canOnlineCheckInPrimary;
+
+              // Kiểm tra xem hàng có thao tác phụ hay không
+              const hasSecondaryActions =
+                isPendingCheckIn ||
+                contract.status === 'ACTIVE' ||
+                (contract.status === 'PENDING_RETURN' && !contract.inspectionDone) ||
+                contract.status === 'OVERDUE' ||
+                settlementDeficit > 0;
 
               return (
                 <tr
                   key={contract.id}
-                  className={`transition-colors ${
+                  className={`transition-all ${
                     isClosed
-                      ? 'bg-slate-50/40 opacity-60 text-slate-400'
-                      : contract.status === 'OVERDUE'
-                      ? 'bg-rose-50/20 hover:bg-rose-50/40'
-                      : isUrgentExpiring
-                      ? 'bg-amber-50/20 hover:bg-amber-50/40'
-                      : 'hover:bg-slate-50/70'
+                      ? 'bg-gray-50 opacity-70 hover:opacity-100 hover:bg-gray-100/70'
+                      : 'bg-white hover:bg-gray-50/80'
                   }`}
                 >
                   {/* Cột 1: Ô & Loại ô (Gộp 2 dòng) */}
-                  <td className="py-3 px-4 whitespace-nowrap">
+                  <td className="py-3.5 px-4 whitespace-nowrap">
                     <div className="flex flex-col">
                       {contract.relocationEligible ? (
                         <button
                           type="button"
                           onClick={() => onViewDetail(contract)}
-                          className="font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded text-xs self-start cursor-pointer transition-colors"
+                          className="font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded text-xs self-start cursor-pointer transition-colors"
                           title="Xem chi tiết hợp đồng & Phụ lục đổi ô kho"
                         >
                           Chờ đổi ô
@@ -443,7 +464,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                         <button
                           type="button"
                           onClick={() => onViewDetail(contract)}
-                          className="font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded text-xs self-start cursor-pointer transition-colors"
+                          className="font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded text-xs self-start cursor-pointer transition-colors"
                           title="Xem chi tiết hợp đồng"
                         >
                           Chưa gán ô
@@ -452,15 +473,17 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                         <button
                           type="button"
                           onClick={() => onViewDetail(contract)}
-                          className={`font-extrabold text-sm tracking-tight text-left transition-colors cursor-pointer ${
-                            isClosed ? "text-slate-400 hover:text-slate-600" : "text-slate-900 hover:text-brand-700 hover:underline"
+                          className={`font-bold text-sm tracking-tight text-left transition-colors cursor-pointer ${
+                            isClosed
+                              ? 'text-gray-500 hover:text-gray-700'
+                              : 'text-gray-900 hover:text-brand-700 hover:underline'
                           }`}
                           title="Xem chi tiết hợp đồng"
                         >
                           {contract.unitNumber}
                         </button>
                       )}
-                      <span className="text-[11px] font-medium text-slate-500">
+                      <span className="text-[11px] font-medium text-gray-500">
                         {(contract.unitTypeName || 'Tiêu chuẩn')
                           .replace(/^Kho\s+/i, '')
                           .replace(/\s*\([^)]*\)/g, '')
@@ -470,17 +493,19 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                   </td>
 
                   {/* Cột 2: Cơ sở (Bỏ chữ Cơ sở thừa) */}
-                  <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">
+                  <td className="py-3.5 px-4 font-medium text-gray-800 whitespace-nowrap">
                     {contract.facilityName.replace(/^Cơ sở\s+/i, '')}
                   </td>
 
-                  {/* Cột 4: Thời hạn thuê */}
-                  <td className="py-3.5 px-4 whitespace-nowrap font-medium text-slate-800">
+                  {/* Cột 3: Thời hạn thuê (Gọn gàng, số ngày màu ngữ nghĩa nằm dòng dưới) */}
+                  <td className="py-3.5 px-4 whitespace-nowrap">
                     <div className="flex flex-col">
-                      <span>{formatDateVN(contract.startDate)} → {formatDateVN(contract.endDate)}</span>
+                      <span className="text-xs font-medium text-gray-900 tabular-nums">
+                        {formatDateVN(contract.startDate)} → {formatDateVN(contract.endDate)}
+                      </span>
                       {contract.status === 'ACTIVE' && isExpiringSoon && (
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className={`text-[11px] font-bold ${isUrgentExpiring ? 'text-rose-600' : 'text-amber-600'}`}>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[11px] font-medium text-amber-600 tabular-nums">
                             Còn {daysRemaining} ngày
                           </span>
                           {!canRenewOnline && !contract.hasPendingRenewal && (
@@ -490,8 +515,8 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                 e.stopPropagation();
                                 setLateRenewalContract(contract);
                               }}
-                              className="inline-flex items-center text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded border border-amber-300 font-bold cursor-pointer transition-colors shadow-2xs"
-                              title="Cổng tự gia hạn online đã đóng theo BR-REN-01. Bấm để xem hướng dẫn liên hệ Quản lý cơ sở (FM)"
+                              className="text-[11px] font-medium text-gray-500 hover:text-amber-700 underline underline-offset-2 cursor-pointer transition-colors"
+                              title="Cổng tự gia hạn online đã đóng. Bấm để xem hướng dẫn liên hệ Quản lý cơ sở"
                             >
                               Khóa online (T-20)
                             </button>
@@ -499,28 +524,28 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                         </div>
                       )}
                       {contract.status === 'OVERDUE' && (
-                        <span className="text-[11px] font-semibold text-rose-600">
+                        <span className="text-[11px] font-medium text-rose-600 mt-0.5 tabular-nums">
                           Quá hạn D+{overdueDays}
                         </span>
                       )}
                     </div>
                   </td>
 
-                  {/* Cột 5: Mã mở khóa */}
+                  {/* Cột 4: Mã mở khóa */}
                   <td className="py-3.5 px-4 whitespace-nowrap text-center" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-center">
                     {contract.status === 'OVERDUE' && !isOverdueUnlocked ? (
                       <span
-                        className="inline-flex items-center justify-center w-[116px] h-7 text-rose-700 text-[11px] font-bold bg-rose-50 px-2.5 rounded-lg border border-rose-200"
+                        className="inline-flex items-center justify-center w-[116px] h-7 text-rose-700 text-[11px] font-semibold bg-rose-50 px-2.5 rounded-md border border-rose-200"
                         title="Mã PIN đang bị khóa do quá hạn. Vui lòng đóng phí phạt để mở lại PIN tạm thời."
                       >
                         Đã khóa PIN
                       </span>
-                    ) : contract.accessPin && contract.status !== 'PENDING_CHECKIN' && (contract.status as string) !== 'PENDING_CHECK_IN' ? (
-                      <div className="inline-flex items-center justify-between min-w-[116px] h-7 gap-1 px-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs shadow-2xs">
+                    ) : contract.accessPin && !isPendingCheckIn ? (
+                      <div className="inline-flex items-center justify-between min-w-[116px] h-7 gap-1 px-2.5 rounded-md bg-gray-50 border border-gray-200 text-xs">
                         <div className="inline-flex items-center gap-1">
-                          <span className="text-slate-400 text-[10px] font-medium">PIN:</span>
-                          <span className="font-bold text-slate-800 tracking-wider">
+                          <span className="text-gray-400 text-[10px] font-medium">PIN:</span>
+                          <span className="font-semibold text-gray-800 tracking-wider tabular-nums">
                             {isRevealed ? contract.accessPin : '••••••'}
                           </span>
                         </div>
@@ -528,7 +553,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                           <button
                             type="button"
                             onClick={() => togglePin(contract.id)}
-                            className="text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer transition-colors"
+                            className="text-gray-400 hover:text-gray-700 p-0.5 cursor-pointer transition-colors"
                             title={isRevealed ? 'Ẩn mã PIN' : 'Hiện mã PIN'}
                           >
                             {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -537,7 +562,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                             <button
                               type="button"
                               onClick={(e) => handleCopyPin(contract.id, contract.accessPin!, e)}
-                              className="text-slate-400 hover:text-brand-600 p-0.5 cursor-pointer transition-colors"
+                              className="text-gray-400 hover:text-brand-600 p-0.5 cursor-pointer transition-colors"
                               title="Sao chép mã PIN"
                             >
                               {copiedPinId === contract.id ? (
@@ -550,102 +575,69 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                         </div>
                       </div>
                     ) : isRelocating ? (
-                      <span className="inline-flex items-center justify-center w-[116px] h-7 text-amber-700 text-[11px] font-semibold bg-amber-50 px-2.5 rounded-lg border border-amber-200">
+                      <span className="inline-flex items-center justify-center w-[116px] h-7 text-amber-700 text-[11px] font-semibold bg-amber-50 px-2.5 rounded-md border border-amber-200">
                         Đang đổi ô kho
                       </span>
                     ) : contract.hasPendingInitialPayment ? (
-                      <span className="inline-flex items-center justify-center w-[116px] h-7 text-amber-700 text-[11px] font-semibold bg-amber-50 px-2.5 rounded-lg border border-amber-200">
+                      <span className="inline-flex items-center justify-center w-[116px] h-7 text-amber-700 text-[11px] font-semibold bg-amber-50 px-2.5 rounded-md border border-amber-200">
                         Chờ thanh toán
                       </span>
-                    ) : contract.status === 'PENDING_CHECKIN' ||
-                      (contract.status as string) === 'PENDING_CHECK_IN' ? (
-                      <div className="inline-flex items-center gap-1.5">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActivePassMode('pass');
-                            setActivePassContract(contract);
-                          }}
-                          className="h-7 text-[11px] px-2.5 font-bold text-slate-700 border-slate-200/90 bg-white hover:bg-slate-50 whitespace-nowrap shrink-0 shadow-2xs cursor-pointer"
-                          title="Xem mã QR và thông tin vé nhận kho"
-                        >
-                          <QrCode className="w-3.5 h-3.5 mr-1 text-slate-500" />
-                          Vé nhận kho
-                        </Button>
-                        {isStorageUnitAssigned(contract.unitNumber) && !contract.relocationEligible && (
-                          <Button
-                            type="button"
-                            variant="primary"
-                            size="sm"
-                            disabled={!isCheckInAllowedToday(contract.startDate)}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!isCheckInAllowedToday(contract.startDate)) return;
-                              setActivePassMode('checkin');
-                              setActivePassContract(contract);
-                            }}
-                            className={`h-7 text-[11px] px-2.5 font-bold whitespace-nowrap shrink-0 shadow-2xs ${
-                              isCheckInAllowedToday(contract.startDate)
-                                ? 'bg-[#0d6050] hover:bg-[#12836d] text-white cursor-pointer'
-                                : 'bg-slate-100 hover:bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60'
-                            }`}
-                            title={
-                              isCheckInAllowedToday(contract.startDate)
-                                ? 'Tự làm thủ tục ký số nhận bàn giao & kích hoạt mã PIN mở kho 24/7'
-                                : `Chưa đến ngày nhận kho (${formatDateVN(contract.startDate)}). Chỉ được check-in vào đúng ngày trên hợp đồng.`
-                            }
-                          >
-                            <KeyRound className={`w-3.5 h-3.5 mr-1 ${isCheckInAllowedToday(contract.startDate) ? 'text-amber-300' : 'text-slate-400'}`} />
-                            Check-in online
-                          </Button>
-                        )}
-                      </div>
+                    ) : isPendingCheckIn ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActivePassMode('pass');
+                          setActivePassContract(contract);
+                        }}
+                        className="h-7 text-[11px] px-2.5 font-semibold text-gray-700 border-gray-300 bg-white hover:bg-gray-50 whitespace-nowrap shrink-0 cursor-pointer"
+                        title="Xem mã QR và thông tin vé nhận kho"
+                      >
+                        <QrCode className="w-3.5 h-3.5 mr-1 text-gray-500" />
+                        Vé nhận kho
+                      </Button>
                     ) : contract.status === 'OVERDUE' ? (
                       <span
-                        className="inline-flex items-center justify-center w-[116px] h-7 text-rose-700 text-[11px] font-bold bg-rose-50 px-2.5 rounded-lg border border-rose-200"
+                        className="inline-flex items-center justify-center w-[116px] h-7 text-rose-700 text-[11px] font-semibold bg-rose-50 px-2.5 rounded-md border border-rose-200"
                         title="Mã PIN đang bị khóa do quá hạn. Vui lòng đóng phí phạt để mở lại PIN tạm thời."
                       >
                         Đã khóa PIN
                       </span>
                     ) : (
-                      <span className="inline-flex items-center justify-center w-[116px] h-7 text-slate-300 text-xs">—</span>
+                      <span className="inline-flex items-center justify-center w-[116px] h-7 text-gray-300 text-xs">—</span>
                     )}
                     </div>
                   </td>
 
-                  {/* Cột 6: Trạng thái */}
+                  {/* Cột 5: Trạng thái (4 nhóm ngữ nghĩa: Emerald / Amber / Rose / Gray) */}
                   <td className="py-3.5 px-4 whitespace-nowrap text-center">
                     <div className="flex justify-center">
                     {contract.hasPendingRenewal ? (
-                      <Badge
-                        variant="warning"
-                        className="w-[136px] justify-center text-[11px] bg-amber-100 text-amber-900 border-amber-300 font-bold"
+                      <span
+                        className={SEMANTIC_BADGE.warning}
                         title="Đang có đơn gia hạn chờ thanh toán VNPay"
                       >
                         Chờ thanh toán gia hạn
-                      </Badge>
+                      </span>
                     ) : contract.status === 'ACTIVE' && isExpiringSoon ? (
-                      <Badge
-                        variant={isUrgentExpiring ? 'overdue' : 'warning'}
-                        className={`w-[136px] justify-center ${isUrgentExpiring ? 'bg-red-50 text-red-700 border-red-300' : ''}`}
+                      <span
+                        className={SEMANTIC_BADGE.warning}
                         title={`Sắp hết hạn (Còn ${daysRemaining} ngày)`}
                       >
                         Sắp hết hạn
-                      </Badge>
+                      </span>
                     ) : contract.status === 'ACTIVE' ? (
-                      <Badge variant="available" className="w-[136px] justify-center">
+                      <span className={SEMANTIC_BADGE.success}>
                         Đang hoạt động
-                      </Badge>
+                      </span>
                     ) : contract.status === 'OVERDUE' ? (
-                      <Badge
-                        variant={isOverdueUnlocked || overdueDays <= 3 ? 'warning' : 'overdue'}
-                        className="w-[136px] justify-center"
+                      <span
+                        className={SEMANTIC_BADGE.danger}
                         title={
                           isOverdueUnlocked
-                            ? `Đã mở PIN tạm trong ngày (D+${overdueDays}) — Vui lòng bấm Báo trả kho sau khi dọn đồ`
+                            ? `Đã mở PIN tạm trong ngày (D+${overdueDays}) — Vui lòng mở menu ••• chọn Báo trả kho sau khi dọn đồ`
                             : overdueDays <= 3
                             ? `Quá hạn D+${overdueDays} (5%/ngày)`
                             : `Quá hạn D+${overdueDays} (Phạt 10%/ngày)`
@@ -654,59 +646,69 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                         {isOverdueUnlocked
                           ? 'Quá hạn · Mở PIN'
                           : `Quá hạn (D+${overdueDays})`}
-                      </Badge>
+                      </span>
                     ) : (contract.relocationEligible || isRelocating) ? (
-                      <Badge variant="warning" className="w-[136px] justify-center bg-amber-100 text-amber-900 border-amber-300 font-bold" title="Từ chối ô cũ do lỗi hiện trường - Đang chờ bố trí ô kho thay thế">
+                      <span
+                        className={SEMANTIC_BADGE.warning}
+                        title="Từ chối ô cũ do lỗi hiện trường - Đang chờ bố trí ô kho thay thế"
+                      >
                         Đổi ô kho
-                      </Badge>
+                      </span>
                     ) : contract.hasPendingInitialPayment ? (
-                      <Badge variant="warning" className="w-[136px] justify-center bg-amber-100 text-amber-900 border-amber-300 font-bold" title="Chờ thanh toán tiền cọc & tiền thuê ban đầu">
+                      <span
+                        className={SEMANTIC_BADGE.warning}
+                        title="Chờ thanh toán tiền cọc & tiền thuê ban đầu"
+                      >
                         Chờ thanh toán
-                      </Badge>
-                    ) : contract.status === 'PENDING_CHECKIN' ||
-                      (contract.status as string) === 'PENDING_CHECK_IN' ? (
-                      <Badge variant="reserved" className="w-[136px] justify-center">
+                      </span>
+                    ) : isPendingCheckIn ? (
+                      <span className={SEMANTIC_BADGE.warning}>
                         Chờ nhận kho
-                      </Badge>
+                      </span>
                     ) : contract.status === 'PENDING_RETURN' ? (
-                      <Badge variant={contract.inspectionDone ? 'info' : 'warning'} className="w-[136px] justify-center">
+                      <span className={contract.inspectionDone ? SEMANTIC_BADGE.success : SEMANTIC_BADGE.warning}>
                         {contract.inspectionDone ? 'Đã nghiệm thu' : 'Chờ nghiệm thu'}
-                      </Badge>
+                      </span>
                     ) : (contract.status as string) === 'CANCELLED' ? (
-                      <Badge variant="warning" className="w-[136px] justify-center bg-amber-50 text-amber-800 border-amber-300 font-bold" title="Đã hủy nhận kho - Đang chờ Quản lý cơ sở duyệt quyết toán hoàn tiền">
+                      <span
+                        className={SEMANTIC_BADGE.neutral}
+                        title="Đã hủy nhận kho - Đang chờ Quản lý cơ sở duyệt quyết toán hoàn tiền"
+                      >
                         Đã hủy · Chờ hoàn
-                      </Badge>
+                      </span>
                     ) : (contract.status as string) === 'TERMINATED' ? (
                       (contract.depositHeld === 0 || (contract.overdueDays ?? 0) >= 7) ? (
-                        <Badge variant="danger" className="w-[136px] justify-center bg-purple-50 text-purple-800 border-purple-200">
+                        <span className={SEMANTIC_BADGE.danger}>
                           Bị niêm phong
-                        </Badge>
+                        </span>
                       ) : (contract.handoverRejected || contract.contractNumber?.includes('REJ') || contract.contractNumber?.includes('REFUND')) ? (
-                        <Badge variant="danger" className="w-[136px] justify-center bg-rose-100 text-rose-800 border-rose-300 font-bold" title={contract.rejectionReason || 'Từ chối nhận bàn giao tại hiện trường'}>
+                        <span
+                          className={SEMANTIC_BADGE.danger}
+                          title={contract.rejectionReason || 'Từ chối nhận bàn giao tại hiện trường'}
+                        >
                           Từ chối nhận kho
-                        </Badge>
-                      ) : (!isStorageUnitAssigned(contract.unitNumber) || contract.unitNumber === 'Chưa gán ô' || contract.unitNumber === 'Chưa gán ô kho' || contract.contractNumber?.includes('NO-UNIT')) ? (
-                        <Badge variant="danger" className="w-[136px] justify-center bg-rose-50 text-rose-700 border-rose-200" title="Đã hủy khi chưa phân bổ ô vật lý - Hoàn cọc 100%">
-                          Đã hủy
-                        </Badge>
+                        </span>
                       ) : (
-                        <Badge variant="danger" className="w-[136px] justify-center bg-rose-50 text-rose-700 border-rose-200" title="Đã hủy trước ngày nhận kho - Ô vật lý đã được giải phóng">
+                        <span
+                          className={SEMANTIC_BADGE.neutral}
+                          title="Đã hủy trước ngày nhận kho - Ô vật lý đã được giải phóng"
+                        >
                           Đã hủy
-                        </Badge>
+                        </span>
                       )
                     ) : contract.status === 'CLOSED' ? (
-                      <Badge variant="default" className="w-[136px] justify-center">
+                      <span className={SEMANTIC_BADGE.neutral}>
                         Đã kết thúc
-                      </Badge>
+                      </span>
                     ) : (
-                      <Badge variant="default" className="w-[136px] justify-center">
+                      <span className={SEMANTIC_BADGE.neutral}>
                         {contract.status}
-                      </Badge>
+                      </span>
                     )}
                     </div>
                   </td>
 
-                  {/* Cột 7: Thao tác (Gọn gàng: Nút chính cố định độ rộng + slot cố định cho menu •••) */}
+                  {/* Cột 6: Thao tác (Thứ bậc chuẩn: 1 Nút chính duy nhất + Menu phụ •••) */}
                   <td className="py-3.5 px-4 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
                       {/* 1. Nút hành động chính */}
@@ -719,10 +721,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                             e.stopPropagation();
                             setPayingContract(contract);
                           }}
-                          className="h-7 w-[112px] justify-center text-xs px-2.5 font-bold bg-[#0d6050] hover:bg-[#12836d] text-white cursor-pointer whitespace-nowrap shrink-0 shadow-xs"
+                          className="h-7 w-[124px] justify-center text-xs px-2.5 font-semibold bg-brand-600 hover:bg-brand-700 text-white cursor-pointer whitespace-nowrap shrink-0 shadow-2xs"
                           title="Thanh toán trực tuyến VNPay tiền cọc & thuê ban đầu"
                         >
-                          <CreditCard className="w-3.5 h-3.5 mr-1 text-amber-300" />
+                          <CreditCard className="w-3.5 h-3.5 mr-1" />
                           Thanh toán
                         </Button>
                       ) : contract.status === 'OVERDUE' && penaltyFee > 0 ? (
@@ -735,26 +737,11 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                             e.stopPropagation();
                             onOpenOverduePayment({ ...contract, overdueFee: penaltyFee });
                           }}
-                          className="h-7 w-[112px] justify-center text-xs px-2.5 font-bold bg-rose-600 hover:bg-rose-700 text-white cursor-pointer whitespace-nowrap shrink-0 shadow-xs"
-                          title="Thanh toán phí quá hạn qua VNPay để mở Mã PIN tạm thời (đến 23:59) và mở khóa nút Báo trả kho"
+                          className="h-7 w-[124px] justify-center text-xs px-2.5 font-semibold bg-rose-600 hover:bg-rose-700 text-white cursor-pointer whitespace-nowrap shrink-0 shadow-2xs"
+                          title="Thanh toán phí quá hạn qua VNPay để mở Mã PIN tạm thời (đến 23:59)"
                         >
                           <CreditCard className="w-3.5 h-3.5 mr-1" />
                           Đóng phí phạt
-                        </Button>
-                      ) : isOverdueUnlocked ? (
-                        <Button
-                          type="button"
-                          variant="primary"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onScheduleReturn(contract);
-                          }}
-                          className="h-7 w-[112px] justify-center text-xs px-2.5 font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer whitespace-nowrap shrink-0 shadow-xs"
-                          title="Báo đã dọn xong đồ để Quản lý cơ sở điều phối nhân viên nghiệm thu hiện trạng và hoàn cọc còn lại"
-                        >
-                          <LogOut className="w-3.5 h-3.5 mr-1" />
-                          Báo trả kho
                         </Button>
                       ) : settlementDeficit > 0 ? (
                         <Button
@@ -765,7 +752,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                             e.stopPropagation();
                             onOpenOverduePayment(contract);
                           }}
-                          className="h-7 w-[112px] justify-center text-xs px-2.5 font-bold bg-purple-600 hover:bg-purple-700 text-white cursor-pointer whitespace-nowrap shrink-0 shadow-xs"
+                          className="h-7 w-[124px] justify-center text-xs px-2.5 font-semibold bg-rose-600 hover:bg-rose-700 text-white cursor-pointer whitespace-nowrap shrink-0 shadow-2xs"
                           title="Thanh toán chi phí phát sinh / lưu Kho Tổng để nhận lại tài sản và đóng hợp đồng"
                         >
                           <CreditCard className="w-3.5 h-3.5 mr-1" />
@@ -784,32 +771,37 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                           <Button
                             variant="primary"
                             size="sm"
-                            className={`h-7 min-w-[112px] px-2.5 justify-center text-xs font-bold cursor-pointer whitespace-nowrap shrink-0 shadow-xs ${
-                              contract.hasPendingRenewal
-                                ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                                : isUrgentExpiring
-                                ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white'
-                                : 'bg-gradient-to-r from-amber-600 to-orange-600 text-white'
-                            }`}
+                            className="h-7 w-[124px] px-2.5 justify-center text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white cursor-pointer whitespace-nowrap shrink-0 shadow-2xs"
                           >
                             <RefreshCw className="w-3 h-3 mr-1" />
-                            {contract.hasPendingRenewal ? 'Tiếp tục thanh toán' : 'Gia hạn'}
+                            {contract.hasPendingRenewal ? 'Thanh toán' : 'Gia hạn'}
                           </Button>
                         </Link>
-                      ) : isExpiringSoon && !canRenewOnline ? (
+                      ) : canOnlineCheckInPrimary ? (
                         <Button
                           type="button"
-                          variant="outline"
+                          variant="primary"
                           size="sm"
+                          disabled={!isCheckInAllowedToday(contract.startDate)}
                           onClick={(e) => {
                             e.stopPropagation();
-                            onScheduleReturn(contract);
+                            if (!isCheckInAllowedToday(contract.startDate)) return;
+                            setActivePassMode('checkin');
+                            setActivePassContract(contract);
                           }}
-                          className="h-7 w-[112px] justify-center text-xs px-2.5 font-bold text-rose-600 border-rose-200 hover:bg-rose-50 cursor-pointer whitespace-nowrap shrink-0 shadow-2xs"
-                          title="Báo trả kho và lên lịch nghiệm thu dọn đồ theo quy định chuẩn bị trả kho T-20..T-0 (BR-REN-01)"
+                          className={`h-7 w-[124px] justify-center text-xs px-2.5 font-semibold whitespace-nowrap shrink-0 shadow-2xs ${
+                            isCheckInAllowedToday(contract.startDate)
+                              ? 'bg-brand-600 hover:bg-brand-700 text-white cursor-pointer'
+                              : 'bg-gray-100 hover:bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
+                          }`}
+                          title={
+                            isCheckInAllowedToday(contract.startDate)
+                              ? 'Tự làm thủ tục ký số nhận bàn giao & kích hoạt mã PIN mở kho 24/7'
+                              : `Chưa đến ngày nhận kho (${formatDateVN(contract.startDate)}). Chỉ được check-in vào đúng ngày trên hợp đồng.`
+                          }
                         >
-                          <LogOut className="w-3.5 h-3.5 mr-1" />
-                          Báo trả kho
+                          <KeyRound className="w-3.5 h-3.5 mr-1" />
+                          Check-in online
                         </Button>
                       ) : (
                         <Button
@@ -820,15 +812,15 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                             e.stopPropagation();
                             onViewDetail(contract);
                           }}
-                          className="h-7 w-[112px] justify-center text-xs px-2.5 font-semibold text-slate-700 border-slate-200/90 hover:bg-slate-100 cursor-pointer whitespace-nowrap shrink-0"
+                          className="h-7 w-[124px] justify-center text-xs px-2.5 font-medium bg-white text-gray-700 border-gray-300 hover:bg-gray-50 cursor-pointer whitespace-nowrap shrink-0"
                           title="Xem chi tiết hợp đồng"
                         >
-                          <FileText className="w-3.5 h-3.5 mr-1" />
+                          <FileText className="w-3.5 h-3.5 mr-1 text-gray-500" />
                           Chi tiết
                         </Button>
                       )}
 
-                      {/* 2. Menu 3 chấm (Thao tác phụ) — Luôn giữ slot w-7 h-7 để nút chính không bị nhảy lệch */}
+                      {/* 2. Menu 3 chấm (Thao tác phụ) — Luôn giữ slot w-7 h-7 để nút chính thẳng hàng */}
                       {hasSecondaryActions ? (
                         <div className="relative inline-flex items-center">
                           <button
@@ -839,12 +831,12 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                             }}
                             className={`h-7 w-7 flex items-center justify-center rounded-lg border transition-colors cursor-pointer shrink-0 ${
                               isMenuOpen
-                                ? 'bg-slate-100 border-slate-300 text-slate-800'
-                                : 'border-slate-200/90 text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                                ? 'bg-gray-100 border-gray-300 text-gray-800'
+                                : 'border-transparent text-gray-400 hover:text-gray-700 hover:bg-gray-100'
                             }`}
                             title="Thao tác khác"
                           >
-                            <MoreVertical className="w-3.5 h-3.5" />
+                            <MoreVertical className="w-4 h-4" />
                           </button>
 
                           {isMenuOpen && (
@@ -859,10 +851,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                               <div
                                 className={`absolute right-0 ${
                                   isLastRows ? 'bottom-full mb-1' : 'top-full mt-1'
-                                } w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-40 py-1 text-xs divide-y divide-slate-100 text-left`}
+                                } w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-40 py-1 text-xs divide-y divide-gray-100 text-left`}
                               >
-                                {/* Xem chi tiết nếu nút chính đang là Gia hạn, Đóng phí hoặc Báo trả kho */}
-                                {(isExpiringSoon || contract.hasPendingRenewal || contract.status === 'OVERDUE' || settlementDeficit > 0) && (
+                                {/* Xem chi tiết nếu nút chính không phải Chi tiết */}
+                                {hasNonDetailPrimaryAction && (
                                   <div className="py-0.5">
                                     <button
                                       type="button"
@@ -871,17 +863,34 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                         setOpenMenuId(null);
                                         onViewDetail(contract);
                                       }}
-                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer font-medium"
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-gray-50 text-gray-700 transition-colors cursor-pointer font-medium"
                                     >
-                                      <FileText className="w-3.5 h-3.5 text-slate-500" />
+                                      <FileText className="w-3.5 h-3.5 text-gray-500" />
                                       <span>Xem chi tiết hợp đồng</span>
                                     </button>
                                   </div>
                                 )}
 
+                                {/* Báo trả kho cho hợp đồng Quá hạn đã mở PIN tạm */}
+                                {isOverdueUnlocked && (
+                                  <div className="py-0.5">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenMenuId(null);
+                                        onScheduleReturn(contract);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-gray-50 text-gray-700 transition-colors cursor-pointer font-medium"
+                                    >
+                                      <LogOut className="w-3.5 h-3.5 text-gray-500" />
+                                      <span>Báo trả kho</span>
+                                    </button>
+                                  </div>
+                                )}
+
                                 {/* Menu cho PENDING_CHECKIN */}
-                                {(contract.status === 'PENDING_CHECKIN' ||
-                                  (contract.status as string) === 'PENDING_CHECK_IN') && (
+                                {isPendingCheckIn && (
                                   <div className="py-0.5">
                                     {contract.hasPendingInitialPayment && (
                                       <button
@@ -891,9 +900,9 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                           setOpenMenuId(null);
                                           setPayingContract(contract);
                                         }}
-                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-emerald-50 text-[#0d6050] transition-colors cursor-pointer font-bold"
+                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-emerald-50 text-brand-700 transition-colors cursor-pointer font-semibold"
                                       >
-                                        <CreditCard className="w-3.5 h-3.5 text-emerald-600" />
+                                        <CreditCard className="w-3.5 h-3.5 text-brand-600" />
                                         <span>Thanh toán ngay</span>
                                       </button>
                                     )}
@@ -914,11 +923,11 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                       }
                                       className={`w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors font-medium ${
                                         (contract.rescheduleCount ?? 0) >= 1
-                                          ? 'opacity-50 cursor-not-allowed text-slate-400 bg-slate-50'
-                                          : 'hover:bg-slate-50 text-slate-700 cursor-pointer'
+                                          ? 'opacity-50 cursor-not-allowed text-gray-400 bg-gray-50'
+                                          : 'hover:bg-gray-50 text-gray-700 cursor-pointer'
                                       }`}
                                     >
-                                      <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                                      <Calendar className="w-3.5 h-3.5 text-gray-500" />
                                       <span>
                                         {(contract.rescheduleCount ?? 0) >= 1
                                           ? 'Đã dời lịch (1/1)'
@@ -954,9 +963,9 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                           e.stopPropagation();
                                           setOpenMenuId(null);
                                         }}
-                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer font-medium"
+                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-gray-50 text-gray-700 transition-colors cursor-pointer font-medium"
                                       >
-                                        <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+                                        <RefreshCw className="w-3.5 h-3.5 text-gray-500" />
                                         <span>Gia hạn hợp đồng</span>
                                       </Link>
                                     )}
@@ -968,7 +977,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                           setOpenMenuId(null);
                                           setLateRenewalContract(contract);
                                         }}
-                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-amber-50 text-amber-800 transition-colors cursor-pointer font-medium"
+                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-amber-50 text-amber-700 transition-colors cursor-pointer font-medium"
                                       >
                                         <HelpCircle className="w-3.5 h-3.5 text-amber-600" />
                                         <span>Xin gia hạn muộn (T-20)</span>
@@ -981,9 +990,9 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                         setOpenMenuId(null);
                                         onScheduleReturn(contract);
                                       }}
-                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer font-medium"
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-gray-50 text-gray-700 transition-colors cursor-pointer font-medium"
                                     >
-                                      <LogOut className="w-3.5 h-3.5 text-slate-500" />
+                                      <LogOut className="w-3.5 h-3.5 text-gray-500" />
                                       <span>Báo trả kho</span>
                                     </button>
                                   </div>
@@ -1128,100 +1137,112 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
         />
       )}
 
-      {/* Modal Hướng dẫn Gia hạn Ngoại lệ T-20 ngày (BR-REN-01 & BR-REN-10) */}
+      {/* Modal Hướng dẫn Chính sách Gia hạn muộn (T-20) */}
       {lateRenewalContract && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden flex flex-col animate-in zoom-in-95 duration-150">
-            {/* Header */}
-            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                  <AlertTriangle className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold">Chính Sách Gia Hạn Khung T-20 Ngày</h3>
-                  <p className="text-xs text-slate-400">
-                    Ô kho: <span className="text-amber-400 font-bold">{lateRenewalContract.unitNumber}</span> ({lateRenewalContract.facilityName})
-                  </p>
-                </div>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setLateRenewalContract(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-xl w-full overflow-hidden flex flex-col animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header sáng sủa, gọn gàng */}
+            <div className="px-6 py-5 border-b border-gray-200 bg-white flex justify-between items-start gap-4 shrink-0">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Chính sách Gia hạn muộn (T-20)</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Ô kho: <span className="font-semibold text-gray-700">{lateRenewalContract.unitNumber}</span> ({lateRenewalContract.facilityName})
+                </p>
               </div>
               <button
                 type="button"
+                aria-label="Đóng"
                 onClick={() => setLateRenewalContract(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Body */}
-            <div className="p-6 space-y-4 text-xs text-slate-700">
-              <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-xl space-y-1.5 text-amber-950">
-                <p className="font-bold text-sm flex items-center gap-1.5 text-amber-900">
-                  <span>Cổng tự phục vụ Online đã đóng (BR-REN-01)</span>
-                </p>
-                <p className="leading-relaxed">
-                  Hợp đồng thuê của Quý khách hiện còn dưới 20 ngày trước khi hết hạn. Theo quy chế cơ sở, hệ thống đã khóa tính năng tự gia hạn trên portal để bắt đầu chuẩn bị giải phóng mặt bằng và ưu tiên danh sách chờ.
-                </p>
-              </div>
-
-              <div className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <p className="font-bold text-slate-900 text-xs uppercase tracking-wider">Lựa chọn của Quý khách:</p>
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center shrink-0 text-[11px]">1</span>
-                    <p className="leading-relaxed">
-                      <strong>Nếu muốn tiếp tục thuê ô kho này:</strong> Vui lòng liên hệ Quản lý cơ sở (FM) qua Hotline bên dưới. FM sẽ kiểm tra nếu ô kho chưa có khách mới đặt cọc, FM sẽ duyệt <strong>Gia hạn Ngoại lệ (Force Renewal)</strong> và cấp cổng thanh toán trực tuyến cho Quý khách (áp dụng phụ phí hành chính 200.000 VNĐ theo BR-REN-10).
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-rose-100 text-rose-800 font-bold flex items-center justify-center shrink-0 text-[11px]">2</span>
-                    <p className="leading-relaxed">
-                      <strong>Nếu muốn trả kho đúng hạn:</strong> Quý khách vui lòng nhấn nút <strong>"Báo trả kho"</strong> để lên lịch dọn đồ và nghiệm thu trước ngày hết hạn nhằm tránh phát sinh phí phạt quá hạn.
-                    </p>
-                  </div>
+            {/* Khối cảnh báo chính sách phẳng */}
+            <div className="px-6 pt-5 pb-4">
+              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-100 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div className="text-sm text-amber-800 leading-relaxed">
+                  <p className="font-bold text-amber-900 mb-1">Chính sách quan trọng</p>
+                  <p>
+                    Hợp đồng của bạn còn dưới 20 ngày. Hệ thống đã khóa tính năng tự gia hạn online để ưu tiên danh sách khách hàng đang chờ thuê.
+                  </p>
                 </div>
-              </div>
-
-              <div className="p-3 bg-brand-50 border border-brand-200 rounded-xl flex items-center justify-between text-brand-950">
-                <div>
-                  <span className="text-[11px] text-brand-700 block font-medium">Hotline Ban Quản lý Cơ sở:</span>
-                  <a href="tel:19008888" className="text-base font-black text-brand-800 hover:underline">1900 8888</a>
-                </div>
-                <a
-                  href="tel:19008888"
-                  className="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
-                >
-                  <Phone className="w-3.5 h-3.5" />
-                  <span>Gọi ngay</span>
-                </a>
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const c = lateRenewalContract;
-                  setLateRenewalContract(null);
-                  onScheduleReturn(c);
-                }}
-                className="text-xs font-bold text-rose-600 border-rose-200 hover:bg-rose-50"
-              >
-                <LogOut className="w-3.5 h-3.5 mr-1" />
-                Lên lịch Báo trả kho
-              </Button>
+            {/* Hai lựa chọn hành động dạng Card phẳng riêng biệt */}
+            <div className="px-6 pb-6 space-y-3.5">
+              <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                Vui lòng chọn hành động của bạn:
+              </h4>
 
-              <Button
-                variant="primary"
-                size="sm"
+              {/* Lựa chọn 1: Gia hạn ngoại lệ */}
+              <div className="border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-brand-300 transition-colors bg-white">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-bold text-gray-900">Bạn muốn tiếp tục thuê?</h5>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1 leading-relaxed">
+                      Liên hệ Quản lý cơ sở để được duyệt gia hạn ngoại lệ. Phí hành chính:{' '}
+                      <strong className="font-semibold text-gray-900 tabular-nums">200.000 đ</strong>.
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href="tel:19008888"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-lg shadow-xs transition-colors whitespace-nowrap"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>Gọi 1900 8888</span>
+                </a>
+              </div>
+
+              {/* Lựa chọn 2: Báo trả kho */}
+              <div className="border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-gray-300 transition-colors bg-white">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <LogOut className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-bold text-gray-900">Bạn muốn trả kho?</h5>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1 leading-relaxed">
+                      Lên lịch dọn đồ và nghiệm thu trước ngày hết hạn. Không phát sinh phí phạt.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const c = lateRenewalContract;
+                    setLateRenewalContract(null);
+                    onScheduleReturn(c);
+                  }}
+                  className="w-full sm:w-auto px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+                >
+                  Báo trả kho
+                </button>
+              </div>
+            </div>
+
+            {/* Footer chỉ giữ nút Đóng trung tính */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end shrink-0">
+              <button
+                type="button"
                 onClick={() => setLateRenewalContract(null)}
-                className="text-xs font-bold"
+                className="px-6 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
               >
-                Đã hiểu
-              </Button>
+                Đóng
+              </button>
             </div>
           </div>
         </div>

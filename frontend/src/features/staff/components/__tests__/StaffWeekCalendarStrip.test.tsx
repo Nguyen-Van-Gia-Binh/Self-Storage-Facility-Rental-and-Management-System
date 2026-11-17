@@ -68,4 +68,21 @@ describe('StaffWeekCalendarStrip - Date Calculations', () => {
     expect(content).not.toContain('scale-[1.01]');
     expect(content).not.toContain('scrollbar-thumb-slate-200');
   });
+
+  it('không dùng new Date().toISOString().split("T")[0] gây lệch lùi 1 ngày vào khung 00:00–06:59 giờ Việt Nam (UTC+7)', async () => {
+    const fs = await import('fs');
+    const path = await import('path');
+    const filesToCheck = [
+      'src/features/staff/pages/StaffDashboardPage.tsx',
+      'src/features/staff/components/DailyTasksOverview.tsx',
+      'src/features/staff/components/HandoverInspectionForm.tsx',
+      'src/features/staff/components/ReturnInspectionForm.tsx',
+    ];
+    for (const relPath of filesToCheck) {
+      const content = fs.readFileSync(path.resolve(process.cwd(), relPath), 'utf-8');
+      expect(content, `${relPath} không được dùng toISOString().split('T')[0]`).not.toContain(
+        "toISOString().split('T')[0]"
+      );
+    }
+  });
 });

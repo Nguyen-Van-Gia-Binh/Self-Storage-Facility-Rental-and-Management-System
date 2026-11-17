@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { DateField } from '@/components/ui/DateField';
 import { Input } from '@/components/ui/Input';
@@ -16,11 +16,14 @@ import {
 import { MyUnitsGuestPrompt } from '../components/MyUnitsGuestPrompt';
 // Unified table view replaces standalone RentedUnitCard and PendingReservationCard
 import { MyUnitsTable } from '../components/MyUnitsTable';
+import { MyWaitlistsTable } from '../components/MyWaitlistsTable';
 import { MyUnitsModals } from '../components/MyUnitsModals';
 import { useCustomerContracts } from '../hooks/useCustomerContracts';
 import { useActivePolicy } from '@/hooks/useActivePolicy';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
 import { cancelContractReturn } from '@/api/customerRentals';
+import { fetchMyWaitlists, extendWaitlist, cancelWaitlist } from '@/api/waitlist';
+import type { WaitlistResponse } from '@/types/waitlist';
 import type { RentedContract } from '../types';
 
 export const MyUnitsPage: React.FC = () => {
@@ -55,9 +58,94 @@ export const MyUnitsPage: React.FC = () => {
   const policy = useActivePolicy();
   const holdHours = policy?.reservationHoldHours || 15;
 
-  // 2. Trạng thái bộ lọc (Tab, Search, Date Filter)
+  // 2. Tab chính (Ô kho & Hợp đồng vs Danh sách chờ của tôi) + Bộ lọc
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const mainSection: 'UNITS' | 'WAITLIST' =
+    searchParams.get('tab') === 'waitlist' ? 'WAITLIST' : 'UNITS';
+
+  const setMainSection = (section: 'UNITS' | 'WAITLIST') => {
+    const next = new URLSearchParams(searchParams);
+    if (section === 'WAITLIST') {
+      next.set('tab', 'waitlist');
+    } else {
+      next.delete('tab');
+    }
+    setSearchParams(next, { replace: true });
+  };
+
+  // Dữ liệu Danh sách chờ của tôi
+  const [waitlists, setWaitlists] = useState<WaitlistResponse[]>([]);
+  const [waitlistsLoading, setWaitlistsLoading] = useState<boolean>(false);
+  const [extendingWaitlistId, setExtendingWaitlistId] = useState<number | null>(null);
+  const [cancellingWaitlistId, setCancellingWaitlistId] = useState<number | null>(null);
+
+  const loadWaitlists = useCallback(async () => {
+    if (!isAuthenticated) {
+      setWaitlists([]);
+      return;
+    }
+    setWaitlistsLoading(true);
+    try {
+      const list = await fetchMyWaitlists();
+      setWaitlists(list);
+    } catch (err) {
+      console.error('Lỗi tải danh sách chờ của tôi:', err);
+    } finally {
+      setWaitlistsLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    loadWaitlists();
+  }, [loadWaitlists]);
+
+  const activeWaitlistCount = useMemo(
+    () =>
+      waitlists.filter(
+        (w) => w.status === 'WAITING' || w.status === 'CONTACTING' || w.status === 'PENDING_FOLLOW_UP'
+      ).length,
+    [waitlists]
+  );
+
+  const filteredWaitlists = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return waitlists;
+    return waitlists.filter(
+      (w) =>
+        (w.unitTypeName || '').toLowerCase().includes(q) ||
+        (w.facilityName || '').toLowerCase().includes(q) ||
+        (w.contactPhone || w.customerPhone || '').toLowerCase().includes(q)
+    );
+  }, [waitlists, searchQuery]);
+
+  const handleExtendWaitlist = async (item: WaitlistResponse) => {
+    setExtendingWaitlistId(item.id);
+    try {
+      await extendWaitlist(item.id);
+      showToast('Đã gia hạn thời gian chờ thêm 15 ngày thành công.');
+      await loadWaitlists();
+    } catch (err: any) {
+      showToast(err?.message || 'Không thể gia hạn yêu cầu chờ. Vui lòng thử lại.', 'error');
+    } finally {
+      setExtendingWaitlistId(null);
+    }
+  };
+
+  const handleCancelWaitlist = async (item: WaitlistResponse) => {
+    setCancellingWaitlistId(item.id);
+    try {
+      await cancelWaitlist(item.id);
+      showToast('Đã hủy yêu cầu chờ thành công.');
+      await loadWaitlists();
+    } catch (err: any) {
+      showToast(err?.message || 'Không thể hủy yêu cầu chờ. Vui lòng thử lại.', 'error');
+    } finally {
+      setCancellingWaitlistId(null);
+    }
+  };
+
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState<boolean>(false);
 
   const [dateFilter, setDateFilter] = useState<'ALL' | 'UPCOMING_30' | 'THIS_MONTH' | 'CUSTOM'>('ALL');
@@ -214,7 +302,11 @@ export const MyUnitsPage: React.FC = () => {
           {/* Ô Tìm Kiếm Nhanh */}
           <div className="relative w-full sm:w-64">
             <Input
-              placeholder="Tìm mã kho, cơ sở, mã HĐ..."
+              placeholder={
+                mainSection === 'WAITLIST'
+                  ? 'Tìm loại kho, cơ sở, SĐT...'
+                  : 'Tìm mã kho, cơ sở, mã HĐ...'
+              }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="text-xs pl-8 pr-7 py-1.5 h-9 bg-white"
@@ -231,6 +323,8 @@ export const MyUnitsPage: React.FC = () => {
             )}
           </div>
 
+          {mainSection === 'UNITS' && (
+          <>
           {/* Dropdown Lọc Theo 6 Trạng Thái Nghiệp Vụ (ISS-106) */}
           <div className="relative">
             <button
@@ -520,16 +614,21 @@ export const MyUnitsPage: React.FC = () => {
               </>
             )}
           </div>
+          </>
+          )}
 
           {/* Nút Làm Mới Dữ Liệu */}
           <Button
             variant="outline"
             size="sm"
-            onClick={loadContracts}
-            disabled={loading}
+            onClick={() => {
+              loadContracts();
+              loadWaitlists();
+            }}
+            disabled={loading || waitlistsLoading}
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold cursor-pointer h-9"
           >
-            <RotateCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <RotateCcw className={`w-3.5 h-3.5 ${loading || waitlistsLoading ? 'animate-spin' : ''}`} />
             <span>Làm mới</span>
           </Button>
 
@@ -546,6 +645,39 @@ export const MyUnitsPage: React.FC = () => {
           </Link>
         </div>
       </div>
+
+      {/* Underline Main Tabs: Ô kho & Hợp đồng | Danh sách chờ của tôi */}
+      {isAuthenticated && (
+        <div className="border-b border-gray-200 flex items-center gap-6 overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => setMainSection('UNITS')}
+            className={`pb-3 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+              mainSection === 'UNITS'
+                ? 'border-brand-600 text-brand-700'
+                : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            Ô kho &amp; Hợp đồng ({contracts.length + pendingReservations.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setMainSection('WAITLIST')}
+            className={`pb-3 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap cursor-pointer inline-flex items-center gap-2 ${
+              mainSection === 'WAITLIST'
+                ? 'border-brand-600 text-brand-700'
+                : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            <span>Danh sách chờ của tôi</span>
+            {activeWaitlistCount > 0 && (
+              <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-amber-100 text-amber-700 tabular-nums">
+                {activeWaitlistCount}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* BANNER SỰ CỐ KHẨN CẤP / BẤT KHẢ KHÁNG (BR-BMP-03) */}
       {contracts.some((c) => (c.status as string) === 'PENDING_EMERGENCY_RESOLUTION') && (
@@ -570,9 +702,19 @@ export const MyUnitsPage: React.FC = () => {
         </div>
       )}
 
-      {/* BẢNG QUẢN LÝ HỢP ĐỒNG HỢP NHẤT (SAAS TABLE) */}
+      {/* BẢNG QUẢN LÝ HỢP ĐỒNG HOẶC DANH SÁCH CHỜ CỦA TÔI */}
       {!isAuthenticated ? (
         <MyUnitsGuestPrompt />
+      ) : mainSection === 'WAITLIST' ? (
+        <MyWaitlistsTable
+          waitlists={filteredWaitlists}
+          loading={waitlistsLoading}
+          extendingId={extendingWaitlistId}
+          cancellingId={cancellingWaitlistId}
+          onExtend={handleExtendWaitlist}
+          onCancel={handleCancelWaitlist}
+          onViewContracts={() => setMainSection('UNITS')}
+        />
       ) : (
         <MyUnitsTable
           contracts={filteredContracts}

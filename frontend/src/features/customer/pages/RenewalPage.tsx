@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -20,13 +21,15 @@ import {
   Loader2,
   XCircle,
   PlusCircle,
-  RotateCcw
+  RotateCcw,
+  Landmark,
+  CreditCard,
 } from 'lucide-react';
 import { getCustomerContracts } from '@/api/customerRentals';
 import { formatVND } from '../utils/pricing';
 import type { RentedContract } from '../types';
 import { RenewalExpiryBanner } from '../components/RenewalExpiryBanner';
-import { VnpayPayLinks } from '../components/VnpayPayLinks';
+import { vnpayPayHref } from '../components/VnpayPayLinks';
 import { RenewalReceiptModal } from '../components/RenewalReceiptModal';
 import { ScheduleReturnModal } from '../components/ScheduleReturnModal';
 import { tokenStorage } from '@/utils/tokenStorage';
@@ -64,6 +67,8 @@ export const RenewalPage: React.FC = () => {
     return urlStep === '3' ? 3 : 1;
   });
   const [renewalMonths, setRenewalMonths] = useState<number>(3);
+  const [selectedBankCode, setSelectedBankCode] = useState<'VNBANK' | 'INTCARD'>('VNBANK');
+  const [isRedirectingVnpay, setIsRedirectingVnpay] = useState<boolean>(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
 
   useEffect(() => {
@@ -81,6 +86,19 @@ export const RenewalPage: React.FC = () => {
         if (!isMounted) return;
         const found = contracts.find((c) => c.id === contractId) || null;
         setContract(found);
+        // Nếu khách thoát ra rồi quay lại trang gia hạn khi vẫn còn phiên thanh toán PENDING còn hạn,
+        // tự động khôi phục thẳng vào Bước 3 với đúng kỳ hạn & mốc đếm ngược real-time từ server
+        if (found?.hasPendingRenewal && found?.pendingRenewalOrderCode) {
+          const expMs = found.pendingRenewalExpiresAt
+            ? new Date(found.pendingRenewalExpiresAt).getTime()
+            : null;
+          if (!expMs || expMs > Date.now()) {
+            if (found.pendingRenewalMonths && found.pendingRenewalMonths > 0) {
+              setRenewalMonths(found.pendingRenewalMonths);
+            }
+            setCurrentStep(3);
+          }
+        }
         setLoading(false);
       })
       .catch((err) => {
@@ -119,6 +137,9 @@ export const RenewalPage: React.FC = () => {
       setCurrentStep(1);
       navigate(`/customer/renew/${contractId}`, { replace: true });
     },
+    onOrderCodeReady: (orderCode) => {
+      navigate(`/customer/renew/${contractId}?step=3&orderCode=${orderCode}`, { replace: true });
+    },
   });
 
   const {
@@ -126,20 +147,19 @@ export const RenewalPage: React.FC = () => {
     isLoadingCheckout,
     checkoutError,
     isPaidSuccess,
-    isVerifying,
     paymentNotice,
     setPaymentNotice,
     isCancelling,
     showCancelDialog,
     setShowCancelDialog,
     countdownSeconds,
+    isSessionExpired,
     formatCountdown,
     isProcessing,
     renewalResult,
     confirmedRenewal,
     showReceiptModal,
     setShowReceiptModal,
-    handleCheckPaymentAndRenew,
     handleCancelPayment,
   } = payment;
 
@@ -305,7 +325,7 @@ export const RenewalPage: React.FC = () => {
           }`}>
             {currentStep > 1 ? <Check className="w-3.5 h-3.5" /> : '1'}
           </span>
-          <span>1. Chọn kỳ hạn & Kiểm tra</span>
+          <span>Chọn kỳ hạn & Kiểm tra</span>
         </div>
 
         <div className="h-px bg-slate-200 flex-1 mx-3 hidden sm:block" />
@@ -339,7 +359,7 @@ export const RenewalPage: React.FC = () => {
           }`}>
             {currentStep > 2 ? <Check className="w-3.5 h-3.5" /> : '2'}
           </span>
-          <span>2. Bảng kê tài chính</span>
+          <span>Bảng kê tài chính</span>
         </div>
 
         <div className="h-px bg-slate-200 flex-1 mx-3 hidden sm:block" />
@@ -358,12 +378,12 @@ export const RenewalPage: React.FC = () => {
           }`}>
             3
           </span>
-          <span>3. Thanh toán VNPay</span>
+          <span>Thanh toán VNPay</span>
         </div>
       </div>
 
-      {/* Dynamic Expiry & Eligibility Banner */}
-      <RenewalExpiryBanner contract={contract} />
+      {/* Dynamic Expiry & Eligibility Banner (Ẩn ở Bước 3 khi khách đã sang màn hình thanh toán) */}
+      {currentStep !== 3 && <RenewalExpiryBanner contract={contract} />}
 
       {/* MÀN HÌNH CẢNH BÁO XUNG ĐỘT TRÙNG LỊCH ĐẶT TRƯỚC (Availability Conflict) */}
       {isCapacityConflict ? (
@@ -465,56 +485,74 @@ export const RenewalPage: React.FC = () => {
               </div>
 
               {/* Renewal Duration Selector (BR-REN-03 & BR-REN-07) */}
-              <div className="pt-3 border-t border-slate-100 space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="block text-sm font-bold text-[#0a1614]">
-                    Chọn kỳ hạn muốn gia hạn thêm:
-                  </label>
-                  <span className="text-xs text-slate-500">
-                    Kỳ hạn từ {policy?.renewalMinMonths ?? '…'} đến {policy?.renewalMaxMonths ?? '…'} tháng
-                  </span>
+              <div className="pt-4 border-t border-gray-100 space-y-5">
+                <div>
+                  <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900">
+                        Chọn kỳ hạn muốn gia hạn thêm:
+                      </label>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Kỳ hạn từ {policy?.renewalMinMonths ?? '…'} đến {policy?.renewalMaxMonths ?? '…'} tháng
+                      </p>
+                    </div>
+                  </div>
+
+                  {termMonths.length > 0 && (
+                    <div
+                      className={`grid gap-3 pt-2 ${
+                        termMonths.length === 3
+                          ? 'grid-cols-3'
+                          : termMonths.length === 2
+                          ? 'grid-cols-2'
+                          : 'grid-cols-2 sm:grid-cols-4'
+                      }`}
+                    >
+                      {termMonths.map((months) => {
+                        const tag = discountTag(months, 'reduce');
+                        const badgeLabel = tag || (months === 3 ? 'Phổ biến' : null);
+                        const isSelected = renewalMonths === months;
+                        return (
+                          <button
+                            key={months}
+                            type="button"
+                            disabled={isRenewalBlocked}
+                            onClick={() => setRenewalMonths(months)}
+                            className={`relative flex items-center justify-center py-3 px-4 rounded-lg text-center transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/35 ${
+                              isRenewalBlocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+                            } ${
+                              isSelected
+                                ? 'border-2 border-brand-500 bg-brand-50/50 text-brand-700'
+                                : 'border border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 text-gray-700'
+                            }`}
+                          >
+                            {badgeLabel && (
+                              <span
+                                className={`absolute -top-2.5 -right-2 px-2 py-0.5 text-[10px] font-bold rounded-full border shadow-xs uppercase tracking-wide whitespace-nowrap ${
+                                  tag
+                                    ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                                    : 'bg-amber-100 text-amber-700 border-amber-200'
+                                }`}
+                              >
+                                {badgeLabel}
+                              </span>
+                            )}
+                            <span className={`font-bold text-sm ${isSelected ? 'text-brand-700' : 'text-gray-700'}`}>
+                              {months} Tháng
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                  {termMonths.map((months) => {
-                    const pkg = {
-                      months,
-                      label: `${months} Tháng`,
-                      discountTag: discountTag(months, 'reduce'),
-                    };
-                    const isSelected = renewalMonths === pkg.months;
-                    return (
-                      <button
-                        key={pkg.months}
-                        type="button"
-                        disabled={isRenewalBlocked}
-                        onClick={() => setRenewalMonths(pkg.months)}
-                        className={`p-3.5 rounded-xl border text-center relative transition-all ${
-                          isRenewalBlocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-                        } ${
-                          isSelected
-                            ? 'border-brand-600 bg-brand-50/60'
-                            : 'border-slate-200 bg-white hover:border-slate-300'
-                        }`}
-                      >
-                        {pkg.discountTag && (
-                          <span className="absolute -top-2.5 -right-2 px-2 py-0.5 bg-brand-50 text-brand-700 text-[10px] font-semibold rounded-full whitespace-nowrap">
-                            {pkg.discountTag}
-                          </span>
-                        )}
-                        <span className={`block font-semibold text-sm ${isSelected ? 'text-brand-700' : 'text-slate-900'}`}>
-                          {pkg.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="pt-1">
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">
-                    Hoặc nhập số tháng tùy chỉnh
+                {/* Ô nhập số tháng tùy chỉnh dạng Input Group liền mạch */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Hoặc nhập số tháng tùy chỉnh:
                   </label>
-                  <div className="flex items-center gap-3">
+                  <div className="inline-flex items-center w-52 border border-gray-300 rounded-lg overflow-hidden focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500 bg-white">
                     <button
                       type="button"
                       disabled={isRenewalBlocked || renewalMonths <= (policy?.renewalMinMonths ?? 1)}
@@ -523,10 +561,10 @@ export const RenewalPage: React.FC = () => {
                           clampRenewalMonths(current - 1, policy?.renewalMinMonths, policy?.renewalMaxMonths)
                         )
                       }
-                      className="w-8 h-8 flex items-center justify-center border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                      className="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-r border-gray-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                       aria-label="Giảm 1 tháng"
                     >
-                      <Minus className="w-3.5 h-3.5" />
+                      <Minus className="w-4 h-4" />
                     </button>
                     <input
                       type="number"
@@ -543,7 +581,7 @@ export const RenewalPage: React.FC = () => {
                           )
                         )
                       }
-                      className="w-20 h-8 text-center border border-slate-300 rounded-md font-semibold text-slate-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 disabled:opacity-40"
+                      className="w-full text-center border-none focus:outline-none focus:ring-0 text-gray-900 font-bold tabular-nums py-2 px-1 bg-transparent disabled:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       aria-label="Số tháng gia hạn"
                     />
                     <button
@@ -554,12 +592,14 @@ export const RenewalPage: React.FC = () => {
                           clampRenewalMonths(current + 1, policy?.renewalMinMonths, policy?.renewalMaxMonths)
                         )
                       }
-                      className="w-8 h-8 flex items-center justify-center border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                      className="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-l border-gray-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                       aria-label="Tăng 1 tháng"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      <Plus className="w-4 h-4" />
                     </button>
-                    <span className="text-sm text-slate-600">Tháng</span>
+                    <span className="px-3 py-2 bg-gray-50 text-gray-600 font-medium border-l border-gray-300 text-sm shrink-0">
+                      Tháng
+                    </span>
                   </div>
                 </div>
               </div>
@@ -778,7 +818,7 @@ export const RenewalPage: React.FC = () => {
                 variant="primary"
                 disabled={isRenewalBlocked}
                 onClick={() => !isRenewalBlocked && setCurrentStep(3)}
-                className={`px-6 py-2.5 flex items-center gap-2 shadow-xs ${
+                className={`px-6 py-2.5 flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-bold shadow-xs ${
                   isRenewalBlocked ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
@@ -804,10 +844,30 @@ export const RenewalPage: React.FC = () => {
                   Gia hạn hợp đồng #{contract.contractNumber} thêm {renewalMonths} tháng
                 </p>
               </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold shrink-0">
-                <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-                <span>Hiệu lực phiên giao dịch:</span>
-                <span className="num text-xs text-amber-900 font-extrabold tracking-wider bg-amber-100/80 px-2 py-0.5 rounded border border-amber-300/60 shadow-2xs">
+              <div
+                className={`inline-flex items-center gap-2 px-3 py-1.5 border rounded-lg shrink-0 ${
+                  isSessionExpired
+                    ? 'bg-rose-50 border-rose-200'
+                    : 'bg-amber-50 border-amber-200'
+                }`}
+              >
+                <Clock
+                  className={`w-4 h-4 shrink-0 ${
+                    isSessionExpired ? 'text-rose-600' : 'text-amber-600'
+                  }`}
+                />
+                <span
+                  className={`text-sm font-medium ${
+                    isSessionExpired ? 'text-rose-800' : 'text-amber-800'
+                  }`}
+                >
+                  {isSessionExpired ? 'Phiên giao dịch đã hết hạn:' : 'Hiệu lực phiên giao dịch:'}
+                </span>
+                <span
+                  className={`text-sm font-bold tabular-nums tracking-wider ${
+                    isSessionExpired ? 'text-rose-900' : 'text-amber-900'
+                  }`}
+                >
                   {formatCountdown(countdownSeconds)}
                 </span>
               </div>
@@ -836,9 +896,75 @@ export const RenewalPage: React.FC = () => {
                   </div>
                 )}
 
-                <VnpayPayLinks orderCode={checkoutData?.orderCode} />
+                {/* Chọn phương thức thanh toán VNPay dạng thẻ phẳng (Không lộ công cụ Dev/Test) */}
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    Chọn phương thức thanh toán qua VNPay
+                  </h3>
 
-                {/* Thông báo đối soát / chưa thanh toán */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label
+                      className={`relative flex items-start gap-3 p-4 rounded-xl border transition-all cursor-pointer ${
+                        selectedBankCode === 'VNBANK'
+                          ? 'border-2 border-brand-500 bg-brand-50/30 shadow-2xs'
+                          : 'border-gray-200 bg-white hover:border-brand-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="renewal-vnpay-method"
+                        value="VNBANK"
+                        checked={selectedBankCode === 'VNBANK'}
+                        onChange={() => setSelectedBankCode('VNBANK')}
+                        className="mt-1 h-4 w-4 accent-brand-600 cursor-pointer"
+                      />
+                      <div className="w-9 h-9 rounded-lg bg-brand-100 text-brand-700 flex items-center justify-center shrink-0">
+                        <Landmark className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-bold text-gray-900">Thẻ ATM / Tài khoản nội địa</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brand-100 text-brand-700">
+                            Khuyên dùng
+                          </span>
+                        </div>
+                        <span className="block text-xs text-gray-500 mt-1">
+                          Hỗ trợ 40+ ngân hàng nội địa Việt Nam
+                        </span>
+                      </div>
+                    </label>
+
+                    <label
+                      className={`relative flex items-start gap-3 p-4 rounded-xl border transition-all cursor-pointer ${
+                        selectedBankCode === 'INTCARD'
+                          ? 'border-2 border-brand-500 bg-brand-50/30 shadow-2xs'
+                          : 'border-gray-200 bg-white hover:border-brand-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="renewal-vnpay-method"
+                        value="INTCARD"
+                        checked={selectedBankCode === 'INTCARD'}
+                        onChange={() => setSelectedBankCode('INTCARD')}
+                        className="mt-1 h-4 w-4 accent-brand-600 cursor-pointer"
+                      />
+                      <div className="w-9 h-9 rounded-lg bg-gray-100 text-gray-700 flex items-center justify-center shrink-0">
+                        <CreditCard className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="block text-sm font-bold text-gray-900">
+                          Thẻ Quốc tế (Visa / Master)
+                        </span>
+                        <span className="block text-xs text-gray-500 mt-1">
+                          Thanh toán bằng thẻ tín dụng / ghi nợ quốc tế
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Thông báo đối soát / lỗi */}
                 {paymentNotice && (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center justify-between gap-2 shadow-xs">
                     <div className="flex items-center gap-2">
@@ -855,44 +981,42 @@ export const RenewalPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Action buttons */}
-                <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-                  {/* Nút Hủy lệnh thanh toán */}
-                  {!showCancelDialog ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowCancelDialog(true)}
-                      className="w-full sm:w-auto text-rose-600 border-rose-200 hover:bg-rose-50"
-                    >
-                      <XCircle className="w-4 h-4 mr-1.5" />
-                      Hủy lệnh thanh toán
-                    </Button>
-                  ) : (
-                    <div className="flex items-center gap-2 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800">
-                      <span>Bạn có chắc muốn hủy lệnh thanh toán gia hạn này?</span>
-                      <Button size="sm" variant="outline" onClick={() => setShowCancelDialog(false)} className="text-xs py-1 px-2">
-                        Không
-                      </Button>
-                      <Button size="sm" onClick={handleCancelPayment} disabled={isCancelling}
-                        className="text-xs py-1 px-2 bg-rose-600 hover:bg-rose-700 text-white">
-                        {isCancelling ? 'Đang hủy...' : 'Xác nhận hủy'}
-                      </Button>
-                    </div>
-                  )}
+                {/* Footer thanh toán gọn gàng, không bị xô lệch layout */}
+                <div className="pt-5 border-t border-gray-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                  {/* Nút Hủy lệnh thanh toán (Ghost Button) */}
+                  <button
+                    type="button"
+                    onClick={() => setShowCancelDialog(true)}
+                    disabled={isProcessing || isPaidSuccess || isCancelling}
+                    className="inline-flex items-center justify-center md:justify-start gap-1.5 text-sm font-medium text-gray-500 hover:text-rose-600 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <XCircle className="w-4 h-4 shrink-0" />
+                    <span>Hủy lệnh thanh toán</span>
+                  </button>
 
-                  <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <Button
-                      variant="primary"
-                      size="md"
-                      disabled={isProcessing || isVerifying || isPaidSuccess}
-                      onClick={handleCheckPaymentAndRenew}
-                      className="w-full sm:w-auto px-6 py-2.5 flex items-center justify-center gap-2 cursor-pointer shadow-sm text-xs font-bold whitespace-nowrap"
+                  {/* Khối bên phải: Tổng tiền + Nút Submit */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6">
+                    <div className="flex items-baseline justify-between sm:flex-col sm:items-end">
+                      <span className="text-xs text-gray-500">Tổng thanh toán:</span>
+                      <span className="text-xl font-bold text-brand-600 tabular-nums">
+                        {formatVND(pricing.finalTotal)}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={isProcessing || isPaidSuccess || isRedirectingVnpay || !checkoutData?.orderCode || isSessionExpired}
+                      onClick={() => {
+                        if (!checkoutData?.orderCode) return;
+                        setIsRedirectingVnpay(true);
+                        window.location.href = vnpayPayHref(checkoutData.orderCode, selectedBankCode);
+                      }}
+                      className="w-full sm:w-auto px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-lg shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
                     >
-                      {isProcessing || isVerifying ? (
+                      {isRedirectingVnpay || isProcessing ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>Đang đối soát...</span>
+                          <span>Đang chuyển hướng sang VNPay...</span>
                         </>
                       ) : isPaidSuccess ? (
                         <>
@@ -901,11 +1025,11 @@ export const RenewalPage: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>Tôi đã hoàn tất chuyển khoản</span>
+                          <span>Thanh toán an toàn qua VNPay</span>
+                          <ArrowRight className="w-4 h-4" />
                         </>
                       )}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </>
@@ -926,6 +1050,47 @@ export const RenewalPage: React.FC = () => {
           navigate('/customer/my-units');
         }}
       />
+
+      {/* Modal xác nhận hủy lệnh thanh toán (Destructive Action Popup) */}
+      {showCancelDialog &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+            onClick={() => !isCancelling && setShowCancelDialog(false)}
+          >
+            <div
+              className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-150"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-6 pt-6 pb-4 space-y-2">
+                <h3 className="text-lg font-bold text-gray-900">Hủy thanh toán?</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Bạn có chắc chắn muốn hủy giao dịch này? Lệnh thanh toán gia hạn hiện tại sẽ bị vô hiệu hóa và bạn sẽ quay về bước chọn kỳ hạn.
+                </p>
+              </div>
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={isCancelling}
+                  onClick={() => setShowCancelDialog(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Quay lại
+                </button>
+                <button
+                  type="button"
+                  disabled={isCancelling}
+                  onClick={handleCancelPayment}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {isCancelling ? 'Đang hủy...' : 'Xác nhận hủy'}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* Electronic Renewal Receipt Modal (E-Receipt) */}
       {renewalResult && (

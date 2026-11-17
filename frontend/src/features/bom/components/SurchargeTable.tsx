@@ -3,12 +3,11 @@ import React, { useState, useMemo } from 'react';
 import {
   AlertCircle,
   Pencil,
-  Power,
   Search,
   Plus,
   Layers,
   Filter,
-  Check,
+  Globe,
 } from 'lucide-react';
 import type { SurchargeItem } from '@/types';
 import { feeCategoryLabel } from '@/features/pricing/feeCategory';
@@ -45,10 +44,8 @@ export const SurchargeTable: React.FC<SurchargeTableProps> = ({
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
-  // Filtered surcharges
   const filteredSurcharges = useMemo(() => {
     return surcharges.filter((item) => {
-      // Search text
       const term = searchTerm.toLowerCase().trim();
       const matchSearch =
         !term ||
@@ -58,7 +55,6 @@ export const SurchargeTable: React.FC<SurchargeTableProps> = ({
         (item.category && item.category.toLowerCase().includes(term)) ||
         (item.facilityName && item.facilityName.toLowerCase().includes(term));
 
-      // Status filter
       const matchStatus =
         statusFilter === 'ALL' ||
         (statusFilter === 'ACTIVE' && item.isActive) ||
@@ -68,7 +64,6 @@ export const SurchargeTable: React.FC<SurchargeTableProps> = ({
     });
   }, [surcharges, searchTerm, statusFilter]);
 
-  // Bulk selection logic
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedIds(filteredSurcharges.map((s) => s.id));
@@ -91,28 +86,28 @@ export const SurchargeTable: React.FC<SurchargeTableProps> = ({
   const selectedTargets = surcharges.filter((s) => selectedIds.includes(s.id));
 
   return (
-    <div className="space-y-3.5">
-      {/* Sleek Toolbar: Search + Status Filter + Add Button */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs">
-        {/* Left: Search & Filter */}
-        <div className="flex flex-1 items-center gap-2.5 max-w-xl">
+    <div className="space-y-3">
+      {/* Compact Toolbar: Search + Status Filter + Primary Brand CTA */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-white px-3.5 py-2.5 rounded-md border border-gray-200">
+        <div className="flex flex-1 items-center gap-2 max-w-xl">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm kiếm phụ phí theo tên hoặc mã..."
-              className="w-full pl-9 pr-3.5 py-2 bg-slate-50/70 border border-slate-200/90 rounded-lg text-xs font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+              placeholder="Tìm kiếm theo tên hoặc mã..."
+              className="w-full pl-9 pr-3 py-1.5 bg-gray-50/70 border border-gray-200 rounded-md text-xs font-medium text-gray-800 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition-colors"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 bg-slate-50/70 border border-slate-200/90 px-2.5 py-1.5 rounded-lg shrink-0">
-            <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          <div className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-gray-300 pl-2.5 pr-1.5 py-1 rounded-md shrink-0 transition-colors">
+            <Filter className="w-3.5 h-3.5 text-gray-500 shrink-0" />
             <select
+              aria-label="Lọc theo trạng thái phụ phí"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE')}
-              className="text-xs font-semibold bg-transparent text-slate-700 outline-none cursor-pointer pr-1"
+              className="text-xs font-medium bg-transparent text-gray-700 border-0 outline-none cursor-pointer py-0.5 pr-6"
             >
               <option value="ALL">Tất cả trạng thái</option>
               <option value="ACTIVE">Đang áp dụng</option>
@@ -121,25 +116,23 @@ export const SurchargeTable: React.FC<SurchargeTableProps> = ({
           </div>
         </div>
 
-        {/* Right: Add Surcharge Button */}
         <button
           type="button"
           onClick={onOpenModal}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer shrink-0"
+          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-md text-xs font-semibold transition-colors cursor-pointer shrink-0"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           <span>Thêm phụ phí</span>
         </button>
       </div>
 
-      {/* Main Data Table */}
-      <div className="bg-white rounded-xl border border-slate-200/80 shadow-[0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+      {/* Main Enterprise Data Table */}
+      <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="bg-slate-100/70 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wide whitespace-nowrap">
-                {/* Checkbox Select All */}
-                <th className="py-3 px-4 w-10 text-center">
+              <tr className="bg-gray-50/80 border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                <th className="py-2.5 px-4 w-10 text-center">
                   <input
                     type="checkbox"
                     checked={isAllSelected}
@@ -148,39 +141,39 @@ export const SurchargeTable: React.FC<SurchargeTableProps> = ({
                     }}
                     onChange={(e) => handleSelectAll(e.target.checked)}
                     disabled={isLoading || filteredSurcharges.length === 0}
-                    className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                    className="rounded border-gray-300 text-brand-600 accent-brand-600 focus:ring-brand-500 cursor-pointer"
                     title="Chọn tất cả để thao tác hàng loạt"
                   />
                 </th>
-                <th className="py-3 px-4">Mã</th>
-                <th className="py-3 px-4 w-full">Tên phụ phí & Hình thức</th>
-                <th className="py-3 px-4">Phạm vi áp dụng</th>
-                <th className="py-3 px-4 text-right">Mức phí</th>
-                <th className="py-3 px-4">Ngày hiệu lực</th>
-                <th className="py-3 px-4 text-center">Trạng thái</th>
-                <th className="py-3 px-4 text-right">Thao tác</th>
+                <th className="py-2.5 px-4">Mã</th>
+                <th className="py-2.5 px-4 w-full">Tên phụ phí &amp; Hình thức</th>
+                <th className="py-2.5 px-4">Phạm vi</th>
+                <th className="py-2.5 px-4 text-right">Mức phí</th>
+                <th className="py-2.5 px-4">Ngày hiệu lực</th>
+                <th className="py-2.5 px-4">Trạng thái</th>
+                <th className="py-2.5 px-4 text-right">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-gray-200 text-gray-700">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-500 text-sm">
-                    <div className="inline-block p-2 rounded-xl bg-amber-50 text-amber-500 animate-pulse mb-2">
-                      <Layers className="w-6 h-6" />
+                  <td colSpan={8} className="py-12 text-center text-gray-500 text-sm">
+                    <div className="inline-block p-2 rounded-md bg-brand-50 text-brand-600 animate-pulse mb-2">
+                      <Layers className="w-5 h-5" />
                     </div>
                     <p className="text-xs font-medium">Đang tải danh mục phụ phí hệ thống...</p>
                   </td>
                 </tr>
               ) : filteredSurcharges.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-500 text-sm">
-                    <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                    <p className="font-semibold text-slate-700 text-sm">
+                  <td colSpan={8} className="py-12 text-center text-gray-500 text-sm">
+                    <AlertCircle className="w-7 h-7 text-gray-300 mx-auto mb-2" />
+                    <p className="font-semibold text-gray-700 text-sm">
                       {searchTerm || statusFilter !== 'ALL'
                         ? 'Không tìm thấy phụ phí phù hợp với bộ lọc'
                         : 'Chưa có phụ phí nào được cấu hình'}
                     </p>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-gray-400 mt-1">
                       {searchTerm || statusFilter !== 'ALL'
                         ? 'Hãy thử thay đổi từ khóa hoặc điều kiện lọc'
                         : 'Nhấn "+ Thêm phụ phí" để khởi tạo danh mục đầu tiên.'}
@@ -196,96 +189,101 @@ export const SurchargeTable: React.FC<SurchargeTableProps> = ({
                   return (
                     <tr
                       key={item.id}
-                      className={`hover:bg-slate-50/80 transition-colors duration-150 ${
-                        isChecked ? 'bg-amber-50/25' : ''
+                      className={`hover:bg-gray-50/80 transition-colors ${
+                        isChecked ? 'bg-brand-50/30' : ''
                       }`}
                     >
                       {/* Checkbox */}
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-2.5 px-4 text-center">
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => handleToggleOne(item.id)}
-                          className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                          className="rounded border-gray-300 text-brand-600 accent-brand-600 focus:ring-brand-500 cursor-pointer"
                         />
                       </td>
 
                       {/* Mã */}
-                      <td className="py-3 px-4 text-xs font-mono text-slate-500 whitespace-nowrap">
+                      <td className="py-2.5 px-4 text-xs font-medium text-gray-500 tabular-nums whitespace-nowrap">
                         {item.code?.trim() ? item.code : `#${item.id}`}
                       </td>
 
-                      {/* Tên phụ phí & Hình thức / Nhóm gộp */}
-                      <td className="py-3 px-4 whitespace-normal">
+                      {/* Tên phụ phí & Hình thức */}
+                      <td className="py-2.5 px-4 whitespace-normal">
                         <div className="flex flex-col">
-                          <span className="font-medium text-slate-900 text-sm">
+                          <span className="font-semibold text-gray-900 text-sm leading-snug">
                             {item.name}
                           </span>
-                          <div className="flex items-center gap-1.5 mt-0.5 text-xs text-slate-500 whitespace-nowrap">
-                            <span>{isFixed ? 'Cố định' : 'Tỷ lệ %'}</span>
-                            <span className="text-slate-300">•</span>
-                            <span>{feeCategoryLabel(item.category)}</span>
-                          </div>
+                          <span className="text-xs text-gray-500 mt-0.5 whitespace-nowrap">
+                            {isFixed ? 'Cố định' : 'Tỷ lệ %'} - {feeCategoryLabel(item.category)}
+                          </span>
                         </div>
                       </td>
 
                       {/* Phạm vi áp dụng */}
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <span className="text-xs font-medium text-slate-600">
-                          {item.facilityName || 'Toàn hệ thống'}
-                        </span>
+                      <td className="py-2.5 px-4 whitespace-nowrap">
+                        {item.facilityName ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded bg-brand-50 text-brand-700 border border-brand-200 text-xs font-medium">
+                            {item.facilityName}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-xs font-medium">
+                            <Globe className="w-3 h-3 text-gray-400 shrink-0" />
+                            <span>Toàn hệ thống</span>
+                          </span>
+                        )}
                       </td>
 
-                      {/* Mức phí: căn phải, tabular nums */}
-                      <td className="py-3 px-4 text-right tabular-nums text-sm font-medium text-slate-900 whitespace-nowrap">
+                      {/* Mức phí: strictly right-aligned, tabular-nums */}
+                      <td className="py-2.5 px-4 text-right tabular-nums text-sm font-semibold text-gray-900 whitespace-nowrap">
                         {isFixed ? (
                           <>
-                            <span>{item.amount.toLocaleString('vi-VN')}</span>{' '}
-                            <span className="text-xs font-semibold text-slate-400">₫</span>
+                            <span>{item.amount.toLocaleString('vi-VN')}</span>
+                            <span className="ml-1 text-xs font-medium text-gray-500">đ</span>
                           </>
                         ) : (
                           <>
                             <span>{item.amount}</span>
-                            <span className="text-xs font-semibold text-slate-400">%</span>
+                            <span className="text-xs font-medium text-gray-500">%</span>
                           </>
                         )}
                       </td>
 
                       {/* Ngày hiệu lực */}
-                      <td className="py-3 px-4 text-sm text-slate-700 whitespace-nowrap">
+                      <td className="py-2.5 px-4 text-sm text-gray-700 tabular-nums whitespace-nowrap">
                         {dateText === 'Vô thời hạn' ? (
-                          <span className="text-xs text-slate-400 italic">Vô thời hạn</span>
+                          <span className="text-xs text-gray-400">Vô thời hạn</span>
                         ) : (
-                          <span className="num">{dateText}</span>
+                          <span>{dateText}</span>
                         )}
                       </td>
 
-                      {/* Trạng thái Badge */}
-                      <td className="py-3 px-4 text-center">
+                      {/* Trạng thái */}
+                      <td className="py-2.5 px-4 whitespace-nowrap">
                         {item.isActive ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80 whitespace-nowrap">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            Đang áp dụng
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-50/70 text-emerald-800 border border-emerald-300">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                            <span>Đang áp dụng</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                            Tạm ngưng
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-300">
+                            <span className="w-1.5 h-1.5 rounded-full border border-gray-500 bg-white" />
+                            <span>Tạm ngưng</span>
                           </span>
                         )}
                       </td>
 
-                      {/* Thao tác */}
-                      <td className="py-3 px-4 text-right">
-                        <div className="inline-flex items-center justify-end gap-1">
+                      {/* Thao tác: Edit + 1-click Toggle Switch */}
+                      <td className="py-2.5 px-4 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center justify-end gap-2.5">
                           <Tooltip content="Chỉnh sửa định mức và thông tin phụ phí" position="top" align="end">
                             <button
                               type="button"
                               onClick={() => onEdit(item)}
-                              className="p-1.5 text-slate-400 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors cursor-pointer"
                               aria-label="Sửa"
                             >
-                              <Pencil className="w-4 h-4" />
+                              <Pencil className="w-3.5 h-3.5" />
                             </button>
                           </Tooltip>
 
@@ -296,15 +294,20 @@ export const SurchargeTable: React.FC<SurchargeTableProps> = ({
                           >
                             <button
                               type="button"
-                              onClick={() => onToggleStatus(item)}
-                              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                                item.isActive
-                                  ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
-                                  : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
-                              }`}
+                              role="switch"
+                              aria-checked={item.isActive}
                               aria-label={item.isActive ? 'Tạm ngưng' : 'Kích hoạt'}
+                              onClick={() => onToggleStatus(item)}
+                              className={`relative inline-flex h-[18px] w-8 shrink-0 items-center rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 ${
+                                item.isActive ? 'bg-brand-600' : 'bg-gray-300'
+                              }`}
                             >
-                              <Power className="w-4 h-4" />
+                              <span
+                                aria-hidden="true"
+                                className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-xs transition-transform ${
+                                  item.isActive ? 'translate-x-4' : 'translate-x-0.5'
+                                }`}
+                              />
                             </button>
                           </Tooltip>
                         </div>
@@ -318,29 +321,33 @@ export const SurchargeTable: React.FC<SurchargeTableProps> = ({
         </div>
       </div>
 
-      {/* Floating Bulk Action Bar */}
+      {/* Light Floating Bulk Action Bar (Linear / Notion style) */}
       {selectedIds.length > 0 && onBulkToggleStatus && (
-        <div className="sticky bottom-4 z-20 flex items-center justify-between px-5 py-3 bg-slate-900 text-white rounded-xl shadow-xl border border-slate-800 animate-in fade-in slide-in-from-bottom-2 duration-200">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-slate-900 text-xs font-bold">
-              {selectedIds.length}
-            </span>
-            <span className="text-xs font-medium text-slate-200">
-              Đã chọn <strong>{selectedIds.length}</strong> phụ phí
+        <div className="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-white/95 backdrop-blur-sm text-gray-900 rounded-lg shadow-[0_8px_28px_rgba(15,23,42,0.12)] border border-gray-200">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-gray-900 tabular-nums">
+              Đã chọn {selectedIds.length} phụ phí
             </span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={() => setSelectedIds([])}
+              className="px-2.5 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors cursor-pointer"
+            >
+              Bỏ chọn
+            </button>
+
+            <button
+              type="button"
               onClick={() => {
                 onBulkToggleStatus(selectedTargets, false);
                 setSelectedIds([]);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600/90 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 text-gray-700 text-xs font-medium rounded-md transition-colors cursor-pointer"
             >
-              <Power className="w-3.5 h-3.5" />
-              <span>Tạm ngưng hàng loạt</span>
+              Tạm ngưng
             </button>
 
             <button
@@ -349,18 +356,9 @@ export const SurchargeTable: React.FC<SurchargeTableProps> = ({
                 onBulkToggleStatus(selectedTargets, true);
                 setSelectedIds([]);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-md transition-colors cursor-pointer"
             >
-              <Check className="w-3.5 h-3.5" />
-              <span>Kích hoạt hàng loạt</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedIds([])}
-              className="px-2.5 py-1.5 text-xs text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer ml-1"
-            >
-              Bỏ chọn
+              Kích hoạt
             </button>
           </div>
         </div>

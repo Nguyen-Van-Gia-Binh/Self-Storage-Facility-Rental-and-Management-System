@@ -109,9 +109,9 @@ describe("RenewalPage Stepper Disabled & Digital Clock", () => {
     await renderRenewalPageAtStep3();
 
     const step1El = screen
-      .getByText("1. Chọn kỳ hạn & Kiểm tra")
+      .getByText(/Chọn kỳ hạn & Kiểm tra/)
       .closest("div");
-    const step2El = screen.getByText("2. Bảng kê tài chính").closest("div");
+    const step2El = screen.getByText(/Bảng kê tài chính/).closest("div");
 
     expect(step1El).toHaveClass("cursor-not-allowed");
     expect(step2El).toHaveClass("cursor-not-allowed");
@@ -135,5 +135,39 @@ describe("RenewalPage Stepper Disabled & Digital Clock", () => {
     expect(
       screen.queryByText("Tiến Hành Thanh Toán VietQR (Napas247)"),
     ).not.toBeInTheDocument();
+  });
+
+  it("giữ đúng đồng hồ đếm ngược real-time từ server khi thoát ra vào lại (không bao giờ reset về 15:00:00)", async () => {
+    // Phiên thanh toán thực tế chỉ còn đúng 12 giờ 30 phút (không phải 15 giờ / 48 giờ mới)
+    const serverExpiresAt = new Date(Date.now() + (12 * 3600 + 30 * 60) * 1000).toISOString();
+    vi.spyOn(customerRentalsApi, "getCustomerContracts").mockResolvedValue([
+      {
+        ...mockContract,
+        pendingRenewalExpiresAt: serverExpiresAt,
+      },
+    ]);
+    vi.spyOn(customerApi, "getPaymentStatus").mockResolvedValue({
+      id: 1,
+      referenceType: "CONTRACT_RENEWAL",
+      referenceId: 1,
+      orderCode: 888888,
+      amount: 4500000,
+      status: "PENDING",
+      expiresAt: serverExpiresAt,
+    });
+
+    // Mô phỏng thoát ra rồi bấm vào lại trang /customer/renew/1 (kể cả không có ?step=3 trên URL)
+    render(
+      <MemoryRouter initialEntries={["/customer/renew/1"]}>
+        <Routes>
+          <Route path="/customer/renew/:contractId" element={<RenewalPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    // Tự động khôi phục Bước 3 và hiển thị đúng 12:29:xx hoặc 12:30:00 từ server
+    await screen.findByText("Thanh toán VNPay để hoàn tất gia hạn");
+    const expiryContainer = screen.getByText(/Hiệu lực phiên giao dịch:/).parentElement;
+    expect(expiryContainer?.textContent).toMatch(/12:(29|30):\d{2}/);
   });
 });

@@ -20,6 +20,7 @@ export interface CheckoutResponse {
   accountNumber: string;
   bin: string;
   status: string;
+  expiresAt?: string;
 }
 
 export interface PaymentStatusResponse {
@@ -30,6 +31,8 @@ export interface PaymentStatusResponse {
   status: string;
   orderCode: number;
   transactionRef?: string;
+  createdAt?: string;
+  expiresAt?: string;
 }
 
 /**

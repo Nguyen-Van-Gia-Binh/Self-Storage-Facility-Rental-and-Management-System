@@ -75,7 +75,9 @@ describe('OverdueClearedAudit: Trạng thái & Cảnh báo Thẻ ô kho sau khi 
       />
     );
 
-    expect(screen.getByText(/Văn bản hợp đồng & Biên bản bàn giao/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/HỢP ĐỒNG THUÊ Ô KHO THÔNG MINH & BIÊN BẢN BÀN GIAO ĐIỆN TỬ/i)
+    ).toBeInTheDocument();
     expect(screen.queryByText('Quá hạn thanh toán')).not.toBeInTheDocument();
   });
 });

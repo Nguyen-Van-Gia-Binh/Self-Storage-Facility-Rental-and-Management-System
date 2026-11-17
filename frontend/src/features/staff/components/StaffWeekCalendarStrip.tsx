@@ -35,14 +35,14 @@ export const getMondayOfWeek = (d: Date): Date => {
   return date;
 };
 
-const DAY_LABELS = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
+const DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
 export const StaffWeekCalendarStrip: React.FC<StaffWeekCalendarStripProps> = ({
   selectedDate,
   onDateChange,
   totalTasksForSelectedDate,
 }) => {
-  const todayStr = useMemo(() => formatLocalDate(new Date()), []);
+  const todayStr = formatLocalDate(new Date());
 
   // Ngày Thứ Hai của tuần đang hiển thị
   const [viewingMonday, setViewingMonday] = useState<Date>(() => {
@@ -71,7 +71,6 @@ export const StaffWeekCalendarStrip: React.FC<StaffWeekCalendarStripProps> = ({
       date: Date;
       dayLabel: string;
       dayNumber: number;
-      monthText: string;
       isToday: boolean;
       isSelected: boolean;
     }> = [];
@@ -84,7 +83,6 @@ export const StaffWeekCalendarStrip: React.FC<StaffWeekCalendarStripProps> = ({
         date: d,
         dayLabel: DAY_LABELS[i],
         dayNumber: d.getDate(),
-        monthText: `${d.getDate()} Thg ${d.getMonth() + 1}`,
         isToday: dateStr === todayStr,
         isSelected: dateStr === selectedDate,
       });
@@ -123,30 +121,28 @@ export const StaffWeekCalendarStrip: React.FC<StaffWeekCalendarStripProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-3.5 sm:p-4 space-y-3">
+    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs px-3.5 py-3 sm:px-4 space-y-2.5">
       {/* Header điều khiển tuần & Chuyển ngày */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2 border-b border-slate-100">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-200/60">
-            <CalendarIcon className="w-4 h-4" />
+          <div className="w-7 h-7 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center shrink-0 border border-brand-200/60">
+            <CalendarIcon className="w-3.5 h-3.5" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs sm:text-sm font-bold text-slate-800">Lịch ca trực tuần</span>
-              <span className="text-xs font-semibold text-slate-500 hidden sm:inline">·</span>
-              <span className="text-xs font-semibold text-teal-700">{weekRangeText}</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Lịch trực tuần</span>
+            <span className="text-xs text-slate-300 hidden sm:inline">·</span>
+            <span className="text-xs font-semibold text-brand-700">{weekRangeText}</span>
           </div>
         </div>
 
-        {/* Cụm nút điều hướng: Tuần trước / Hôm nay / Tuần sau */}
+        {/* Cụm nút điều hướng: Hôm nay / Tuần trước / Tuần sau */}
         <div className="flex items-center gap-1.5 ml-auto">
           <button
             type="button"
             onClick={handleGoToday}
-            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer border ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer border ${
               selectedDate === todayStr
-                ? 'bg-emerald-50 text-emerald-800 border-emerald-200 shadow-2xs'
+                ? 'bg-brand-50 text-brand-700 border-brand-200'
                 : 'bg-white text-slate-600 hover:text-slate-900 border-slate-200 hover:bg-slate-50'
             }`}
             title="Quay lại ngày hôm nay"
@@ -155,20 +151,20 @@ export const StaffWeekCalendarStrip: React.FC<StaffWeekCalendarStripProps> = ({
             <span>Hôm nay</span>
           </button>
 
-          <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50/60 p-0.5">
+          <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50/70 p-0.5">
             <button
               type="button"
               onClick={handlePrevWeek}
-              className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white transition cursor-pointer"
+              className="p-1 rounded-md text-slate-600 hover:text-slate-900 hover:bg-white transition cursor-pointer"
               title="Tuần trước"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <div className="w-px h-4 bg-slate-200 mx-0.5" />
+            <div className="w-px h-3.5 bg-slate-200 mx-0.5" />
             <button
               type="button"
               onClick={handleNextWeek}
-              className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white transition cursor-pointer"
+              className="p-1 rounded-md text-slate-600 hover:text-slate-900 hover:bg-white transition cursor-pointer"
               title="Tuần sau"
             >
               <ChevronRight className="w-4 h-4" />
@@ -177,71 +173,56 @@ export const StaffWeekCalendarStrip: React.FC<StaffWeekCalendarStripProps> = ({
         </div>
       </div>
 
-      {/* Dải 7 thẻ ngày (Ẩn hoàn toàn thanh cuộn ngang, chia đều 7 cột trên màn hình lớn) */}
-      <div className="flex md:grid md:grid-cols-7 items-stretch gap-2 sm:gap-2.5 overflow-x-auto md:overflow-visible [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      {/* Dải ngang 7 ngày gọn gàng (Ẩn hoàn toàn thanh cuộn ngang, chia đều 7 cột trên màn hình lớn) */}
+      <div className="flex md:grid md:grid-cols-7 items-stretch gap-2 overflow-x-auto md:overflow-visible pb-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {weekDays.map((day) => {
-          const { dateStr, dayLabel, dayNumber, monthText, isToday, isSelected } = day;
+          const { dateStr, dayLabel, dayNumber, isToday, isSelected } = day;
 
           return (
             <button
               key={dateStr}
               type="button"
               onClick={() => onDateChange(dateStr)}
-              className={`flex-1 min-w-[92px] md:min-w-0 rounded-2xl p-2.5 sm:p-3 text-center transition-colors duration-200 cursor-pointer border flex flex-col justify-between select-none ${
+              className={`relative flex-1 min-w-[74px] md:min-w-0 rounded-xl px-2.5 py-2 text-center transition-colors duration-150 cursor-pointer flex flex-col items-center justify-center gap-0.5 select-none ${
                 isSelected
-                  ? 'bg-teal-600 text-white border-teal-700 shadow-sm'
-                  : 'bg-white hover:bg-teal-50/40 text-slate-700 border-slate-200/90 hover:border-teal-300 shadow-2xs hover:shadow-xs'
+                  ? 'bg-white border-2 border-brand-500 text-brand-700 shadow-sm'
+                  : 'bg-slate-50/80 hover:bg-slate-100 text-slate-600 border border-slate-200/70 hover:border-slate-300'
               }`}
             >
-              {/* Hàng 1: Thứ & Badge Hôm nay */}
-              <div className="flex items-center justify-between gap-1 w-full mb-1">
+              <div className="flex items-center gap-1">
                 <span
-                  className={`text-[11px] font-bold uppercase tracking-wider truncate ${
-                    isSelected ? 'text-teal-100' : 'text-slate-500'
+                  className={`text-[11px] uppercase tracking-wider ${
+                    isSelected ? 'font-bold text-brand-600' : 'font-medium text-slate-500'
                   }`}
                 >
                   {dayLabel}
                 </span>
-                {isToday && (
-                  <span
-                    className={`text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase shrink-0 ${
-                      isSelected
-                        ? 'bg-white/20 text-white'
-                        : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                    }`}
-                  >
-                    Hôm nay
-                  </span>
-                )}
-              </div>
-
-              {/* Hàng 2: Số ngày to nổi bật */}
-              <div className="my-0.5">
-                <span
-                  className={`text-2xl sm:text-3xl font-black num tracking-tight ${
-                    isSelected ? 'text-white' : 'text-slate-900'
-                  }`}
-                >
-                  {dayNumber < 10 ? `0${dayNumber}` : dayNumber}
-                </span>
-              </div>
-
-              {/* Hàng 3: Chi tiết ngày & Thống kê nhiệm vụ khi được chọn */}
-              <div className="mt-1 pt-1 border-t border-current/15 flex flex-col items-center">
-                <span
-                  className={`text-[11px] font-medium leading-none ${
-                    isSelected ? 'text-teal-100' : 'text-slate-400'
-                  }`}
-                >
-                  {monthText}
-                </span>
-
                 {isSelected && typeof totalTasksForSelectedDate === 'number' && (
-                  <span className="text-[10px] font-bold text-white bg-teal-700/70 px-1.5 py-0.5 rounded-md mt-1 leading-none shadow-2xs">
-                    {totalTasksForSelectedDate} việc ca trực
+                  <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-brand-50 text-brand-700 border border-brand-200/80">
+                    {totalTasksForSelectedDate} việc
                   </span>
                 )}
               </div>
+
+              <span
+                className={`text-lg font-bold num leading-tight ${
+                  isSelected ? 'text-brand-700' : 'text-slate-800'
+                }`}
+              >
+                {dayNumber < 10 ? `0${dayNumber}` : dayNumber}
+              </span>
+
+              {isToday && (
+                <span
+                  className={`absolute -bottom-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none ${
+                    isSelected
+                      ? 'bg-brand-500 text-white shadow-2xs'
+                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  }`}
+                >
+                  Hôm nay
+                </span>
+              )}
             </button>
           );
         })}

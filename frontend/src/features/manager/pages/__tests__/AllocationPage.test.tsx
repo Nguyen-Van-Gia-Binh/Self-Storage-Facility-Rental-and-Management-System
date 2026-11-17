@@ -84,6 +84,24 @@ vi.mock('@/features/manager/components/FacilityFloorPlanMapModal', () => ({
         >
           Chọn ô Q7-AC-M205
         </button>
+        <button
+          type="button"
+          data-testid="select-mock-upgrade-unit-btn"
+          onClick={() =>
+            onSelectUnit({
+              id: 95,
+              code: 'Q7-AC-XL101',
+              facilityId: 2,
+              unitTypeId: 8,
+              unitTypeName: 'Kho Máy Lạnh XL',
+              floor: 1,
+              position: 'Khu A',
+              status: 'AVAILABLE',
+            } as StorageUnitResponse)
+          }
+        >
+          Chọn ô Q7-AC-XL101
+        </button>
         <button type="button" onClick={onClose}>
           Đóng sơ đồ
         </button>
@@ -222,8 +240,8 @@ describe('AllocationPage Component (Gán ô kho)', () => {
       expect(screen.getByRole('heading', { name: /Xác nhận phân bổ ô kho/i })).toBeDefined();
     });
 
-    // Kiểm tra thông tin khách hàng được hiển thị rõ ràng trên form modal
-    expect(screen.getByText('Thông tin khách hàng')).toBeDefined();
+    // Kiểm tra thông tin đơn hàng & khách hàng được hiển thị phẳng, rõ ràng trên form modal
+    expect(screen.getByText('Thông tin đơn hàng')).toBeDefined();
     expect(screen.getAllByText('Nguyễn Văn Gia Bình').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('0901234567').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('binh.nguyen@example.com')).toBeDefined();
@@ -349,7 +367,7 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     });
   });
 
-  it('6. Hợp đồng thực sự có sự cố bàn giao (relocationEligible = true) vẫn hiển thị "Sự cố bàn giao" và "Đổi ô kho"', async () => {
+  it('6. Hợp đồng thực sự có sự cố bàn giao (relocationEligible = true) vẫn hiển thị "Sự cố bàn giao", badge "Cần đổi ô (Sự cố)" và nút chính màu Mint "Gán ô kho"', async () => {
     vi.mocked(reservationApi.listReservations).mockResolvedValue([]);
     vi.mocked(contractApi.getManagerContracts).mockResolvedValue([
       {
@@ -381,8 +399,9 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     await waitFor(() => {
       expect(screen.getByText('CTR-20261108-9999')).toBeDefined();
       expect(screen.getByText('Sự cố bàn giao')).toBeDefined();
-      expect(screen.getByText('Gán lại ô kho')).toBeDefined();
-      expect(screen.getByText('Đổi ô kho')).toBeDefined();
+      expect(screen.getByText('Cần đổi ô (Sự cố)')).toBeDefined();
+      const actionBtn = screen.getByRole('button', { name: /Gán ô kho/i });
+      expect(actionBtn.className).toContain('bg-brand-600');
     });
   });
 
@@ -441,7 +460,7 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     });
   });
 
-  it('8. Đơn đã gán ô kho (isAssigned = true) KHÔNG biến mất khỏi danh sách, hiển thị badge "Ô: ..." và nút "Đổi ô kho"', async () => {
+  it('8. Đơn đã gán ô kho (isAssigned = true) KHÔNG biến mất khỏi danh sách, hiển thị badge "Đã gán: ..." và nút viền xám "Đổi ô"', async () => {
     vi.mocked(reservationApi.listReservations).mockResolvedValue([]);
     vi.mocked(contractApi.getManagerContracts).mockResolvedValue([
       {
@@ -466,13 +485,15 @@ describe('AllocationPage Component (Gán ô kho)', () => {
 
     await waitFor(() => {
       expect(screen.getByText('CTR-20261109-5101')).toBeDefined();
-      expect(screen.getByText('Ô: Q7-AC-M101')).toBeDefined();
+      expect(screen.getByText('Đã gán: Q7-AC-M101')).toBeDefined();
       expect(screen.getByText('NV: Trần Thị Nhân Viên')).toBeDefined();
-      expect(screen.getByText('Đổi ô kho')).toBeDefined();
+      const swapBtn = screen.getByRole('button', { name: /^Đổi ô$/i });
+      expect(swapBtn.className).toContain('bg-white');
+      expect(swapBtn.className).not.toContain('bg-indigo-600');
     });
   });
 
-  it('9. Bấm "Đổi ô kho" cho đơn đã gán mở sơ đồ 2D (có highlightUnitId), chọn ô mới và gọi đổi ô thành công theo BR-AVL-04', async () => {
+  it('9. Bấm "Đổi ô" cho đơn đã gán mở sơ đồ 2D (có highlightUnitId), chọn ô mới và gọi đổi ô thành công theo BR-AVL-04', async () => {
     vi.mocked(reservationApi.listReservations).mockResolvedValue([
       {
         id: 555,
@@ -516,8 +537,8 @@ describe('AllocationPage Component (Gán ô kho)', () => {
       expect(screen.getByText('CTR-20261109-5101')).toBeDefined();
     });
 
-    // Bấm nút "Đổi ô kho"
-    const reassignBtn = screen.getByText('Đổi ô kho');
+    // Bấm nút "Đổi ô"
+    const reassignBtn = screen.getByRole('button', { name: /^Đổi ô$/i });
     fireEvent.click(reassignBtn);
 
     // Modal sơ đồ 2D hiển thị với highlightUnitId là ô 42
@@ -583,15 +604,15 @@ describe('AllocationPage Component (Gán ô kho)', () => {
       expect(screen.getByText('CTR-ASSIGNED-02')).toBeDefined();
     });
 
-    // Chuyển sang tab "Chưa gán ô (1)"
-    fireEvent.click(screen.getByText('Chưa gán ô (1)'));
+    // Chuyển sang tab "Chưa gán ô / Cần đổi (1)"
+    fireEvent.click(screen.getByText('Chưa gán ô / Cần đổi (1)'));
     await waitFor(() => {
       expect(screen.getByText('CTR-UNASSIGNED-01')).toBeDefined();
       expect(screen.queryByText('CTR-ASSIGNED-02')).toBeNull();
     });
 
-    // Chuyển sang tab "Đã gán ô (Có thể đổi) (1)"
-    fireEvent.click(screen.getByText('Đã gán ô (Có thể đổi) (1)'));
+    // Chuyển sang tab "Đã gán ô (1)"
+    fireEvent.click(screen.getByText('Đã gán ô (1)'));
     await waitFor(() => {
       expect(screen.queryByText('CTR-UNASSIGNED-01')).toBeNull();
       expect(screen.getByText('CTR-ASSIGNED-02')).toBeDefined();
@@ -608,7 +629,7 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     // Kiểm tra dropdown hiển thị đúng cơ sở được phân công
     await waitFor(() => {
       expect(screen.getByRole('combobox')).toBeDefined();
-      expect(screen.getByText('Cơ sở Quận 7 - TP.HCM')).toBeDefined();
+      expect(screen.getAllByText('Cơ sở Quận 7 - TP.HCM').length).toBeGreaterThanOrEqual(1);
     });
 
     // Đảm bảo listReservations được gọi với đúng facilityId = 2, không bị gọi không có facilityId
@@ -617,5 +638,81 @@ describe('AllocationPage Component (Gán ô kho)', () => {
         facilityId: 2,
       })
     );
+  });
+
+  it('12. Chuẩn hóa UI Enterprise SaaS: không còn cầu vồng nút cam/tím, bỏ emoji thừa, bỏ Box Soup trong Modal và đồng bộ Soft Badges', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const pagePath = path.resolve(
+      process.cwd(),
+      'src/features/manager/pages/AllocationPage.tsx'
+    );
+    const content = fs.readFileSync(pagePath, 'utf-8');
+
+    expect(content).not.toContain('bg-indigo-600');
+    expect(content).not.toContain('bg-amber-600');
+    expect(content).not.toContain('🏢');
+    expect(content).not.toContain('💡');
+    // Modal Xác nhận phân bổ ô kho đã làm phẳng: không còn khung xanh nhạt bg-sky-50 hay hộp mã đơn/mã kho
+    expect(content).not.toContain('bg-sky-50/70');
+    expect(content).toContain('<hr className="border-gray-100 my-4" />');
+  });
+
+  it('13. Modal điều chuyển ô kho (sự cố + nâng hạng): bỏ icon đũa thần Sparkles, bỏ bôi đỏ ngày bắt đầu, hiện rõ chuyển từ ô cũ -> ô mới và dùng nút Primary Xanh dương', async () => {
+    vi.mocked(reservationApi.listReservations).mockResolvedValue([]);
+    vi.mocked(contractApi.getManagerContracts).mockResolvedValue([
+      {
+        id: 6357,
+        code: 'CTR-20261111-6357',
+        facilityId: 2,
+        facilityName: 'Cơ sở Quận 7 - TP.HCM',
+        customerId: 11,
+        customerName: 'Lê Thanh Tùng',
+        customerPhone: '0868268970',
+        customerEmail: 'thanhtung22012006@gmail.com',
+        storageUnitId: 501,
+        storageUnitCode: 'Q7-STD-501',
+        unitTypeId: 5,
+        unitTypeName: 'Kho Máy Lạnh M',
+        startDate: '2026-11-14',
+        endDateExclusive: '2027-02-14',
+        rentalMonths: 3,
+        status: 'RELOCATION_PENDING',
+        relocationEligible: true,
+        assignedStaffId: 9,
+        assignedStaffName: 'Trần Văn Hùng',
+      } as ManagerContractItem,
+    ]);
+
+    render(<AllocationPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('CTR-20261111-6357')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Gán ô kho/i }));
+    await waitFor(() => expect(screen.getByTestId('select-mock-upgrade-unit-btn')).toBeDefined());
+    fireEvent.click(screen.getByTestId('select-mock-upgrade-unit-btn'));
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /Xác nhận điều chuyển ô kho/i })).toBeDefined();
+    });
+
+    // Không còn icon Sparkles (đũa thần AI Slop) trong modal
+    expect(document.body.innerHTML).not.toContain('lucide-sparkles');
+    // Hiển thị chuyển dịch từ ô cũ (Q7-STD-501) sang ô mới (Q7-AC-XL101)
+    expect(screen.getByText('Q7-STD-501')).toBeDefined();
+    expect(screen.getByText('Q7-AC-XL101')).toBeDefined();
+
+    // Ngày bắt đầu hợp đồng dùng text đen/xám chuẩn, KHÔNG bôi đỏ như lỗi
+    const contractDateEl = screen.getByTestId('modal-contract-date');
+    expect(contractDateEl.textContent).toBe('14/11/2026');
+    expect(contractDateEl.className).not.toContain('text-rose-700');
+    expect(contractDateEl.className).not.toContain('bg-rose-50');
+
+    // Nút xác nhận điều chuyển dùng màu Primary Xanh dương (bg-blue-600)
+    const confirmBtn = screen.getByRole('button', { name: /Xác nhận điều chuyển/i });
+    expect(confirmBtn.className).toContain('bg-blue-600');
+    expect(confirmBtn.className).toContain('text-white');
   });
 });

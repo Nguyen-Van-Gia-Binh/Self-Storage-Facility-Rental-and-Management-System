@@ -35,7 +35,7 @@ describe('ReschedulePeriodModal — Dời ngày nhận kho có thu phí (BR-RES-
       />
     );
 
-    expect(screen.getByText(/Dời ngày nhận kho/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Dời ngày nhận kho/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('A101')).toBeInTheDocument();
 
     const dateInput = screen.getByLabelText(/Chọn ngày bắt đầu mới/i) as HTMLInputElement;

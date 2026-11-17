@@ -395,7 +395,8 @@ export const PolicyDrawer: React.FC<PolicyDrawerProps> = ({
                   Thông số snapshot lịch sử phiên bản v{viewingVersion?.versionNo}
                 </p>
                 <p className="mt-0.5">
-                  Ngày áp dụng: {viewingVersion?.effectiveDate || '—'} · Người ban hành: {viewingVersion?.publishedBy ? `BOM #${viewingVersion.publishedBy}` : 'Hệ thống'}
+                  Ngày áp dụng: {viewingVersion?.effectiveDate || '—'} · Người ban hành:{' '}
+                  {viewingVersion?.publishedByName || (viewingVersion?.publishedBy ? `BOM #${viewingVersion.publishedBy}` : 'Hệ thống')}
                 </p>
               </div>
             </div>

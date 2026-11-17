@@ -104,10 +104,7 @@ export const HomePage: React.FC = () => {
   };
 
   return (
-    <div
-      style={{ fontFamily: "'Be Vietnam Pro', 'Plus Jakarta Sans', sans-serif" }}
-      className="bg-white text-[#0a1614] antialiased selection:bg-[#0c5a8a] selection:text-white"
-    >
+    <div className="bg-white text-[#0a1614] antialiased selection:bg-[#0c5a8a] selection:text-white">
       {/* 1. Hero Phong cách Cofounder + Công cụ Ước lượng 3D */}
       <HomeHeroSection
         unitTypes={unitTypes}

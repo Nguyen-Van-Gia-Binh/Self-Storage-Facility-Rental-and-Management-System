@@ -1,17 +1,11 @@
 // frontend/src/features/manager/components/StorageUnitFloorPlanView.tsx
 import React, { useState, useMemo } from 'react';
 import {
-  Layers,
-  MapPin,
-  TrendingUp,
-  ArrowRight,
-  Sparkles,
+  ArrowUpDown,
   Wrench,
   User,
   Calendar,
-  ExternalLink,
-  Building2,
-  CheckCircle2,
+  ChevronRight,
 } from 'lucide-react';
 import type { StorageUnitResponse, UnitStatus } from '@/types/unit';
 import type { ManagerContractItem } from '@/types/contractManager';
@@ -29,7 +23,6 @@ export interface StorageUnitFloorPlanViewProps {
   onStatusChange?: (unit: StorageUnitResponse, status: UnitStatus) => Promise<void> | void;
 }
 
-// Helper date math & formatting
 const getTodayStr = (): string => {
   const now = new Date();
   const year = now.getFullYear();
@@ -75,14 +68,12 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
     return sorted.length > 0 ? sorted : [1, 2, 3];
   }, [units]);
 
-  // Đảm bảo currentFloor luôn hợp lệ khi đổi danh sách
   React.useEffect(() => {
     if (availableFloors.length > 0 && !availableFloors.includes(currentFloor)) {
       setCurrentFloor(availableFloors[0]);
     }
   }, [availableFloors, currentFloor]);
 
-  // Các ô kho thuộc tầng đang chọn
   const floorUnits = useMemo(() => {
     return units.filter((u) => (u.floor ?? 1) === currentFloor);
   }, [units, currentFloor]);
@@ -98,7 +89,8 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
         contract,
         status: 'MAINTENANCE' as UnitStatus,
         statusLabel: 'Bảo trì',
-        note: 'Bảo trì kỹ thuật',
+        tileLabel: 'BẢO TRÌ',
+        note: 'Đang bảo trì kỹ thuật',
       };
     }
 
@@ -107,7 +99,6 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
       const cEnd = contract.endDateExclusive ? contract.endDateExclusive.substring(0, 10) : '';
 
       if (startDate && endDate) {
-        // Giao cắt: cStart < endDate && cEnd > startDate
         isOccupied = Boolean(cStart && cEnd && cStart < endDate && cEnd > startDate);
         if (isOccupied) {
           note = `Khách ${contract.customerName} thuê đến ${formatVnDate(cEnd)}`;
@@ -120,7 +111,9 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
           note = `Khách ${contract.customerName} thuê đến ${formatVnDate(cEnd)}`;
         }
       } else {
-        isOccupied = unit.status === 'OCCUPIED' || Boolean(cStart && cEnd && cStart <= todayStr && cEnd > todayStr);
+        isOccupied =
+          unit.status === 'OCCUPIED' ||
+          Boolean(cStart && cEnd && cStart <= todayStr && cEnd > todayStr);
         if (isOccupied) {
           note = `Khách ${contract.customerName} đang thuê`;
         }
@@ -129,17 +122,29 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
 
     const computedStatus: UnitStatus = isOccupied
       ? 'OCCUPIED'
-      : (unit.status === 'RESERVED' ? 'RESERVED' : 'AVAILABLE');
+      : unit.status === 'RESERVED'
+        ? 'RESERVED'
+        : 'AVAILABLE';
 
     return {
       contract,
       status: computedStatus,
-      statusLabel: computedStatus === 'OCCUPIED' ? 'Đang thuê' : (computedStatus === 'RESERVED' ? 'Chờ nhận kho' : 'Trống'),
-      note: note || (computedStatus === 'AVAILABLE' ? 'Sẵn sàng đón khách' : ''),
+      statusLabel:
+        computedStatus === 'OCCUPIED'
+          ? 'Đang thuê'
+          : computedStatus === 'RESERVED'
+            ? 'Chờ nhận kho'
+            : 'Đang trống',
+      tileLabel:
+        computedStatus === 'OCCUPIED'
+          ? 'ĐANG THUÊ'
+          : computedStatus === 'RESERVED'
+            ? 'CHỜ NHẬN'
+            : 'TRỐNG',
+      note: note || (computedStatus === 'AVAILABLE' ? 'Sẵn sàng cho thuê' : ''),
     };
   };
 
-  // Lọc theo loại kho hiện tại (nếu bật checkbox)
   const filteredFloorUnits = useMemo(() => {
     return floorUnits.filter((u) => {
       if (filterThisTypeOnly && currentUnitTypeId) {
@@ -149,7 +154,6 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
     });
   }, [floorUnits, filterThisTypeOnly, currentUnitTypeId]);
 
-  // Xác định tầng kế tiếp khi click vào Cầu thang tương tác
   const nextFloorForStaircase = useMemo(() => {
     if (availableFloors.length <= 1) return currentFloor;
     const currentIndex = availableFloors.indexOf(currentFloor);
@@ -159,35 +163,58 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
     return availableFloors[currentIndex + 1];
   }, [availableFloors, currentFloor]);
 
-  const getStatusColor = (
-    unit: StorageUnitResponse,
-    isThisType: boolean,
-    isSelected: boolean
-  ) => {
+  const getTileClasses = (status: UnitStatus, isSelected: boolean) => {
     if (isSelected) {
-      return 'bg-emerald-600 text-white border-emerald-500 ring-4 ring-emerald-500/40 shadow-md scale-102 z-20 font-bold';
+      return 'border-2 border-brand-500 bg-brand-50 shadow-xs';
     }
-
-    const borderStyle = isThisType ? 'border-2 ring-1 ring-brand-500/30' : 'border opacity-95';
-    const meta = getUnitOperationalMeta(unit);
-
-    switch (meta.status) {
+    switch (status) {
       case 'AVAILABLE':
-        return `bg-emerald-50/90 text-emerald-800 border-emerald-300 hover:bg-emerald-100 hover:border-emerald-500 ${borderStyle}`;
+        return 'border border-gray-200 bg-white hover:border-brand-400 hover:shadow-xs';
       case 'OCCUPIED':
-        return `bg-indigo-50/90 text-indigo-800 border-indigo-200 hover:bg-indigo-100 ${borderStyle}`;
-      case 'MAINTENANCE':
-        return `bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100 ${borderStyle}`;
+        return 'border border-gray-200 bg-gray-50 hover:border-gray-300';
       case 'RESERVED':
-        return `bg-sky-50 text-sky-800 border-sky-300 hover:bg-sky-100 ${borderStyle}`;
+        return 'border border-gray-200 bg-white hover:border-amber-300';
+      case 'MAINTENANCE':
+        return 'border border-gray-200 bg-gray-50 opacity-65 hover:opacity-100';
       default:
-        return `bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 ${borderStyle}`;
+        return 'border border-gray-200 bg-white hover:border-gray-300';
+    }
+  };
+
+  const getTileStatusVisual = (status: UnitStatus, isSelected: boolean) => {
+    if (status === 'AVAILABLE') {
+      return isSelected
+        ? { text: 'text-brand-700', dot: 'bg-brand-500' }
+        : { text: 'text-gray-500', dot: 'bg-gray-300' };
+    }
+    if (status === 'OCCUPIED') {
+      return { text: 'text-blue-700', dot: 'bg-blue-500' };
+    }
+    if (status === 'RESERVED') {
+      return { text: 'text-amber-700', dot: 'bg-amber-500' };
+    }
+    return { text: 'text-gray-500', dot: 'bg-gray-400' };
+  };
+
+  const getBadgeClasses = (status: UnitStatus) => {
+    switch (status) {
+      case 'AVAILABLE':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'OCCUPIED':
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'RESERVED':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'MAINTENANCE':
+        return 'bg-rose-50 text-rose-700 border-rose-200';
+      default:
+        return 'bg-gray-100 text-gray-600 border-gray-200';
     }
   };
 
   const handleToggleMaintenance = async () => {
     if (!selectedUnit || !onStatusChange) return;
-    const newStatus: UnitStatus = selectedUnit.status === 'MAINTENANCE' ? 'AVAILABLE' : 'MAINTENANCE';
+    const newStatus: UnitStatus =
+      selectedUnit.status === 'MAINTENANCE' ? 'AVAILABLE' : 'MAINTENANCE';
     try {
       setIsUpdatingStatus(true);
       await onStatusChange(selectedUnit, newStatus);
@@ -201,33 +228,27 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
   const selectedUnitMeta = selectedUnit ? getUnitOperationalMeta(selectedUnit) : null;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden space-y-0">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
       {/* 1. Header Toolbar Mặt bằng & Bộ chọn Tầng */}
-      <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/70">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 border border-brand-200/80 flex items-center justify-center shrink-0">
-            <MapPin className="w-5 h-5" />
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-base font-bold text-slate-900 tracking-tight">
-              Sơ đồ Mặt bằng 2D — {facilityName}
-            </h3>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200 font-mono">
-              {currentUnitTypeName}
+      <div className="px-5 py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <h3 className="text-base font-bold text-gray-900 tracking-tight">
+            Sơ đồ Mặt bằng 2D — {facilityName}
+          </h3>
+          <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 border border-gray-200">
+            {currentUnitTypeName}
+          </span>
+          {startDate && endDate && (
+            <span className="text-xs font-medium px-2.5 py-0.5 rounded-md bg-brand-50 text-brand-700 border border-brand-200 tabular-nums inline-flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              {formatVnDate(startDate)} - {formatVnDate(endDate)}
             </span>
-            {startDate && endDate && (
-              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-brand-100 text-brand-800 border border-brand-300 num flex items-center gap-1">
-                <Calendar className="w-3 h-3 text-brand-600" />
-                {formatVnDate(startDate)} → {formatVnDate(endDate)}
-              </span>
-            )}
-          </div>
+          )}
         </div>
 
-        {/* Floor Switcher & Toggles */}
+        {/* Floor Switcher & Filter Toggle */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Tabs chọn Tầng */}
-          <div className="flex items-center gap-1 p-1 bg-slate-200/80 rounded-xl">
+          <div className="inline-flex items-center gap-1 p-0.5 bg-gray-100 rounded-lg border border-gray-200">
             {availableFloors.map((floor) => {
               const count = units.filter((u) => (u.floor ?? 1) === floor).length;
               const isActive = floor === currentFloor;
@@ -236,17 +257,18 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
                   key={floor}
                   type="button"
                   onClick={() => setCurrentFloor(floor)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
                     isActive
-                      ? 'bg-white text-slate-900 shadow-2xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-gray-900 shadow-2xs'
+                      : 'text-gray-500 hover:text-gray-800'
                   }`}
                 >
-                  <Layers className={`w-3.5 h-3.5 ${isActive ? 'text-brand-600' : 'text-slate-400'}`} />
                   <span>Tầng {floor}</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full num ${
-                    isActive ? 'bg-brand-50 text-brand-700 font-bold' : 'bg-slate-300/80 text-slate-700'
-                  }`}>
+                  <span
+                    className={`text-[11px] tabular-nums ${
+                      isActive ? 'text-brand-600 font-bold' : 'text-gray-400'
+                    }`}
+                  >
                     {count}
                   </span>
                 </button>
@@ -254,266 +276,226 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
             })}
           </div>
 
-          {/* Toggle Chỉ hiển thị loại kho đang chọn */}
-          <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer select-none bg-white border border-slate-300 px-3 py-1.5 rounded-xl shadow-2xs hover:bg-slate-50 transition-colors">
+          <label className="inline-flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer select-none bg-white border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
             <input
               type="checkbox"
               checked={filterThisTypeOnly}
               onChange={(e) => setFilterThisTypeOnly(e.target.checked)}
-              className="w-3.5 h-3.5 accent-brand-500 rounded cursor-pointer"
+              className="w-3.5 h-3.5 accent-brand-600 rounded cursor-pointer"
             />
             <span>Chỉ hiện {currentUnitTypeName}</span>
           </label>
         </div>
       </div>
 
-      {/* 2. Main Floor Plan Canvas */}
-      <div className="p-4 sm:p-6 bg-slate-50/50 space-y-4">
-        {/* Layout: Cột Cầu thang tương tác + Ma trận Lưới Ô kho */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-          {/* CỘT CẦU THANG BỘ & THANG MÁY TƯƠNG TÁC (3 COLS) */}
-          <div className="lg:col-span-3">
-            <div
-              data-testid="interactive-staircase-hub"
-              onClick={() => setCurrentFloor(nextFloorForStaircase)}
-              className="group relative p-4 rounded-2xl border-2 border-dashed border-indigo-300 bg-gradient-to-b from-indigo-50/80 to-purple-50/80 hover:from-indigo-100 hover:to-purple-100 hover:border-indigo-500 transition-all cursor-pointer shadow-2xs flex flex-col justify-between min-h-[170px]"
-              title={`Click để chuyển sang sơ đồ Tầng ${nextFloorForStaircase}`}
-            >
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs">
-                    <TrendingUp className="w-5 h-5" />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">
-                    Lối chuyển tầng
-                  </span>
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-indigo-950 group-hover:text-indigo-800">
-                    Cầu thang bộ & Thang máy
-                  </h4>
-                  <p className="text-[11px] text-indigo-700 mt-1 leading-relaxed">
-                    {currentFloor === 1
-                      ? '↗ Click để lên sơ đồ Tầng 2'
-                      : currentFloor === 2
-                      ? '↗ Click để lên Tầng 3 (hoặc ↙ xuống T1)'
-                      : '↙ Click để xuống lại Tầng 1'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-3 pt-3 border-t border-indigo-200/80 flex items-center justify-between text-xs font-bold text-indigo-900">
-                <span>Chuyển sang Tầng {nextFloorForStaircase}</span>
-                <ArrowRight className="w-4 h-4 text-indigo-600 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
+      {/* 2. Floor Plan Canvas (Full-width, sạch, không cột tím cầu thang) */}
+      <div className="p-5 space-y-4">
+        {/* Sub-header: Tiêu đề Tầng bên trái + Điểm neo Cầu thang nhỏ gọn bên phải */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-gray-100">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-bold text-gray-900 uppercase tracking-wide text-xs">
+              Mặt bằng Tầng {currentFloor}
+            </span>
+            <span className="text-gray-300">·</span>
+            <span className="text-xs text-gray-500 tabular-nums">
+              {filteredFloorUnits.length} ô kho hiển thị
+            </span>
           </div>
 
-          {/* MA TRẬN LƯỚI Ô KHO MẶT BẰNG (9 COLS) */}
-          <div className="lg:col-span-9 bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-2xs space-y-3.5">
-            <div className="flex items-center justify-between text-xs pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-brand-600" />
-                <span className="font-bold text-slate-900 text-sm">Mặt bằng Tầng {currentFloor}</span>
-                <span className="text-slate-400">•</span>
-                <span className="text-slate-500 text-xs">{filteredFloorUnits.length} ô kho hiển thị</span>
-              </div>
-              {currentFloor === 1 && (
-                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                  Sảnh chính & Quầy lễ tân ➔
-                </span>
-              )}
-            </div>
-
-            {filteredFloorUnits.length === 0 ? (
-              <div className="py-16 text-center text-xs text-slate-400 font-medium space-y-1">
-                <p>Không có ô kho nào phù hợp với bộ lọc tại Tầng {currentFloor}.</p>
-                <p className="text-[11px] text-slate-400">Hãy thử tắt tùy chọn lọc hoặc chọn tầng khác.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                {filteredFloorUnits.map((unit) => {
-                  const isThisType = unit.unitTypeId === currentUnitTypeId;
-                  const isSelected = selectedUnit?.id === unit.id;
-                  const meta = getUnitOperationalMeta(unit);
-
-                  return (
-                    <div
-                      key={unit.id}
-                      data-testid={`unit-tile-${unit.code}`}
-                      onClick={() => setSelectedUnit(unit)}
-                      className={`relative p-3 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center justify-between min-h-[92px] ${getStatusColor(
-                        unit,
-                        isThisType,
-                        isSelected
-                      )}`}
-                      title={`Ô ${unit.code} — ${meta.statusLabel} (${unit.unitTypeName || 'Hạng kho'})`}
-                    >
-                      {/* Badge Ô thuộc hạng kho đang chọn */}
-                      {isThisType && !isSelected && (
-                        <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-brand-600 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full whitespace-nowrap shadow-xs flex items-center gap-0.5">
-                          <Sparkles className="w-2.5 h-2.5" />
-                          Hạng xem
-                        </span>
-                      )}
-
-                      {isSelected && (
-                        <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-emerald-700 text-white text-[9px] font-bold px-2 py-0.2 rounded-full whitespace-nowrap shadow-xs">
-                          Đang chọn
-                        </span>
-                      )}
-
-                      <div className="w-full">
-                        <span className="font-mono text-xs font-extrabold truncate block">
-                          {unit.code}
-                        </span>
-                        <span className="text-[10px] opacity-80 truncate block mt-0.5">
-                          {unit.unitTypeName || unit.position || `Tầng ${unit.floor}`}
-                        </span>
-                      </div>
-
-                      {/* Hiển thị Nhãn trạng thái */}
-                      <span className={`text-[9px] font-bold mt-1.5 px-2 py-0.5 rounded-md uppercase tracking-tight ${
-                        meta.status === 'AVAILABLE'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : meta.status === 'OCCUPIED'
-                          ? 'bg-indigo-100 text-indigo-800'
-                          : meta.status === 'MAINTENANCE'
-                          ? 'bg-rose-100 text-rose-800'
-                          : 'bg-sky-100 text-sky-800'
-                      }`}>
-                        {meta.statusLabel}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            {currentFloor === 1 && (
+              <span className="text-xs text-gray-400">
+                Sảnh chính & Quầy lễ tân
+              </span>
             )}
+            <button
+              type="button"
+              data-testid="interactive-staircase-hub"
+              onClick={() => setCurrentFloor(nextFloorForStaircase)}
+              title={
+                availableFloors.length > 1
+                  ? `Điểm neo mặt bằng · Click để chuyển sang Tầng ${nextFloorForStaircase}`
+                  : 'Điểm neo: Cầu thang bộ & Thang máy'
+              }
+              className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5 text-gray-400" />
+              <span>
+                Điểm neo: Cầu thang bộ & Thang máy
+                {availableFloors.length > 1 ? ` (→ Tầng ${nextFloorForStaircase})` : ''}
+              </span>
+            </button>
           </div>
         </div>
 
-        {/* 3. Panel Chi tiết Ô kho đang chọn (Selected Unit Inspector Drawer) */}
-        {selectedUnit && selectedUnitMeta && (
-          <div
-            data-testid="selected-unit-inspector-drawer"
-            className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-300 shadow-md space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200"
-          >
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-slate-900 text-white font-mono font-extrabold text-sm flex items-center justify-center shrink-0">
-                  {selectedUnit.code}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="text-sm font-bold text-slate-900">
-                      Ô kho {selectedUnit.code}
-                    </h4>
-                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
-                      selectedUnitMeta.status === 'AVAILABLE'
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        : selectedUnitMeta.status === 'OCCUPIED'
-                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                        : selectedUnitMeta.status === 'MAINTENANCE'
-                        ? 'bg-rose-50 text-rose-700 border-rose-200'
-                        : 'bg-sky-50 text-sky-700 border-sky-200'
-                    }`}>
-                      {selectedUnitMeta.statusLabel}
+        {/* Unit Grid */}
+        {filteredFloorUnits.length === 0 ? (
+          <div className="py-12 text-center text-sm text-gray-500 space-y-1">
+            <p className="font-medium text-gray-700">
+              Không có ô kho nào phù hợp với bộ lọc tại Tầng {currentFloor}.
+            </p>
+            <p className="text-xs text-gray-400">
+              Hãy thử tắt tùy chọn lọc hoặc chọn tầng khác.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {filteredFloorUnits.map((unit) => {
+              const isThisType = unit.unitTypeId === currentUnitTypeId;
+              const isSelected = selectedUnit?.id === unit.id;
+              const meta = getUnitOperationalMeta(unit);
+              const visual = getTileStatusVisual(meta.status, isSelected);
+
+              return (
+                <button
+                  key={unit.id}
+                  type="button"
+                  data-testid={`unit-tile-${unit.code}`}
+                  onClick={() => setSelectedUnit(unit)}
+                  className={`flex flex-col p-3 rounded-lg text-left transition-all w-full min-h-[92px] cursor-pointer ${getTileClasses(
+                    meta.status,
+                    isSelected
+                  )}`}
+                  title={`Ô ${unit.code} — ${meta.statusLabel} (${unit.unitTypeName || 'Hạng kho'})`}
+                >
+                  <div className="flex items-center justify-between gap-1.5 w-full">
+                    <span
+                      className={`font-mono font-bold text-sm truncate ${
+                        meta.status === 'MAINTENANCE' && !isSelected
+                          ? 'text-gray-600'
+                          : 'text-gray-900'
+                      }`}
+                    >
+                      {unit.code}
                     </span>
-                    {selectedUnit.unitTypeId === currentUnitTypeId && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
-                        Thuộc {currentUnitTypeName}
+                    {isSelected ? (
+                      <span className="text-[10px] font-semibold text-brand-700 shrink-0">
+                        Đang chọn
                       </span>
-                    )}
+                    ) : isThisType ? (
+                      <span
+                        className="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"
+                        title={`Thuộc ${currentUnitTypeName}`}
+                      />
+                    ) : null}
                   </div>
-                  <p className="text-xs text-slate-600 mt-0.5">
-                    {selectedUnit.unitTypeName || 'Hạng chuẩn'} • Tầng {selectedUnit.floor} • {selectedUnit.locationNote || selectedUnit.position || 'Vị trí tiêu chuẩn'}
-                  </p>
 
-                  {/* Hợp đồng hiện hành nếu có */}
-                  {selectedContract && (
-                    <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-slate-600">
-                      <span className="flex items-center gap-1 font-semibold text-slate-800">
-                        <User className="w-3.5 h-3.5 text-slate-400" />
-                        {selectedContract.customerName} ({selectedContract.customerPhone})
-                      </span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1 text-slate-500 font-medium">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        Kỳ hạn: <strong>{formatVnDate(selectedContract.startDate)}</strong> → <strong className="text-slate-800">{formatVnDate(selectedContract.endDateExclusive)}</strong>
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Quick Actions cho FM */}
-              <div className="flex items-center gap-2.5 self-end md:self-auto shrink-0">
-                {onStatusChange && (
-                  <button
-                    type="button"
-                    disabled={isUpdatingStatus || selectedUnitMeta.status === 'OCCUPIED' || selectedUnitMeta.status === 'RESERVED'}
-                    onClick={handleToggleMaintenance}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                      selectedUnit.status === 'MAINTENANCE'
-                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
-                        : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
+                  <span
+                    className={`text-xs truncate mt-0.5 mb-3 w-full ${
+                      isSelected ? 'text-gray-700' : 'text-gray-500'
                     }`}
-                    title={
-                      selectedUnitMeta.status === 'OCCUPIED' || selectedUnitMeta.status === 'RESERVED'
-                        ? 'Ô kho đang có khách thuê/giữ chỗ — không thể đổi trạng thái'
-                        : undefined
-                    }
                   >
-                    <Wrench className="w-3.5 h-3.5" />
-                    <span>{selectedUnit.status === 'MAINTENANCE' ? 'Hoàn tất bảo trì' : 'Đưa vào bảo trì'}</span>
-                  </button>
-                )}
+                    {unit.unitTypeName || unit.position || `Tầng ${unit.floor}`}
+                  </span>
 
-                {onSelectUnit && (
-                  <button
-                    type="button"
-                    onClick={() => onSelectUnit(selectedUnit)}
-                    className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <span>Chi tiết ô kho</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Thông tin trạng thái chi tiết */}
-            <div className="pt-2 border-t border-slate-100">
-              {startDate && endDate ? (
-                <div className="p-3 bg-purple-50/80 border border-purple-200 rounded-xl text-xs text-purple-900 flex items-start gap-2.5">
-                  <Calendar className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold block text-purple-950">
-                      Khoảng thời gian {formatVnDate(startDate)} → {formatVnDate(endDate)}:
+                  <div className="mt-auto flex items-center justify-between w-full">
+                    <span
+                      className={`text-[11px] font-semibold inline-flex items-center gap-1.5 ${visual.text}`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${visual.dot}`} />
+                      {meta.tileLabel}
                     </span>
-                    <p className="mt-0.5 text-purple-800 leading-relaxed">
-                      Tình trạng: <strong>{selectedUnitMeta.statusLabel}</strong>
-                      {selectedUnitMeta.note ? ` — ${selectedUnitMeta.note}` : ''}.
-                    </p>
                   </div>
-                </div>
-              ) : selectedUnitMeta.status === 'AVAILABLE' ? (
-                <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-xl text-xs text-emerald-900 flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold block text-emerald-950">
-                      Ô kho đang trống & sẵn sàng hoạt động:
-                    </span>
-                    <p className="mt-0.5 text-emerald-800 leading-relaxed">
-                      Chưa có hợp đồng thuê phát sinh. Sẵn sàng gán cho khách hàng đặt mới.
-                    </p>
-                  </div>
-                </div>
-              ) : null}
-            </div>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
+
+      {/* 3. Flattened Bottom Inspector Panel (Không hộp lồng hộp, nút đồng bộ bên phải) */}
+      {selectedUnit && selectedUnitMeta && (
+        <div
+          data-testid="selected-unit-inspector-drawer"
+          className="bg-white border-t-2 border-brand-500 px-5 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+        >
+          {/* Thông tin ô kho bên trái */}
+          <div className="flex items-start sm:items-center gap-4 min-w-0">
+            <div className="px-3 py-1.5 bg-gray-100 border border-gray-200 rounded-md text-sm font-mono font-bold text-gray-900 tracking-wider shrink-0">
+              {selectedUnit.code}
+            </div>
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="text-sm font-bold text-gray-900">
+                  {selectedUnit.unitTypeName || `Ô kho ${selectedUnit.code}`}
+                </h4>
+                <span
+                  className={`px-2 py-0.5 text-xs font-semibold rounded border ${getBadgeClasses(
+                    selectedUnitMeta.status
+                  )}`}
+                >
+                  {selectedUnitMeta.statusLabel}
+                </span>
+              </div>
+
+              <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                Tầng {selectedUnit.floor}
+                {selectedUnit.position ? ` · ${selectedUnit.position}` : ''}
+                {selectedUnit.locationNote ? ` · ${selectedUnit.locationNote}` : ''}
+                {selectedUnitMeta.note ? ` · ${selectedUnitMeta.note}` : ''}
+              </p>
+
+              {selectedContract && (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-gray-600">
+                  <span className="inline-flex items-center gap-1 font-medium text-gray-800">
+                    <User className="w-3.5 h-3.5 text-gray-400" />
+                    {selectedContract.customerName} ({selectedContract.customerPhone})
+                  </span>
+                  <span className="text-gray-300">·</span>
+                  <span className="inline-flex items-center gap-1 tabular-nums">
+                    <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                    {formatVnDate(selectedContract.startDate)} -{' '}
+                    {formatVnDate(selectedContract.endDateExclusive)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Nút thao tác bên phải — Bảo trì (Outline Đỏ) + Chi tiết (Primary Solid Mint) */}
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            {onStatusChange && (
+              <button
+                type="button"
+                disabled={
+                  isUpdatingStatus ||
+                  selectedUnitMeta.status === 'OCCUPIED' ||
+                  selectedUnitMeta.status === 'RESERVED'
+                }
+                onClick={handleToggleMaintenance}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                  selectedUnit.status === 'MAINTENANCE'
+                    ? 'bg-white border border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+                    : 'bg-white border border-rose-300 text-rose-600 hover:bg-rose-50'
+                }`}
+                title={
+                  selectedUnitMeta.status === 'OCCUPIED' ||
+                  selectedUnitMeta.status === 'RESERVED'
+                    ? 'Ô kho đang có khách thuê/giữ chỗ — không thể đổi trạng thái'
+                    : undefined
+                }
+              >
+                <Wrench className="w-4 h-4" />
+                <span>
+                  {selectedUnit.status === 'MAINTENANCE' ? 'Hoàn tất bảo trì' : 'Đưa vào bảo trì'}
+                </span>
+              </button>
+            )}
+
+            {onSelectUnit && (
+              <button
+                type="button"
+                onClick={() => onSelectUnit(selectedUnit)}
+                className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>Chi tiết ô kho</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -23,6 +23,7 @@ public class PaymentResponse {
     private String transactionRef;
     private Instant paidAt;
     private Instant createdAt;
+    private Instant expiresAt;
 
     // Chỉ điền ở danh sách lịch sử giao dịch (BOM)
     private String facilityName;

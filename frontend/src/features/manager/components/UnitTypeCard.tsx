@@ -4,13 +4,10 @@ import type { UnitTypeResponse } from '@/types/unit';
 import {
   Edit2,
   Power,
-  ArrowRight,
-  Maximize2,
+  ChevronRight,
+  Snowflake,
   Box,
-  Layers,
-  Sparkles,
 } from 'lucide-react';
-import { getUnitTypeTheme } from '../utils/unitTypeTheme';
 
 export interface UnitTypeBreakdownStats {
   total: number;
@@ -28,7 +25,6 @@ interface UnitTypeCardProps {
   onToggle?: () => void;
   canManage?: boolean;
 }
-
 
 export const isClimateType = (t: { code?: string; name: string }) => {
   const code = (t.code || '').toUpperCase();
@@ -50,117 +46,135 @@ export function cleanUnitTypeName(name?: string): string {
 export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
   type,
   isSelected = false,
+  stats,
   onClick,
   onEdit,
   onToggle,
   canManage = false,
 }) => {
   const isTypeActive = type.isActive ?? type.active ?? true;
-  const theme = getUnitTypeTheme(type);
-  const IconComponent = theme.icon;
+  const isClimate = isClimateType(type);
+  const IconComponent = isClimate ? Snowflake : Box;
 
-  const area = type.areaM2 || (type.widthM && type.depthM ? Number((type.widthM * type.depthM).toFixed(1)) : 0);
-  const totalUnits = type.totalUnits ?? 0;
+  const area =
+    type.areaM2 ||
+    (type.widthM && type.depthM ? Number((type.widthM * type.depthM).toFixed(1)) : 0);
+  const totalUnits = stats ? stats.total : (type.totalUnits ?? 0);
+  const dimensionsText =
+    type.widthM && type.depthM && type.heightM
+      ? `${type.widthM}×${type.depthM}×${type.heightM}m`
+      : '—';
+
+  const renderAvailabilityBadge = () => {
+    if (!isTypeActive) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+          Vô hiệu
+        </span>
+      );
+    }
+
+    if (stats) {
+      if (stats.available > 0) {
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 tabular-nums">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            Còn {stats.available} ô trống
+          </span>
+        );
+      }
+      if (stats.total > 0) {
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+            Hết ô
+          </span>
+        );
+      }
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200">
+          Chưa có ô
+        </span>
+      );
+    }
+
+    return (
+      <span className="text-xs font-medium text-gray-500 tabular-nums">
+        {totalUnits > 0 ? `${totalUnits} ô tại cơ sở` : 'Chưa có ô'}
+      </span>
+    );
+  };
 
   return (
     <div
       onClick={onClick}
-      className={`group relative rounded-2xl border transition-all duration-300 select-none cursor-pointer flex flex-col justify-between overflow-hidden bg-white hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 ${
+      className={`group bg-white rounded-xl border p-5 shadow-xs hover:border-brand-300 hover:shadow-md transition-all flex flex-col h-full cursor-pointer select-none ${
         isSelected
-          ? 'border-brand-500 ring-2 ring-brand-500/20 shadow-md'
-          : `border-slate-200/90 ${theme.borderAccent}`
+          ? 'border-brand-500 ring-2 ring-brand-500/15'
+          : 'border-gray-200'
       }`}
     >
-      {/* Top Ambient Glow / Gradient Background */}
-      <div
-        className={`absolute inset-x-0 top-0 h-28 bg-gradient-to-b ${theme.gradientBg} pointer-events-none transition-opacity duration-300 group-hover:opacity-100`}
-      />
-
-      <div className="relative p-5">
-        {/* Header: Visual Icon + Badges */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div
-              className={`w-11 h-11 rounded-2xl flex items-center justify-center border shadow-2xs transition-all duration-300 group-hover:scale-105 group-hover:shadow-xs ${theme.iconBg}`}
-            >
-              <IconComponent className={`w-5 h-5 transition-transform duration-300 group-hover:scale-110 ${theme.iconColor}`} />
-            </div>
-            <div className="min-w-0">
-              <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-100/90 text-slate-600 border border-slate-200/80 inline-block">
-                {type.code || 'UT-STD'}
-              </span>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span
-                  className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${theme.badgeBg} ${theme.badgeTextCol} ${theme.badgeBorder}`}
-                >
-                  <Sparkles className="w-2.5 h-2.5" />
-                  {theme.categoryLabel}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            {!isTypeActive && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 shadow-2xs">
-                Vô hiệu
-              </span>
-            )}
-          </div>
+      {/* 1. Header: Monochrome Icon + Name + Code & Category */}
+      <div className="flex items-start gap-3 mb-3">
+        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0 group-hover:bg-brand-50 transition-colors">
+          <IconComponent className="w-4 h-4 text-gray-500 group-hover:text-brand-600 transition-colors" />
         </div>
 
-        {/* Name & Subtitle */}
-        <div className="mt-3.5">
-          <h3 className="text-base font-bold text-slate-900 group-hover:text-brand-600 transition-colors line-clamp-1">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base font-bold text-gray-900 leading-tight group-hover:text-brand-700 transition-colors line-clamp-1">
             {cleanUnitTypeName(type.name)}
           </h3>
-          <p className="text-xs text-slate-500 mt-1 line-clamp-2 min-h-[32px] leading-relaxed">
-            {type.description || `Khoang lưu trữ tiêu chuẩn phục vụ nhu cầu lưu trữ chuyên biệt với diện tích ${area} m².`}
-          </p>
-        </div>
-
-        {/* Feature Pill Badge */}
-        <div className="mt-2.5">
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            {theme.badgeText}
-          </span>
-        </div>
-
-        {/* Technical Specs 3-Column Grid */}
-        <div className="mt-4 grid grid-cols-3 gap-2 bg-slate-50/70 p-3 rounded-xl border border-slate-100 text-center">
-          <div className="px-1">
-            <span className="text-slate-400 font-medium text-[10px] flex items-center justify-center gap-1">
-              <Maximize2 className="w-2.5 h-2.5" />
-              Diện tích
+          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+            <span className="text-xs font-mono text-gray-500">
+              {type.code || 'UT-STD'}
             </span>
-            <p className="num font-bold text-slate-800 mt-0.5 text-xs">
-              {area} m²
-            </p>
-          </div>
-          <div className="px-1 border-x border-slate-200/70">
-            <span className="text-slate-400 font-medium text-[10px] flex items-center justify-center gap-1">
-              <Box className="w-2.5 h-2.5" />
-              Kích thước
+            <span className="text-gray-300">·</span>
+            <span className="text-xs font-medium text-gray-600">
+              {isClimate ? 'Kho Máy Lạnh' : 'Kho Tiêu Chuẩn'}
             </span>
-            <p className="num font-semibold text-slate-700 mt-0.5 text-[11px] whitespace-nowrap">
-              {type.widthM}×{type.depthM}×{type.heightM}m
-            </p>
-          </div>
-          <div className="px-1">
-            <span className="text-slate-400 font-medium text-[10px] flex items-center justify-center gap-1">
-              <Layers className="w-2.5 h-2.5" />
-              Tổng quy mô
-            </span>
-            <p className="num font-bold text-slate-800 mt-0.5 text-xs">
-              {totalUnits} ô
-            </p>
           </div>
         </div>
       </div>
 
-      {/* Bottom Action Footer */}
-      <div className="relative px-5 py-3.5 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+      {/* 2. Description */}
+      <p className="text-sm text-gray-600 line-clamp-2 mb-4 flex-1 leading-relaxed">
+        {type.description ||
+          `Khoang lưu trữ tiêu chuẩn phục vụ nhu cầu lưu trữ chuyên biệt với diện tích ${area} m².`}
+      </p>
+
+      {/* 3. Technical Specs (Flattened 3-column strip, zero gray box soup) */}
+      <div className="grid grid-cols-3 gap-2 py-3 border-y border-gray-100 mb-4">
+        <div className="flex flex-col">
+          <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
+            Diện tích
+          </span>
+          <span className="text-sm font-bold text-gray-900 tabular-nums mt-0.5">
+            {area} m²
+          </span>
+        </div>
+
+        <div className="flex flex-col border-l border-gray-100 pl-2">
+          <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
+            Kích thước
+          </span>
+          <span className="text-sm font-medium text-gray-700 tabular-nums mt-0.5 whitespace-nowrap">
+            {dimensionsText}
+          </span>
+        </div>
+
+        <div className="flex flex-col border-l border-gray-100 pl-2">
+          <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
+            Quy mô
+          </span>
+          <span className="text-sm font-medium text-gray-700 tabular-nums mt-0.5">
+            {totalUnits} ô
+          </span>
+        </div>
+      </div>
+
+      {/* 4. Footer: Status / Manage actions + Ghost text action */}
+      <div className="flex items-center justify-between gap-2 mt-auto">
         {canManage && onEdit && onToggle ? (
           <div className="flex items-center gap-1.5">
             <button
@@ -169,10 +183,10 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
                 e.stopPropagation();
                 onEdit();
               }}
-              className="text-xs font-semibold text-slate-600 hover:text-brand-700 hover:bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/80 transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
+              className="text-xs font-medium text-gray-700 hover:bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-300 transition-colors inline-flex items-center gap-1 cursor-pointer"
               title="Chỉnh sửa loại kho"
             >
-              <Edit2 className="w-3 h-3" />
+              <Edit2 className="w-3 h-3 text-gray-500" />
               Sửa
             </button>
             <button
@@ -181,10 +195,10 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
                 e.stopPropagation();
                 onToggle();
               }}
-              className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-colors flex items-center gap-1 cursor-pointer shadow-2xs ${
+              className={`text-xs font-medium px-2.5 py-1 rounded-lg border transition-colors inline-flex items-center gap-1 cursor-pointer ${
                 isTypeActive
-                  ? 'text-rose-600 hover:bg-white border-rose-200 hover:border-rose-300'
-                  : 'text-emerald-700 hover:bg-white border-emerald-200 hover:border-emerald-300'
+                  ? 'text-rose-600 hover:bg-rose-50 border-rose-200'
+                  : 'text-emerald-700 hover:bg-emerald-50 border-emerald-200'
               }`}
               title={isTypeActive ? 'Vô hiệu hóa loại ô kho' : 'Kích hoạt loại ô kho'}
             >
@@ -193,15 +207,13 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
             </button>
           </div>
         ) : (
-          <span className="text-[11px] font-medium text-slate-500">
-            {totalUnits > 0 ? `${totalUnits} ô kho vật lý tại cơ sở` : 'Chưa có ô vật lý'}
-          </span>
+          renderAvailabilityBadge()
         )}
 
-        <div className="flex items-center gap-1 text-xs font-bold text-brand-600 group-hover:text-brand-700">
-          <span>Xem danh sách ô</span>
-          <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
-        </div>
+        <span className="inline-flex items-center gap-0.5 text-sm font-semibold text-brand-600 group-hover:text-brand-700 group-hover:underline shrink-0">
+          <span>Xem chi tiết</span>
+          <ChevronRight className="w-4 h-4" />
+        </span>
       </div>
     </div>
   );
