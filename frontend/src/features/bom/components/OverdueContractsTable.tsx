@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import type { OverdueContractItem } from '@/types';
 import { formatCurrency, formatDate } from '@/utils/format';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { TablePagination } from '@/components/ui/TablePagination';
 
 export interface OverdueContractsTableProps {
   items: OverdueContractItem[];
@@ -13,11 +14,25 @@ export const OverdueContractsTable: React.FC<OverdueContractsTableProps> = ({
   items,
   isLoading = false,
 }) => {
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+
+  const rows = useMemo(
+    () => [...items].sort((a, b) => b.accruedOverdueFee - a.accruedOverdueFee),
+    [items]
+  );
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const safePage = Math.min(page, totalPages - 1);
+  const pagedRows = useMemo(
+    () => rows.slice(safePage * pageSize, (safePage + 1) * pageSize),
+    [rows, safePage, pageSize]
+  );
+
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm animate-pulse space-y-4">
-        <div className="h-5 bg-slate-200 rounded w-1/4" />
-        <div className="h-32 bg-slate-100 rounded-lg" />
+      <div className="bg-white rounded-md border border-gray-200 p-5 animate-pulse space-y-4">
+        <div className="h-5 bg-gray-200 rounded w-1/4" />
+        <div className="h-32 bg-gray-100 rounded-md" />
       </div>
     );
   }
@@ -48,10 +63,9 @@ export const OverdueContractsTable: React.FC<OverdueContractsTableProps> = ({
   };
 
   const totalFee = items.reduce((acc, c) => acc + c.accruedOverdueFee, 0);
-  const rows = [...items].sort((a, b) => b.accruedOverdueFee - a.accruedOverdueFee);
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden space-y-0">
+    <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
       <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
@@ -100,43 +114,43 @@ export const OverdueContractsTable: React.FC<OverdueContractsTableProps> = ({
                 <th className="py-3 px-4">Biện Pháp Chế Tài</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {rows.map((item) => {
+            <tbody className="divide-y divide-gray-200">
+              {pagedRows.map((item) => {
                 const policy = getPolicyAction(item.overdueDays);
                 return (
-                  <tr key={item.contractId} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
+                  <tr key={item.contractId} className="hover:bg-gray-50/80 transition-colors">
+                    <td className="py-2.5 px-4 font-semibold text-gray-900 tabular-nums whitespace-nowrap">
                       {item.contractCode}
                     </td>
-                    <td className="py-3 px-3">
-                      <div className="font-semibold text-slate-800">{item.customerName}</div>
-                      <div className="text-[11px] text-slate-500 font-mono">{item.customerPhone}</div>
+                    <td className="py-2.5 px-3">
+                      <div className="font-semibold text-gray-800">{item.customerName}</div>
+                      <div className="text-[11px] text-gray-500 tabular-nums">{item.customerPhone}</div>
                     </td>
-                    <td className="py-3 px-3">
-                      <div className="font-mono font-semibold text-slate-900">{item.unitCode}</div>
-                      <div className="text-[11px] text-slate-500">{item.facilityName}</div>
+                    <td className="py-2.5 px-3">
+                      <div className="font-semibold text-gray-900 tabular-nums">{item.unitCode}</div>
+                      <div className="text-[11px] text-gray-500">{item.facilityName}</div>
                     </td>
-                    <td className="py-3 px-3 text-right tabular-nums text-slate-600 whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right tabular-nums text-gray-600 whitespace-nowrap">
                       {formatDate(item.endDateExclusive)}
                     </td>
-                    <td className="py-3 px-3 text-right">
+                    <td className="py-2.5 px-3 text-right">
                       <span className={`inline-flex items-center justify-end gap-1.5 font-bold tabular-nums ${policy.tone}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${policy.dot}`} />
                         D+{item.overdueDays}
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-right tabular-nums">
+                    <td className="py-2.5 px-3 text-right tabular-nums">
                       {item.accruedOverdueFee > 0 ? (
                         <span className="font-bold text-rose-600">{formatCurrency(item.accruedOverdueFee)}</span>
                       ) : (
-                        <span className="text-slate-300">-</span>
+                        <span className="text-gray-300">-</span>
                       )}
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-2.5 px-4">
                       <Tooltip content={policy.desc} position="left">
                         <button type="button" className={`inline-flex items-center gap-1 text-xs font-semibold whitespace-nowrap ${policy.tone}`}>
                           {policy.label}
-                          <Info className="w-3.5 h-3.5 text-slate-400" />
+                          <Info className="w-3.5 h-3.5 text-gray-400" />
                         </button>
                       </Tooltip>
                     </td>
@@ -145,6 +159,20 @@ export const OverdueContractsTable: React.FC<OverdueContractsTableProps> = ({
               })}
             </tbody>
           </table>
+          {rows.length > pageSize && (
+            <TablePagination
+              page={safePage}
+              pageSize={pageSize}
+              totalElements={rows.length}
+              totalPages={totalPages}
+              itemLabel="hợp đồng quá hạn"
+              onPageChange={setPage}
+              onPageSizeChange={(nextSize) => {
+                setPageSize(nextSize);
+                setPage(0);
+              }}
+            />
+          )}
         </div>
       )}
     </div>

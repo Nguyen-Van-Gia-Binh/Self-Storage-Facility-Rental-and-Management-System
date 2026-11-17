@@ -107,6 +107,17 @@ describe('RevenueTrendCharts - Tier 2 Trends Over Time', () => {
     expect(screen.getByText(/Thuê kho & Gia hạn/i)).toBeInTheDocument();
   });
 
+  it('cắt bỏ các tháng trống đầu kỳ và chú thích thời điểm bắt đầu phát sinh', () => {
+    const sparseTrends: MonthlyRevenueTrend[] = [
+      { month: '2026-09', monthLabel: 'T09/26', rentalRevenue: 0, surchargeRevenue: 0, overdueFeeRevenue: 0, renewalRevenue: 0, cashFlow: 0, mrr: 0 },
+      { month: '2026-10', monthLabel: 'T10/26', rentalRevenue: 0, surchargeRevenue: 0, overdueFeeRevenue: 0, renewalRevenue: 0, cashFlow: 0, mrr: 0 },
+      { month: '2026-11', monthLabel: 'T11/26', rentalRevenue: 115370000, surchargeRevenue: 5200000, overdueFeeRevenue: 0, renewalRevenue: 1800000000, cashFlow: 1927380000, mrr: 2750000 },
+    ];
+    render(<RevenueTrendCharts data={sparseTrends} />);
+    expect(screen.getByText(/Hiển thị từ T11\/26 \(2 tháng trước chưa phát sinh giao dịch\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/So sánh tháng phát sinh đầu tiên \(T11\/26\)/i)).toBeInTheDocument();
+  });
+
   it('renders empty state tao nhã khi không có dữ liệu', () => {
     render(<RevenueTrendCharts data={[]} />);
     expect(screen.getByText(/Chưa có đủ dữ liệu xu hướng/i)).toBeInTheDocument();

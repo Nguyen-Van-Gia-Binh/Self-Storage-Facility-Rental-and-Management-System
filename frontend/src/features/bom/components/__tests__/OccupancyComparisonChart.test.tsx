@@ -67,19 +67,29 @@ const mockOccupancies: FacilityOccupancyItem[] = [
   },
 ];
 
-describe('OccupancyComparisonChart (Enterprise UX List View)', () => {
-  it('renders all facilities in list view with headers, progress bars, and status chips', () => {
+describe('OccupancyComparisonChart (Enterprise Data Table)', () => {
+  it('renders facilities in a structured Enterprise Data Table with progress bars and pagination instead of card chips', () => {
     render(<OccupancyComparisonChart data={mockOccupancies} />);
 
-    // Kiểm tra tên cơ sở
-    expect(screen.getByText('Cơ sở Quận 1 - TP.HCM')).toBeInTheDocument();
-    expect(screen.getByText('(ID: #5)')).toBeInTheDocument();
-    expect(screen.getByText('Cơ sở Quận 7 - TP.HCM')).toBeInTheDocument();
-    expect(screen.queryByText('Đạt chuẩn')).not.toBeInTheDocument();
+    // Renders as a structured Data Table
+    expect(screen.getByRole('table')).toBeInTheDocument();
+    expect(screen.getByText('Tên cơ sở')).toBeInTheDocument();
+    expect(screen.getByText('Tổng ô kho')).toBeInTheDocument();
+    expect(screen.getByText('Đã thuê')).toBeInTheDocument();
+    expect(screen.getByText('Tỷ lệ lấp đầy')).toBeInTheDocument();
+    expect(screen.getByText('Trạng thái')).toBeInTheDocument();
 
-    // Kiểm tra chips
-    expect(screen.getAllByText(/Trống:/).length).toBe(4);
-    expect(screen.getAllByText(/Đang thuê:/).length).toBe(4);
+    // Facility rows & progress bars
+    expect(screen.getByText('Cơ sở Quận 1 - TP.HCM')).toBeInTheDocument();
+    expect(screen.getByText('Cơ sở Quận 7 - TP.HCM')).toBeInTheDocument();
+    expect(screen.getAllByRole('progressbar').length).toBe(4);
+
+    // No redundant card chip lists ("Trống: 4", "Đang thuê: 1")
+    expect(screen.queryByText(/Trống:/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Đang thuê:/)).not.toBeInTheDocument();
+
+    // 3-part pagination present
+    expect(screen.getByLabelText('Số dòng mỗi trang')).toBeInTheDocument();
   });
 
   it('filters by search keyword (name or id)', () => {

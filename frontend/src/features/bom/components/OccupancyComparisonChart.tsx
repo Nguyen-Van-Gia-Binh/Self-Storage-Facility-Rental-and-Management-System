@@ -1,14 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   BarChart3,
   ArrowUpDown,
   Search,
-  AlertTriangle,
   X,
   Filter,
+  ChevronRight,
 } from 'lucide-react';
 import type { FacilityOccupancyItem } from '@/types';
 import { formatPercent } from '@/utils/format';
+import { TablePagination } from '@/components/ui/TablePagination';
+import { Tooltip } from '@/components/ui/Tooltip';
 
 export interface OccupancyComparisonChartProps {
   data: FacilityOccupancyItem[];
@@ -23,17 +25,20 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
   onSelectFacility,
   onOpenDetail,
 }) => {
-  // 1. Toàn bộ React hooks phải đặt ở trên đầu component (tuân thủ tuyệt đối React Rules of Hooks)
   const [searchQuery, setSearchQuery] = useState('');
   const [hideZeroOccupancy, setHideZeroOccupancy] = useState(false);
   const [filterUnderTarget, setFilterUnderTarget] = useState(false);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
 
-  // 2. Lọc và sắp xếp dữ liệu
+  useEffect(() => {
+    setPage(0);
+  }, [searchQuery, hideZeroOccupancy, filterUnderTarget, sortOrder, pageSize]);
+
   const filteredData = useMemo(() => {
     return [...data]
       .filter((item) => {
-        // Tìm kiếm theo tên hoặc mã ID cơ sở
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase().trim();
           const matchName = item.facilityName.toLowerCase().includes(q);
@@ -41,7 +46,6 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
           if (!matchName && !matchId) return false;
         }
 
-        // Toggle: Ẩn cơ sở 0%
         if (hideZeroOccupancy) {
           const exploitable = Math.max(0, item.totalUnits - (item.outOfServiceUnits || 0));
           if (exploitable === 0 || item.occupancyRate === 0 || item.occupiedUnits === 0) {
@@ -49,7 +53,6 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
           }
         }
 
-        // Filter: Chỉ xem cơ sở dưới chỉ tiêu (< 50%)
         if (filterUnderTarget) {
           if ((item.occupancyRate ?? 0) >= 0.5) return false;
         }
@@ -59,11 +62,16 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
       .sort((a, b) => {
         const rateA = a.occupancyRate ?? 0;
         const rateB = b.occupancyRate ?? 0;
-        return sortOrder === 'desc'
-          ? rateB - rateA
-          : rateA - rateB;
+        return sortOrder === 'desc' ? rateB - rateA : rateA - rateB;
       });
   }, [data, searchQuery, hideZeroOccupancy, filterUnderTarget, sortOrder]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+  const safePage = Math.min(page, totalPages - 1);
+  const pagedData = useMemo(
+    () => filteredData.slice(safePage * pageSize, (safePage + 1) * pageSize),
+    [filteredData, safePage, pageSize]
+  );
 
   const hasActiveFilters = Boolean(searchQuery.trim() || hideZeroOccupancy || filterUnderTarget);
 
@@ -73,73 +81,47 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
     setFilterUnderTarget(false);
   };
 
-  // 3. Early return skeleton sau khi đã khai báo đầy đủ hooks
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs animate-pulse space-y-4">
-        <div className="h-5 bg-slate-200 rounded w-1/3" />
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-slate-100 rounded-xl" />
+      <div className="bg-white rounded-md border border-gray-200 p-5 animate-pulse space-y-4">
+        <div className="h-5 bg-gray-200 rounded w-1/3" />
+        <div className="space-y-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-10 bg-gray-100 rounded-md" />
           ))}
         </div>
       </div>
     );
   }
 
-  // Đỏ chỉ khi dưới 10%. Từ 10% trở lên dùng brand. Không xác định thì xám.
-  const getRateColorMeta = (rate: number, rateUnknown: boolean) => {
-    if (rateUnknown) {
-      return {
-        textColor: 'text-slate-400',
-        barColor: 'bg-slate-300',
-        isAlarm: false,
-      };
-    }
-    if (rate < 0.1) {
-      return {
-        textColor: 'text-rose-600',
-        barColor: 'bg-rose-500',
-        isAlarm: true,
-      };
-    }
-    return {
-      textColor: 'text-slate-900',
-      barColor: 'bg-brand-500',
-      isAlarm: false,
-    };
-  };
-
   return (
-    <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-5">
-      {/* 1. Header Khối */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
-        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
-          Hiệu Suất Vận Hành & Tỷ Lệ Lấp Đầy Từng Cơ Sở
+    <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
+      {/* Header */}
+      <div className="px-4 py-3.5 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+          Hiệu Suất Vận Hành &amp; Tỷ Lệ Lấp Đầy Từng Cơ Sở
         </h3>
-
-        <div className="text-xs num text-slate-400">
-          Hiển thị: <strong className="text-slate-700">{filteredData.length}</strong> / {data.length} cơ sở
+        <div className="text-xs tabular-nums text-gray-500">
+          Tổng số: <strong className="font-semibold text-gray-800">{filteredData.length}</strong> / {data.length} cơ sở
         </div>
       </div>
 
-      {/* 2. Thanh Công Cụ (Toolbar) Theo Specs Design Leader */}
-      <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-200/80 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 no-print">
-        {/* Ô Tìm Kiếm */}
+      {/* Compact Toolbar */}
+      <div className="px-4 py-2.5 bg-gray-50/70 border-b border-gray-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 no-print">
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+          <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm tên hoặc ID cơ sở..."
-            className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-slate-800 placeholder-slate-400 font-medium"
+            className="w-full pl-8.5 pr-8 py-1.5 text-xs bg-white border border-gray-200 rounded-md outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 transition-colors text-gray-800 placeholder-gray-400 font-medium"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
               title="Xóa tìm kiếm"
             >
               <X className="w-3.5 h-3.5" />
@@ -147,44 +129,39 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
           )}
         </div>
 
-        {/* Cụm Bộ Lọc Nhanh & Sắp Xếp */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Toggle: Ẩn cơ sở 0% */}
-          <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors select-none">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 cursor-pointer px-2.5 py-1.5 rounded-md border border-gray-200 bg-white hover:bg-gray-50 transition-colors select-none">
             <input
               type="checkbox"
               checked={hideZeroOccupancy}
               onChange={(e) => setHideZeroOccupancy(e.target.checked)}
-              className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+              className="w-3.5 h-3.5 rounded border-gray-300 text-brand-600 accent-brand-600 focus:ring-brand-500 cursor-pointer"
             />
             <span>Ẩn cơ sở 0%</span>
           </label>
 
-          {/* Button: Chỉ xem < 50% */}
           <button
             type="button"
             onClick={() => setFilterUnderTarget((prev) => !prev)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
               filterUnderTarget
-                ? 'bg-amber-100 text-amber-800 border-amber-300 shadow-2xs'
-                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                ? 'bg-amber-50 text-amber-800 border-amber-300'
+                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
             }`}
           >
-            <Filter className={`w-3.5 h-3.5 ${filterUnderTarget ? 'text-amber-700' : 'text-slate-400'}`} />
+            <Filter className={`w-3.5 h-3.5 ${filterUnderTarget ? 'text-amber-700' : 'text-gray-400'}`} />
             <span>Chỉ xem &lt; 50%</span>
           </button>
 
-          {/* Button: Sắp xếp tỷ lệ lấp đầy */}
           <button
             type="button"
             onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer transition-all shadow-2xs"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
           >
-            <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+            <ArrowUpDown className="w-3.5 h-3.5 text-gray-400" />
             <span>Sắp xếp: {sortOrder === 'desc' ? 'Giảm dần' : 'Tăng dần'}</span>
           </button>
 
-          {/* Nút Xóa Lọc Nhanh (chỉ hiện khi có filter) */}
           {hasActiveFilters && (
             <button
               type="button"
@@ -198,160 +175,189 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
         </div>
       </div>
 
-      {/* 3. Danh Sách Cơ Sở (List View) */}
-      <div className="space-y-3 pt-1">
-        {filteredData.length === 0 ? (
-          /* Empty State theo chuẩn specs Design Leader */
-          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 p-8 text-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
-              <BarChart3 className="w-6 h-6" />
-            </div>
-            <p className="text-sm font-bold text-slate-800">
-              {filterUnderTarget && !searchQuery
-                ? 'Tuyệt vời! Không có cơ sở nào dưới chỉ tiêu (< 50%).'
-                : 'Không tìm thấy cơ sở phù hợp với bộ lọc.'}
-            </p>
-            <p className="text-xs text-slate-500 max-w-md mx-auto">
-              Hãy thử điều chỉnh từ khóa tìm kiếm hoặc xóa các điều kiện lọc để hiển thị toàn bộ cơ sở.
-            </p>
-            {hasActiveFilters && (
-              <button
-                type="button"
-                onClick={handleResetFilters}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs cursor-pointer mt-1"
-              >
-                <X className="w-3.5 h-3.5" />
-                <span>Xóa bộ lọc</span>
-              </button>
-            )}
+      {/* Data Table */}
+      {filteredData.length === 0 ? (
+        <div className="p-10 text-center space-y-2.5">
+          <div className="w-11 h-11 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center mx-auto">
+            <BarChart3 className="w-5 h-5" />
           </div>
-        ) : (
-          filteredData.map((item) => {
-            const exploitableUnits = Math.max(0, item.totalUnits - (item.outOfServiceUnits || 0));
-            const rateUnknown = item.occupancyRate == null || exploitableUnits === 0;
-            const rate = item.occupancyRate ?? 0;
-            const ratePercent = rateUnknown ? 0 : Math.min(rate * 100, 100);
-            const { textColor, barColor, isAlarm } = getRateColorMeta(rate, rateUnknown);
+          <p className="text-sm font-semibold text-gray-800">
+            {filterUnderTarget && !searchQuery
+              ? 'Tuyệt vời! Không có cơ sở nào dưới chỉ tiêu (< 50%).'
+              : 'Không tìm thấy cơ sở phù hợp với bộ lọc.'}
+          </p>
+          <p className="text-xs text-gray-500 max-w-md mx-auto">
+            Hãy thử điều chỉnh từ khóa tìm kiếm hoặc xóa các điều kiện lọc để hiển thị toàn bộ cơ sở.
+          </p>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer mt-1"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Xóa bộ lọc</span>
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse whitespace-nowrap">
+              <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                <tr>
+                  <th className="py-2.5 px-4 w-full">Tên cơ sở</th>
+                  <th className="py-2.5 px-4 text-right tabular-nums">Tổng ô kho</th>
+                  <th className="py-2.5 px-4 text-right tabular-nums">Đã thuê</th>
+                  <th className="py-2.5 px-4 text-right tabular-nums">Trống</th>
+                  <th className="py-2.5 px-4 text-right">Tỷ lệ lấp đầy</th>
+                  <th className="py-2.5 px-4">Trạng thái</th>
+                  <th className="py-2.5 px-3 text-right">
+                    <span className="sr-only">Chi tiết</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {pagedData.map((item) => {
+                  const exploitableUnits = Math.max(0, item.totalUnits - (item.outOfServiceUnits || 0));
+                  const rateUnknown = item.occupancyRate == null || exploitableUnits === 0;
+                  const rate = item.occupancyRate ?? 0;
+                  const pct = rateUnknown ? 0 : Math.min(Math.max(rate * 100, 0), 100);
 
-            const handleFacilityClick = () => {
-              if (onOpenDetail) {
-                onOpenDetail(item);
-              } else if (onSelectFacility) {
-                onSelectFacility(item.facilityId);
-              }
-            };
+                  const breakdownParts = [
+                    `Đặt chỗ: ${item.reservedUnits}`,
+                    `Bảo trì: ${item.maintenanceUnits}`,
+                    item.cleaningUnits > 0 ? `Vệ sinh: ${item.cleaningUnits}` : null,
+                    item.outOfServiceUnits > 0 ? `Ngừng dùng: ${item.outOfServiceUnits}` : null,
+                    `Quá hạn: ${item.overdueContractsCount}`,
+                  ].filter(Boolean).join(' · ');
 
-            return (
-              <div
-                key={item.facilityId}
-                className="p-4 rounded-xl border border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-xs transition-all space-y-3 group"
-              >
-                {/* A. Header Dòng (Top Row) */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={handleFacilityClick}
-                      className="font-bold text-slate-800 hover:text-brand-600 hover:underline transition-colors text-sm text-left cursor-pointer inline-flex items-center gap-1.5"
-                      title="Bấm để xem chi tiết bóc tách ô kho và doanh thu của cơ sở này"
-                    >
-                      <span>{item.facilityName}</span>
-                    </button>
-                    <span className="text-xs text-slate-400 font-mono">
-                      (ID: #{item.facilityId})
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between sm:justify-end gap-3">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-slate-500 hidden sm:inline">Tỷ lệ lấp đầy:</span>
-                      <span className={`num font-bold text-base ${textColor}`}>
-                        {rateUnknown ? 'Không xác định' : formatPercent(item.occupancyRate)}
-                      </span>
-                      {isAlarm && (
-                        <span title="Tỷ lệ lấp đầy dưới 10%">
-                          <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 inline" />
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-slate-500 num">
-                      {rateUnknown ? 'N/A' : `${item.occupiedUnits} / ${exploitableUnits} ô`}
-                    </div>
-                  </div>
-                </div>
-
-                {/* B. Thanh Tiến Trình (Middle Row) */}
-                <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden relative">
-                  <div
-                    style={{ width: `${ratePercent}%` }}
-                    className={`h-full ${barColor} rounded-full transition-all duration-500 ease-out`}
-                  />
-                  {/* Vạch mốc chỉ tiêu 80% */}
-                  <div
-                    className="absolute top-0 bottom-0 border-r-2 border-dashed border-slate-400/80"
-                    style={{ left: '80%' }}
-                    title="Chỉ tiêu vàng: 80%"
-                  />
-                </div>
-
-                {/* C. Các Chip Trạng Thái Ô Kho (Bottom Row) */}
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <div
-                    className="px-2.5 py-1 rounded-md font-medium border border-slate-200 text-slate-600 bg-white"
-                    title={`Có ${item.availableUnits} ô kho đang sẵn sàng cho thuê`}
-                  >
-                    Trống: {item.availableUnits}
-                  </div>
-                  <div
-                    className="px-2.5 py-1 rounded-md font-medium border border-slate-200 text-slate-600 bg-white"
-                    title={`Có ${item.occupiedUnits} ô kho đang có khách thuê hoạt động`}
-                  >
-                    Đang thuê: {item.occupiedUnits}
-                  </div>
-                  <div
-                    className="px-2.5 py-1 rounded-md font-medium border border-sky-200 text-sky-700 bg-white"
-                    title={`Có ${item.reservedUnits} ô kho đang được giữ chỗ chờ nhận kho`}
-                  >
-                    Đặt chỗ: {item.reservedUnits}
-                  </div>
-                  <div
-                    className="px-2.5 py-1 rounded-md font-medium border border-slate-200 text-slate-600 bg-white"
-                    title={`Có ${item.maintenanceUnits} ô kho đang bảo dưỡng / sửa chữa`}
-                  >
-                    Bảo trì: {item.maintenanceUnits}
-                  </div>
-                  {item.cleaningUnits > 0 && (
-                    <div
-                      className="px-2.5 py-1 rounded-md font-medium border border-slate-200 text-slate-600 bg-white"
-                      title={`Có ${item.cleaningUnits} ô kho đang vệ sinh sau trả kho`}
-                    >
-                      Vệ sinh: {item.cleaningUnits}
-                    </div>
-                  )}
-                  {item.outOfServiceUnits > 0 && (
-                    <div
-                      className="px-2.5 py-1 rounded-md font-medium border border-slate-200 text-slate-600 bg-white"
-                      title={`Có ${item.outOfServiceUnits} ô kho tạm ngừng khai thác kỹ thuật`}
-                    >
-                      Ngừng dùng: {item.outOfServiceUnits}
-                    </div>
-                  )}
-                  <div
-                    className={
-                      item.overdueContractsCount > 0
-                        ? 'px-2.5 py-1 rounded-md font-medium border border-rose-200 text-rose-600 bg-rose-50'
-                        : 'px-2.5 py-1 rounded-md font-medium border border-slate-200 text-slate-600 bg-white'
+                  const handleFacilityClick = () => {
+                    if (onOpenDetail) {
+                      onOpenDetail(item);
+                    } else if (onSelectFacility) {
+                      onSelectFacility(item.facilityId);
                     }
-                    title={`Có ${item.overdueContractsCount} hợp đồng đang trễ hạn thanh toán`}
-                  >
-                    Quá hạn: {item.overdueContractsCount}
-                  </div>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
+                  };
+
+                  return (
+                    <tr key={item.facilityId} className="hover:bg-gray-50/80 transition-colors group">
+                      <td className="py-2.5 px-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={handleFacilityClick}
+                            className="font-semibold text-gray-900 group-hover:text-brand-600 hover:underline text-left cursor-pointer transition-colors"
+                          >
+                            {item.facilityName}
+                          </button>
+                          <span className="text-[11px] text-gray-400 tabular-nums">
+                            #{item.facilityId}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="py-2.5 px-4 text-right tabular-nums text-gray-700 font-medium">
+                        {item.totalUnits}
+                      </td>
+
+                      <td className="py-2.5 px-4 text-right tabular-nums text-gray-900 font-semibold">
+                        {item.occupiedUnits}
+                      </td>
+
+                      <td className="py-2.5 px-4 text-right tabular-nums text-gray-600">
+                        {item.availableUnits}
+                      </td>
+
+                      <td className="py-2.5 px-4">
+                        {rateUnknown ? (
+                          <span className="block text-right text-gray-400">N/A</span>
+                        ) : (
+                          <div className="flex items-center justify-end gap-2.5">
+                            <div
+                              role="progressbar"
+                              aria-valuenow={Math.round(pct)}
+                              aria-valuemin={0}
+                              aria-valuemax={100}
+                              aria-label={`Tỷ lệ lấp đầy ${item.facilityName}`}
+                              className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden shrink-0"
+                            >
+                              <div
+                                style={{ width: `${pct}%` }}
+                                className={`h-full rounded-full transition-all ${
+                                  pct >= 50 ? 'bg-brand-600' : pct > 0 ? 'bg-amber-500' : 'bg-gray-300'
+                                }`}
+                              />
+                            </div>
+                            <span className="tabular-nums font-semibold text-gray-800 w-11 text-right">
+                              {formatPercent(item.occupancyRate)}
+                            </span>
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="py-2.5 px-4">
+                        <Tooltip content={breakdownParts} position="top">
+                          {item.overdueContractsCount > 0 ? (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
+                              Quá hạn ({item.overdueContractsCount})
+                            </span>
+                          ) : rateUnknown ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                              Chưa khai thác
+                            </span>
+                          ) : rate >= 0.5 ? (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                              Ổn định
+                            </span>
+                          ) : rate < 0.1 ? (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                              Lấp đầy thấp
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                              Đang khai thác
+                            </span>
+                          )}
+                        </Tooltip>
+                      </td>
+
+                      <td className="py-2.5 px-3 text-right">
+                        <button
+                          type="button"
+                          onClick={handleFacilityClick}
+                          aria-label="Chi tiết"
+                          title="Xem chi tiết cơ sở"
+                          className="p-1.5 rounded-md text-gray-400 hover:text-gray-800 hover:bg-gray-100 transition-colors cursor-pointer inline-flex items-center justify-center"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <TablePagination
+            page={safePage}
+            pageSize={pageSize}
+            totalElements={filteredData.length}
+            totalPages={totalPages}
+            itemLabel="cơ sở"
+            onPageChange={setPage}
+            onPageSizeChange={(nextSize) => {
+              setPageSize(nextSize);
+              setPage(0);
+            }}
+          />
+        </>
+      )}
     </div>
   );
 };
