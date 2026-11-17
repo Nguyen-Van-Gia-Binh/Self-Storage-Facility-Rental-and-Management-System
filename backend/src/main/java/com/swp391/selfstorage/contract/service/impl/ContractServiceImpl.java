@@ -829,7 +829,7 @@ public class ContractServiceImpl implements ContractService {
                                         "Phiếu hư hỏng chưa được đánh dấu cần di dời.");
                 }
 
-                if (contract.getStorageUnitId().equals(request.getNewStorageUnitId())) {
+                if (contract.getStorageUnitId() != null && contract.getStorageUnitId().equals(request.getNewStorageUnitId())) {
                         throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ô kho mới trùng với ô kho hiện tại.");
                 }
 
@@ -846,12 +846,17 @@ public class ContractServiceImpl implements ContractService {
                 }
 
                 Long oldUnitId = contract.getStorageUnitId();
-                StorageUnit oldUnit = storageUnitRepository.findByIdForUpdate(oldUnitId)
-                                .or(() -> storageUnitRepository.findById(oldUnitId))
-                                .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND, "Không tìm thấy ô kho hiện tại."));
-                String oldCode = oldUnit.getCode() != null ? oldUnit.getCode() : ("U-" + oldUnitId);
+                StorageUnit oldUnit = null;
+                if (oldUnitId != null) {
+                        oldUnit = storageUnitRepository.findByIdForUpdate(oldUnitId)
+                                        .or(() -> storageUnitRepository.findById(oldUnitId))
+                                        .orElse(null);
+                }
+                String oldCode = (oldUnit != null && oldUnit.getCode() != null)
+                                ? oldUnit.getCode()
+                                : (oldUnitId != null ? ("U-" + oldUnitId) : "ô cũ");
 
-                if (contract.getUnitTypeId() == null && oldUnit.getUnitTypeId() != null) {
+                if (contract.getUnitTypeId() == null && oldUnit != null && oldUnit.getUnitTypeId() != null) {
                         contract.setUnitTypeId(oldUnit.getUnitTypeId());
                 }
 
@@ -905,8 +910,10 @@ public class ContractServiceImpl implements ContractService {
                 if (ticket != null && ticket.getStorageUnitId() == null) {
                         ticket.setStorageUnitId(oldUnitId);
                 }
-                oldUnit.setStatus(StorageUnitStatus.MAINTENANCE);
-                storageUnitRepository.save(oldUnit);
+                if (oldUnit != null) {
+                        oldUnit.setStatus(StorageUnitStatus.MAINTENANCE);
+                        storageUnitRepository.save(oldUnit);
+                }
 
                 if (contract.getStatus() == ContractStatus.PENDING_CHECK_IN) {
                         newUnit.setStatus(StorageUnitStatus.RESERVED);
@@ -3062,11 +3069,18 @@ public class ContractServiceImpl implements ContractService {
                                         }
                                 });
                         }
+                        if ((r.getRelocationEligible() == null || !r.getRelocationEligible()) && handoverRecordRepository != null) {
+                                handoverRecordRepository.findByContractId(c.getId()).ifPresent(hr -> {
+                                        if (hr.isRejected() && c.getStatus() == ContractStatus.PENDING_CHECK_IN) {
+                                                r.setRelocationEligible(true);
+                                        }
+                                });
+                        }
                 }
 
                 if (Boolean.TRUE.equals(r.getRelocationEligible())
                                 && c.getStatus() == ContractStatus.PENDING_CHECK_IN) {
-                        r.setStorageUnitCode(null);
+                        r.setStorageUnitCode("Chờ gán lại ô kho");
                 }
 
                 return r;
