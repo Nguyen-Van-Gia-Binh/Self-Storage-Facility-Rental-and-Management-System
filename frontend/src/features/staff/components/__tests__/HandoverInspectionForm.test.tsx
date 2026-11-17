@@ -23,7 +23,7 @@ describe('ISS-84: HandoverInspectionForm Action Footer Clean Scroll Fix', () => 
 
   it('Thanh thao tác bàn giao được định dạng tự nhiên ở chân thẻ form với viền trên và nền phân tách rõ ràng', () => {
     const content = fs.readFileSync(handoverInspectionFormPath, 'utf-8');
-    expect(content).toMatch(/pt-6\s+border-t\s+border-slate-200\s+flex\s+flex-col\s+sm:flex-row/);
+    expect(content).toMatch(/bg-gray-50\s+border-t\s+border-gray-200/);
     expect(content).not.toMatch(/sticky bottom-0/);
   });
 
@@ -50,5 +50,32 @@ describe('ISS-84: HandoverInspectionForm Action Footer Clean Scroll Fix', () => 
     expect(content).not.toContain('bg-amber-100/70');
     expect(content).toMatch(/3\. Ảnh chụp hiện trạng bàn giao kho/i);
     expect(content).toMatch(/4\. Chữ ký xác nhận của khách hàng/i);
+  });
+
+  it('Hoàn thiện 4 điểm Design Lead: Text link chọn nhanh, nút Báo hỏng Outline Red, Checkbox pháp lý nằm trong Footer và làm phẳng cột trái', () => {
+    const formContent = fs.readFileSync(handoverInspectionFormPath, 'utf-8');
+    const cardPath = path.resolve(
+      process.cwd(),
+      'src/features/staff/components/CustomerVerificationCard.tsx'
+    );
+    const cardContent = fs.readFileSync(cardPath, 'utf-8');
+
+    // Lỗi 2: "Chọn tất cả đạt chuẩn" là text link gọn, không bọc nền/viền xanh
+    expect(formContent).not.toContain('Sparkles');
+    expect(formContent).toContain('hover:underline');
+
+    // Lỗi 3: Nút Báo hỏng dùng Outline Red (bg-white text-rose-600 border-rose-300), không dùng nền hồng bg-rose-50
+    expect(formContent).toContain('text-rose-600 bg-white border border-rose-300');
+    expect(formContent).not.toContain('text-rose-600 bg-rose-50');
+
+    // Lỗi 4: Checkbox pháp lý đặt trong Footer (sau marker Footer) ngay cạnh/trên nút Submit
+    const footerIndex = formContent.indexOf('bg-gray-50 border-t border-gray-200');
+    const legalCheckboxIndex = formContent.indexOf('xác nhận đồng ý nhận bàn giao ô kho');
+    expect(footerIndex).toBeGreaterThan(-1);
+    expect(legalCheckboxIndex).toBeGreaterThan(footerIndex);
+
+    // Lỗi 1 (cột trái): bỏ hộp viền bao mã ô kho và chuẩn hóa hiển thị ngày DD/MM/YYYY
+    expect(cardContent).not.toContain('bg-brand-50 border border-brand-200 px-2.5');
+    expect(cardContent).toContain('formatDateVN');
   });
 });
