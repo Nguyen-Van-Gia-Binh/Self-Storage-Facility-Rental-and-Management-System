@@ -463,20 +463,25 @@ export const ContractDetailPage: React.FC = () => {
             <div className="p-2 rounded-lg bg-amber-100 text-amber-700 shrink-0 mt-0.5">
               <RefreshCw className="w-4 h-4 text-amber-700" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="text-sm font-semibold text-amber-950">
                   Hợp đồng bước vào mốc Chốt chặn T-20 ngày (Còn {daysRemaining} ngày)
                 </h4>
-                <span className="text-[11px] font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded border border-amber-200">
+                <span className="text-[11px] font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded border border-amber-200 whitespace-nowrap">
                   Cổng online đã khóa · Thu phụ phí 200k
                 </span>
               </div>
-              <p className="text-xs text-amber-800 mt-1">
-                Khách hàng không thể tự gia hạn trực tuyến. Quản lý cơ sở có thẩm quyền thực hiện{' '}
-                <strong>Gia hạn Ngoại lệ (Force Renewal)</strong> tại quầy nếu ô kho chưa có khách mới
-                đặt cọc trước (tự động cộng phụ phí trễ hạn 200.000 VNĐ theo BR-REN-10).
-              </p>
+              <div className="text-xs text-amber-800 mt-1 space-y-0.5 max-w-2xl leading-relaxed">
+                <p>
+                  Khách hàng không thể tự gia hạn trực tuyến. Quản lý cơ sở có thể thực hiện{' '}
+                  <strong>Gia hạn Ngoại lệ (Force Renewal)</strong> tại quầy nếu ô kho chưa có khách mới đặt cọc.
+                </p>
+                <p className="text-amber-700">
+                  Hệ thống tự động cộng phụ phí trễ hạn <strong>200.000 VNĐ</strong> theo{' '}
+                  <span className="whitespace-nowrap font-medium">BR-REN-10</span>.
+                </p>
+              </div>
             </div>
           </div>
           <button
