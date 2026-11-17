@@ -9,7 +9,6 @@ import {
   Inbox,
   Search,
   Check,
-  Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
@@ -329,14 +328,11 @@ export const ShiftCalendarPage: React.FC = () => {
                 Hôm nay
               </button>
 
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-white rounded-lg border border-slate-200/80 text-xs font-bold text-slate-800">
-                <CalendarIcon className="w-3.5 h-3.5 text-brand-600" />
-                <DateField
-                  value={selectedDate}
-                  onChange={handleDateChange}
-                  className="w-24 bg-transparent text-xs font-bold text-slate-800 outline-none"
-                />
-              </div>
+              <DateField
+                value={selectedDate}
+                onChange={handleDateChange}
+                className="w-32 pl-2.5 py-1 bg-white rounded-lg border border-slate-200/80 text-xs font-semibold text-slate-800 tabular-nums outline-none focus:border-brand-500"
+              />
 
               <button
                 type="button"

@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import { DateField } from '@/components/ui/DateField';
 import {
   Building2,
-  Calendar,
   Users,
   CheckCircle2,
   RefreshCw,
@@ -235,14 +234,11 @@ export const StaffAssignmentPage: React.FC = () => {
             </select>
           </div>
 
-          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm">
-            <Calendar className="w-4 h-4 text-slate-400" />
-            <DateField
-              value={selectedDate}
-              onChange={setSelectedDate}
-              className="text-xs font-semibold text-slate-700 bg-transparent outline-none cursor-pointer"
-            />
-          </div>
+          <DateField
+            value={selectedDate}
+            onChange={setSelectedDate}
+            className="w-32 bg-white border border-slate-200 rounded-xl pl-3 py-1.5 shadow-sm text-xs font-semibold text-slate-700 tabular-nums outline-none focus:border-brand-500 cursor-pointer"
+          />
 
           <button
             type="button"
