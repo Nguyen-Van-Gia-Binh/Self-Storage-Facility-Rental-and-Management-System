@@ -1,10 +1,16 @@
-/** Kỳ hạn khách được chọn: giữ 1, 3, 6, 12 nếu nằm trong khoảng chính sách, luôn có mốc tối đa. */
+const MAX_PRESET_CARD_MONTHS = 12;
+
+/** Kỳ hạn thẻ chọn nhanh: giữ 1, 3, 6, 12 trong khoảng chính sách, chỉ hiện tối đa đến 12 tháng. */
 export function termMonthChoices(minMonths?: number | null, maxMonths?: number | null): number[] {
   const min = Math.max(1, Number(minMonths) || 1);
   const max = Math.max(min, Number(maxMonths) || min);
-  const anchors = [1, 3, 6, 12].filter((months) => months >= min && months <= max);
-  const months = anchors.includes(max) ? [...anchors] : [...anchors, max];
-  return months.length > 0 ? months : [max];
+  if (min > MAX_PRESET_CARD_MONTHS) return [];
+  const effectiveMax = Math.min(max, MAX_PRESET_CARD_MONTHS);
+  const anchors = [1, 3, 6, 12].filter((months) => months >= min && months <= effectiveMax);
+  if (max <= MAX_PRESET_CARD_MONTHS && !anchors.includes(max)) {
+    return [...anchors, max];
+  }
+  return anchors;
 }
 
 /** Kẹp số tháng gia hạn vào khoảng chính sách. Rỗng hoặc không phải số thì về min. */

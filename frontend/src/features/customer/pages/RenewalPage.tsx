@@ -481,51 +481,53 @@ export const RenewalPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div
-                    className={`grid gap-3 pt-2 ${
-                      termMonths.length === 3
-                        ? 'grid-cols-3'
-                        : termMonths.length === 2
-                        ? 'grid-cols-2'
-                        : 'grid-cols-2 sm:grid-cols-4'
-                    }`}
-                  >
-                    {termMonths.map((months) => {
-                      const tag = discountTag(months, 'reduce');
-                      const badgeLabel = tag || (months === 3 ? 'Phổ biến' : null);
-                      const isSelected = renewalMonths === months;
-                      return (
-                        <button
-                          key={months}
-                          type="button"
-                          disabled={isRenewalBlocked}
-                          onClick={() => setRenewalMonths(months)}
-                          className={`relative flex items-center justify-center py-3 px-4 rounded-lg text-center transition-all focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 ${
-                            isRenewalBlocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-                          } ${
-                            isSelected
-                              ? 'border-2 border-brand-500 bg-brand-50/50 text-brand-700'
-                              : 'border border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 text-gray-700'
-                          }`}
-                        >
-                          {badgeLabel && (
-                            <span
-                              className={`absolute -top-2.5 -right-2 px-2 py-0.5 text-[10px] font-bold rounded-full border shadow-xs uppercase tracking-wide whitespace-nowrap ${
-                                tag
-                                  ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                                  : 'bg-amber-100 text-amber-700 border-amber-200'
-                              }`}
-                            >
-                              {badgeLabel}
+                  {termMonths.length > 0 && (
+                    <div
+                      className={`grid gap-3 pt-2 ${
+                        termMonths.length === 3
+                          ? 'grid-cols-3'
+                          : termMonths.length === 2
+                          ? 'grid-cols-2'
+                          : 'grid-cols-2 sm:grid-cols-4'
+                      }`}
+                    >
+                      {termMonths.map((months) => {
+                        const tag = discountTag(months, 'reduce');
+                        const badgeLabel = tag || (months === 3 ? 'Phổ biến' : null);
+                        const isSelected = renewalMonths === months;
+                        return (
+                          <button
+                            key={months}
+                            type="button"
+                            disabled={isRenewalBlocked}
+                            onClick={() => setRenewalMonths(months)}
+                            className={`relative flex items-center justify-center py-3 px-4 rounded-lg text-center transition-all focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 ${
+                              isRenewalBlocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+                            } ${
+                              isSelected
+                                ? 'border-2 border-brand-500 bg-brand-50/50 text-brand-700'
+                                : 'border border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 text-gray-700'
+                            }`}
+                          >
+                            {badgeLabel && (
+                              <span
+                                className={`absolute -top-2.5 -right-2 px-2 py-0.5 text-[10px] font-bold rounded-full border shadow-xs uppercase tracking-wide whitespace-nowrap ${
+                                  tag
+                                    ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                                    : 'bg-amber-100 text-amber-700 border-amber-200'
+                                }`}
+                              >
+                                {badgeLabel}
+                              </span>
+                            )}
+                            <span className={`font-bold text-sm ${isSelected ? 'text-brand-700' : 'text-gray-700'}`}>
+                              {months} Tháng
                             </span>
-                          )}
-                          <span className={`font-bold text-sm ${isSelected ? 'text-brand-700' : 'text-gray-700'}`}>
-                            {months} Tháng
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* Ô nhập số tháng tùy chỉnh dạng Input Group liền mạch */}
