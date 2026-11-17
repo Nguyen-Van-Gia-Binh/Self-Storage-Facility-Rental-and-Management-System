@@ -1,5 +1,12 @@
 package com.swp391.selfstorage.common.cache;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.swp391.selfstorage.common.dto.PageResponse;
+import com.swp391.selfstorage.facility.dto.FacilityResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -7,7 +14,11 @@ import org.mockito.Mockito;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.support.SimpleValueWrapper;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -122,5 +133,66 @@ class TwoLevelCacheTest {
         CacheManager manager = config.cacheManager();
         assertThat(manager).isNotNull();
         assertThat(manager).isInstanceOf(TwoLevelCacheManager.class);
+    }
+
+    @Test
+    @DisplayName("L2 LinkedHashMap Anomaly: Khi L2 trả về LinkedHashMap (lỗi mất class type), TwoLevelCache tự động evict và trả về null để fallback DB")
+    void testL2LinkedHashMapAnomaly_evictsAndReturnsNull() {
+        when(l1Cache.get("key1")).thenReturn(null);
+        Map<String, Object> corruptedMap = new LinkedHashMap<>();
+        corruptedMap.put("content", List.of());
+        when(l2Cache.get("key1")).thenReturn(new SimpleValueWrapper(corruptedMap));
+
+        Cache.ValueWrapper result = twoLevelCache.get("key1");
+
+        assertThat(result).isNull();
+        verify(l2Cache, times(1)).evict("key1");
+        verify(l1Cache, never()).put(any(), any());
+    }
+
+    @Test
+    @DisplayName("L1 LinkedHashMap Anomaly: Khi L1 chứa LinkedHashMap, TwoLevelCache tự động evict khỏi L1")
+    void testL1LinkedHashMapAnomaly_evictsAndContinues() {
+        Map<String, Object> corruptedMap = new LinkedHashMap<>();
+        when(l1Cache.get("key1")).thenReturn(new SimpleValueWrapper(corruptedMap));
+        when(l2Cache.get("key1")).thenReturn(new SimpleValueWrapper("validVal"));
+
+        Cache.ValueWrapper result = twoLevelCache.get("key1");
+
+        assertThat(result).isNotNull();
+        assertThat(result.get()).isEqualTo("validVal");
+        verify(l1Cache, times(1)).evict("key1");
+        verify(l1Cache, times(1)).put("key1", "validVal");
+    }
+
+    @Test
+    @DisplayName("Redis Serializer: Đảm bảo PageResponse<FacilityResponse> serialize và deserialize giữ nguyên kiểu đối tượng (không biến thành LinkedHashMap)")
+    void testPageResponseSerialization_retainsType() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        objectMapper.activateDefaultTyping(
+                LaissezFaireSubTypeValidator.instance,
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY
+        );
+
+        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+
+        FacilityResponse facility = new FacilityResponse();
+        facility.setId(1L);
+        facility.setName("Kho Quận 7");
+        PageResponse<FacilityResponse> pageResponse = new PageResponse<>(List.of(facility), 0, 10, 1L, 1);
+
+        byte[] serialized = serializer.serialize(pageResponse);
+        assertThat(serialized).isNotNull();
+
+        Object deserialized = serializer.deserialize(serialized);
+        assertThat(deserialized).isInstanceOf(PageResponse.class);
+        PageResponse<?> result = (PageResponse<?>) deserialized;
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0)).isInstanceOf(FacilityResponse.class);
+        FacilityResponse deserializedFacility = (FacilityResponse) result.getContent().get(0);
+        assertThat(deserializedFacility.getName()).isEqualTo("Kho Quận 7");
     }
 }
