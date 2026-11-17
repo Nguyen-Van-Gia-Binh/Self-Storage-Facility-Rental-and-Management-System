@@ -311,4 +311,48 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
     expect(screen.queryByText(/✓ ĐÃ XÁC NHẬN BÀN GIAO/i)).not.toBeInTheDocument();
     unmount();
   });
+
+  it('ContractDetailModal chuẩn hóa UI phẳng Enterprise SaaS: Header trắng, bỏ Box Soup, Badge Chờ hoàn cọc màu Amber và định dạng ngày DD/MM/YYYY', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const modalPath = path.resolve(
+      process.cwd(),
+      'src/features/customer/components/ContractDetailModal.tsx'
+    );
+    const content = fs.readFileSync(modalPath, 'utf-8');
+
+    // Lỗi 1 & 2: không còn Header xanh đậm đặc và dùng hr phân tách điều khoản
+    expect(content).not.toContain('from-[#0a483c] via-[#0d6050]');
+    expect(content).toContain('<hr className="border-gray-200" />');
+
+    const pendingReturnContract: RentedContract = {
+      ...sampleContract,
+      id: '502',
+      contractNumber: 'CTR-TEST-004',
+      unitNumber: 'Q1-B201',
+      startDate: '2026-05-21',
+      endDate: '2026-11-15',
+      status: 'PENDING_RETURN',
+      inspectionDone: true,
+      relocationSupportRequestId: undefined,
+      relocationSupportRequestCode: undefined,
+    };
+
+    const { unmount } = render(
+      <ContractDetailModal
+        isOpen={true}
+        onClose={vi.fn()}
+        contract={pendingReturnContract}
+      />
+    );
+
+    // Lỗi 3: Badge Chờ hoàn cọc dùng màu Amber
+    const refundBadge = await screen.findByText('Chờ hoàn cọc');
+    expect(refundBadge.className).toContain('bg-amber-');
+
+    // Lỗi 4: Ngày tháng hiển thị chuẩn DD/MM/YYYY
+    expect(screen.getAllByText('21/05/2026').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('15/11/2026').length).toBeGreaterThanOrEqual(1);
+    unmount();
+  });
 });
