@@ -97,7 +97,7 @@ export const SurchargeTable: React.FC<SurchargeTableProps> = ({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Tìm kiếm theo tên hoặc mã..."
-              className="w-full pl-8.5 pr-3 py-1.5 bg-gray-50/70 border border-gray-200 rounded-md text-xs font-medium text-gray-800 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition-colors"
+              className="w-full pl-9 pr-3 py-1.5 bg-gray-50/70 border border-gray-200 rounded-md text-xs font-medium text-gray-800 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition-colors"
             />
           </div>
 

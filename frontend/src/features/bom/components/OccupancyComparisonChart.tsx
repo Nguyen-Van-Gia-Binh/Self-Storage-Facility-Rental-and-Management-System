@@ -115,7 +115,7 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm tên hoặc ID cơ sở..."
-            className="w-full pl-8.5 pr-8 py-1.5 text-xs bg-white border border-gray-200 rounded-md outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 transition-colors text-gray-800 placeholder-gray-400 font-medium"
+            className="w-full pl-9 pr-8 py-1.5 text-xs bg-white border border-gray-200 rounded-md outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 transition-colors text-gray-800 placeholder-gray-400 font-medium"
           />
           {searchQuery && (
             <button

@@ -52,8 +52,10 @@ describe('SurchargeTable Enterprise UI', () => {
       />
     );
 
-    // Concise search placeholder without redundant "phụ phí"
-    expect(screen.getByPlaceholderText('Tìm kiếm theo tên hoặc mã...')).toBeInTheDocument();
+    // Concise search placeholder without redundant "phụ phí" + valid pl-9 clearance for left search icon
+    const searchInput = screen.getByPlaceholderText('Tìm kiếm theo tên hoặc mã...');
+    expect(searchInput).toBeInTheDocument();
+    expect(searchInput.className).toContain('pl-9');
 
     // Primary Green CTA instead of warning Amber
     const addBtn = screen.getByRole('button', { name: /Thêm phụ phí/i });
