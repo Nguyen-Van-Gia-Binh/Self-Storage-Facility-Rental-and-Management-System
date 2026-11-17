@@ -161,10 +161,10 @@ export const WaitlistInboxPage: React.FC = () => {
         </div>
 
         {/* Facility Selector */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Cơ sở:</label>
           <select
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none"
+            className="h-9 rounded-lg border border-gray-300 bg-white pl-3 pr-9 text-sm text-gray-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 cursor-pointer"
             value={selectedFacilityId ?? ''}
             onChange={(e) => setSelectedFacilityId(Number(e.target.value))}
           >
@@ -179,9 +179,11 @@ export const WaitlistInboxPage: React.FC = () => {
             )}
           </select>
           <button
+            type="button"
             onClick={() => selectedFacilityId && loadWaitlists(selectedFacilityId)}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 shadow-2xs hover:bg-gray-50 transition-colors cursor-pointer shrink-0"
             title="Làm mới dữ liệu"
+            aria-label="Làm mới dữ liệu"
           >
             <RefreshCw className="h-4 w-4" />
           </button>

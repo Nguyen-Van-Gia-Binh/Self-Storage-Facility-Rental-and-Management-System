@@ -297,7 +297,7 @@ export const ForgotPasswordPage: React.FC = () => {
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                   placeholder="• • • • • •"
-                  className="w-full text-center tracking-[10px] text-xl font-mono font-extrabold py-3 rounded-xl bg-slate-50 border border-slate-200 text-brand-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all shadow-xs"
+                  className="w-full text-center tracking-[10px] text-xl font-mono font-extrabold px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-brand-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all shadow-xs"
                 />
               </div>
 
