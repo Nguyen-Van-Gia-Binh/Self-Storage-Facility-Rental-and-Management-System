@@ -89,7 +89,6 @@ export const IncidentListPage: React.FC = () => {
     loadData();
   }, [facIdNumber]);
 
-  // Reset về trang 1 khi đổi bộ lọc hoặc đổi kích thước trang
   useEffect(() => {
     setCurrentPage(1);
   }, [pageSize, timeFilter, includeBacklog, customRange, searchKeyword, selectedStatusTab, selectedCategory]);
@@ -99,7 +98,7 @@ export const IncidentListPage: React.FC = () => {
     return filterTicketsByTimeRange(tickets, timeFilter, customRange, includeBacklog);
   }, [tickets, timeFilter, customRange, includeBacklog]);
 
-  // 2. Thống kê theo phạm vi thời gian hiện tại
+  // 2. Thống kê theo phạm vi thời gian hiện tại (hiển thị trực tiếp trên Underline Status Tabs)
   const stats = useMemo(() => {
     const total = timeFilteredTickets.length;
     const pending = timeFilteredTickets.filter(
@@ -120,7 +119,6 @@ export const IncidentListPage: React.FC = () => {
   const processedTickets = useMemo(() => {
     let result = [...timeFilteredTickets];
 
-    // Status Tab
     if (selectedStatusTab !== 'ALL') {
       if (selectedStatusTab === 'NEW' || selectedStatusTab === 'OPEN') {
         result = result.filter((t) => t.status === 'NEW' || t.status === 'OPEN');
@@ -133,12 +131,10 @@ export const IncidentListPage: React.FC = () => {
       }
     }
 
-    // Category
     if (selectedCategory !== 'ALL') {
       result = result.filter((t) => t.category === selectedCategory);
     }
 
-    // Keyword
     if (searchKeyword.trim()) {
       const q = searchKeyword.trim().toLowerCase();
       result = result.filter(
@@ -152,7 +148,6 @@ export const IncidentListPage: React.FC = () => {
       );
     }
 
-    // Sort
     result.sort((a, b) => {
       const valA: any = a[sortField];
       const valB: any = b[sortField];
@@ -166,7 +161,6 @@ export const IncidentListPage: React.FC = () => {
     return result;
   }, [timeFilteredTickets, selectedStatusTab, selectedCategory, searchKeyword, sortField, sortDirection]);
 
-  // Phân trang
   const totalPages = Math.ceil(processedTickets.length / pageSize) || 1;
   const paginatedTickets = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -193,8 +187,21 @@ export const IncidentListPage: React.FC = () => {
   const facilityName = facility?.name || `Cơ sở #${facIdNumber}`;
   const facilityCode = facility?.code || `FAC-${facIdNumber}`;
 
+  const statusTabs: {
+    key: SupportStatus | 'ALL';
+    label: string;
+    count: number;
+    dot?: string;
+  }[] = [
+    { key: 'ALL', label: 'Tất cả trạng thái', count: stats.total },
+    { key: 'NEW', label: 'Chờ tiếp nhận', count: stats.pending, dot: 'bg-rose-500' },
+    { key: 'IN_PROGRESS', label: 'Đang xử lý', count: stats.inProgress, dot: 'bg-amber-500' },
+    { key: 'RESOLVED', label: 'Đã giải quyết', count: stats.resolved, dot: 'bg-emerald-500' },
+    { key: 'CANCELLED', label: 'Đã hủy', count: stats.cancelled, dot: 'bg-gray-400' },
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 pb-12">
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
@@ -203,26 +210,28 @@ export const IncidentListPage: React.FC = () => {
         ]}
       />
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+      {/* Page Header phẳng */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={() => navigate('/manager/incidents')}
-            className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+            className="p-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors shrink-0 cursor-pointer"
             title="Quay lại danh sách cơ sở"
+            aria-label="Quay lại danh sách cơ sở"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
                 {facilityName}
               </h1>
-              <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-slate-100 text-slate-700">
+              <span className="px-2 py-0.5 rounded text-xs font-mono font-medium bg-gray-100 text-gray-600 border border-gray-200">
                 {facilityCode}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               {facility?.address ? `${facility.address} · ` : ''}
               Theo dõi và phân công nhân viên xử lý sự cố kỹ thuật tại cơ sở
             </p>
@@ -230,238 +239,203 @@ export const IncidentListPage: React.FC = () => {
         </div>
 
         <button
+          type="button"
           onClick={loadData}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs self-start sm:self-auto cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors self-start sm:self-auto cursor-pointer"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-brand-600' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-brand-600' : 'text-gray-500'}`} />
           <span>Làm mới</span>
         </button>
       </div>
 
-      {/* Bộ Lọc Thời Gian Thông Minh (Time Filter Presets) */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-3.5 sm:p-4 space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Pills Chọn Nhanh Mốc Thời Gian */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-            <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1 shrink-0">
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+      {/* Bộ lọc Thời gian + Search + Category + Sort gộp gọn (không có 4 thẻ KPI trùng lặp) */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3.5">
+        {/* Hàng 1: Mốc thời gian + Backlog toggle */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
+            <span className="text-xs font-medium text-gray-500 mr-1 inline-flex items-center gap-1.5 shrink-0">
+              <Calendar className="w-3.5 h-3.5 text-gray-400" />
               Thời gian:
             </span>
-            {TIME_FILTER_OPTIONS.map((opt) => {
-              const isActive = timeFilter === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setTimeFilter(opt.value)}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer ${
-                    isActive
-                      ? 'bg-brand-600 text-white shadow-2xs font-bold'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
+            <div className="inline-flex items-center gap-1 p-0.5 bg-gray-100 rounded-lg border border-gray-200">
+              {TIME_FILTER_OPTIONS.map((opt) => {
+                const isActive = timeFilter === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setTimeFilter(opt.value)}
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors shrink-0 cursor-pointer ${
+                      isActive
+                        ? 'bg-white text-gray-900 font-semibold shadow-2xs'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Toggle Chống Sót Việc: Sự Cố Tồn Đọng Chưa Giải Quyết */}
           {timeFilter === 'TODAY' && (
-            <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer select-none self-end sm:self-auto bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/80">
+            <label className="inline-flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={includeBacklog}
                 onChange={(e) => setIncludeBacklog(e.target.checked)}
-                className="w-3.5 h-3.5 rounded text-brand-600 focus:ring-brand-500 focus:ring-1 border-slate-300 cursor-pointer"
+                className="w-3.5 h-3.5 rounded accent-brand-600 cursor-pointer"
               />
               <span>Bao gồm sự cố tồn đọng chưa xử lý</span>
               {backlogCount > 0 && (
-                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-rose-100 text-rose-800 border border-rose-200">
-                  {backlogCount} ticket
+                <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 tabular-nums">
+                  {backlogCount}
                 </span>
               )}
             </label>
           )}
         </div>
 
-        {/* Khung Tùy Chọn Khoảng Ngày Tự Do (Nếu chọn CUSTOM) */}
+        {/* Khung chọn khoảng ngày tự do (CUSTOM) */}
         {timeFilter === 'CUSTOM' && (
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
-            <span className="text-slate-500 font-medium">Từ ngày:</span>
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100 text-xs">
+            <span className="text-gray-500 font-medium">Từ ngày:</span>
             <DateField
               value={customRange.startDate || ''}
               onChange={(next) =>
                 setCustomRange((prev) => ({ ...prev, startDate: next }))
               }
-              className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+              className="px-2.5 py-1.5 bg-white border border-gray-300 rounded-lg text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
             />
-            <span className="text-slate-500 font-medium">Đến ngày:</span>
+            <span className="text-gray-500 font-medium">Đến ngày:</span>
             <DateField
               value={customRange.endDate || ''}
               onChange={(next) =>
                 setCustomRange((prev) => ({ ...prev, endDate: next }))
               }
-              className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+              className="px-2.5 py-1.5 bg-white border border-gray-300 rounded-lg text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
             />
           </div>
         )}
-      </div>
 
-      {/* Interactive KPI Bar: Bấm trực tiếp để lọc trạng thái */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-        {([
-          { key: 'ALL' as const, label: `Tổng sự cố ${timeFilter === 'TODAY' ? 'hôm nay' : ''}`.trim(), value: stats.total, dot: '' },
-          { key: 'NEW' as const, label: 'Chờ tiếp nhận', value: stats.pending, dot: 'bg-rose-500' },
-          { key: 'IN_PROGRESS' as const, label: 'Đang xử lý', value: stats.inProgress, dot: 'bg-amber-500' },
-          { key: 'RESOLVED' as const, label: 'Đã giải quyết', value: stats.resolved, dot: 'bg-emerald-500' },
-        ]).map((card) => {
-          const selected = selectedStatusTab === card.key;
-          return (
-            <button
-              key={card.key}
-              type="button"
-              onClick={() => setSelectedStatusTab(card.key)}
-              className={`p-4 rounded-2xl border bg-white text-left text-slate-900 transition-all cursor-pointer flex items-center justify-between ${
-                selected ? 'border-brand-500 ring-2 ring-brand-500/25' : 'border-slate-200/90 hover:border-slate-300'
-              }`}
-            >
-              <div>
-                <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1.5">
-                  {card.dot && <span className={`w-1.5 h-1.5 rounded-full ${card.dot}`} />}
-                  {card.label}
-                </span>
-                <span className="text-2xl font-bold num tracking-tight block mt-0.5">
-                  {card.value}
-                </span>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Toolbar: Search, Category & Status Tabs */}
-      <div className="space-y-3">
-        {/* Hàng 1: Search, Category dropdown, Sort dropdown */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Search */}
+        {/* Hàng 2: Tìm kiếm + Lọc loại sự cố + Sắp xếp */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-3 border-t border-gray-100">
           <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
               placeholder="Tìm mã sự cố, khách hàng, SĐT, ô kho..."
-              className="w-full pl-10 pr-4 py-2 bg-white text-xs border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 shadow-2xs placeholder-slate-400"
+              className="w-full pl-9 pr-3 py-1.5 bg-white text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 placeholder-gray-400"
             />
           </div>
 
-          {/* Lọc loại sự cố & Sắp xếp */}
-          <div className="flex items-center gap-2">
-            {/* Category Dropdown */}
-            <div className="relative">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value as any)}
-                className="pl-3 pr-8 py-2 bg-white text-xs font-semibold border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 shadow-2xs text-slate-700 cursor-pointer"
-              >
-                <option value="ALL">Tất cả loại sự cố</option>
-                <option value="ACCESS_ISSUE">Khóa cửa & PIN</option>
-                <option value="LOST_KEY">Mất chìa khóa</option>
-                <option value="FACILITY_DAMAGE">Hư bản lề / vách cửa</option>
-                <option value="FACILITY_LEAK">Ngập nước / ẩm mốc</option>
-                <option value="POWER_ISSUE">Điện & chiếu sáng</option>
-                <option value="CLEANLINESS">Vệ sinh kho bãi</option>
-                <option value="PAYMENT_BILLING">Hóa đơn & phụ phí</option>
-                <option value="OTHER">Sự cố khác</option>
-              </select>
-            </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value as any)}
+              aria-label="Lọc theo loại sự cố"
+              className="px-3 py-1.5 bg-white text-xs font-medium border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-gray-700 cursor-pointer"
+            >
+              <option value="ALL">Tất cả loại sự cố</option>
+              <option value="ACCESS_ISSUE">Khóa cửa & PIN</option>
+              <option value="LOST_KEY">Mất chìa khóa</option>
+              <option value="FACILITY_DAMAGE">Hư bản lề / vách cửa</option>
+              <option value="FACILITY_LEAK">Ngập nước / ẩm mốc</option>
+              <option value="POWER_ISSUE">Điện & chiếu sáng</option>
+              <option value="CLEANLINESS">Vệ sinh kho bãi</option>
+              <option value="PAYMENT_BILLING">Hóa đơn & phụ phí</option>
+              <option value="OTHER">Sự cố khác</option>
+            </select>
 
-            {/* Sort Dropdown */}
-            <div className="relative">
-              <select
-                value={`${sortField}_${sortDirection}`}
-                onChange={(e) => {
-                  const [field, dir] = e.target.value.split('_');
-                  setSortField(field as IncidentSortField);
-                  setSortDirection(dir as 'asc' | 'desc');
-                }}
-                className="pl-3 pr-8 py-2 bg-white text-xs font-semibold border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 shadow-2xs text-slate-700 cursor-pointer"
-              >
-                <option value="createdAt_desc">Mới nhất trước</option>
-                <option value="createdAt_asc">Cũ nhất trước</option>
-                <option value="code_asc">Mã sự cố (A-Z)</option>
-              </select>
-            </div>
+            <select
+              value={`${sortField}_${sortDirection}`}
+              onChange={(e) => {
+                const [field, dir] = e.target.value.split('_');
+                setSortField(field as IncidentSortField);
+                setSortDirection(dir as 'asc' | 'desc');
+              }}
+              aria-label="Sắp xếp danh sách sự cố"
+              className="px-3 py-1.5 bg-white text-xs font-medium border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-gray-700 cursor-pointer"
+            >
+              <option value="createdAt_desc">Mới nhất trước</option>
+              <option value="createdAt_asc">Cũ nhất trước</option>
+              <option value="code_asc">Mã sự cố (A-Z)</option>
+            </select>
           </div>
-        </div>
-
-        {/* Hàng 2: Status Tabs có Đếm Số Lượng Động */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          {[
-            { key: 'ALL', label: 'Tất cả trạng thái', count: stats.total },
-            { key: 'NEW', label: 'Chờ tiếp nhận', count: stats.pending },
-            { key: 'IN_PROGRESS', label: 'Đang xử lý', count: stats.inProgress },
-            { key: 'RESOLVED', label: 'Đã giải quyết', count: stats.resolved },
-            { key: 'CANCELLED', label: 'Đã hủy', count: stats.cancelled },
-          ].map((tab) => {
-            const isActive = selectedStatusTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setSelectedStatusTab(tab.key as any)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
-                  isActive
-                    ? 'bg-brand-600 text-white shadow-2xs font-bold'
-                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                <span>{tab.label}</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                    isActive
-                      ? 'bg-brand-700/60 text-white'
-                      : 'bg-slate-100 text-slate-600'
-                  }`}
-                >
-                  {tab.count}
-                </span>
-              </button>
-            );
-          })}
         </div>
       </div>
 
-      {/* Table danh sách sự cố hoặc Empty State */}
+      {/* Underline Status Tabs (Nguồn duy nhất cho cả số đếm & bộ lọc trạng thái) */}
+      <div
+        role="tablist"
+        aria-label="Lọc sự cố theo trạng thái"
+        className="flex items-center gap-1 border-b border-gray-200 overflow-x-auto scrollbar-none"
+      >
+        {statusTabs.map((tab) => {
+          const isActive = selectedStatusTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setSelectedStatusTab(tab.key)}
+              className={`px-3.5 py-2.5 text-sm font-medium whitespace-nowrap transition-colors cursor-pointer inline-flex items-center gap-2 -mb-px border-b-2 ${
+                isActive
+                  ? 'border-brand-600 text-brand-700 font-semibold'
+                  : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300'
+              }`}
+            >
+              {tab.dot && <span className={`w-1.5 h-1.5 rounded-full ${tab.dot}`} />}
+              <span>{tab.label}</span>
+              <span
+                className={`text-xs px-1.5 py-0.5 rounded-md tabular-nums ${
+                  isActive
+                    ? 'bg-brand-50 text-brand-700 font-semibold'
+                    : 'bg-gray-100 text-gray-600'
+                }`}
+              >
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Table danh sách sự cố hoặc Empty State gọn gàng chuẩn B2B */}
       {loading ? (
-        <div className="py-20 text-center">
-          <div className="w-10 h-10 border-3 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-xs text-slate-500 font-medium">Đang đồng bộ dữ liệu sự cố kỹ thuật...</p>
+        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+          <div className="w-8 h-8 border-2 border-brand-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-xs text-gray-500 font-medium">
+            Đang đồng bộ dữ liệu sự cố kỹ thuật...
+          </p>
         </div>
       ) : timeFilteredTickets.length === 0 && timeFilter === 'TODAY' && !searchKeyword ? (
-        <div className="bg-white rounded-2xl border border-slate-200/90 p-12 text-center shadow-2xs">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
-            <CheckCircle2 className="w-6 h-6" />
+        <div className="bg-white rounded-xl border border-gray-200 py-10 px-6 text-center">
+          <div className="w-10 h-10 rounded-full bg-gray-100 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+            <CheckCircle2 className="w-5 h-5" />
           </div>
-          <h3 className="font-bold text-slate-900 text-base">
-            Tuyệt vời! Không có sự cố nào phát sinh hôm nay
+          <h3 className="font-semibold text-gray-900 text-sm">
+            Không có sự cố nào phát sinh hôm nay
           </h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-            Tất cả các ô kho và cơ sở vật chất tại {facilityName} đang vận hành ổn định.
+          <p className="text-xs text-gray-500 mt-1 max-w-md mx-auto">
+            Các ô kho và hạng mục vận hành tại {facilityName} hiện đang hoạt động ổn định.
           </p>
-          <div className="mt-5 flex items-center justify-center gap-2">
+          <div className="mt-4 flex items-center justify-center gap-2">
             <button
               type="button"
               onClick={() => setTimeFilter('LAST_7_DAYS')}
-              className="px-4 py-2 text-xs font-semibold text-brand-600 bg-brand-50 hover:bg-brand-600 hover:text-white rounded-xl transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
             >
               Xem sự cố 7 ngày qua
             </button>
             <button
               type="button"
               onClick={() => setTimeFilter('ALL')}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
             >
               Xem toàn bộ lịch sử
             </button>
@@ -479,9 +453,9 @@ export const IncidentListPage: React.FC = () => {
         />
       )}
 
-      {/* Phân trang: Hỗ trợ chuyển đổi số lượng/trang và luôn hiển thị điều hướng chuyên nghiệp */}
+      {/* Phân trang */}
       {processedTickets.length > 0 && (
-        <div className="pt-2">
+        <div className="pt-1">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
