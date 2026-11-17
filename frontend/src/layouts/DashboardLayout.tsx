@@ -241,15 +241,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 }}
                 title={!sidebarOpen ? item.label : undefined}
                 className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold
-                  transition-all duration-150 group relative
+                  flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
+                  transition-colors duration-150 group relative
                   ${isActive
-                    ? 'bg-brand-500 text-white shadow-sm shadow-brand-500/25 font-bold'
-                    : 'text-slate-600 hover:text-brand-700 hover:bg-brand-50/70'
+                    ? 'bg-brand-600 text-white shadow-2xs font-semibold'
+                    : 'text-gray-500 font-medium hover:text-gray-900 hover:bg-gray-100/80'
                   }
                 `}
               >
-                <Icon className={`w-4.5 h-4.5 flex-shrink-0 transition-transform group-hover:scale-105 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-brand-600'}`} />
+                <Icon className={`w-4.5 h-4.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-700'}`} />
                 <span className={`truncate transition-all duration-300 ${sidebarOpen ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'}`}>
                   {item.label}
                 </span>
