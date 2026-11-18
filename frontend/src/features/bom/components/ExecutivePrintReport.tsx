@@ -58,45 +58,53 @@ export const ExecutivePrintReport: React.FC<ExecutivePrintReportProps> = ({
   const showOutOfService = units.some((u) => (u.outOfServiceUnits ?? 0) > 0);
   const showOverdueCol = units.some((u) => (u.overdueContractsCount ?? 0) > 0);
 
-  const reportYear = (preparedOn.match(/\d{4}/)?.[0]) || String(new Date().getFullYear());
+  const reportYear = preparedOn.match(/\d{4}/)?.[0] || String(new Date().getFullYear());
   const depositHeld = revenue?.totalDepositLiability ?? revenue?.depositBalance ?? 0;
 
   return (
-    <article className="ss-report">
-      {/* Report Header — uses <div> (never <header> which @media print hides globally) */}
+    <article
+      className="ss-report"
+      style={{ fontFamily: "'Times New Roman', Times, serif" }}
+    >
+      {/* 1. Formal Vietnamese Administrative & Contract Header (Left Org + Right National Motto) */}
       <div className="ss-letterhead">
-        <div>
-          <div className="ss-brand">SMARTSTORAGE · BOM OPERATIONS</div>
-          <div className="ss-brand-sub">Hệ thống cho thuê kho tự quản — Báo cáo tài chính &amp; vận hành</div>
+        <div className="ss-lh-left">
+          <div className="ss-brand">CÔNG TY SMARTSTORAGE</div>
+          <div className="ss-brand-sub">Bộ phận: BOM Operations</div>
+          <div className="ss-lh-rule ss-lh-rule-sm" />
+          <div className="ss-lh-meta">Mã báo cáo: BC-VH-05</div>
         </div>
-        <div className="ss-doc-meta">
-          <div>Mã biểu: BC-VH-05</div>
-          <div>Múi giờ: Asia/Ho_Chi_Minh</div>
+
+        <div className="ss-lh-right">
+          <div className="ss-motto-top">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+          <div className="ss-motto-sub">Độc lập - Tự do - Hạnh phúc</div>
+          <div className="ss-lh-rule ss-lh-rule-md" />
+          <div className="ss-lh-meta">Ngày xuất: {preparedOn}</div>
         </div>
       </div>
 
+      {/* 2. Centered Report Title & Italic Period */}
       <div className="ss-title">
         <h1>BÁO CÁO ĐỐI SOÁT DOANH THU, TỶ LỆ LẤP ĐẦY VÀ NỢ QUÁ HẠN</h1>
+        <p className="ss-period">
+          Từ ngày {formatDate(from)} đến ngày {formatDate(to)}
+        </p>
       </div>
 
-      {/* Unboxed 2-Column Metadata Table (Thin Horizontal Rules Only) */}
+      {/* 3. Unboxed 2-Column Metadata Block (Thin Horizontal Rules Only) */}
       <table className="ss-meta">
         <tbody>
           <tr>
-            <td className="ss-meta-label">Kỳ báo cáo</td>
-            <td className="ss-meta-value">Từ {formatDate(from)} đến {formatDate(to)}</td>
-            <td className="ss-meta-label">Thời gian xuất</td>
-            <td className="ss-meta-value">{printedAt}</td>
-          </tr>
-          <tr>
-            <td className="ss-meta-label">Đơn vị tiền tệ</td>
-            <td className="ss-meta-value">VND (Tất cả số liệu tiền tệ tính bằng đồng Việt Nam)</td>
-            <td className="ss-meta-label">Người lập</td>
+            <td className="ss-meta-label">Phạm vi báo cáo:</td>
+            <td className="ss-meta-value">{scopeName}</td>
+            <td className="ss-meta-label">Người lập biểu:</td>
             <td className="ss-meta-value">{preparedBy}</td>
           </tr>
           <tr>
-            <td className="ss-meta-label">Phạm vi</td>
-            <td className="ss-meta-value" colSpan={3}>{scopeName}</td>
+            <td className="ss-meta-label">Đơn vị tính:</td>
+            <td className="ss-meta-value">Đồng Việt Nam (VND)</td>
+            <td className="ss-meta-label">Thời gian xuất:</td>
+            <td className="ss-meta-value">{printedAt}</td>
           </tr>
         </tbody>
       </table>
@@ -105,7 +113,7 @@ export const ExecutivePrintReport: React.FC<ExecutivePrintReportProps> = ({
       <section className="ss-section ss-keep">
         <div className="ss-section-head">
           <h2 className="ss-section-title">1. Tóm tắt chỉ số thực thu và tài chính</h2>
-          <span className="ss-unit-note">Đơn vị tiền tệ: VND</span>
+          <span className="ss-unit-note">Đơn vị tính: VND</span>
         </div>
         <table className="ss-summary-table">
           <tbody>
@@ -114,7 +122,7 @@ export const ExecutivePrintReport: React.FC<ExecutivePrintReportProps> = ({
               <td className="ss-num ss-sum-val">{formatLedgerAmount(revenue?.totalRevenue)}</td>
               <td className="ss-sum-label">Định kỳ (MRR)</td>
               <td className="ss-num ss-sum-val">{formatLedgerAmount(revenue?.mrr)}</td>
-              <td className="ss-sum-label">Số HĐ đang hoạt động</td>
+              <td className="ss-sum-label">HĐ đang hoạt động</td>
               <td className="ss-num ss-sum-val">{formatLedgerCount(revenue?.activeContractCount)}</td>
             </tr>
             <tr>
@@ -129,24 +137,24 @@ export const ExecutivePrintReport: React.FC<ExecutivePrintReportProps> = ({
         </table>
       </section>
 
-      {/* Part 2: Financial Table (Monochrome Ledger, Right-Aligned, No Repeated "đ", Safe Total Row) */}
+      {/* Part 2: Financial Table (Monochrome Ledger, Right-Aligned, Single-Line Facilities, Safe Total Row) */}
       <section className="ss-section">
         <div className="ss-section-head">
           <h2 className="ss-section-title">2. Bảng đối soát doanh thu theo cơ sở</h2>
-          <span className="ss-unit-note">Đơn vị: VND</span>
+          <span className="ss-unit-note">Đơn vị tính: VND</span>
         </div>
         {facilities.length === 0 ? (
           <div className="ss-empty">Không có dữ liệu doanh thu phát sinh trong kỳ báo cáo.</div>
         ) : (
-          <table className="ss-table">
+          <table className="ss-table ss-table-financial">
             <thead>
               <tr>
-                <th>Cơ sở lưu kho</th>
+                <th className="ss-col-facility">Cơ sở lưu kho</th>
                 <th className="ss-num">Tiền thuê</th>
                 <th className="ss-num">Phụ phí</th>
                 <th className="ss-num">Gia hạn</th>
-                <th className="ss-num">Phạt quá hạn</th>
-                <th className="ss-num">Cọc đang giữ</th>
+                <th className="ss-num">Quá hạn</th>
+                <th className="ss-num">Cọc giữ</th>
                 <th className="ss-num">Đã hoàn</th>
                 <th className="ss-num">Tổng</th>
               </tr>
@@ -154,7 +162,7 @@ export const ExecutivePrintReport: React.FC<ExecutivePrintReportProps> = ({
             <tbody>
               {facilities.map((row) => (
                 <tr key={row.facilityId}>
-                  <td>{row.facilityName}</td>
+                  <td className="ss-col-facility">{row.facilityName}</td>
                   <td className="ss-num">{formatLedgerAmount(row.rentalRevenue)}</td>
                   <td className="ss-num">{formatLedgerAmount(row.surchargeRevenue)}</td>
                   <td className="ss-num">{formatLedgerAmount(row.renewalRevenue)}</td>
@@ -164,9 +172,9 @@ export const ExecutivePrintReport: React.FC<ExecutivePrintReportProps> = ({
                   <td className="ss-num ss-bold">{formatLedgerAmount(row.totalRevenue)}</td>
                 </tr>
               ))}
-              {/* Total Row inside tbody (NEVER tfoot) to prevent Chrome duplicating it across page breaks */}
+              {/* Total Row inside tbody (never tfoot) to avoid Chrome duplicating it across pages */}
               <tr className="ss-total-row">
-                <td>TỔNG CỘNG</td>
+                <td className="ss-col-facility">TỔNG CỘNG</td>
                 <td className="ss-num">{formatLedgerAmount(revenue?.rentalRevenue)}</td>
                 <td className="ss-num">{formatLedgerAmount(revenue?.surchargeRevenue)}</td>
                 <td className="ss-num">{formatLedgerAmount(revenue?.renewalRevenue)}</td>
@@ -199,8 +207,8 @@ export const ExecutivePrintReport: React.FC<ExecutivePrintReportProps> = ({
           <table className="ss-table">
             <thead>
               <tr>
-                <th>Cơ sở lưu kho</th>
-                <th className="ss-num">Tổng ô</th>
+                <th className="ss-col-facility">Cơ sở lưu kho</th>
+                <th className="ss-num">Tổng kho</th>
                 <th className="ss-num">Đang thuê</th>
                 <th className="ss-num">Công suất trống</th>
                 {showReserved && <th className="ss-num">Đặt chỗ</th>}
@@ -220,7 +228,7 @@ export const ExecutivePrintReport: React.FC<ExecutivePrintReportProps> = ({
                     : formatPercent(row.occupancyRate);
                 return (
                   <tr key={row.facilityId}>
-                    <td>{row.facilityName}</td>
+                    <td className="ss-col-facility">{row.facilityName}</td>
                     <td className="ss-num">{formatLedgerCount(row.totalUnits)}</td>
                     <td className="ss-num">{formatLedgerCount(row.occupiedUnits)}</td>
                     <td className="ss-num">{formatLedgerCount(row.availableUnits)}</td>
@@ -234,7 +242,7 @@ export const ExecutivePrintReport: React.FC<ExecutivePrintReportProps> = ({
                 );
               })}
               <tr className="ss-total-row">
-                <td>TỔNG CỘNG</td>
+                <td className="ss-col-facility">TỔNG CỘNG</td>
                 <td className="ss-num">{formatLedgerCount(occupancy?.totalUnitsSystem)}</td>
                 <td className="ss-num">{formatLedgerCount(occupancy?.occupiedUnitsSystem)}</td>
                 <td className="ss-num">{formatLedgerCount(occupancy?.availableUnitsSystem)}</td>
@@ -273,11 +281,11 @@ export const ExecutivePrintReport: React.FC<ExecutivePrintReportProps> = ({
           </table>
         )}
         <p className="ss-footnote">
-          (*) Tỷ lệ lấp đầy (Usage Rate) = Số ô đang thuê / (Tổng ô kho − Ô ngừng khai thác). Các cột phân loại bằng 0 toàn kỳ được ẩn để tối ưu không gian đọc.
+          (*) Tỷ lệ lấp đầy (Usage Rate) = Số ô đang thuê / (Tổng ô kho − Ô ngừng khai thác). Các cột phân loại bằng 0 toàn kỳ được ẩn tự động để tối ưu khổ giấy A4.
         </p>
       </section>
 
-      {/* Part 4: Overdue Contracts + Structured 3-Column Approval Sign-off Block */}
+      {/* Part 4: Overdue Contracts + Formal 3-Column Approval Sign-off Block */}
       <section className="ss-section ss-keep">
         <div className="ss-section-head">
           <h2 className="ss-section-title">4. Hợp đồng quá hạn và công nợ rủi ro</h2>
@@ -322,36 +330,41 @@ export const ExecutivePrintReport: React.FC<ExecutivePrintReportProps> = ({
           </table>
         )}
 
-        {/* Approval Sign-off Block (3 columns, 76px signing space, date lines) */}
-        <div className="ss-sign ss-keep">
-          <div className="ss-sign-col">
-            <strong className="ss-sign-role">NGƯỜI LẬP BIỂU</strong>
-            <span className="ss-sign-hint">(Ký, ghi rõ họ tên)</span>
-            <div className="ss-sign-space" />
-            <div className="ss-sign-name">{preparedBy}</div>
-            <div className="ss-sign-date">Ngày ...... tháng ...... năm {reportYear}</div>
+        {/* Formal Sign-off Block (Top-right Date Line + 3 Equal Columns with 80px Space) */}
+        <div className="ss-sign-wrap ss-keep">
+          <div className="ss-sign-top-date">
+            ……, ngày …… tháng …… năm {reportYear}
           </div>
-          <div className="ss-sign-col">
-            <strong className="ss-sign-role">PHỤ TRÁCH VẬN HÀNH</strong>
-            <span className="ss-sign-hint">(Ký, ghi rõ họ tên)</span>
-            <div className="ss-sign-space" />
-            <div className="ss-sign-line" />
-            <div className="ss-sign-date">Ngày ...... tháng ...... năm {reportYear}</div>
-          </div>
-          <div className="ss-sign-col">
-            <strong className="ss-sign-role">GIÁM ĐỐC ĐIỀU HÀNH</strong>
-            <span className="ss-sign-hint">(Ký, ghi rõ họ tên &amp; đóng dấu)</span>
-            <div className="ss-sign-space" />
-            <div className="ss-sign-line" />
-            <div className="ss-sign-date">Ngày ...... tháng ...... năm {reportYear}</div>
+          <div className="ss-sign">
+            <div className="ss-sign-col">
+              <strong className="ss-sign-role">NGƯỜI LẬP BIỂU</strong>
+              <span className="ss-sign-hint">(Ký, ghi rõ họ tên)</span>
+              <div className="ss-sign-space" />
+              <div className="ss-sign-dots">........................................</div>
+              <div className="ss-sign-name">{preparedBy}</div>
+            </div>
+            <div className="ss-sign-col">
+              <strong className="ss-sign-role">PHỤ TRÁCH VẬN HÀNH</strong>
+              <span className="ss-sign-hint">(Ký, ghi rõ họ tên)</span>
+              <div className="ss-sign-space" />
+              <div className="ss-sign-dots">........................................</div>
+              <div className="ss-sign-placeholder">(Ghi rõ họ tên)</div>
+            </div>
+            <div className="ss-sign-col">
+              <strong className="ss-sign-role">GIÁM ĐỐC ĐIỀU HÀNH</strong>
+              <span className="ss-sign-hint">(Ký, ghi rõ họ tên &amp; đóng dấu)</span>
+              <div className="ss-sign-space" />
+              <div className="ss-sign-dots">........................................</div>
+              <div className="ss-sign-placeholder">(Ghi rõ họ tên)</div>
+            </div>
           </div>
         </div>
 
         {/* Clean Monochrome Document Footer */}
         <div className="ss-doc-footer">
-          <span>SmartStorage — BOM Operations</span>
-          <span>Báo cáo đối soát tài chính &amp; vận hành</span>
-          <span>Xuất lúc {printedAt}</span>
+          <span>Mã biểu: BC-VH-05 · SmartStorage</span>
+          <span>Báo cáo đối soát doanh thu &amp; vận hành</span>
+          <span>Xuất lúc: {printedAt}</span>
         </div>
       </section>
     </article>

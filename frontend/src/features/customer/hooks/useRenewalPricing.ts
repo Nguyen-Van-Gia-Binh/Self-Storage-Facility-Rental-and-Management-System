@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getRenewalQuote, type RenewalQuote } from '@/api/customerRentals';
 import { calculateRenewalPricing, calculateExtendedEndDate } from '../utils/renewalPricing';
+import { normalizeDiscountPercent } from '../utils/pricing';
 import type { RentedContract } from '../types';
 
 interface UseRenewalPricingParams {
@@ -100,7 +101,9 @@ export function useRenewalPricing({ contract, renewalMonths }: UseRenewalPricing
         monthlyRent: 0,
         rawRent: 0,
         discountRate: 0,
+        discountPercent: 0,
         discountAmount: 0,
+        discountProgramName: null as string | null,
         netRent: 0,
         overdueFee: 0,
         extraDeposit: 0,
@@ -113,13 +116,23 @@ export function useRenewalPricing({ contract, renewalMonths }: UseRenewalPricing
       const rawRent = renewalQuote.monthlyPrice * renewalQuote.renewalMonths;
       const netRent = renewalQuote.totalRenewalFee;
       const overdueFee = renewalQuote.overdueFeeSettled || 0;
-      const discountAmount = Math.max(0, rawRent - netRent);
-      const discountRate = rawRent > 0 ? Math.round((discountAmount / rawRent) * 100) : 0;
+      const discountAmount =
+        renewalQuote.discountAmount != null
+          ? Math.max(0, renewalQuote.discountAmount)
+          : Math.max(0, rawRent - netRent);
+      const discountRate =
+        renewalQuote.discountPercentage && renewalQuote.discountPercentage > 0
+          ? renewalQuote.discountPercentage
+          : rawRent > 0
+            ? discountAmount / rawRent
+            : 0;
       return {
         monthlyRent: renewalQuote.monthlyPrice,
         rawRent,
         discountRate,
+        discountPercent: normalizeDiscountPercent(discountRate),
         discountAmount,
+        discountProgramName: renewalQuote.discountProgramName || null,
         netRent,
         overdueFee,
         extraDeposit: 0, // BR-DEP-01: Cọc được bảo lưu từ hợp đồng gốc
@@ -128,13 +141,18 @@ export function useRenewalPricing({ contract, renewalMonths }: UseRenewalPricing
       };
     }
 
-    return calculateRenewalPricing({
+    const fallback = calculateRenewalPricing({
       monthlyRent: contract.monthlyRent,
       renewalMonths,
       isOverdue: contract.status === 'OVERDUE',
       overdueDays: contract.overdueDays,
       overdueFee: contract.overdueFee,
     });
+    return {
+      ...fallback,
+      discountPercent: normalizeDiscountPercent(fallback.discountRate),
+      discountProgramName: null as string | null,
+    };
   }, [contract, renewalMonths, renewalQuote]);
 
   return {

@@ -28,7 +28,7 @@ function formatDisplayDate(iso?: string): string {
 export const WaitlistInboxPage: React.FC = () => {
   const navigate = useNavigate();
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
-  const [selectedFacilityId, setSelectedFacilityId] = useState<number | null>(null);
+  const [selectedFacilityId, setSelectedFacilityId] = useState<number | 'ALL' | null>(null);
   const [waitlists, setWaitlists] = useState<WaitlistResponse[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
@@ -48,13 +48,13 @@ export const WaitlistInboxPage: React.FC = () => {
     window.setTimeout(() => setToast(null), 4000);
   };
 
-  // Load facilities
+  // Load facilities — mặc định xem Toàn cơ sở được phân công
   useEffect(() => {
     fetchMyAssignedFacilities()
       .then((res) => {
         setFacilities(res);
         if (res.length > 0) {
-          setSelectedFacilityId(res[0].id);
+          setSelectedFacilityId('ALL');
         }
       })
       .catch((err) => {
@@ -63,24 +63,41 @@ export const WaitlistInboxPage: React.FC = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  // Load waitlists for facility
-  const loadWaitlists = useCallback(async (facilityId: number) => {
-    try {
-      setLoading(true);
-      const data = await fetchFacilityWaitlists(facilityId);
-      setWaitlists(Array.isArray(data) ? data : []);
-    } catch (err: any) {
-      showToast(err.message || 'Lỗi tải danh sách chờ', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Load waitlists for 1 facility or all assigned facilities
+  const loadWaitlists = useCallback(
+    async (target: number | 'ALL', facilityList: FacilityListItem[] = facilities) => {
+      try {
+        setLoading(true);
+        if (target === 'ALL') {
+          if (facilityList.length === 0) {
+            setWaitlists([]);
+            return;
+          }
+          const batches = await Promise.all(
+            facilityList.map((f) => fetchFacilityWaitlists(f.id).catch(() => []))
+          );
+          const merged = batches
+            .flat()
+            .sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+          setWaitlists(merged);
+        } else {
+          const data = await fetchFacilityWaitlists(target);
+          setWaitlists(Array.isArray(data) ? data : []);
+        }
+      } catch (err: any) {
+        showToast(err.message || 'Lỗi tải danh sách chờ', 'error');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [facilities]
+  );
 
   useEffect(() => {
-    if (selectedFacilityId) {
-      loadWaitlists(selectedFacilityId);
+    if (selectedFacilityId !== null) {
+      loadWaitlists(selectedFacilityId, facilities);
     }
-  }, [selectedFacilityId, loadWaitlists]);
+  }, [selectedFacilityId, facilities, loadWaitlists]);
 
   // Open Direct Contract Modal
   const openDirectContractModal = (item: WaitlistResponse) => {
@@ -98,7 +115,7 @@ export const WaitlistInboxPage: React.FC = () => {
       showToast('Đã chuyển khách hàng vào mục Lưu trữ an toàn (dữ liệu được bảo toàn)', 'success');
       setArchiveModalItem(null);
       setArchiveReason('');
-      if (selectedFacilityId) await loadWaitlists(selectedFacilityId);
+      if (selectedFacilityId !== null) await loadWaitlists(selectedFacilityId, facilities);
     } catch (err: any) {
       showToast(err.message || 'Lỗi khi lưu trữ khách hàng', 'error');
     } finally {
@@ -124,7 +141,8 @@ export const WaitlistInboxPage: React.FC = () => {
       !searchTerm ||
       (item.customerName && item.customerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (item.customerPhone && item.customerPhone.includes(searchTerm)) ||
-      (item.unitTypeName && item.unitTypeName.toLowerCase().includes(searchTerm.toLowerCase()));
+      (item.unitTypeName && item.unitTypeName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (item.facilityName && item.facilityName.toLowerCase().includes(searchTerm.toLowerCase()));
 
     return Boolean(matchesTab && matchesSearch);
   });
@@ -166,21 +184,27 @@ export const WaitlistInboxPage: React.FC = () => {
           <select
             className="h-9 rounded-lg border border-gray-300 bg-white pl-3 pr-9 text-sm text-gray-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 cursor-pointer"
             value={selectedFacilityId ?? ''}
-            onChange={(e) => setSelectedFacilityId(Number(e.target.value))}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSelectedFacilityId(val === 'ALL' ? 'ALL' : Number(val));
+            }}
           >
             {facilities.length === 0 ? (
               <option value="">Chưa có cơ sở phân công</option>
             ) : (
-              facilities.map((fac) => (
-                <option key={fac.id} value={fac.id}>
-                  {fac.name}
-                </option>
-              ))
+              <>
+                <option value="ALL">Toàn cơ sở ({facilities.length})</option>
+                {facilities.map((fac) => (
+                  <option key={fac.id} value={fac.id}>
+                    {fac.name}
+                  </option>
+                ))}
+              </>
             )}
           </select>
           <button
             type="button"
-            onClick={() => selectedFacilityId && loadWaitlists(selectedFacilityId)}
+            onClick={() => selectedFacilityId !== null && loadWaitlists(selectedFacilityId, facilities)}
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 shadow-2xs hover:bg-gray-50 transition-colors cursor-pointer shrink-0"
             title="Làm mới dữ liệu"
             aria-label="Làm mới dữ liệu"
@@ -355,6 +379,11 @@ export const WaitlistInboxPage: React.FC = () => {
                         <div className="text-sm font-semibold text-gray-900">
                           {item.unitTypeName}
                         </div>
+                        {selectedFacilityId === 'ALL' && (item.facilityName || facilities.find((f) => f.id === item.facilityId)?.name) && (
+                          <div className="text-xs font-medium text-gray-600 mt-0.5">
+                            {item.facilityName || facilities.find((f) => f.id === item.facilityId)?.name}
+                          </div>
+                        )}
                         <div className="text-xs text-gray-500 mt-0.5">
                           Thuê {item.rentalMonths} tháng
                         </div>
@@ -412,7 +441,7 @@ export const WaitlistInboxPage: React.FC = () => {
                             {(item.unassignedReservationCount ?? 0) > 0 ? (
                               <button
                                 type="button"
-                                onClick={() => navigate(`/manager/allocation?facilityId=${selectedFacilityId}`)}
+                                onClick={() => navigate(`/manager/allocation?facilityId=${item.facilityId}`)}
                                 className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-semibold shadow-2xs transition-colors cursor-pointer shrink-0"
                                 title={`Đang có ${item.unassignedReservationCount} khách đặt trước chưa gán ô kho. Cần hoàn tất gán ô kho tại mục Gán ô kho trước.`}
                               >
@@ -483,11 +512,11 @@ export const WaitlistInboxPage: React.FC = () => {
           onSuccess={async (_contract, msg) => {
             showToast(msg || 'Tạo hợp đồng trực tiếp từ danh sách chờ thành công!', 'success');
             setDirectModalItem(null);
-            if (selectedFacilityId) {
-              await loadWaitlists(selectedFacilityId);
+            if (selectedFacilityId !== null) {
+              await loadWaitlists(selectedFacilityId, facilities);
             }
           }}
-          defaultFacilityId={selectedFacilityId ?? undefined}
+          defaultFacilityId={directModalItem.facilityId}
           initialWaitlist={directModalItem}
         />
       )}

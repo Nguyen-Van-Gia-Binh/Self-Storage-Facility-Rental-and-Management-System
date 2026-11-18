@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { DateField } from '@/components/ui/DateField';
@@ -9,6 +10,7 @@ import {
   X,
   RotateCcw,
   AlertTriangle,
+  CheckCircle2,
   Filter,
   ChevronDown,
   Calendar,
@@ -22,7 +24,7 @@ import { useCustomerContracts } from '../hooks/useCustomerContracts';
 import { useActivePolicy } from '@/hooks/useActivePolicy';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
 import { cancelContractReturn } from '@/api/customerRentals';
-import { fetchMyWaitlists, extendWaitlist, cancelWaitlist } from '@/api/waitlist';
+import { fetchMyWaitlists, cancelWaitlist } from '@/api/waitlist';
 import type { WaitlistResponse } from '@/types/waitlist';
 import type { RentedContract } from '../types';
 
@@ -78,7 +80,6 @@ export const MyUnitsPage: React.FC = () => {
   // Dữ liệu Danh sách chờ của tôi
   const [waitlists, setWaitlists] = useState<WaitlistResponse[]>([]);
   const [waitlistsLoading, setWaitlistsLoading] = useState<boolean>(false);
-  const [extendingWaitlistId, setExtendingWaitlistId] = useState<number | null>(null);
   const [cancellingWaitlistId, setCancellingWaitlistId] = useState<number | null>(null);
 
   const loadWaitlists = useCallback(async () => {
@@ -120,19 +121,6 @@ export const MyUnitsPage: React.FC = () => {
     );
   }, [waitlists, searchQuery]);
 
-  const handleExtendWaitlist = async (item: WaitlistResponse) => {
-    setExtendingWaitlistId(item.id);
-    try {
-      await extendWaitlist(item.id);
-      showToast('Đã gia hạn thời gian chờ thêm 15 ngày thành công.');
-      await loadWaitlists();
-    } catch (err: any) {
-      showToast(err?.message || 'Không thể gia hạn yêu cầu chờ. Vui lòng thử lại.', 'error');
-    } finally {
-      setExtendingWaitlistId(null);
-    }
-  };
-
   const handleCancelWaitlist = async (item: WaitlistResponse) => {
     setCancellingWaitlistId(item.id);
     try {
@@ -164,10 +152,12 @@ export const MyUnitsPage: React.FC = () => {
   const [isCancellingReturn, setIsCancellingReturn] = useState<boolean>(false);
   const [cancelReturnError, setCancelReturnError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToastMessage({ text, type });
-    setTimeout(() => setToastMessage(null), 4000);
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = window.setTimeout(() => setToastMessage(null), 4000);
   };
 
   const handleConfirmCancelReturn = async () => {
@@ -709,9 +699,7 @@ export const MyUnitsPage: React.FC = () => {
         <MyWaitlistsTable
           waitlists={filteredWaitlists}
           loading={waitlistsLoading}
-          extendingId={extendingWaitlistId}
           cancellingId={cancellingWaitlistId}
-          onExtend={handleExtendWaitlist}
           onCancel={handleCancelWaitlist}
           onViewContracts={() => setMainSection('UNITS')}
         />
@@ -828,25 +816,34 @@ export const MyUnitsPage: React.FC = () => {
         cancelReturnError={cancelReturnError}
       />
 
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
+      {/* Toast Notification — Render qua Portal cố định góc trên-phải dưới thanh điều hướng */}
+      {toastMessage &&
+        typeof document !== 'undefined' &&
+        createPortal(
           <div
-            className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl border text-xs font-bold ${
-              toastMessage.type === 'success'
-                ? 'bg-emerald-900 text-white border-emerald-700 shadow-emerald-950/20'
-                : 'bg-rose-900 text-white border-rose-700 shadow-rose-950/20'
-            }`}
+            role="status"
+            aria-live="polite"
+            className="fixed top-20 right-6 z-[110] max-w-sm animate-in fade-in slide-in-from-top-2 duration-200"
           >
-            {toastMessage.type === 'success' ? (
-              <RotateCcw className="w-4 h-4 text-emerald-400" />
-            ) : (
-              <AlertTriangle className="w-4 h-4 text-rose-400" />
-            )}
-            <span>{toastMessage.text}</span>
-          </div>
-        </div>
-      )}
+            <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg bg-white border border-slate-200 shadow-lg text-xs text-slate-800">
+              {toastMessage.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              ) : (
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              )}
+              <span className="font-medium leading-relaxed flex-1">{toastMessage.text}</span>
+              <button
+                type="button"
+                onClick={() => setToastMessage(null)}
+                aria-label="Đóng thông báo"
+                className="text-slate-400 hover:text-slate-600 cursor-pointer shrink-0 p-0.5 -mr-1"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
 
     </div>
   );

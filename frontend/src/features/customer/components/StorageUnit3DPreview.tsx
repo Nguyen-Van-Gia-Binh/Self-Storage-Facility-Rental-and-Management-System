@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import {
+  getPracticalVolumeM3,
   packItemsIntoUnit,
   sumItemCounts,
   type EstimatorItemCounts,
@@ -46,9 +47,9 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
 
   const fillPercent = useMemo(() => {
     if (!hasCustomItems) return 0;
-    const practicalVol = spec.areaM2 * 1.55;
+    const practicalVol = getPracticalVolumeM3(spec);
     return Math.max(1, Math.min(100, Math.round((packResult.totalVolumeM3 / practicalVol) * 100)));
-  }, [hasCustomItems, packResult.totalVolumeM3, spec.areaM2]);
+  }, [hasCustomItems, packResult.totalVolumeM3, spec]);
 
   // Tự động phóng to khung 3D lấp đầy sân khấu 360×236, cân đối cho cả ô nhỏ lẫn ô lớn
   const unitIsoW = (L + W) * COS30;
@@ -76,14 +77,15 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
   const leftWallPts = pts([p(0, 0, 0), p(0, W, 0), p(0, W, H), p(0, 0, H)]);
   const rightWallPts = pts([p(0, 0, 0), p(L, 0, 0), p(L, 0, H), p(0, 0, H)]);
 
-  // Lưới ô sàn từng 1 mét để khách nhìn trực quan số m²
+  // Lưới ô sàn theo bước 1m (kho <= 30 m²) hoặc 2m (kho lớn 60–100 m²) cho dễ nhìn
+  const gridStep = L >= 10 || W >= 10 ? 2 : 1;
   const gridLines: Array<{ x1: number; y1: number; x2: number; y2: number }> = [];
-  for (let u = 1; u < L; u += 1) {
+  for (let u = gridStep; u < L; u += gridStep) {
     const [x1, y1] = p(u, 0, 0);
     const [x2, y2] = p(u, W, 0);
     gridLines.push({ x1, y1, x2, y2 });
   }
-  for (let v = 1; v < W; v += 1) {
+  for (let v = gridStep; v < W; v += gridStep) {
     const [x1, y1] = p(0, v, 0);
     const [x2, y2] = p(L, v, 0);
     gridLines.push({ x1, y1, x2, y2 });
@@ -264,23 +266,16 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
           const tapeEnd =
             b.renderType === 'carton' ? p(b.u + b.du, b.v + b.dv * 0.5, b.z + b.dz) : null;
 
-          // Đường chia ngăn tủ lạnh/máy giặt
-          const doorL1 =
-            b.renderType === 'appliance' ? p(b.u, b.v + b.dv, b.z + b.dz * 0.62) : null;
-          const doorL2 =
-            b.renderType === 'appliance' ? p(b.u + b.du, b.v + b.dv, b.z + b.dz * 0.62) : null;
-          const doorR2 =
-            b.renderType === 'appliance' ? p(b.u + b.du, b.v, b.z + b.dz * 0.62) : null;
-
-          // Quai kéo nhỏ trên đầu vali
-          const handleL =
-            b.renderType === 'suitcase'
-              ? p(b.u + b.du * 0.35, b.v + b.dv * 0.5, b.z + b.dz + 0.06)
-              : null;
-          const handleR =
-            b.renderType === 'suitcase'
-              ? p(b.u + b.du * 0.65, b.v + b.dv * 0.5, b.z + b.dz + 0.06)
-              : null;
+          // Đường chia ngăn tủ / thiết bị máy hoặc tầng kệ công nghiệp
+          const splitZ =
+            b.renderType === 'equipment' || b.renderType === 'rack'
+              ? b.z + b.dz * 0.5
+              : b.renderType === 'pallet'
+                ? b.z + b.dz * 0.16
+                : null;
+          const doorL1 = splitZ != null ? p(b.u, b.v + b.dv, splitZ) : null;
+          const doorL2 = splitZ != null ? p(b.u + b.du, b.v + b.dv, splitZ) : null;
+          const doorR2 = splitZ != null ? p(b.u + b.du, b.v, splitZ) : null;
           const badgeCenter =
             b.badge ? p(b.u + b.du * 0.5, b.v + b.dv * 0.5, b.z + b.dz) : null;
 
@@ -338,17 +333,6 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
                   stroke="#475569"
                   strokeWidth="0.7"
                   strokeOpacity="0.55"
-                />
-              )}
-              {handleL && handleR && (
-                <line
-                  x1={handleL[0]}
-                  y1={handleL[1]}
-                  x2={handleR[0]}
-                  y2={handleR[1]}
-                  stroke="#0c5a8a"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
                 />
               )}
             </g>
@@ -420,7 +404,7 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
         </text>
       </svg>
 
-      {/* Chú thích phân biệt cỡ thùng ngay dưới đáy mô hình */}
+      {/* Chú thích phân biệt cỡ hàng hóa ngay dưới đáy mô hình */}
       <div className="px-3.5 pb-2.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] font-medium text-slate-600">
         <span className="inline-flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-[2px] bg-[#facc15] border border-black/15" />
@@ -428,11 +412,15 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-[2px] bg-[#fb923c] border border-black/15" />
-          Thùng M
+          Kiện M
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-[2px] bg-[#38bdf8] border border-black/15" />
-          Thùng L
+          Kiện L
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-[2px] bg-[#2dd4bf] border border-black/15" />
+          Pallet
         </span>
       </div>
     </div>

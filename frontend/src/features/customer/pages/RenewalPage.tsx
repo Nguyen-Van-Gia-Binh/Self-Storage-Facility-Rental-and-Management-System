@@ -673,8 +673,10 @@ export const RenewalPage: React.FC = () => {
                 {pricing.discountAmount > 0 && (
                   <div className="flex justify-between items-center text-amber-700 bg-amber-50 px-2.5 py-1.5 rounded-lg text-xs font-bold">
                     <span className="flex items-center gap-1">
-                      <Tag className="w-3.5 h-3.5" />
-                      Chiết khấu ({pricing.discountRate * 100}%):
+                      <Tag className="w-3.5 h-3.5 shrink-0" />
+                      {pricing.discountProgramName
+                        ? `${pricing.discountProgramName}:`
+                        : `Chiết khấu (${pricing.discountPercent}%):`}
                     </span>
                     <span>-{formatVND(pricing.discountAmount)}</span>
                   </div>
@@ -748,10 +750,11 @@ export const RenewalPage: React.FC = () => {
                         Chính sách ưu đãi gia hạn dài hạn
                       </strong>
                       <span className="text-xs text-amber-800">
-                        Chiết khấu {pricing.discountRate * 100}% cho hợp đồng từ {renewalMonths >= 12 ? '12' : '6'} tháng
+                        {pricing.discountProgramName ||
+                          `Chiết khấu ${pricing.discountPercent}% cho hợp đồng gia hạn ${renewalMonths} tháng`}
                       </span>
                     </div>
-                    <span className="col-span-2 text-center text-amber-900 font-semibold">-{pricing.discountRate * 100}%</span>
+                    <span className="col-span-2 text-center text-amber-900 font-semibold">-{pricing.discountPercent}%</span>
                     <span className="col-span-4 sm:col-span-3 text-right font-bold text-amber-700">
                       -{formatVND(pricing.discountAmount)}
                     </span>

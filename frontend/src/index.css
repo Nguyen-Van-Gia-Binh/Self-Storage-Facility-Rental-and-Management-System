@@ -473,7 +473,25 @@ select.bg-transparent:not([multiple]):not(.appearance-none) {
 
 @page {
   size: A4 portrait;
-  margin: 18mm 14mm 18mm;
+  margin: 18mm 14mm 18mm 14mm;
+  @bottom-left {
+    content: "Mã biểu: BC-VH-05 · SmartStorage";
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 8.5pt;
+    color: #555555;
+  }
+  @bottom-center {
+    content: "Báo cáo đối soát doanh thu & vận hành";
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 8.5pt;
+    color: #555555;
+  }
+  @bottom-right {
+    content: "Trang " counter(page) " / " counter(pages);
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 8.5pt;
+    color: #555555;
+  }
 }
 
 @media print {
@@ -522,8 +540,20 @@ select.bg-transparent:not([multiple]):not(.appearance-none) {
 
   .ss-report,
   .ss-report * {
+    font-family: 'Times New Roman', Times, serif !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    text-rendering: optimizeLegibility !important;
+  }
+
+  .ss-report thead {
+    display: table-header-group;
+  }
+
+  .ss-report tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    page-break-after: auto;
   }
 
   .contract-print-document,
@@ -557,44 +587,64 @@ select.bg-transparent:not([multiple]):not(.appearance-none) {
   display: none;
 }
 
-/* ========== Monochrome Ledger Typography PDF Report (BOM Audit Grade) ========== */
+/* ========== Formal Vietnamese Contract & Ledger PDF Report (Times New Roman) ========== */
 .ss-report {
   color: #000000;
   background: #ffffff;
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-  font-size: 9.5pt;
-  line-height: 1.4;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 10.5pt;
+  line-height: 1.38;
   font-variant-numeric: tabular-nums;
 }
 
 .ss-letterhead {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 16px;
-  border-bottom: 1pt solid #000000;
-  padding-bottom: 6px;
-  margin-bottom: 12px;
+  display: grid;
+  grid-template-columns: 44% 56%;
+  gap: 12px;
+  align-items: start;
+  text-align: center;
+  margin-bottom: 14px;
 }
 
-.ss-brand {
-  font-size: 11pt;
+.ss-brand,
+.ss-motto-top {
+  font-size: 10.5pt;
   font-weight: 700;
-  letter-spacing: 0.06em;
   color: #000000;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 .ss-brand-sub {
-  font-size: 8.5pt;
-  color: #666666;
+  font-size: 10pt;
+  color: #000000;
   margin-top: 2px;
 }
 
-.ss-doc-meta {
-  text-align: right;
-  font-size: 8.5pt;
+.ss-motto-sub {
+  font-size: 10.5pt;
+  font-weight: 700;
+  color: #000000;
+  margin-top: 2px;
+}
+
+.ss-lh-rule {
+  margin: 4px auto 3px;
+  border-bottom: 0.75pt solid #000000;
+}
+
+.ss-lh-rule-sm {
+  width: 84px;
+}
+
+.ss-lh-rule-md {
+  width: 132px;
+}
+
+.ss-lh-meta {
+  font-size: 9pt;
+  font-style: italic;
   color: #333333;
-  line-height: 1.45;
 }
 
 .ss-title {
@@ -603,27 +653,34 @@ select.bg-transparent:not([multiple]):not(.appearance-none) {
 }
 
 .ss-title h1 {
-  font-size: 14pt;
+  font-size: 13.5pt;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   margin: 0;
   color: #000000;
   text-transform: uppercase;
+}
+
+.ss-period {
+  font-size: 10.5pt;
+  font-style: italic;
+  color: #222222;
+  margin: 4px 0 0;
 }
 
 /* Unboxed 2-column Metadata Block (thin horizontal rules only) */
 .ss-meta {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 16px;
-  border-top: 0.75pt solid #333333;
-  border-bottom: 0.75pt solid #333333;
-  font-size: 9pt;
+  margin-bottom: 14px;
+  border-top: 0.75pt solid #000000;
+  border-bottom: 0.75pt solid #000000;
+  font-size: 9.5pt;
 }
 
 .ss-meta td {
   padding: 4px 6px;
-  border-bottom: 0.5pt solid #e4e4e7;
+  border-bottom: 0.5pt solid #d4d4d8;
   vertical-align: top;
 }
 
@@ -632,20 +689,20 @@ select.bg-transparent:not([multiple]):not(.appearance-none) {
 }
 
 .ss-meta-label {
-  width: 16%;
-  color: #666666;
-  font-weight: 500;
+  width: 17%;
+  color: #444444;
+  font-weight: 400;
   white-space: nowrap;
 }
 
 .ss-meta-value {
-  width: 34%;
+  width: 33%;
   color: #000000;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .ss-section {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .ss-section-head {
@@ -653,7 +710,7 @@ select.bg-transparent:not([multiple]):not(.appearance-none) {
   justify-content: space-between;
   align-items: baseline;
   gap: 12px;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
   break-after: avoid;
   page-break-after: avoid;
 }
@@ -664,14 +721,13 @@ select.bg-transparent:not([multiple]):not(.appearance-none) {
   color: #000000;
   margin: 0;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
   break-after: avoid;
   page-break-after: avoid;
 }
 
 .ss-unit-note {
-  font-size: 8.5pt;
-  color: #666666;
+  font-size: 9pt;
+  color: #444444;
   font-style: italic;
 }
 
@@ -681,11 +737,11 @@ select.bg-transparent:not([multiple]):not(.appearance-none) {
   border-collapse: collapse;
   border-top: 1pt solid #000000;
   border-bottom: 1pt solid #000000;
-  font-size: 9pt;
+  font-size: 9.5pt;
 }
 
 .ss-summary-table td {
-  padding: 6px 6px;
+  padding: 5px 5px;
   border-bottom: 0.5pt solid #d4d4d8;
 }
 
@@ -694,23 +750,32 @@ select.bg-transparent:not([multiple]):not(.appearance-none) {
 }
 
 .ss-sum-label {
-  color: #444444;
+  color: #333333;
   font-weight: 400;
 }
 
 .ss-sum-val {
   color: #000000;
   font-weight: 700;
-  padding-right: 14px !important;
+  padding-right: 12px !important;
 }
 
-/* Ledger Data Tables: monochrome, zero vertical lines, repeat thead, safe row breaks */
+/* Ledger Data Tables: monochrome, zero vertical lines, repeat thead, compact single-line rows */
 .ss-table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 6px;
-  font-size: 8.8pt;
+  font-size: 9.2pt;
   border-top: 1pt solid #000000;
+}
+
+.ss-table-financial {
+  font-size: 8.8pt;
+}
+
+.ss-table .ss-col-facility {
+  width: 28%;
+  text-align: left;
 }
 
 .ss-table thead {
@@ -720,14 +785,15 @@ select.bg-transparent:not([multiple]):not(.appearance-none) {
 .ss-table tr {
   break-inside: avoid;
   page-break-inside: avoid;
+  page-break-after: auto;
 }
 
 .ss-table th {
   background: transparent;
-  color: #333333;
+  color: #000000;
   font-weight: 700;
   text-align: left;
-  padding: 5px 5px;
+  padding: 4.5px 4px;
   border: none;
   border-bottom: 0.75pt solid #000000;
   white-space: nowrap;
@@ -738,7 +804,7 @@ select.bg-transparent:not([multiple]):not(.appearance-none) {
   color: #000000;
   border: none;
   border-bottom: 0.5pt solid #d4d4d8;
-  padding: 4.5px 5px;
+  padding: 3.5px 4px;
   vertical-align: top;
 }
 
@@ -747,8 +813,8 @@ select.bg-transparent:not([multiple]):not(.appearance-none) {
   color: #000000;
   border-top: 0.75pt solid #000000;
   border-bottom: 1.5pt double #000000;
-  padding-top: 6px;
-  padding-bottom: 6px;
+  padding-top: 5px;
+  padding-bottom: 5px;
 }
 
 .ss-num {
@@ -758,12 +824,13 @@ select.bg-transparent:not([multiple]):not(.appearance-none) {
 }
 
 .ss-bold {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .ss-footnote {
-  font-size: 8pt;
-  color: #666666;
+  font-size: 8.5pt;
+  font-style: italic;
+  color: #444444;
   margin: 4px 0 0;
   line-height: 1.35;
 }
@@ -773,18 +840,29 @@ select.bg-transparent:not([multiple]):not(.appearance-none) {
   border-bottom: 0.5pt solid #d4d4d8;
   padding: 10px 6px;
   text-align: center;
-  color: #666666;
+  color: #555555;
   font-style: italic;
-  font-size: 9pt;
+  font-size: 9.5pt;
   margin-bottom: 8px;
 }
 
-/* Structured 3-column Approval Sign-off Block */
+/* Formal Vietnamese Contract 3-Column Approval Sign-off Block */
+.ss-sign-wrap {
+  margin-top: 22px;
+}
+
+.ss-sign-top-date {
+  text-align: right;
+  font-size: 9.5pt;
+  font-style: italic;
+  color: #222222;
+  margin-bottom: 10px;
+}
+
 .ss-sign {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 20px;
-  margin-top: 28px;
+  gap: 16px;
   text-align: center;
 }
 
@@ -796,54 +874,52 @@ select.bg-transparent:not([multiple]):not(.appearance-none) {
 
 .ss-sign-role {
   display: block;
-  font-size: 9.5pt;
+  font-size: 10pt;
   font-weight: 700;
   color: #000000;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
 }
 
 .ss-sign-hint {
   display: block;
-  font-size: 8pt;
-  color: #666666;
+  font-size: 9pt;
+  color: #333333;
   font-style: italic;
   margin-top: 2px;
 }
 
 .ss-sign-space {
-  height: 76px;
+  height: 80px;
+}
+
+.ss-sign-dots {
+  font-size: 9pt;
+  color: #555555;
+  letter-spacing: 0.04em;
+  line-height: 1;
 }
 
 .ss-sign-name {
-  font-size: 9.5pt;
+  font-size: 10pt;
   font-weight: 700;
   color: #000000;
-  min-width: 130px;
-  border-top: 0.5pt dotted #666666;
-  padding-top: 4px;
+  margin-top: 4px;
 }
 
-.ss-sign-line {
-  width: 130px;
-  border-top: 0.5pt dotted #666666;
-  height: 16px;
-}
-
-.ss-sign-date {
-  font-size: 8pt;
-  color: #666666;
+.ss-sign-placeholder {
+  font-size: 9pt;
   font-style: italic;
-  margin-top: 3px;
+  color: #666666;
+  margin-top: 4px;
 }
 
 .ss-doc-footer {
   margin-top: 24px;
-  padding-top: 6px;
-  border-top: 0.5pt solid #cccccc;
+  padding-top: 5px;
+  border-top: 0.5pt solid #bbbbbb;
   display: flex;
   justify-content: space-between;
-  font-size: 8pt;
-  color: #666666;
+  font-size: 8.5pt;
+  color: #555555;
 }
 

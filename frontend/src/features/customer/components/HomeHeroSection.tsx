@@ -16,13 +16,13 @@ import {
 
 type SizeCode = UnitSpec3D['code'];
 
-// Thông số chuẩn theo V16__standardize_unit_types_and_sizes.sql (làm fallback trước khi API tải xong)
+// Thông số chuẩn Enterprise B2B theo V39__upgrade_enterprise_unit_sizes_and_pricing.sql
 const DEFAULT_UNIT_SPECS: Record<SizeCode, UnitSpec3D> = {
-  XS: { code: 'XS', widthM: 1.0, lengthM: 1.0, heightM: 2.5, areaM2: 1.0, volumeM3: 2.5 },
-  S: { code: 'S', widthM: 1.5, lengthM: 2.0, heightM: 2.5, areaM2: 3.0, volumeM3: 7.5 },
-  M: { code: 'M', widthM: 2.0, lengthM: 3.0, heightM: 2.5, areaM2: 6.0, volumeM3: 15.0 },
-  L: { code: 'L', widthM: 2.5, lengthM: 4.0, heightM: 2.5, areaM2: 10.0, volumeM3: 25.0 },
-  XL: { code: 'XL', widthM: 3.0, lengthM: 5.0, heightM: 3.0, areaM2: 15.0, volumeM3: 45.0 },
+  XS: { code: 'XS', widthM: 2.0, lengthM: 2.5, heightM: 3.0, areaM2: 5, volumeM3: 15 },
+  S: { code: 'S', widthM: 3.0, lengthM: 5.0, heightM: 3.5, areaM2: 15, volumeM3: 52.5 },
+  M: { code: 'M', widthM: 5.0, lengthM: 6.0, heightM: 4.0, areaM2: 30, volumeM3: 120 },
+  L: { code: 'L', widthM: 6.0, lengthM: 10.0, heightM: 4.5, areaM2: 60, volumeM3: 270 },
+  XL: { code: 'XL', widthM: 10.0, lengthM: 10.0, heightM: 5.0, areaM2: 100, volumeM3: 500 },
 };
 
 const SIZE_ORDER: SizeCode[] = ['XS', 'S', 'M', 'L', 'XL'];
@@ -66,7 +66,7 @@ export const HomeHeroSection: React.FC<HomeHeroSectionProps> = ({
   const [env, setEnv] = useState<'STANDARD' | 'CLIMATE_CONTROLLED'>('STANDARD');
   const [itemCounts, setItemCounts] = useState<EstimatorItemCounts>({ ...INITIAL_SAMPLE_COUNTS });
 
-  // Đồng bộ kích thước thực tế từ API Backend (fallback về chuẩn V16 nếu chưa tải xong)
+  // Đồng bộ kích thước thực tế từ API Backend (ưu tiên 10 mã chuẩn V39 để tránh loại tùy chỉnh ghi đè)
   const resolvedSpecs = useMemo(() => {
     const map: Record<SizeCode, UnitSpec3D> = {
       XS: { ...DEFAULT_UNIT_SPECS.XS },
@@ -76,7 +76,12 @@ export const HomeHeroSection: React.FC<HomeHeroSectionProps> = ({
       XL: { ...DEFAULT_UNIT_SPECS.XL },
     };
 
-    unitTypes.forEach((ut) => {
+    const standardUnits = unitTypes.filter((ut) =>
+      /^UT-(STD|AC)-(XS|S|M|L|XL)$/i.test((ut.code || '').trim())
+    );
+    const source = standardUnits.length > 0 ? standardUnits : unitTypes;
+
+    source.forEach((ut) => {
       const code = resolveSizeCategory(ut.code || ut.name, ut.areaM2) as SizeCode;
       if (!map[code]) return;
       if (ut.widthM && ut.depthM && ut.heightM) {
@@ -349,7 +354,7 @@ export const HomeHeroSection: React.FC<HomeHeroSectionProps> = ({
 
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between text-[13px] text-slate-700">
-                    <span className="font-semibold">Thử xếp nhanh đồ đạc:</span>
+                    <span className="font-semibold">Thử xếp nhanh hàng hóa:</span>
                     <button
                       type="button"
                       onClick={resetItems}

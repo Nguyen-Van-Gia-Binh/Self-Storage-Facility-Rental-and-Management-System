@@ -9,6 +9,7 @@ import com.swp391.selfstorage.facility.repository.FacilityRepository;
 import com.swp391.selfstorage.policy.entity.PolicyVersion;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
+import com.swp391.selfstorage.policy.service.DiscountProgramService;
 import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
@@ -73,6 +74,9 @@ public class WaitlistServiceImpl implements WaitlistService {
 
     @Autowired(required = false)
     private ContractService contractService;
+
+    @Autowired(required = false)
+    private DiscountProgramService discountProgramService;
 
     @Override
     public WaitlistResponse registerWaitlist(CreateWaitlistRequest request, UserPrincipal currentUser) {
@@ -266,12 +270,19 @@ public class WaitlistServiceImpl implements WaitlistService {
                             + " đơn đặt chỗ của khách đặt trước chưa được gán ô kho. Theo quy chế ưu tiên, Quản lý phải hoàn tất gán ô kho cho khách đặt trước tại mục 'Gán ô kho'!");
         }
 
-        // Tính toán biểu giá
+        // Tính toán biểu giá & áp dụng khuyến mãi tốt nhất từ DB (BR-PRI-01)
         long monthlyPrice = lookupMonthlyPrice(waitlist.getFacilityId(), waitlist.getUnitTypeId());
         BigDecimal multiplier = policy.getDepositMultiplier() != null ? policy.getDepositMultiplier() : BigDecimal.ONE;
         long rawRent = monthlyPrice * months;
+        DiscountProgramService.BestDiscountResult bestDiscount = discountProgramService != null
+                ? discountProgramService.findBestDiscount(
+                        waitlist.getFacilityId(), waitlist.getUnitTypeId(),
+                        months, rawRent, AppliedPriceLookup.todayVn())
+                : null;
+        long discountAmount = bestDiscount != null ? bestDiscount.discountAmount() : 0L;
+        long finalRent = Math.max(0L, rawRent - discountAmount);
         long deposit = Math.round((monthlyPrice * multiplier.doubleValue()) / 1000.0) * 1000;
-        long totalPayable = rawRent + deposit;
+        long totalPayable = finalRent + deposit;
 
         // Khởi tạo đơn Reservation với thời hạn giữ cọc 24 giờ (BR-WAT-03)
         Reservation reservation = new Reservation();
@@ -287,9 +298,10 @@ public class WaitlistServiceImpl implements WaitlistService {
         reservation.setEndDateExclusive(endDateExclusive);
         reservation.setMonthlyPriceSnapshot(monthlyPrice);
         reservation.setPolicyVersionId(policy.getId());
-        reservation.setDiscountAmount(0L);
+        reservation.setDiscountProgramId(bestDiscount != null ? bestDiscount.programId() : null);
+        reservation.setDiscountAmount(discountAmount);
         reservation.setDepositAmount(deposit);
-        reservation.setTotalRentalFee(rawRent);
+        reservation.setTotalRentalFee(finalRent);
         reservation.setTotalPayable(totalPayable);
         reservation.setStatus(ReservationStatus.PENDING_PAYMENT);
         reservation.setHoldExpiresAt(OffsetDateTime.now(ZoneOffset.UTC).plusHours(24));

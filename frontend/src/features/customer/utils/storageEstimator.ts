@@ -4,9 +4,9 @@ export type EstimatorItemKey =
   | 'boxS'
   | 'boxM'
   | 'boxL'
-  | 'suitcase'
-  | 'appliance'
-  | 'sofa';
+  | 'pallet'
+  | 'rack'
+  | 'equipment';
 
 export type EstimatorItemCounts = Record<EstimatorItemKey, number>;
 
@@ -14,9 +14,9 @@ export const EMPTY_ESTIMATOR_COUNTS: EstimatorItemCounts = {
   boxS: 0,
   boxM: 0,
   boxL: 0,
-  suitcase: 0,
-  appliance: 0,
-  sofa: 0,
+  pallet: 0,
+  rack: 0,
+  equipment: 0,
 };
 
 export interface EstimatorItemMeta {
@@ -28,7 +28,7 @@ export interface EstimatorItemMeta {
   dv: number; // mét
   dz: number; // mét
   volM3: number;
-  kind: 'carton' | 'suitcase' | 'appliance' | 'sofa';
+  kind: 'carton' | 'pallet' | 'rack' | 'equipment';
   maxStackM: number;
   colors: {
     top: string;
@@ -40,78 +40,78 @@ export interface EstimatorItemMeta {
 export const STORAGE_ESTIMATOR_ITEMS: EstimatorItemMeta[] = [
   {
     key: 'boxS',
-    label: 'Thùng nhỏ (S)',
-    sizeLabel: '40×30×30 cm',
-    badge: 'S',
-    du: 0.4,
-    dv: 0.3,
-    dz: 0.3,
-    volM3: 0.036,
-    kind: 'carton',
-    maxStackM: 1.8,
-    colors: { top: '#fef08a', left: '#facc15', right: '#ca8a04' },
-  },
-  {
-    key: 'boxM',
-    label: 'Thùng vừa (M)',
+    label: 'Thùng hồ sơ (S)',
     sizeLabel: '50×40×40 cm',
-    badge: 'M',
+    badge: 'S',
     du: 0.5,
     dv: 0.4,
     dz: 0.4,
     volM3: 0.08,
     kind: 'carton',
-    maxStackM: 1.8,
+    maxStackM: 2.0,
+    colors: { top: '#fef08a', left: '#facc15', right: '#ca8a04' },
+  },
+  {
+    key: 'boxM',
+    label: 'Kiện hàng vừa (M)',
+    sizeLabel: '80×60×60 cm',
+    badge: 'M',
+    du: 0.8,
+    dv: 0.6,
+    dz: 0.6,
+    volM3: 0.288,
+    kind: 'carton',
+    maxStackM: 2.4,
     colors: { top: '#fed7aa', left: '#fb923c', right: '#c2410c' },
   },
   {
     key: 'boxL',
-    label: 'Thùng lớn (L)',
-    sizeLabel: '60×50×50 cm',
+    label: 'Kiện hàng lớn (L)',
+    sizeLabel: '100×80×80 cm',
     badge: 'L',
-    du: 0.6,
-    dv: 0.5,
-    dz: 0.5,
-    volM3: 0.15,
+    du: 1.0,
+    dv: 0.8,
+    dz: 0.8,
+    volM3: 0.64,
     kind: 'carton',
-    maxStackM: 1.8,
+    maxStackM: 2.4,
     colors: { top: '#bae6fd', left: '#38bdf8', right: '#0284c7' },
   },
   {
-    key: 'suitcase',
-    label: 'Vali du lịch',
-    sizeLabel: '45×30×70 cm',
-    du: 0.45,
-    dv: 0.3,
-    dz: 0.7,
-    volM3: 0.095,
-    kind: 'suitcase',
-    maxStackM: 1.45,
+    key: 'pallet',
+    label: 'Pallet tiêu chuẩn',
+    sizeLabel: '120×100×120 cm',
+    du: 1.2,
+    dv: 1.0,
+    dz: 1.2,
+    volM3: 1.44,
+    kind: 'pallet',
+    maxStackM: 2.4,
     colors: { top: '#99f6e4', left: '#2dd4bf', right: '#0f766e' },
   },
   {
-    key: 'appliance',
-    label: 'Tủ lạnh / Giặt',
-    sizeLabel: '65×65×145 cm',
-    du: 0.65,
-    dv: 0.65,
-    dz: 1.45,
-    volM3: 0.613,
-    kind: 'appliance',
-    maxStackM: 1.8,
-    colors: { top: '#f1f5f9', left: '#cbd5e1', right: '#94a3b8' },
+    key: 'rack',
+    label: 'Kệ hàng công nghiệp',
+    sizeLabel: '150×60×200 cm',
+    du: 1.5,
+    dv: 0.6,
+    dz: 2.0,
+    volM3: 1.8,
+    kind: 'rack',
+    maxStackM: 2.5,
+    colors: { top: '#c7d2fe', left: '#818cf8', right: '#4f46e5' },
   },
   {
-    key: 'sofa',
-    label: 'Sofa / Nệm',
-    sizeLabel: '150×80×75 cm',
-    du: 1.5,
-    dv: 0.8,
-    dz: 0.75,
-    volM3: 0.9,
-    kind: 'sofa',
-    maxStackM: 1.8,
-    colors: { top: '#c7d2fe', left: '#818cf8', right: '#4f46e5' },
+    key: 'equipment',
+    label: 'Tủ / Thiết bị máy',
+    sizeLabel: '120×100×180 cm',
+    du: 1.2,
+    dv: 1.0,
+    dz: 1.8,
+    volM3: 2.16,
+    kind: 'equipment',
+    maxStackM: 2.5,
+    colors: { top: '#f1f5f9', left: '#cbd5e1', right: '#94a3b8' },
   },
 ];
 
@@ -124,14 +124,14 @@ export const ITEM_META_BY_KEY: Record<EstimatorItemKey, EstimatorItemMeta> =
     {} as Record<EstimatorItemKey, EstimatorItemMeta>
   );
 
-// Bộ đồ mẫu khởi tạo đồng bộ 1:1 với bộ đếm trên Hero (khớp mặc định cỡ M)
+// Bộ hàng hóa mẫu khởi tạo đồng bộ 1:1 với bộ đếm trên Hero (khớp mặc định cỡ M · 30 m²)
 export const INITIAL_SAMPLE_COUNTS: EstimatorItemCounts = {
-  boxS: 2,
-  boxM: 3,
-  boxL: 2,
-  suitcase: 1,
-  appliance: 1,
-  sofa: 1,
+  boxS: 4,
+  boxM: 4,
+  boxL: 4,
+  pallet: 4,
+  rack: 2,
+  equipment: 2,
 };
 
 export interface PlacedIsoBox {
@@ -145,7 +145,7 @@ export interface PlacedIsoBox {
   left: string;
   right: string;
   badge?: 'S' | 'M' | 'L';
-  renderType: 'carton' | 'suitcase' | 'appliance' | 'sofa-base' | 'sofa-back';
+  renderType: 'carton' | 'pallet' | 'rack' | 'equipment';
 }
 
 export interface PackResult {
@@ -155,35 +155,39 @@ export interface PackResult {
   totalVolumeM3: number;
 }
 
-const CELL_SCALE = 20; // 1 ô = 0.05m -> mọi kích thước đồ & kho đều là bội nguyên chính xác
+const CELL_SCALE = 10; // 1 ô = 0.1m -> kích thước kho 5–100 m² & hàng B2B đều là bội nguyên chính xác
 const SURF_FLOOR = 0;
 const SURF_BOX = 1;
-const SURF_SUITCASE = 2;
+const SURF_PALLET = 2;
 const SURF_BLOCKED = 3;
 
 const PACK_PRIORITY: EstimatorItemKey[] = [
-  'sofa',
-  'appliance',
+  'rack',
+  'equipment',
+  'pallet',
   'boxL',
   'boxM',
   'boxS',
-  'suitcase',
 ];
 
 function isSurfaceCompatible(kind: EstimatorItemMeta['kind'], surf: number, zCells: number): boolean {
-  if (kind === 'sofa' || kind === 'appliance') {
+  if (kind === 'rack' || kind === 'equipment') {
     return surf === SURF_FLOOR && zCells === 0;
   }
   if (kind === 'carton') {
     return surf === SURF_FLOOR || surf === SURF_BOX;
   }
-  return surf === SURF_FLOOR || surf === SURF_SUITCASE;
+  return surf === SURF_FLOOR || surf === SURF_PALLET;
 }
 
 function getNextSurface(kind: EstimatorItemMeta['kind']): number {
   if (kind === 'carton') return SURF_BOX;
-  if (kind === 'suitcase') return SURF_SUITCASE;
+  if (kind === 'pallet') return SURF_PALLET;
   return SURF_BLOCKED;
+}
+
+export function getPracticalVolumeM3(spec: UnitSpec3D): number {
+  return spec.volumeM3 * 0.65;
 }
 
 export function sumItemCounts(counts: EstimatorItemCounts): number {
@@ -191,9 +195,9 @@ export function sumItemCounts(counts: EstimatorItemCounts): number {
     counts.boxS +
     counts.boxM +
     counts.boxL +
-    counts.suitcase +
-    counts.appliance +
-    counts.sofa
+    counts.pallet +
+    counts.rack +
+    counts.equipment
   );
 }
 
@@ -302,45 +306,17 @@ export function packItemsIntoUnit(spec: UnitSpec3D, counts: EstimatorItemCounts)
       const dv = dvCells / CELL_SCALE;
       const dz = cZ / CELL_SCALE;
 
-      if (meta.kind === 'sofa') {
-        const seatH = 0.38;
-        boxes.push({
-          u,
-          v,
-          z,
-          du,
-          dv,
-          dz: seatH,
-          ...meta.colors,
-          renderType: 'sofa-base',
-        });
-        // Tựa lưng áp vào tường sau gần nhất
-        const alignAlongUWall = gu <= 1 && dv > du;
-        boxes.push({
-          u,
-          v,
-          z: z + seatH,
-          du: alignAlongUWall ? 0.22 : du,
-          dv: alignAlongUWall ? dv : 0.22,
-          dz: dz - seatH,
-          top: '#b3c0fb',
-          left: '#6a75eb',
-          right: '#4338ca',
-          renderType: 'sofa-back',
-        });
-      } else {
-        boxes.push({
-          u,
-          v,
-          z,
-          du,
-          dv,
-          dz,
-          ...meta.colors,
-          badge: meta.badge,
-          renderType: meta.kind,
-        });
-      }
+      boxes.push({
+        u,
+        v,
+        z,
+        du,
+        dv,
+        dz,
+        ...meta.colors,
+        badge: meta.badge,
+        renderType: meta.kind,
+      });
     }
   }
 
@@ -458,7 +434,7 @@ export function recommendUnitSize(
     const pack = packItemsIntoUnit(spec, counts);
     if (pack.overflowCount > 0) continue;
 
-    const practicalVol = spec.areaM2 * 1.55;
+    const practicalVol = getPracticalVolumeM3(spec);
     const maxFloor = code === 'XS' ? 0.92 : 0.78;
     if (pack.usedFloorRatio <= maxFloor && pack.totalVolumeM3 <= practicalVol * 0.85) {
       return code;

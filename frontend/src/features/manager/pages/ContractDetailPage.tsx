@@ -25,7 +25,7 @@ import {
   getSettlementPreview,
   completeSettlementPayment,
 } from '@/api/contract';
-import type { ManagerContractItem } from '@/types/contractManager';
+import type { ContractPaymentTransaction, ManagerContractItem } from '@/types/contractManager';
 import type { StorageUnitResponse } from '@/types/unit';
 import type { SettlementPreviewData } from '@/types';
 import { formatDateVN } from '@/features/customer/utils/unitPickerHelpers';
@@ -48,6 +48,102 @@ function formatDisplayDate(iso?: string | null): string {
   if (!iso) return '—';
   const trimmed = iso.trim();
   return /^\d{4}-\d{2}-\d{2}/.test(trimmed) ? formatDateVN(trimmed.slice(0, 10)) : trimmed;
+}
+
+function formatDateTimeVN(iso?: string | null): string {
+  if (!iso) return '—';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return formatDisplayDate(iso);
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(date);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
+  return `${get('day')}/${get('month')}/${get('year')} ${get('hour')}:${get('minute')}`;
+}
+
+function isRefundTransaction(type?: string | null): boolean {
+  return type === 'REFUND' || type === 'RENT_REFUND' || type === 'DEPOSIT_REFUND';
+}
+
+function formatPaymentMethodLabel(method?: string | null): string {
+  switch ((method || '').toUpperCase()) {
+    case 'VNPAY':
+      return 'VNPay';
+    case 'CASH':
+      return 'Tiền mặt';
+    case 'BANK_TRANSFER':
+    case 'TRANSFER':
+      return 'Chuyển khoản';
+    case 'PAYOS':
+      return 'PayOS';
+    case 'DEPOSIT_DEDUCTION':
+      return 'Khấu trừ cọc';
+    case 'SYSTEM':
+    case 'MANUAL':
+      return 'Hệ thống';
+    default:
+      return method || 'Khác';
+  }
+}
+
+function formatTransactionLabel(tx: ContractPaymentTransaction): string {
+  switch (tx.transactionType) {
+    case 'INITIAL_PAYMENT':
+      return 'Thanh toán hợp đồng ban đầu';
+    case 'CONTRACT_RENEWAL':
+    case 'RENEWAL_PAYMENT': {
+      const monthsLabel = tx.renewalMonths ? ` (+${tx.renewalMonths} tháng)` : '';
+      const forceSuffix = tx.providerReference?.startsWith('FORCE_') ? ' — T-20' : '';
+      return `Gia hạn hợp đồng${monthsLabel}${forceSuffix}`;
+    }
+    case 'OVERDUE_PENALTY':
+      return 'Thanh toán phí phạt quá hạn';
+    case 'EXTRA_FEE_PAYMENT':
+      return 'Thanh toán phụ phí phát sinh';
+    case 'RESCHEDULE_FEE':
+      return 'Phí dời lịch nhận kho';
+    case 'SETTLEMENT':
+      return 'Tất toán quyết toán hợp đồng';
+    case 'DEPOSIT_REFUND':
+      return 'Hoàn trả tiền cọc';
+    case 'RENT_REFUND':
+      return 'Hoàn trả tiền thuê';
+    case 'REFUND':
+      return 'Hoàn tiền giao dịch';
+    default:
+      return tx.transactionType || 'Giao dịch thanh toán';
+  }
+}
+
+function getTransactionStatusMeta(status?: string | null): {
+  label: string;
+  dotClass: string;
+  textClass: string;
+} {
+  switch ((status || '').toUpperCase()) {
+    case 'SUCCESS':
+      return { label: 'Thành công', dotClass: 'bg-emerald-500', textClass: 'text-emerald-700' };
+    case 'PENDING':
+      return { label: 'Chờ thanh toán', dotClass: 'bg-amber-500', textClass: 'text-amber-700' };
+    case 'PENDING_REFUND':
+      return { label: 'Chờ hoàn tiền', dotClass: 'bg-amber-500', textClass: 'text-amber-700' };
+    case 'FAILED':
+      return { label: 'Thất bại', dotClass: 'bg-rose-500', textClass: 'text-rose-700' };
+    case 'REFUND_FAILED':
+      return { label: 'Hoàn tiền lỗi', dotClass: 'bg-rose-500', textClass: 'text-rose-700' };
+    case 'EXPIRED':
+      return { label: 'Hết hạn', dotClass: 'bg-gray-400', textClass: 'text-gray-600' };
+    case 'CANCELLED':
+      return { label: 'Đã hủy', dotClass: 'bg-gray-400', textClass: 'text-gray-600' };
+    default:
+      return { label: status || 'Không rõ', dotClass: 'bg-gray-400', textClass: 'text-gray-600' };
+  }
 }
 
 export const ContractDetailPage: React.FC = () => {
@@ -856,66 +952,203 @@ export const ContractDetailPage: React.FC = () => {
           </div>
 
           {/* Card Phẳng: Lịch sử thanh toán & Giao dịch */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setPaymentHistoryOpen(!paymentHistoryOpen)}
-              className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50/60 transition-colors cursor-pointer"
-            >
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                Lịch sử thanh toán & Giao dịch
-              </span>
-              {paymentHistoryOpen ? (
-                <ChevronUp className="w-4 h-4 text-gray-400" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-gray-400" />
-              )}
-            </button>
+          {(() => {
+            const transactions = contract.paymentTransactions ?? [];
+            const unpaidExtraCharges = contract.unpaidExtraCharges ?? [];
+            const overdueFee = contract.accruedOverdueFee ?? 0;
+            const unpaidExtraTotal = unpaidExtraCharges.reduce((s, c) => s + (c.amount || 0), 0);
+            const totalOutstanding = overdueFee + unpaidExtraTotal;
+            const totalCollected = transactions.reduce(
+              (s, tx) => (tx.status === 'SUCCESS' && !isRefundTransaction(tx.transactionType) ? s + (tx.amount || 0) : s),
+              0
+            );
+            const totalRefunded = transactions.reduce(
+              (s, tx) => (tx.status === 'SUCCESS' && isRefundTransaction(tx.transactionType) ? s + (tx.amount || 0) : s),
+              0
+            );
+            const initialRentalTotal =
+              contract.totalRentalFee && contract.totalRentalFee > 0
+                ? contract.totalRentalFee
+                : (contract.monthlyPrice || 0) * (contract.rentalMonths || 1);
 
-            {paymentHistoryOpen && (
-              <div className="px-6 pb-5 pt-1 border-t border-gray-100">
-                <div className="divide-y divide-gray-100">
-                  <div className="py-3 flex items-center justify-between gap-4 text-sm">
-                    <div>
-                      <p className="font-medium text-gray-900">Thanh toán cọc ban đầu</p>
-                      <p className="text-xs text-gray-500 tabular-nums mt-0.5">
-                        VNPay · {contract.startDate ? startDateDisplay : 'Khởi tạo'}
-                      </p>
-                    </div>
-                    <span className="font-semibold text-emerald-600 tabular-nums">
-                      + {fmt(contract.depositAmount || 0)}
+            return (
+              <div
+                data-testid="payment-history-card"
+                className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden"
+              >
+                <button
+                  type="button"
+                  onClick={() => setPaymentHistoryOpen(!paymentHistoryOpen)}
+                  className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50/60 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                      Lịch sử thanh toán & Giao dịch
+                    </span>
+                    <span className="text-xs font-medium text-gray-400 tabular-nums">
+                      ({transactions.length} giao dịch)
                     </span>
                   </div>
-
-                  <div className="py-3 flex items-center justify-between gap-4 text-sm">
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        Tiền thuê {contract.rentalMonths} tháng
-                      </p>
-                      <p className="text-xs text-gray-500 tabular-nums mt-0.5">
-                        VNPay · {contract.startDate ? startDateDisplay : 'Khởi tạo'}
-                      </p>
-                    </div>
-                    <span className="font-semibold text-emerald-600 tabular-nums">
-                      + {fmt((contract.monthlyPrice || 0) * (contract.rentalMonths || 1))}
-                    </span>
-                  </div>
-
-                  {contract.accruedOverdueFee !== undefined && contract.accruedOverdueFee > 0 && (
-                    <div className="py-3 flex items-center justify-between gap-4 text-sm">
-                      <div>
-                        <p className="font-medium text-rose-700">Phí phạt quá hạn tích lũy</p>
-                        <p className="text-xs text-rose-500 mt-0.5">Chưa tất toán</p>
-                      </div>
-                      <span className="font-semibold text-rose-600 tabular-nums">
-                        - {fmt(contract.accruedOverdueFee)}
-                      </span>
-                    </div>
+                  {paymentHistoryOpen ? (
+                    <ChevronUp className="w-4 h-4 text-gray-400" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
                   )}
-                </div>
+                </button>
+
+                {paymentHistoryOpen && (
+                  <div className="px-6 pb-5 pt-1 border-t border-gray-100">
+                    {transactions.length === 0 ? (
+                      <p className="py-4 text-sm text-gray-500">
+                        Chưa có giao dịch thanh toán nào được ghi nhận trên hệ thống.
+                      </p>
+                    ) : (
+                      <div className="divide-y divide-gray-100">
+                        {transactions.map((tx) => {
+                          const refund = isRefundTransaction(tx.transactionType);
+                          const statusMeta = getTransactionStatusMeta(tx.status);
+                          const isSuccess = tx.status === 'SUCCESS';
+                          const isStrike =
+                            tx.status === 'FAILED' || tx.status === 'CANCELLED' || tx.status === 'EXPIRED';
+                          const amountSign = refund ? '-' : '+';
+                          const amountClass = isSuccess
+                            ? refund
+                              ? 'text-rose-600'
+                              : 'text-emerald-600'
+                            : isStrike
+                              ? 'text-gray-400 line-through'
+                              : 'text-gray-500';
+                          const refLabel = tx.orderCode
+                            ? `#${tx.orderCode}`
+                            : tx.providerReference || null;
+
+                          return (
+                            <div
+                              key={tx.id}
+                              className="py-3 flex items-start justify-between gap-4 text-sm"
+                            >
+                              <div className="min-w-0">
+                                <p className="font-medium text-gray-900">
+                                  {formatTransactionLabel(tx)}
+                                </p>
+                                {tx.transactionType === 'INITIAL_PAYMENT' && (
+                                  <p className="text-xs text-gray-500 tabular-nums mt-0.5">
+                                    Gồm tiền thuê {contract.rentalMonths} tháng ({fmt(initialRentalTotal)}) + cọc{' '}
+                                    {fmt(contract.depositAmount || 0)}
+                                  </p>
+                                )}
+                                <p className="text-xs text-gray-500 tabular-nums mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                                  <span>{formatPaymentMethodLabel(tx.paymentMethod)}</span>
+                                  <span aria-hidden="true">·</span>
+                                  <span>{formatDateTimeVN(tx.paidAt || tx.createdAt)}</span>
+                                  {refLabel && (
+                                    <>
+                                      <span aria-hidden="true">·</span>
+                                      <span className="font-mono text-gray-400">{refLabel}</span>
+                                    </>
+                                  )}
+                                </p>
+                              </div>
+
+                              <div className="text-right shrink-0">
+                                <p className={`font-semibold tabular-nums ${amountClass}`}>
+                                  {amountSign} {fmt(tx.amount || 0)}
+                                </p>
+                                <p className="inline-flex items-center justify-end gap-1.5 text-xs font-medium mt-0.5">
+                                  <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dotClass}`} />
+                                  <span className={statusMeta.textClass}>{statusMeta.label}</span>
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {totalOutstanding > 0 && (
+                      <div className="mt-2 pt-3 border-t border-gray-100">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-rose-600 mb-1">
+                          Khoản công nợ chưa tất toán
+                        </p>
+                        <div className="divide-y divide-gray-100">
+                          {overdueFee > 0 && (
+                            <div className="py-2.5 flex items-start justify-between gap-4 text-sm">
+                              <div>
+                                <p className="font-medium text-rose-700">Phí phạt quá hạn tích lũy</p>
+                                <p className="text-xs text-gray-500 mt-0.5">Chưa tất toán</p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="font-semibold text-rose-600 tabular-nums">
+                                  - {fmt(overdueFee)}
+                                </p>
+                                <p className="inline-flex items-center justify-end gap-1.5 text-xs font-medium mt-0.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                  <span className="text-rose-700">Chưa thu</span>
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {unpaidExtraCharges.map((charge) => (
+                            <div
+                              key={charge.id}
+                              className="py-2.5 flex items-start justify-between gap-4 text-sm"
+                            >
+                              <div className="min-w-0">
+                                <p className="font-medium text-rose-700">
+                                  {charge.reason || 'Phụ phí phát sinh'}
+                                </p>
+                                <p className="text-xs text-gray-500 tabular-nums mt-0.5">
+                                  Chưa tất toán
+                                  {charge.createdAt ? ` · ${formatDateTimeVN(charge.createdAt)}` : ''}
+                                </p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="font-semibold text-rose-600 tabular-nums">
+                                  - {fmt(charge.amount || 0)}
+                                </p>
+                                <p className="inline-flex items-center justify-end gap-1.5 text-xs font-medium mt-0.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                  <span className="text-rose-700">Chưa thu</span>
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(transactions.length > 0 || totalOutstanding > 0) && (
+                      <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-gray-600">
+                        <div>
+                          Tổng đã thu:{' '}
+                          <span className="font-semibold text-emerald-700 tabular-nums">
+                            {fmt(totalCollected)}
+                          </span>
+                        </div>
+                        {totalRefunded > 0 && (
+                          <div>
+                            Đã hoàn trả:{' '}
+                            <span className="font-semibold text-gray-800 tabular-nums">
+                              {fmt(totalRefunded)}
+                            </span>
+                          </div>
+                        )}
+                        {totalOutstanding > 0 && (
+                          <div>
+                            Còn nợ:{' '}
+                            <span className="font-semibold text-rose-600 tabular-nums">
+                              {fmt(totalOutstanding)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })()}
 
           {/* Card Phẳng: Lịch sử hoạt động & Dòng thời gian */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">

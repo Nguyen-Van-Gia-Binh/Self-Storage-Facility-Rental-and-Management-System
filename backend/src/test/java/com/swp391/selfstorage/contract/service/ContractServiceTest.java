@@ -1310,4 +1310,91 @@ class ContractServiceTest {
         verify(storageUnitRepository).findByIdForUpdate(43L);
         verify(storageUnitRepository).findByIdForUpdate(42L);
     }
+
+    @Test
+    @DisplayName("getContractById gộp, loại trùng và sắp xếp mới nhất trước các giao dịch từ contractId + reservationId kèm phụ phí chưa thu")
+    void shouldReturnMergedSortedPaymentTransactionsAndUnpaidCharges_onGetContractById() {
+        RentalContract contract = RentalContract.builder()
+                .id(777L)
+                .reservationId(888L)
+                .code("CTR-777")
+                .facilityId(1L)
+                .storageUnitId(42L)
+                .unitTypeId(7L)
+                .startDate(LocalDate.of(2026, 5, 15))
+                .endDateExclusive(LocalDate.of(2026, 11, 15))
+                .rentalMonths(6)
+                .monthlyPrice(2_000_000L)
+                .totalRentalFee(12_000_000L)
+                .depositAmount(2_000_000L)
+                .depositBalance(2_000_000L)
+                .status(ContractStatus.ACTIVE)
+                .build();
+
+        PaymentTransaction initialTx = PaymentTransaction.builder()
+                .id(10L)
+                .reservationId(888L)
+                .contractId(777L)
+                .transactionType("INITIAL_PAYMENT")
+                .amount(14_000_000L)
+                .status("SUCCESS")
+                .paymentMethod("VNPAY")
+                .orderCode(100010L)
+                .paidAt(java.time.Instant.parse("2026-05-15T02:00:00Z"))
+                .build();
+        initialTx.setCreatedAt(java.time.Instant.parse("2026-05-15T01:55:00Z"));
+
+        PaymentTransaction renewalTx = PaymentTransaction.builder()
+                .id(20L)
+                .contractId(777L)
+                .transactionType("CONTRACT_RENEWAL")
+                .amount(6_000_000L)
+                .status("SUCCESS")
+                .paymentMethod("VNPAY")
+                .orderCode(100020L)
+                .renewalMonths(3)
+                .paidAt(java.time.Instant.parse("2026-09-01T08:30:00Z"))
+                .build();
+        renewalTx.setCreatedAt(java.time.Instant.parse("2026-09-01T08:25:00Z"));
+
+        PaymentTransaction pendingPenaltyTx = PaymentTransaction.builder()
+                .id(30L)
+                .contractId(777L)
+                .transactionType("OVERDUE_PENALTY")
+                .amount(450_000L)
+                .status("PENDING")
+                .paymentMethod("VNPAY")
+                .orderCode(100030L)
+                .paidAt(null)
+                .build();
+        pendingPenaltyTx.setCreatedAt(java.time.Instant.parse("2026-11-18T03:00:00Z"));
+
+        ContractExtraCharge unpaidCharge = ContractExtraCharge.builder()
+                .id(5L)
+                .contractId(777L)
+                .amount(150_000L)
+                .reason("Cấp lại thẻ từ ra vào")
+                .status(ExtraChargeStatus.UNPAID)
+                .createdAt(OffsetDateTime.parse("2026-11-10T09:00:00+07:00"))
+                .build();
+
+        when(contractRepository.findById(777L)).thenReturn(Optional.of(contract));
+        when(paymentTransactionRepository.findByContractId(777L)).thenReturn(List.of(initialTx, renewalTx, pendingPenaltyTx));
+        when(paymentTransactionRepository.findByReservationId(888L)).thenReturn(List.of(initialTx));
+        when(extraChargeRepository.findByContractIdAndStatus(777L, ExtraChargeStatus.UNPAID)).thenReturn(List.of(unpaidCharge));
+
+        ContractResponse resp = contractService.getContractById(777L, List.of());
+
+        assertNotNull(resp.getPaymentTransactions());
+        assertEquals(3, resp.getPaymentTransactions().size());
+        assertEquals(30L, resp.getPaymentTransactions().get(0).getId());
+        assertEquals(20L, resp.getPaymentTransactions().get(1).getId());
+        assertEquals(10L, resp.getPaymentTransactions().get(2).getId());
+        assertEquals(3, resp.getPaymentTransactions().get(1).getRenewalMonths());
+
+        assertNotNull(resp.getUnpaidExtraCharges());
+        assertEquals(1, resp.getUnpaidExtraCharges().size());
+        assertEquals(150_000L, resp.getUnpaidExtraCharges().get(0).getAmount());
+        assertEquals("Cấp lại thẻ từ ra vào", resp.getUnpaidExtraCharges().get(0).getReason());
+    }
 }

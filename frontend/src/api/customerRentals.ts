@@ -140,6 +140,9 @@ export interface RenewalQuote {
   renewalMonths: number;
   monthlyPrice: number;
   totalRenewalFee: number;
+  discountAmount?: number;
+  discountPercentage?: number;
+  discountProgramName?: string | null;
   overdueFeeSettled?: number;
 }
 
@@ -264,7 +267,10 @@ export async function getRenewalQuote(contractId: number, renewalMonths: number)
     newEndDateExclusive: d.newEndDate || d.newEndDateExclusive,
     renewalMonths: d.renewalMonths,
     monthlyPrice: d.monthlyPriceSnapshot || d.monthlyPrice || 0,
-    totalRenewalFee: d.rentalFeeAmount || d.totalRenewalFee || d.totalAmount || 0,
+    totalRenewalFee: d.rentalFeeAmount ?? d.totalRenewalFee ?? d.totalAmount ?? 0,
+    discountAmount: d.discountAmount ?? 0,
+    discountPercentage: d.discountPercentage ?? 0,
+    discountProgramName: d.discountProgramName ?? null,
     overdueFeeSettled: d.overdueFeeSettled || 0,
   };
 }

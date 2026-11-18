@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { User, ShieldCheck, FileText, CheckCircle2, Clock, Key } from 'lucide-react';
-import { formatVND } from '../utils/pricing';
 import {
   TermsAndPolicyModal,
   type TermsPolicyTabKey,
@@ -56,8 +55,6 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
   onSubmit,
   hasExtendedInsurance = false,
   setHasExtendedInsurance,
-  durationMonths = 1,
-  insuranceTotal = 0,
 }) => {
   const [termsModal, setTermsModal] = useState<{
     isOpen: boolean;
@@ -219,16 +216,9 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
                   />
                   <span>Gói Toàn diện 50M</span>
                 </span>
-                <div className="text-right shrink-0">
-                  <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 text-brand-700 border border-brand-200/60">
-                    +50.000 ₫/tháng
-                  </span>
-                  {durationMonths > 1 && (
-                    <span className="block text-[10px] text-brand-600 font-semibold mt-0.5">
-                      = +{formatVND(insuranceTotal || durationMonths * 50000)} ({durationMonths} tháng)
-                    </span>
-                  )}
-                </div>
+                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 text-brand-700 border border-brand-200/60 shrink-0">
+                  +50.000 ₫/tháng
+                </span>
               </div>
               <p className="text-[11px] text-slate-500 leading-relaxed pl-6">
                 Mức bảo vệ nâng cao bồi hoàn rủi ro tối đa tới <strong>50.000.000 ₫</strong>. Khuyên dùng cho hàng giá trị cao, đồ điện tử và tài liệu.

@@ -4,6 +4,7 @@ import { render, screen, fireEvent, cleanup, within } from '@testing-library/rea
 import '@testing-library/jest-dom/vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { HomePage } from '../../pages/HomePage';
+import { resolveSizeCategory } from '../../utils/unitPickerHelpers';
 
 const mockNavigate = vi.fn();
 
@@ -115,42 +116,50 @@ describe('HomePage Redesign (3D Sizing, Real Data & Section Order)', () => {
     expect(hero.querySelector('[data-testid="hero-text-scrim"]')).toBeInTheDocument();
     expect(hero.querySelector('[data-testid="hero-ambient-motion"]')).toBeInTheDocument();
 
-    // Mặc định đang ở cỡ M (6 m²); giảm đồ đạc không được tự thu nhỏ sang S hoặc XS
-    fireEvent.click(within(hero).getByRole('button', { name: 'Giảm Sofa / Nệm' }));
-    fireEvent.click(within(hero).getByRole('button', { name: 'Giảm Tủ lạnh / Giặt' }));
-    expect(within(hero).getByRole('button', { name: /M\s*6 m²/i })).toHaveAttribute(
+    // Khớp chuẩn phân loại V39 (5 / 15 / 30 / 60 / 100 m²) — không rơi nhầm S/M/L sang XL
+    expect(resolveSizeCategory('UT-STD-XS', 5)).toBe('XS');
+    expect(resolveSizeCategory('UT-STD-S', 15)).toBe('S');
+    expect(resolveSizeCategory('UT-STD-M', 30)).toBe('M');
+    expect(resolveSizeCategory('UT-STD-L', 60)).toBe('L');
+    expect(resolveSizeCategory('UT-STD-XL', 100)).toBe('XL');
+
+    // Mặc định đang ở cỡ M (30 m²); giảm hàng hóa không được tự thu nhỏ sang S hoặc XS
+    fireEvent.click(within(hero).getByRole('button', { name: 'Giảm Kệ hàng công nghiệp' }));
+    fireEvent.click(within(hero).getByRole('button', { name: 'Giảm Tủ / Thiết bị máy' }));
+    expect(within(hero).getByRole('button', { name: /M\s*30 m²/i })).toHaveAttribute(
       'aria-pressed',
       'true'
     );
 
-    // Khi mới tải có bộ đồ mẫu đồng bộ với bộ đếm, bấm Đặt lại hàng hóa -> kho trống hoàn toàn (0 đồ), vẫn giữ cỡ M
+    // Khi mới tải có bộ hàng hóa mẫu đồng bộ với bộ đếm, bấm Đặt lại hàng hóa -> kho trống hoàn toàn (0 đồ), vẫn giữ cỡ M
     fireEvent.click(within(hero).getByRole('button', { name: /Đặt lại hàng hóa/i }));
     const emptySvg = within(hero).getByRole('img', { name: /Mô hình 3D kho cỡ M/i });
     expect(emptySvg).toHaveAttribute('data-item-count', '0');
     expect(within(hero).queryByText(/Lấp đầy ~/i)).not.toBeInTheDocument();
 
-    // Chuyển sang XL (3.0m x 5.0m x 3.0m) và thêm 3 cỡ thùng S/M/L -> vẫn giữ nguyên XL (không tự thu nhỏ về XS)
-    fireEvent.click(within(hero).getByRole('button', { name: /XL\s*15 m²/i }));
+    // Chuyển sang XL (10m x 10m x 5m = 100 m²) và thêm 3 cỡ thùng/kiện S/M/L -> vẫn giữ nguyên XL
+    fireEvent.click(within(hero).getByRole('button', { name: /XL\s*100 m²/i }));
     const xlSvg = within(hero).getByRole('img', {
-      name: /Mô hình 3D kho cỡ XL kích thước 5m x 3m x 3m/i,
+      name: /Mô hình 3D kho cỡ XL kích thước 10m x 10m x 5m/i,
     });
     expect(xlSvg).toHaveAttribute('data-item-count', '0');
 
-    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Thùng nhỏ (S)' }));
-    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Thùng vừa (M)' }));
-    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Thùng lớn (L)' }));
-    expect(within(hero).getByRole('button', { name: /XL\s*15 m²/i })).toHaveAttribute(
+    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Thùng hồ sơ (S)' }));
+    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Kiện hàng vừa (M)' }));
+    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Kiện hàng lớn (L)' }));
+    expect(within(hero).getByRole('button', { name: /XL\s*100 m²/i })).toHaveAttribute(
       'aria-pressed',
       'true'
     );
     expect(within(hero).getByTestId('xp-capacity-bar')).toBeInTheDocument();
     expect(within(hero).getByText(/Lấp đầy/i)).toBeInTheDocument();
 
-    // Chọn XS rồi thêm Sofa & Tủ lạnh -> vẫn giữ nguyên XS và báo Chưa vừa hết + nút gợi ý thủ công
-    fireEvent.click(within(hero).getByRole('button', { name: /XS\s*1 m²/i }));
-    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Sofa / Nệm' }));
-    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Tủ lạnh / Giặt' }));
-    expect(within(hero).getByRole('button', { name: /XS\s*1 m²/i })).toHaveAttribute(
+    // Chọn XS (5 m²) rồi thêm 5 Tủ / Thiết bị máy (5 × 1.2m² = 6 m² > 5 m²) -> giữ nguyên XS và báo Chưa vừa hết
+    fireEvent.click(within(hero).getByRole('button', { name: /XS\s*5 m²/i }));
+    for (let i = 0; i < 5; i += 1) {
+      fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Tủ / Thiết bị máy' }));
+    }
+    expect(within(hero).getByRole('button', { name: /XS\s*5 m²/i })).toHaveAttribute(
       'aria-pressed',
       'true'
     );
@@ -231,7 +240,7 @@ describe('HomePage Redesign (3D Sizing, Real Data & Section Order)', () => {
     expect(container.innerHTML).not.toContain(
       'Dữ liệu chi nhánh, giá thuê và số lượng ô trống được cập nhật trực tiếp từ hệ thống.'
     );
-    expect(screen.getByText(/Kinh doanh & Lưu hồ sơ/i)).toBeInTheDocument();
+    expect(screen.getByText(/Kho phân phối & Hàng nguyên kiện/i)).toBeInTheDocument();
     expect(screen.getByText(/Tại sao chọn SmartStorage/i)).toBeInTheDocument();
     expect(screen.getByText(/MÀN 01 · CHỌN KHO/i)).toHaveClass('font-pixel');
     expect(screen.getByText(/MÀN 02 · THANH TOÁN/i)).toHaveClass('font-pixel');
@@ -261,7 +270,7 @@ describe('HomePage Redesign (3D Sizing, Real Data & Section Order)', () => {
     expect(screen.getByText(/lỗi kỹ thuật hạ tầng cơ sở/i)).toBeInTheDocument();
     expect(screen.queryByText(/Bảo vệ cơ bản 10 triệu \(miễn phí\)/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/50\.000đ\/tháng/i)).not.toBeInTheDocument();
-    expect(screen.getByAltText(/Minh họa Chuyển nhà & Sửa nhà/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Minh họa Lưu kho & Trung chuyển/i)).toBeInTheDocument();
 
     const scrollSpy = vi.fn();
     Element.prototype.scrollIntoView = scrollSpy;
@@ -272,8 +281,8 @@ describe('HomePage Redesign (3D Sizing, Real Data & Section Order)', () => {
     expect(closingBtn).toHaveClass('btn-tactile');
     fireEvent.click(closingBtn);
     expect(scrollSpy).toHaveBeenCalled();
-    expect(screen.getByAltText(/Minh họa Kinh doanh & Lưu hồ sơ/i)).toBeInTheDocument();
-    expect(screen.getByAltText(/Minh họa Đồ giá trị, nhạy ẩm/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Minh họa Kho phân phối & Hàng nguyên kiện/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Minh họa Dược phẩm, Mỹ phẩm & Linh kiện/i)).toBeInTheDocument();
     expect(screen.queryByText(/Chị Minh Thư/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Anh Quốc Bảo/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Bạn Hoàng Nam/i)).not.toBeInTheDocument();

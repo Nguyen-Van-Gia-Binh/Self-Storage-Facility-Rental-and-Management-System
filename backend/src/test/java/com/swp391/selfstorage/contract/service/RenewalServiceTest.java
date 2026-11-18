@@ -648,4 +648,34 @@ class RenewalServiceTest {
         assertEquals(ErrorCode.ACCESS_DENIED, ex.getErrorCode());
         assertEquals("Bạn không có quyền truy cập thông tin gia hạn của hợp đồng này", ex.getMessage());
     }
+
+    @Test
+    @DisplayName("Báo giá gia hạn áp dụng đúng chương trình chiết khấu tốt nhất từ DiscountProgramService")
+    void testGetRenewalQuote_appliesBestDiscountProgram() {
+        RentalContract contract = buildContract(ContractStatus.ACTIVE);
+        contract.setEndDateExclusive(LocalDate.now().plusDays(40));
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), anyInt())).thenReturn(false);
+        when(facilityPriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L))
+                .thenReturn(Optional.of(FacilityUnitTypePrice.builder().monthlyPrice(6_000_000L).build()));
+
+        com.swp391.selfstorage.policy.service.DiscountProgramService discountMock =
+                org.mockito.Mockito.mock(com.swp391.selfstorage.policy.service.DiscountProgramService.class);
+        when(discountMock.findBestDiscount(eq(1L), eq(7L), eq(12), eq(72_000_000L), any()))
+                .thenReturn(new com.swp391.selfstorage.policy.service.DiscountProgramService.BestDiscountResult(
+                        2L, "Chiết khấu hợp đồng năm (10%)", 0.10, 7_200_000L));
+        org.springframework.test.util.ReflectionTestUtils.setField(renewalService, "discountProgramService", discountMock);
+
+        try {
+            RenewalQuoteResponse quote = renewalService.getRenewalQuote(100L, new RenewalRequest(12));
+            assertEquals(64_800_000L, quote.getRentalFeeAmount());
+            assertEquals(64_800_000L, quote.getTotalAmount());
+            assertEquals(7_200_000L, quote.getDiscountAmount());
+            assertEquals(0.10, quote.getDiscountPercentage());
+            assertEquals("Chiết khấu hợp đồng năm (10%)", quote.getDiscountProgramName());
+        } finally {
+            org.springframework.test.util.ReflectionTestUtils.setField(renewalService, "discountProgramService", null);
+        }
+    }
 }

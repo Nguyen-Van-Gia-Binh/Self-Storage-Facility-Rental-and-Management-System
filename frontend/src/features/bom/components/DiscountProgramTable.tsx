@@ -338,13 +338,14 @@ export const DiscountProgramTable: React.FC<DiscountProgramTableProps> = ({
                               }
                               disabled={isPendingToggle}
                               onClick={() => onToggleStatus(item)}
-                              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 disabled:cursor-wait ${
+                              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 disabled:cursor-wait ${
                                 visualActive ? 'bg-brand-600' : 'bg-gray-300'
                               }`}
                             >
                               <span
-                                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-2xs ${
-                                  visualActive ? 'translate-x-4.5' : 'translate-x-1'
+                                aria-hidden="true"
+                                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-2xs ${
+                                  visualActive ? 'translate-x-4' : 'translate-x-0'
                                 }`}
                               />
                             </button>

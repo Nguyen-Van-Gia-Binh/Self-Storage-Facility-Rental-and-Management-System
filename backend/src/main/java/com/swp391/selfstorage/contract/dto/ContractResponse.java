@@ -1,8 +1,14 @@
 package com.swp391.selfstorage.contract.dto;
 
 import com.swp391.selfstorage.contract.entity.ContractStatus;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.List;
 
 @Data
 public class ContractResponse {
@@ -51,4 +57,34 @@ public class ContractResponse {
     private java.time.OffsetDateTime rescheduledAt;
     private Boolean relocationEligible;
     private Long openSupportRequestId;
+    private List<PaymentTransactionItem> paymentTransactions;
+    private List<UnpaidExtraChargeItem> unpaidExtraCharges;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PaymentTransactionItem {
+        private Long id;
+        private String transactionType;
+        private Long amount;
+        private String status;
+        private String paymentMethod;
+        private Long orderCode;
+        private String providerReference;
+        private Integer renewalMonths;
+        private Instant paidAt;
+        private Instant createdAt;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UnpaidExtraChargeItem {
+        private Long id;
+        private Long amount;
+        private String reason;
+        private OffsetDateTime createdAt;
+    }
 }

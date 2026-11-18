@@ -45,9 +45,7 @@ describe('MyWaitlistsTable & Customer Waitlist Integration — Chuẩn Enterpris
         <MyWaitlistsTable
           waitlists={items}
           loading={false}
-          extendingId={null}
           cancellingId={null}
-          onExtend={vi.fn()}
           onCancel={vi.fn()}
           onViewContracts={vi.fn()}
         />
@@ -57,11 +55,12 @@ describe('MyWaitlistsTable & Customer Waitlist Integration — Chuẩn Enterpris
     // Định dạng ngày DD/MM/YYYY
     expect(screen.getAllByText('20/12/2026').length).toBeGreaterThanOrEqual(1);
 
-    // 4 nhóm trạng thái ngữ nghĩa
-    expect(screen.getByText('Đang chờ trống').className).toContain('bg-amber-50');
-    expect(screen.getByText('Đang tư vấn').className).toContain('bg-blue-50');
-    expect(screen.getByText('Đã chuyển thành đơn').className).toContain('bg-emerald-50');
-    expect(screen.getByText('Đã hủy').className).toContain('bg-gray-100');
+    // 4 nhóm trạng thái ngữ nghĩa phẳng (chấm tròn + chữ màu, không nền pill pastel)
+    expect(screen.getByText('Đang chờ trống').parentElement?.className).toContain('text-amber-700');
+    expect(screen.getByText('Đang chờ trống').parentElement?.className).not.toContain('bg-amber-50');
+    expect(screen.getByText('Đang tư vấn').parentElement?.className).toContain('text-sky-700');
+    expect(screen.getByText('Đã chuyển thành đơn').parentElement?.className).toContain('text-emerald-700');
+    expect(screen.getByText('Đã hủy').parentElement?.className).toContain('text-slate-500');
 
     // Dòng đã hủy được làm mờ nhẹ
     const cancelledRow = screen.getByText('Kho Tiêu Chuẩn XS').closest('tr');
@@ -72,8 +71,7 @@ describe('MyWaitlistsTable & Customer Waitlist Integration — Chuẩn Enterpris
     expect(screen.queryByText(/BR-WAT/i)).not.toBeInTheDocument();
   });
 
-  it('Hỗ trợ Gia hạn +15 ngày và mở Modal xác nhận giữa màn hình khi Hủy yêu cầu chờ', () => {
-    const onExtend = vi.fn();
+  it('Bỏ nút Gia hạn +15 ngày thừa và mở Modal xác nhận giữa màn hình khi Hủy yêu cầu chờ', () => {
     const onCancel = vi.fn();
     const item = makeWaitlist({ id: 77, status: 'WAITING', unitTypeName: 'Kho Máy Lạnh M' });
 
@@ -82,18 +80,15 @@ describe('MyWaitlistsTable & Customer Waitlist Integration — Chuẩn Enterpris
         <MyWaitlistsTable
           waitlists={[item]}
           loading={false}
-          extendingId={null}
           cancellingId={null}
-          onExtend={onExtend}
           onCancel={onCancel}
           onViewContracts={vi.fn()}
         />
       </MemoryRouter>
     );
 
-    // Bấm Gia hạn +15 ngày
-    fireEvent.click(screen.getByRole('button', { name: /Gia hạn \+15 ngày/i }));
-    expect(onExtend).toHaveBeenCalledWith(item);
+    // Không còn nút Gia hạn +15 ngày
+    expect(screen.queryByRole('button', { name: /Gia hạn \+15 ngày/i })).not.toBeInTheDocument();
 
     // Bấm Hủy yêu cầu -> mở Modal xác nhận (không đẩy lệch layout bảng)
     fireEvent.click(screen.getByRole('button', { name: /Hủy yêu cầu/i }));
@@ -110,9 +105,7 @@ describe('MyWaitlistsTable & Customer Waitlist Integration — Chuẩn Enterpris
         <MyWaitlistsTable
           waitlists={[]}
           loading={false}
-          extendingId={null}
           cancellingId={null}
-          onExtend={vi.fn()}
           onCancel={vi.fn()}
           onViewContracts={vi.fn()}
         />

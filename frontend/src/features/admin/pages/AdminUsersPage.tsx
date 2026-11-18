@@ -26,13 +26,13 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 const ROLE_BADGES: Record<UserRoleType, { label: string; bg: string; text: string; border: string }> = {
   SYSTEM_ADMINISTRATOR: {
-    label: 'Admin',
+    label: 'Quản trị hệ thống',
     bg: 'bg-rose-50',
     text: 'text-rose-700',
     border: 'border-rose-200',
   },
   BUSINESS_OPERATIONS_MANAGER: {
-    label: 'BOM',
+    label: 'Quản lý vận hành',
     bg: 'bg-purple-50',
     text: 'text-purple-700',
     border: 'border-purple-200',
@@ -50,7 +50,7 @@ const ROLE_BADGES: Record<UserRoleType, { label: string; bg: string; text: strin
     border: 'border-emerald-200',
   },
   STORAGE_CUSTOMER: {
-    label: 'Khách thuê',
+    label: 'Khách thuê kho',
     bg: 'bg-amber-50',
     text: 'text-amber-700',
     border: 'border-amber-200',
