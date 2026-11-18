@@ -16,31 +16,31 @@ interface UserRoleModalProps {
 const ROLE_OPTIONS: { role: UserRoleType; label: string; description: string; color: string }[] = [
   {
     role: 'SYSTEM_ADMINISTRATOR',
-    label: 'Quản trị viên hệ thống (Admin)',
+    label: 'Quản trị viên hệ thống',
     description: 'Toàn quyền cấu hình hệ thống, quản lý tài khoản và phân quyền.',
     color: 'border-rose-500 text-rose-700 bg-rose-50',
   },
   {
     role: 'BUSINESS_OPERATIONS_MANAGER',
-    label: 'Quản lý vận hành kinh doanh (BOM)',
+    label: 'Quản lý vận hành kinh doanh',
     description: 'Thiết lập bảng giá, quy định chính sách thuê và giám sát doanh thu toàn hệ thống.',
     color: 'border-purple-500 text-purple-700 bg-purple-50',
   },
   {
     role: 'FACILITY_MANAGER',
-    label: 'Quản lý cơ sở (Facility Manager)',
+    label: 'Quản lý cơ sở',
     description: 'Quản lý ô kho, nhân viên và giải quyết khiếu nại tại các cơ sở được phân công.',
     color: 'border-blue-500 text-blue-700 bg-blue-50',
   },
   {
     role: 'FACILITY_STAFF',
-    label: 'Nhân viên cơ sở (Facility Staff)',
+    label: 'Nhân viên cơ sở',
     description: 'Thực hiện thủ tục check-in, bàn giao kho và nghiệm thu hoàn kho tại cơ sở phụ trách.',
     color: 'border-emerald-500 text-emerald-700 bg-emerald-50',
   },
   {
     role: 'STORAGE_CUSTOMER',
-    label: 'Khách thuê kho (Customer)',
+    label: 'Khách thuê kho',
     description: 'Tìm kiếm, đặt chỗ ô kho, thanh toán trực tuyến và quản lý tài sản lưu trữ.',
     color: 'border-amber-500 text-amber-700 bg-amber-50',
   },

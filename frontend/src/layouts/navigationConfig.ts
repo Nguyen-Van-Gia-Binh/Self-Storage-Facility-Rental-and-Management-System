@@ -25,7 +25,7 @@ export interface RoleNavigation {
 
 export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
   CUSTOMER: {
-    portalTitle: 'Khách hàng',
+    portalTitle: 'Khách thuê kho',
     role: 'CUSTOMER',
     badgeColor: 'bg-emerald-500',
     navItems: [
@@ -56,7 +56,7 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
     ],
   },
   BOM: {
-    portalTitle: 'BOM Operations',
+    portalTitle: 'Quản lý vận hành',
     role: 'BOM',
     badgeColor: 'bg-amber-500',
     navItems: [
@@ -67,7 +67,7 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
     ],
   },
   ADMIN: {
-    portalTitle: 'System Admin',
+    portalTitle: 'Quản trị hệ thống',
     role: 'ADMIN',
     badgeColor: 'bg-rose-500',
     navItems: [

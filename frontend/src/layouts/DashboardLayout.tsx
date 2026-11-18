@@ -53,11 +53,11 @@ const BREADCRUMB_MAP: Record<string, string> = {
 
 // Portal label by role
 const ROLE_PORTAL_LABEL: Record<UserRole, string> = {
-  ADMIN:    'System Admin',
+  ADMIN:    'Quản trị hệ thống',
   MANAGER:  'Quản lý cơ sở',
   STAFF:    'Nhân viên vận hành',
-  BOM:      'BOM Operations',
-  CUSTOMER: 'Customer Portal',
+  BOM:      'Quản lý vận hành',
+  CUSTOMER: 'Khách thuê kho',
 };
 
 // Default home path by role

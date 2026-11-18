@@ -13,11 +13,11 @@ interface CreateUserModalProps {
 }
 
 const ROLES: { role: UserRoleType; label: string }[] = [
-  { role: 'FACILITY_STAFF', label: 'Nhân viên cơ sở (Facility Staff)' },
-  { role: 'FACILITY_MANAGER', label: 'Quản lý cơ sở (Facility Manager)' },
-  { role: 'BUSINESS_OPERATIONS_MANAGER', label: 'Quản lý kinh doanh (BOM)' },
-  { role: 'SYSTEM_ADMINISTRATOR', label: 'Quản trị viên (System Admin)' },
-  { role: 'STORAGE_CUSTOMER', label: 'Khách thuê kho (Customer)' },
+  { role: 'FACILITY_STAFF', label: 'Nhân viên cơ sở' },
+  { role: 'FACILITY_MANAGER', label: 'Quản lý cơ sở' },
+  { role: 'BUSINESS_OPERATIONS_MANAGER', label: 'Quản lý vận hành kinh doanh' },
+  { role: 'SYSTEM_ADMINISTRATOR', label: 'Quản trị viên hệ thống' },
+  { role: 'STORAGE_CUSTOMER', label: 'Khách thuê kho' },
 ];
 
 export const CreateUserModal: React.FC<CreateUserModalProps> = ({
