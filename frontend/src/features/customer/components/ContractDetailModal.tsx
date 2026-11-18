@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   Layers,
   Info,
+  Sparkles,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { formatDateVN } from '../utils/unitPickerHelpers';
@@ -205,11 +206,15 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
     ? undefined
     : (effectiveDetail?.relocationSupportRequestCode || contract.relocationSupportRequestCode || (relocationId ? 'SUP-202610-0001' : undefined));
   const relocationReason = effectiveDetail?.relocationReason || contract.relocationReason || contract.rejectionReason;
+  const isUpgraded = Boolean(effectiveDetail?.isUpgradedCompensation ?? contract.isUpgradedCompensation);
+  const originalTypeName = effectiveDetail?.originalUnitTypeName || contract.originalUnitTypeName;
+  const upgradeNoticeReason = effectiveDetail?.upgradeReason || contract.upgradeReason || 'Hết ô kho cùng loại tại thời điểm bàn giao (BR-BMP-01)';
   const isReturnScheduled = effectiveStatus === 'PENDING_RETURN' || Boolean(contract.scheduledReturnDate || effectiveDetail?.scheduledReturnDate);
   const scheduledReturnDate = effectiveDetail?.scheduledReturnDate || contract.scheduledReturnDate || (effectiveStatus === 'PENDING_RETURN' ? 'Chờ kiểm tra hiện trường' : undefined);
   const hasSettlement = isClosed || Boolean(effectiveDetail?.settledAt) || Boolean(effectiveDetail?.settlementType);
-  const hasAnyAddenda = renewals.length > 0 || Boolean(relocationCode) || isReturnScheduled || hasSettlement;
-  const addendaCount = renewals.length + (relocationCode ? 1 : 0) + (isReturnScheduled ? 1 : 0) + (hasSettlement ? 1 : 0);
+  const hasUpgradeAddendum = isUpgraded;
+  const hasAnyAddenda = renewals.length > 0 || Boolean(relocationCode) || isReturnScheduled || hasSettlement || hasUpgradeAddendum;
+  const addendaCount = renewals.length + (relocationCode ? 1 : 0) + (isReturnScheduled ? 1 : 0) + (hasSettlement ? 1 : 0) + (hasUpgradeAddendum ? 1 : 0);
 
   // Dữ liệu quyết toán tất toán hợp đồng (PL-SETTLEMENT)
   const settlementType = effectiveDetail?.settlementType || (
@@ -471,7 +476,15 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                   </div>
                   <div>
                     <span className="text-gray-500 block text-[11px] mb-0.5">Loại kho</span>
-                    <span className="font-semibold text-gray-900">{effectiveUnitTypeName}</span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold text-gray-900">{effectiveUnitTypeName}</span>
+                      {isUpgraded && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          <Sparkles className="w-3 h-3 text-emerald-600" />
+                          Nâng hạng đền bù (BR-BMP-01)
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <span className="text-gray-500 block text-[11px] mb-0.5">Kích thước</span>
@@ -506,6 +519,28 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                     )}
                   </div>
                 </div>
+
+                {isUpgraded && (
+                  <div className="p-3.5 bg-emerald-50/90 border border-emerald-200 rounded-lg flex items-start gap-3">
+                    <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <div className="text-xs text-emerald-900 space-y-1">
+                      <p className="font-bold text-emerald-950 uppercase tracking-wide text-[11px]">
+                        Xác nhận Nâng hạng Đền bù Miễn phí (Chính sách BR-BMP-01 & BR-CHK-06)
+                      </p>
+                      <p className="leading-relaxed">
+                        Hợp đồng đã được Cơ sở tự động nâng hạng từ loại kho ban đầu{' '}
+                        <strong>{originalTypeName ? `(${originalTypeName})` : 'đã đặt'}</strong> sang loại kho lớn hơn{' '}
+                        <strong>{effectiveUnitTypeName} ({effectiveDimensions})</strong> do hết ô kho cùng loại hoặc xử lý sự cố kỹ thuật.
+                      </p>
+                      <p className="text-emerald-800 text-[11px]">
+                        <strong>* Lý do ghi nhận:</strong> {upgradeNoticeReason}
+                      </p>
+                      <p className="text-emerald-800 text-[11px]">
+                        <strong>* Quyền lợi tài chính:</strong> Khách hàng được <strong>bảo lưu 100% đơn giá thuê ban đầu ({formatVND(effectiveMonthlyRent)}/tháng)</strong> và tiền cọc trong suốt kỳ hạn hợp đồng. Toàn bộ chênh lệch giá nâng hạng do Cơ sở chi trả đền bù.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </section>
 
               <hr className="border-gray-200" />
@@ -937,6 +972,70 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                           Giữ nguyên 100% đơn giá thuê ({formatVND(effectiveMonthlyRent)}/tháng) và tiền cọc ({formatVND(effectiveDeposit)}), không phát sinh phụ phí.
                         </span>
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Phụ lục nâng hạng đền bù ô kho miễn phí (BR-BMP-01) */}
+                {isUpgraded && (
+                  <div className="bg-emerald-50/80 rounded-lg p-4 border border-emerald-200 space-y-2.5">
+                    <div className="flex items-center justify-between pb-2 border-b border-emerald-200">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[11px] font-bold bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded">
+                          PL-UPGRADE
+                        </span>
+                        <span className="font-semibold text-emerald-950 text-xs">
+                          Phụ lục Nâng hạng Đền bù Ô kho Miễn phí (Chính sách BR-BMP-01)
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-semibold text-emerald-700 bg-white px-2.5 py-0.5 rounded-md border border-emerald-300">
+                        Miễn phí nâng hạng
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+                      <div>
+                        <span className="text-gray-500 block text-[11px]">Hạng kho ban đầu đã đặt</span>
+                        <span className="font-semibold text-gray-800">
+                          {originalTypeName || 'Hạng tiêu chuẩn ban đầu'}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-gray-500 block text-[11px]">Hạng kho được nâng cấp đền bù</span>
+                        <span className="font-semibold text-emerald-800">
+                          {effectiveUnitTypeName} ({effectiveDimensions})
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-gray-500 block text-[11px]">Đơn giá thuê hàng tháng</span>
+                        <span className="font-semibold text-gray-900 tabular-nums">
+                          {formatVND(effectiveMonthlyRent)}/tháng (Bảo lưu 100% đơn giá gốc)
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-gray-500 block text-[11px]">Tiền cọc bảo đảm</span>
+                        <span className="font-medium text-emerald-700 tabular-nums">
+                          {formatVND(effectiveDeposit)} (Bảo lưu nguyên vẹn)
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-[11px] text-emerald-900 bg-white/90 p-2.5 rounded border border-emerald-200 flex items-start gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                      <span>
+                        <strong>Căn cứ BR-BMP-01 & BR-CHK-06:</strong> Do phát sinh sự cố kỹ thuật hoặc cơ sở hết ô trống cùng loại tại thời điểm nhận kho, Ban Quản lý đã kích hoạt chính sách bảo vệ quyền lợi khách hàng, nâng cấp miễn phí sang ô kho có kích thước lớn hơn. Khách hàng không phải chi trả bất kỳ khoản phí phát sinh nào.
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 text-[11px] text-gray-500 border-t border-emerald-200/80">
+                      <span>Lý do ghi nhận: <strong className="text-gray-700">{upgradeNoticeReason}</strong></span>
+                      <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        Đã xác nhận & có hiệu lực
+                      </span>
                     </div>
                   </div>
                 )}

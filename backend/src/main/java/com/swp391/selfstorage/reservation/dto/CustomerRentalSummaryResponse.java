@@ -88,6 +88,12 @@ public class CustomerRentalSummaryResponse {
     private String customerEmail;
     private String customerIdentityNumber;
 
+    // Thông tin nâng hạng đền bù miễn phí (Upgrade Compensation - BR-BMP-01)
+    private Boolean isUpgradedCompensation;
+    private Long originalUnitTypeId;
+    private String originalUnitTypeName;
+    private String upgradeReason;
+
     public CustomerRentalSummaryResponse() {}
 
     // Getters and Setters
@@ -250,4 +256,16 @@ public class CustomerRentalSummaryResponse {
 
     public String getCustomerIdentityNumber() { return customerIdentityNumber; }
     public void setCustomerIdentityNumber(String customerIdentityNumber) { this.customerIdentityNumber = customerIdentityNumber; }
+
+    public Boolean getIsUpgradedCompensation() { return isUpgradedCompensation; }
+    public void setIsUpgradedCompensation(Boolean isUpgradedCompensation) { this.isUpgradedCompensation = isUpgradedCompensation; }
+
+    public Long getOriginalUnitTypeId() { return originalUnitTypeId; }
+    public void setOriginalUnitTypeId(Long originalUnitTypeId) { this.originalUnitTypeId = originalUnitTypeId; }
+
+    public String getOriginalUnitTypeName() { return originalUnitTypeName; }
+    public void setOriginalUnitTypeName(String originalUnitTypeName) { this.originalUnitTypeName = originalUnitTypeName; }
+
+    public String getUpgradeReason() { return upgradeReason; }
+    public void setUpgradeReason(String upgradeReason) { this.upgradeReason = upgradeReason; }
 }

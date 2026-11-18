@@ -501,11 +501,19 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                           {contract.unitNumber}
                         </button>
                       )}
-                      <span className="text-[11px] font-medium text-gray-500">
+                      <span className="text-[11px] font-medium text-gray-500 inline-flex items-center gap-1 flex-wrap">
                         {(contract.unitTypeName || 'Tiêu chuẩn')
                           .replace(/^Kho\s+/i, '')
                           .replace(/\s*\([^)]*\)/g, '')
                           .trim()}
+                        {contract.isUpgradedCompensation && (
+                          <span
+                            className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200"
+                            title="Nâng hạng đền bù miễn phí (BR-BMP-01)"
+                          >
+                            Nâng hạng
+                          </span>
+                        )}
                       </span>
                     </div>
                   </td>

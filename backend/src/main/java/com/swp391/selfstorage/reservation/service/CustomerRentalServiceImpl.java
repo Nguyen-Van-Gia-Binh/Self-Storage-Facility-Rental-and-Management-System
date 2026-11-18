@@ -643,6 +643,16 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
                         }
                     });
         }
+
+        // Thông tin nâng hạng đền bù miễn phí (Upgrade Compensation - BR-BMP-01)
+        res.setIsUpgradedCompensation(contract.isUpgradedCompensation());
+        res.setOriginalUnitTypeId(contract.getOriginalUnitTypeId());
+        if (contract.getOriginalUnitTypeId() != null && unitTypeRepository != null) {
+            unitTypeRepository.findById(contract.getOriginalUnitTypeId()).ifPresent(ut -> {
+                res.setOriginalUnitTypeName(ut.getName());
+            });
+        }
+        res.setUpgradeReason(contract.getUpgradeReason());
     }
 
     @Transactional

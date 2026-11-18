@@ -572,6 +572,10 @@ class ContractServiceTest {
         assertEquals(8L, contract.getUnitTypeId()); // Đã nâng hạng sang loại mới
         assertEquals(750_000L, contract.getMonthlyPrice()); // Bảo lưu giá thuê ban đầu
         assertEquals(750_000L, contract.getDepositAmount()); // Bảo lưu tiền cọc ban đầu
+        assertTrue(contract.isUpgradedCompensation());
+        assertEquals(7L, contract.getOriginalUnitTypeId());
+        assertNotNull(contract.getUpgradeReason());
+        assertTrue(contract.getUpgradeReason().contains("Nâng hạng đền bù miễn phí"));
         assertEquals(StorageUnitStatus.MAINTENANCE, oldUnit.getStatus());
         assertEquals(StorageUnitStatus.RESERVED, newUnit.getStatus());
         assertFalse(ticket.getRelocationRequired());

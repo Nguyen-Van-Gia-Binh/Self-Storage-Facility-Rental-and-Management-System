@@ -93,6 +93,10 @@ export function mapBackendSummaryToCheckInContract(item: any): CheckInContract {
     assignedStaffName: item.assignedStaffName,
     relocationEligible: item.relocationEligible === true,
     isAwaitingRelocation: item.relocationEligible === true,
+    isUpgradedCompensation: item.isUpgradedCompensation === true,
+    originalUnitTypeId: item.originalUnitTypeId,
+    originalUnitTypeName: item.originalUnitTypeName,
+    upgradeReason: item.upgradeReason,
     createdAt: item.createdAt || undefined,
   };
 }

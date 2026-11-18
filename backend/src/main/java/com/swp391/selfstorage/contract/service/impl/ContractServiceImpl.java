@@ -1049,11 +1049,24 @@ public class ContractServiceImpl implements ContractService {
 
                 long monthlyPriceSnapshot = contract.getMonthlyPrice();
                 long depositSnapshot = contract.getDepositAmount();
+                Long originalTypeId = contract.getOriginalUnitTypeId() != null
+                                ? contract.getOriginalUnitTypeId()
+                                : (oldUnit != null ? oldUnit.getUnitTypeId() : contract.getUnitTypeId());
+
                 contract.setStorageUnitId(newUnit.getId());
                 contract.setUnitTypeId(newUnit.getUnitTypeId());
                 contract.setRelocationSupportRequestId(ticket != null ? ticket.getId() : null);
                 contract.setMonthlyPrice(monthlyPriceSnapshot);
                 contract.setDepositAmount(depositSnapshot);
+
+                if (isUpgradeCompensation) {
+                        contract.setUpgradedCompensation(true);
+                        contract.setOriginalUnitTypeId(originalTypeId);
+                        String reasonText = (request.getReason() != null && !request.getReason().isBlank())
+                                        ? request.getReason()
+                                        : (ticket != null && ticket.getDescription() != null ? ticket.getDescription() : "Hết ô kho cùng loại tại thời điểm bàn giao (BR-BMP-01)");
+                        contract.setUpgradeReason("Nâng hạng đền bù miễn phí do " + reasonText + ". Bảo lưu 100% đơn giá gốc.");
+                }
                 contractRepository.save(contract);
 
                 if (contract.getReservationId() != null && reservationRepository != null) {
@@ -3160,6 +3173,15 @@ public class ContractServiceImpl implements ContractService {
                                 && c.getStatus() == ContractStatus.PENDING_CHECK_IN) {
                         r.setStorageUnitCode("Chờ gán lại ô kho");
                 }
+
+                r.setIsUpgradedCompensation(c.isUpgradedCompensation());
+                r.setOriginalUnitTypeId(c.getOriginalUnitTypeId());
+                if (c.getOriginalUnitTypeId() != null && unitTypeRepository != null) {
+                        unitTypeRepository.findById(c.getOriginalUnitTypeId()).ifPresent(ut -> {
+                                r.setOriginalUnitTypeName(ut.getName());
+                        });
+                }
+                r.setUpgradeReason(c.getUpgradeReason());
 
                 return r;
         }

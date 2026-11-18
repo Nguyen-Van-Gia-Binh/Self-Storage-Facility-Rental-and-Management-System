@@ -147,6 +147,10 @@ export interface RentedContract {
   relocationEligible?: boolean;
   handoverRejected?: boolean;
   rejectionReason?: string;
+  isUpgradedCompensation?: boolean;
+  originalUnitTypeId?: number;
+  originalUnitTypeName?: string;
+  upgradeReason?: string;
   createdAt?: string;
 }
 

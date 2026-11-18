@@ -17,6 +17,7 @@ import {
   UserPlus,
   UserCheck,
   MapPin,
+  Sparkles,
 } from 'lucide-react';
 import {
   getManagerContracts,
@@ -1204,6 +1205,12 @@ export const ContractDetailPage: React.FC = () => {
                 <span className="text-gray-500">Loại ô kho:</span>
                 <span className="font-medium text-gray-900 text-right">
                   {contract.unitTypeName || 'Kho tiêu chuẩn'}
+                  {contract.isUpgradedCompensation && (
+                    <span className="ml-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      <Sparkles className="w-3 h-3 text-emerald-600" />
+                      Nâng hạng đền bù
+                    </span>
+                  )}
                   {canRelocate && isPendingCheckIn ? ' (Đang điều phối đổi ô)' : ''}
                 </span>
               </div>

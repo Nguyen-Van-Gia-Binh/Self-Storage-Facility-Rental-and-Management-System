@@ -93,6 +93,10 @@ export interface ManagerContractItem {
   isInspected?: boolean;
   relocationEligible?: boolean;
   openSupportRequestId?: number | null;
+  isUpgradedCompensation?: boolean;
+  originalUnitTypeId?: number;
+  originalUnitTypeName?: string;
+  upgradeReason?: string;
   createdAt?: string;
   returnRequestCreatedAt?: string;
   paymentTransactions?: ContractPaymentTransaction[];

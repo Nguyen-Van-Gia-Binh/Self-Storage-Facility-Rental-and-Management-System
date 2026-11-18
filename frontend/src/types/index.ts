@@ -137,6 +137,10 @@ export interface CheckInContract {
   relocationEligible?: boolean;
   isAwaitingRelocation?: boolean;
   originalDefectiveUnitCode?: string;
+  isUpgradedCompensation?: boolean;
+  originalUnitTypeId?: number;
+  originalUnitTypeName?: string;
+  upgradeReason?: string;
   createdAt?: string;
 }
 

@@ -116,6 +116,16 @@ public class RentalContract {
     @Column(name = "customer_identity_number", length = 20)
     private String customerIdentityNumber;
 
+    @Column(name = "is_upgraded_compensation", nullable = false)
+    @Builder.Default
+    private boolean isUpgradedCompensation = false;
+
+    @Column(name = "original_unit_type_id")
+    private Long originalUnitTypeId;
+
+    @Column(name = "upgrade_reason", columnDefinition = "TEXT")
+    private String upgradeReason;
+
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) createdAt = OffsetDateTime.now();
@@ -220,4 +230,13 @@ public class RentalContract {
 
     public String getCustomerIdentityNumber() { return customerIdentityNumber; }
     public void setCustomerIdentityNumber(String customerIdentityNumber) { this.customerIdentityNumber = customerIdentityNumber; }
+
+    public boolean isUpgradedCompensation() { return isUpgradedCompensation; }
+    public void setUpgradedCompensation(boolean isUpgradedCompensation) { this.isUpgradedCompensation = isUpgradedCompensation; }
+
+    public Long getOriginalUnitTypeId() { return originalUnitTypeId; }
+    public void setOriginalUnitTypeId(Long originalUnitTypeId) { this.originalUnitTypeId = originalUnitTypeId; }
+
+    public String getUpgradeReason() { return upgradeReason; }
+    public void setUpgradeReason(String upgradeReason) { this.upgradeReason = upgradeReason; }
 }

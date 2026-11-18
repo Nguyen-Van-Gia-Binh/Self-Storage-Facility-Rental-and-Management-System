@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   MapPin,
   Check,
+  Sparkles,
 } from 'lucide-react';
 import type { CheckInContract } from '../../../types';
 import { formatDateVN } from '@/features/customer/utils/unitPickerHelpers';
@@ -141,14 +142,27 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
 
         <div className="flex justify-between items-start gap-3">
           <span className="text-gray-500 shrink-0">Loại kho</span>
-          <span className="font-medium text-gray-900 text-right">
-            {contract.unitTypeName}
+          <div className="text-right">
+            <div className="flex items-center justify-end gap-1.5 flex-wrap">
+              <span className="font-medium text-gray-900">{contract.unitTypeName}</span>
+              {contract.isUpgradedCompensation && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  <Sparkles className="w-3 h-3 text-emerald-600" />
+                  Nâng hạng đền bù
+                </span>
+              )}
+            </div>
             {contract.unitTypeDimensions && (
               <span className="block text-xs text-gray-500 font-normal">
                 ({contract.unitTypeDimensions})
               </span>
             )}
-          </span>
+            {contract.isUpgradedCompensation && (
+              <span className="block text-[11px] text-emerald-700 font-medium mt-0.5">
+                (Gốc: {contract.originalUnitTypeName || 'Loại ban đầu'} · BR-BMP-01)
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex justify-between items-center gap-3">
@@ -160,6 +174,18 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
             {contract.facilityName}
           </span>
         </div>
+
+        {contract.isUpgradedCompensation && (
+          <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-left">
+            <div className="flex items-center gap-1.5 text-emerald-800 text-xs font-semibold">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>Chính sách đền bù BR-BMP-01</span>
+            </div>
+            <p className="text-[11px] text-emerald-700 mt-0.5 leading-relaxed">
+              Khách được nâng hạng miễn phí từ <strong>{contract.originalUnitTypeName || 'hạng gốc'}</strong> sang <strong>{contract.unitTypeName}</strong>. Đơn giá thuê và tiền cọc được giữ nguyên 100%.
+            </p>
+          </div>
+        )}
 
         {onOpenFloorPlan && !isRelocating && (
           <div className="pt-1 flex justify-end">

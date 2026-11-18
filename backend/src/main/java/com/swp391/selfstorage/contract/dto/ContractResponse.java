@@ -57,6 +57,10 @@ public class ContractResponse {
     private java.time.OffsetDateTime rescheduledAt;
     private Boolean relocationEligible;
     private Long openSupportRequestId;
+    private Boolean isUpgradedCompensation;
+    private Long originalUnitTypeId;
+    private String originalUnitTypeName;
+    private String upgradeReason;
     private List<PaymentTransactionItem> paymentTransactions;
     private List<UnpaidExtraChargeItem> unpaidExtraCharges;
 

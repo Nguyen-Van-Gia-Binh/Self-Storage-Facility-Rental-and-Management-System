@@ -68,6 +68,10 @@ export interface BackendRentalSummary {
   handoverRejected?: boolean;
   rejectionReason?: string;
   scheduledReturnDate?: string;
+  isUpgradedCompensation?: boolean;
+  originalUnitTypeId?: number;
+  originalUnitTypeName?: string;
+  upgradeReason?: string;
   createdAt?: string;
 }
 
@@ -88,6 +92,10 @@ export interface CustomerRentalSummary {
   depositAmount?: number;
   rescheduleCount?: number;
   rescheduledAt?: string;
+  isUpgradedCompensation?: boolean;
+  originalUnitTypeId?: number;
+  originalUnitTypeName?: string;
+  upgradeReason?: string;
 }
 
 export interface CustomerRentalDetail extends CustomerRentalSummary {
@@ -220,6 +228,10 @@ export function mapBackendRentalToContract(item: BackendRentalSummary): RentedCo
     relocationEligible: Boolean(item.relocationEligible),
     handoverRejected: Boolean(item.handoverRejected),
     rejectionReason: item.rejectionReason,
+    isUpgradedCompensation: Boolean(item.isUpgradedCompensation),
+    originalUnitTypeId: item.originalUnitTypeId,
+    originalUnitTypeName: item.originalUnitTypeName,
+    upgradeReason: item.upgradeReason,
     createdAt: item.createdAt ? String(item.createdAt) : undefined,
   };
 }
