@@ -231,7 +231,7 @@ describe('HomePage Redesign (3D Sizing, Real Data & Section Order)', () => {
     expect(container.innerHTML).not.toContain(
       'Dữ liệu chi nhánh, giá thuê và số lượng ô trống được cập nhật trực tiếp từ hệ thống.'
     );
-    expect(screen.getByText(/Kinh doanh & Lưu hồ sơ/i)).toBeInTheDocument();
+    expect(screen.getByText(/Kho phân phối & Hàng nguyên kiện/i)).toBeInTheDocument();
     expect(screen.getByText(/Tại sao chọn SmartStorage/i)).toBeInTheDocument();
     expect(screen.getByText(/MÀN 01 · CHỌN KHO/i)).toHaveClass('font-pixel');
     expect(screen.getByText(/MÀN 02 · THANH TOÁN/i)).toHaveClass('font-pixel');
@@ -261,7 +261,7 @@ describe('HomePage Redesign (3D Sizing, Real Data & Section Order)', () => {
     expect(screen.getByText(/lỗi kỹ thuật hạ tầng cơ sở/i)).toBeInTheDocument();
     expect(screen.queryByText(/Bảo vệ cơ bản 10 triệu \(miễn phí\)/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/50\.000đ\/tháng/i)).not.toBeInTheDocument();
-    expect(screen.getByAltText(/Minh họa Chuyển nhà & Sửa nhà/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Minh họa Lưu kho & Trung chuyển/i)).toBeInTheDocument();
 
     const scrollSpy = vi.fn();
     Element.prototype.scrollIntoView = scrollSpy;
@@ -272,8 +272,8 @@ describe('HomePage Redesign (3D Sizing, Real Data & Section Order)', () => {
     expect(closingBtn).toHaveClass('btn-tactile');
     fireEvent.click(closingBtn);
     expect(scrollSpy).toHaveBeenCalled();
-    expect(screen.getByAltText(/Minh họa Kinh doanh & Lưu hồ sơ/i)).toBeInTheDocument();
-    expect(screen.getByAltText(/Minh họa Đồ giá trị, nhạy ẩm/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Minh họa Kho phân phối & Hàng nguyên kiện/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Minh họa Dược phẩm, Mỹ phẩm & Linh kiện/i)).toBeInTheDocument();
     expect(screen.queryByText(/Chị Minh Thư/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Anh Quốc Bảo/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Bạn Hoàng Nam/i)).not.toBeInTheDocument();

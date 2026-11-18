@@ -15,24 +15,24 @@ interface HomeSizeGuideSectionProps {
 
 const USE_CASES = [
   {
-    code: 'GIA ĐÌNH',
-    title: 'Chuyển nhà & Sửa nhà',
-    desc: 'Gửi gọn sofa, tủ lạnh và thùng đồ chờ ngày về nhà mới.',
-    tag: 'Gợi ý Cỡ M (6 m²)',
+    code: 'DOANH NGHIỆP VỪA',
+    title: 'Lưu kho & Trung chuyển',
+    desc: 'Lưu hàng đóng kiện, thiết bị văn phòng và tồn kho phân phối (12–16 pallet).',
+    tag: 'Gợi ý Cỡ M (30 m²)',
     imageSrc: pixelUsecaseHomeImg,
   },
   {
-    code: 'KINH DOANH',
-    title: 'Kinh doanh & Lưu hồ sơ',
-    desc: 'Lưu hàng đóng kiện & chứng từ cần ra vào lấy thường xuyên.',
-    tag: 'Gợi ý Cỡ L (10 m²)',
+    code: 'DOANH NGHIỆP LỚN',
+    title: 'Kho phân phối & Hàng nguyên kiện',
+    desc: 'Mặt sàn rộng trần cao 4.5m–5m, xe nâng tiếp cận trực tiếp bốc dỡ thường xuyên.',
+    tag: 'Gợi ý Cỡ L–XL (60–100 m²)',
     imageSrc: pixelUsecaseBusinessImg,
   },
   {
-    code: 'ĐỒ GIÁ TRỊ',
-    title: 'Đồ giá trị, nhạy ẩm',
-    desc: 'Mỹ phẩm, máy ảnh, đồ da, tranh ảnh cần giữ ổn định 20°C–25°C.',
-    tag: 'Kho Máy Lạnh · Cỡ S',
+    code: 'HÀNG NHẠY ẨM',
+    title: 'Dược phẩm, Mỹ phẩm & Linh kiện',
+    desc: 'Kiểm soát nhiệt ẩm ổn định 20°C–25°C chuẩn kho lạnh thương mại 24/7.',
+    tag: 'Kho Máy Lạnh · Cỡ S–M (15–30 m²)',
     imageSrc: pixelUsecaseValuablesImg,
   },
 ];
@@ -47,8 +47,8 @@ export const HomeSizeGuideSection: React.FC<HomeSizeGuideSectionProps> = ({
   unitTypes = [],
 }) => {
   const { minStandardPrice, minClimatePrice } = useMemo(() => {
-    let stdMin = 350000;
-    let acMin = 500000;
+    let stdMin = 1200000;
+    let acMin = 1700000;
     const stdPrices = unitTypes
       .filter((ut) => !isClimateUnitType(ut) && (ut.monthlyPrice ?? 0) > 0)
       .map((ut) => ut.monthlyPrice as number);
