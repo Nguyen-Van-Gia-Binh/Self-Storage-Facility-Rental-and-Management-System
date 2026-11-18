@@ -8,57 +8,55 @@ import { formatDateVN } from '../utils/unitPickerHelpers';
 export interface MyWaitlistsTableProps {
   waitlists: WaitlistResponse[];
   loading: boolean;
-  extendingId: number | null;
   cancellingId: number | null;
-  onExtend: (item: WaitlistResponse) => void;
   onCancel: (item: WaitlistResponse) => void;
   onViewContracts: () => void;
 }
 
 const STATUS_META: Record<
   WaitlistStatus,
-  { label: string; badgeClass: string; dotClass: string; isInactive: boolean }
+  { label: string; textClass: string; dotClass: string; isInactive: boolean }
 > = {
   WAITING: {
     label: 'Đang chờ trống',
-    badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200',
+    textClass: 'text-amber-700',
     dotClass: 'bg-amber-500',
     isInactive: false,
   },
   CONTACTING: {
     label: 'Đang tư vấn',
-    badgeClass: 'bg-blue-50 text-blue-700 border border-blue-200',
-    dotClass: 'bg-blue-500',
+    textClass: 'text-sky-700',
+    dotClass: 'bg-sky-500',
     isInactive: false,
   },
   PENDING_FOLLOW_UP: {
     label: 'Hẹn gọi lại',
-    badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200',
+    textClass: 'text-amber-700',
     dotClass: 'bg-amber-500',
     isInactive: false,
   },
   CONVERTED: {
     label: 'Đã chuyển thành đơn',
-    badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-    dotClass: 'bg-emerald-500',
+    textClass: 'text-emerald-700',
+    dotClass: 'bg-emerald-600',
     isInactive: false,
   },
   CANCELLED: {
     label: 'Đã hủy',
-    badgeClass: 'bg-gray-100 text-gray-600 border border-gray-200',
-    dotClass: 'bg-gray-400',
+    textClass: 'text-slate-500',
+    dotClass: 'bg-slate-400',
     isInactive: true,
   },
   EXPIRED: {
     label: 'Hết hạn chờ',
-    badgeClass: 'bg-gray-100 text-gray-600 border border-gray-200',
-    dotClass: 'bg-gray-400',
+    textClass: 'text-slate-500',
+    dotClass: 'bg-slate-400',
     isInactive: true,
   },
   REJECTED: {
     label: 'Đã từ chối',
-    badgeClass: 'bg-gray-100 text-gray-600 border border-gray-200',
-    dotClass: 'bg-gray-400',
+    textClass: 'text-slate-500',
+    dotClass: 'bg-slate-400',
     isInactive: true,
   },
 };
@@ -72,9 +70,7 @@ function formatDisplayDate(iso?: string): string {
 export const MyWaitlistsTable: React.FC<MyWaitlistsTableProps> = ({
   waitlists,
   loading,
-  extendingId,
   cancellingId,
-  onExtend,
   onCancel,
   onViewContracts,
 }) => {
@@ -116,27 +112,25 @@ export const MyWaitlistsTable: React.FC<MyWaitlistsTableProps> = ({
 
   return (
     <>
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm border-collapse">
-            <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 uppercase tracking-wider text-xs font-semibold">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider text-xs font-semibold">
               <tr>
                 <th className="py-3 px-6 w-[28%]">Loại kho &amp; Cơ sở</th>
                 <th className="py-3 px-4 w-[18%]">Ngày mong muốn</th>
                 <th className="py-3 px-4 w-[18%]">Liên hệ</th>
-                <th className="py-3 px-4 w-[16%]">Trạng thái</th>
-                <th className="py-3 px-6 w-[20%] text-right">Thao tác</th>
+                <th className="py-3 px-4 w-[18%]">Trạng thái</th>
+                <th className="py-3 px-6 w-[18%] text-right">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-100">
               {waitlists.map((item) => {
                 const meta = STATUS_META[item.status] ?? STATUS_META.WAITING;
-                const canExtend = item.status === 'WAITING' || item.status === 'PENDING_FOLLOW_UP';
                 const canCancel =
                   item.status === 'WAITING' ||
                   item.status === 'CONTACTING' ||
                   item.status === 'PENDING_FOLLOW_UP';
-                const isExtending = extendingId === item.id;
                 const isCancelling = cancellingId === item.id;
 
                 return (
@@ -192,36 +186,25 @@ export const MyWaitlistsTable: React.FC<MyWaitlistsTableProps> = ({
                       </div>
                     </td>
 
-                    {/* Cột 4: Trạng thái (Soft Badge + Dot) */}
+                    {/* Cột 4: Trạng thái phẳng (Chấm tròn + text màu ngữ nghĩa, không nền pill) */}
                     <td className="py-4 px-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold ${meta.badgeClass}`}
+                        className={`inline-flex items-center gap-1.5 text-xs font-semibold ${meta.textClass}`}
                       >
-                        <span className={`w-1.5 h-1.5 rounded-full ${meta.dotClass}`} />
-                        {meta.label}
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${meta.dotClass}`} aria-hidden="true" />
+                        <span>{meta.label}</span>
                       </span>
                     </td>
 
                     {/* Cột 5: Thao tác */}
                     <td className="py-4 px-6 text-right whitespace-nowrap">
                       <div className="inline-flex items-center justify-end gap-3">
-                        {canExtend && (
-                          <button
-                            type="button"
-                            disabled={isExtending || isCancelling}
-                            onClick={() => onExtend(item)}
-                            className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                          >
-                            {isExtending ? 'Đang gia hạn...' : 'Gia hạn +15 ngày'}
-                          </button>
-                        )}
-
                         {canCancel && (
                           <button
                             type="button"
-                            disabled={isExtending || isCancelling}
+                            disabled={isCancelling}
                             onClick={() => setConfirmCancelItem(item)}
-                            className="text-xs font-medium text-gray-500 hover:text-rose-600 transition-colors cursor-pointer disabled:opacity-50"
+                            className="text-xs font-medium text-slate-600 hover:text-rose-600 transition-colors cursor-pointer disabled:opacity-50"
                           >
                             {isCancelling ? 'Đang hủy...' : 'Hủy yêu cầu'}
                           </button>
@@ -231,13 +214,13 @@ export const MyWaitlistsTable: React.FC<MyWaitlistsTableProps> = ({
                           <button
                             type="button"
                             onClick={onViewContracts}
-                            className="px-3 py-1.5 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg transition-colors cursor-pointer"
+                            className="px-3 py-1.5 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-md transition-colors cursor-pointer"
                           >
                             Xem kho của tôi
                           </button>
                         )}
 
-                        {meta.isInactive && <span className="text-xs text-gray-400">—</span>}
+                        {meta.isInactive && <span className="text-xs text-slate-400">—</span>}
                       </div>
                     </td>
                   </tr>
