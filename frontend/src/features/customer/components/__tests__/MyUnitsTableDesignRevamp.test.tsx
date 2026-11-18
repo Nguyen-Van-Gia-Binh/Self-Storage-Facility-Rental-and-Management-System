@@ -89,33 +89,36 @@ describe('MyUnitsTable — Chuẩn hóa 4 Nhóm Trạng thái Ngữ nghĩa & Th�
       </MemoryRouter>
     );
 
-    // 1. Emerald: Đang hoạt động & Đã nghiệm thu
-    expect(screen.getByText('Đang hoạt động').className).toContain('bg-emerald-50');
-    expect(screen.getByText('Đã nghiệm thu').className).toContain('bg-emerald-50');
+    // 1. Emerald: Đang hoạt động & Đã nghiệm thu (Text màu + chấm tròn phẳng, không nền pill)
+    expect(screen.getByText('Đang hoạt động').parentElement?.className).toContain('text-emerald-700');
+    expect(screen.getByText('Đang hoạt động').parentElement?.className).not.toContain('bg-emerald-50');
+    expect(screen.getByText('Đã nghiệm thu').parentElement?.className).toContain('text-emerald-700');
 
     // 2. Amber: Sắp hết hạn (kể cả còn 5 ngày) & Chờ nhận kho
     const expiringBadges = screen.getAllByText('Sắp hết hạn');
-    expiringBadges.forEach((b) => expect(b.className).toContain('bg-amber-50'));
-    expect(screen.getByText('Chờ nhận kho').className).toContain('bg-amber-50');
+    expiringBadges.forEach((b) => {
+      expect(b.parentElement?.className).toContain('text-amber-700');
+      expect(b.parentElement?.className).not.toContain('bg-amber-50');
+    });
+    expect(screen.getByText('Chờ nhận kho').parentElement?.className).toContain('text-amber-700');
 
     // 3. Rose: Quá hạn (D+5) & Bị niêm phong
-    expect(screen.getByText('Quá hạn (D+5)').className).toContain('bg-rose-50');
-    expect(screen.getByText('Bị niêm phong').className).toContain('bg-rose-50');
+    expect(screen.getByText('Quá hạn (D+5)').parentElement?.className).toContain('text-rose-700');
+    expect(screen.getByText('Quá hạn (D+5)').parentElement?.className).not.toContain('bg-rose-50');
+    expect(screen.getByText('Bị niêm phong').parentElement?.className).toContain('text-rose-700');
 
-    // 4. Gray: Đã kết thúc & Đã hủy · Chờ hoàn
-    expect(screen.getByText('Đã kết thúc').className).toContain('bg-gray-100');
-    expect(screen.getByText('Đã hủy · Chờ hoàn').className).toContain('bg-gray-100');
+    // 4. Neutral: Đã kết thúc & Đã hủy · Chờ hoàn
+    expect(screen.getByText('Đã kết thúc').parentElement?.className).toContain('text-slate-500');
+    expect(screen.getByText('Đã hủy · Chờ hoàn').parentElement?.className).toContain('text-slate-500');
 
-    // Thứ bậc nút hành động:
-    // - Gia hạn dùng màu xanh Mint (bg-brand-600)
+    // Thứ bậc nút hành động (1 màu Primary thương hiệu duy nhất, không dùng nút đỏ cho hành động thanh toán):
     const renewBtn = screen.getByRole('button', { name: /Gia hạn/i });
     expect(renewBtn.className).toContain('bg-brand-600');
 
-    // - Đóng phạt dùng màu Đỏ (bg-rose-600)
-    const penaltyBtn = screen.getByRole('button', { name: /Đóng phí/i });
-    expect(penaltyBtn.className).toContain('bg-rose-600');
+    const payOverdueBtn = screen.getByRole('button', { name: /Thanh toán ngay/i });
+    expect(payOverdueBtn.className).toContain('bg-brand-600');
+    expect(payOverdueBtn.className).not.toContain('bg-rose-600');
 
-    // - Check-in online dùng màu Xanh Mint (bg-brand-600)
     const checkInBtn = screen.getByRole('button', { name: /Check-in online/i });
     expect(checkInBtn.className).toContain('bg-brand-600');
 
@@ -128,9 +131,8 @@ describe('MyUnitsTable — Chuẩn hóa 4 Nhóm Trạng thái Ngữ nghĩa & Th�
     expect(closedRow?.className).toContain('bg-gray-50');
   });
 
-  it('Modal Chính sách Gia hạn muộn (T-20): bỏ mã BR nội bộ, Header trắng, 2 Card lựa chọn phẳng và nút Đóng trung tính', () => {
+  it('Modal Chính sách Gia hạn muộn (T-20): bỏ Card trong Card, đảo đúng phân cấp nút và bỏ nút Đóng thừa ở footer', () => {
     const content = fs.readFileSync(tablePath, 'utf-8');
-    // Lỗi 2: không dùng Header nền xanh đen bg-slate-900 cho modal T-20
     expect(content).not.toContain('bg-slate-900 text-white');
 
     const today = new Date();
@@ -161,24 +163,25 @@ describe('MyUnitsTable — Chuẩn hóa 4 Nhóm Trạng thái Ngữ nghĩa & Th�
     expect(screen.getByText('Chính sách Gia hạn muộn (T-20)')).toBeInTheDocument();
     expect(screen.getByText(/Chính sách quan trọng/i)).toBeInTheDocument();
 
-    // Lỗi 1: tuyệt đối không lộ mã BR-REN-01 hoặc BR-REN-10 ra giao diện khách hàng
+    // Tuyệt đối không lộ mã BR nội bộ ra giao diện khách hàng
     expect(screen.queryByText(/BR-REN-01/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/BR-REN-10/i)).not.toBeInTheDocument();
 
-    // Lỗi 3 & 4: 2 Card lựa chọn riêng biệt với nút hành động chuẩn thứ bậc
-    expect(screen.getByText('Bạn muốn tiếp tục thuê?')).toBeInTheDocument();
+    // Lựa chọn 1: Gia hạn hợp đồng -> nút viền Gọi 1900 8888 (không dùng Primary đặc)
+    expect(screen.getByText('Gia hạn hợp đồng')).toBeInTheDocument();
     const callLink = screen.getByRole('link', { name: /Gọi 1900 8888/i });
     expect(callLink).toHaveAttribute('href', 'tel:19008888');
-    expect(callLink.className).toContain('bg-brand-600');
+    expect(callLink.className).toContain('bg-white');
+    expect(callLink.className).not.toContain('bg-brand-600');
 
-    expect(screen.getByText('Bạn muốn trả kho?')).toBeInTheDocument();
+    // Lựa chọn 2: Trả kho & Thanh lý -> nút Primary đặc Báo trả kho
+    expect(screen.getByText('Trả kho & Thanh lý')).toBeInTheDocument();
     const returnBtn = screen.getByRole('button', { name: /^Báo trả kho$/i });
-    expect(returnBtn.className).toContain('bg-white');
+    expect(returnBtn.className).toContain('bg-brand-600');
 
-    // Footer chỉ còn nút Đóng trung tính (không còn nút xanh "Đã hiểu")
-    const closeBtn = screen.getByText('Đóng').closest('button');
-    expect(closeBtn).not.toBeNull();
-    expect(closeBtn?.className).not.toContain('bg-brand-600');
+    // Bỏ nút Đóng dư thừa ở footer (chỉ dùng nút X ở header)
+    expect(screen.queryByRole('button', { name: /^Đóng$/i })).toBeInTheDocument(); // nút X có aria-label="Đóng"
+    expect(screen.queryByText('Đóng')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Đã hiểu/i })).not.toBeInTheDocument();
 
     // Click Báo trả kho gọi đúng callback onScheduleReturn
