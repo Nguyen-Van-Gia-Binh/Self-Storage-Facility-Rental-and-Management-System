@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
+  Clock,
   Info,
   MapPin,
   RefreshCw,
@@ -744,23 +745,43 @@ export const AllocationPage: React.FC = () => {
                         </span>
                       </td>
 
-                      {/* Cột 3: Ngày nhận kho (Text cảnh báo gọn thay cho Badge to) */}
+                      {/* Cột 3: Ngày nhận kho */}
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <span className="font-semibold text-gray-900 tabular-nums">
                             {formatDate(row.startDate)}
                           </span>
-                          {isTodayOrPast && (
-                            <span className="text-xs font-semibold text-rose-600 mt-0.5 flex items-center gap-1">
-                              <AlertCircle className="w-3 h-3 shrink-0" />
-                              Gấp (Hôm nay)
-                            </span>
-                          )}
-                          {isSoon && (
-                            <span className="text-xs font-semibold text-amber-600 mt-0.5 flex items-center gap-1">
-                              <AlertCircle className="w-3 h-3 shrink-0" />
-                              Gấp ({daysLeft} ngày)
-                            </span>
+                          {/* Chỉ cảnh báo GẤP khi đơn CHƯA GÁN Ô hoặc CẦN ĐỔI Ô DO SỰ CỐ */}
+                          {needsImmediateAllocation ? (
+                            <>
+                              {isTodayOrPast && (
+                                <span className="text-xs font-semibold text-rose-600 mt-0.5 flex items-center gap-1">
+                                  <AlertCircle className="w-3 h-3 shrink-0" />
+                                  Cần gán gấp (Hôm nay)
+                                </span>
+                              )}
+                              {isSoon && (
+                                <span className="text-xs font-semibold text-amber-600 mt-0.5 flex items-center gap-1">
+                                  <AlertCircle className="w-3 h-3 shrink-0" />
+                                  Cần gán gấp ({daysLeft} ngày)
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            /* Khi ĐÃ GÁN Ô XONG: Chỉ hiển thị tiến độ nhận kho nhẹ nhàng, không báo động đỏ */
+                            <>
+                              {isTodayOrPast && (
+                                <span className="text-xs font-medium text-blue-600 mt-0.5 flex items-center gap-1">
+                                  <Clock className="w-3 h-3 shrink-0" />
+                                  Nhận kho hôm nay
+                                </span>
+                              )}
+                              {isSoon && (
+                                <span className="text-xs font-medium text-gray-500 mt-0.5">
+                                  Nhận sau {daysLeft} ngày
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
                       </td>
