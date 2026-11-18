@@ -115,7 +115,7 @@ export interface MyUnitsTableProps {
   onCancelReturn: (contract: RentedContract) => void;
   onCancelPendingCheckIn: (contract: RentedContract) => void;
   onCancelReservation: (reservation: ReservationResponse) => void;
-  onCheckInSuccess?: () => void;
+  onCheckInSuccess?: (msg?: string) => void;
   renewalNoticeDays?: number;
   pageSize?: number;
   holdHours?: number;
@@ -1086,9 +1086,11 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
           onClose={() => setActivePassContract(null)}
           initialMode={activePassMode}
           contractId={activePassContract.id}
-          onSuccessCheckIn={() => {
+          onSuccessCheckIn={(pin) => {
             activePassContract.status = 'ACTIVE';
-            onCheckInSuccess?.();
+            if (pin) activePassContract.accessPin = pin;
+            setActivePassContract(null);
+            onCheckInSuccess?.('Check-in online thành công! Hợp đồng của quý khách đã có hiệu lực.');
           }}
           onConfirmSignature={() => {
             activePassContract.status = 'ACTIVE';
@@ -1097,13 +1099,15 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
             if (action === 'RELOCATE') {
               activePassContract.relocationEligible = true;
               activePassContract.unitNumber = 'Chờ đổi ô';
+              onCheckInSuccess?.('Đã gửi yêu cầu đổi ô kho. Cơ sở đang xử lý phân bổ ô kho mới cho quý khách.');
             } else {
               (activePassContract.status as any) = 'TERMINATED';
               activePassContract.handoverRejected = true;
               activePassContract.rejectionReason = reason;
               activePassContract.unitNumber = '-';
+              onCheckInSuccess?.('Đã ghi nhận từ chối nhận kho và yêu cầu hủy hợp đồng, hoàn tiền 100%.');
             }
-            onCheckInSuccess?.();
+            setActivePassContract(null);
           }}
           passData={{
             passCode: `PASS-${activePassContract.contractNumber}`,

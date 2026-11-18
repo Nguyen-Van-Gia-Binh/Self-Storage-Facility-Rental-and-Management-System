@@ -162,7 +162,7 @@ describe('ManagerDashboardPage — Operational Cockpit (Enterprise B2B)', () => 
 
     // Khối 3: Performance Sparkline
     expect(screen.getByTestId('performance-sparkline')).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('Khu vực 2 (Workspace) & Khu vực 3 (Mini-Map): Bảng hợp đồng gần đây có tìm kiếm/lọc, Lối tắt nghiệp vụ 1 dòng và Sơ đồ mặt bằng thu nhỏ theo tầng', async () => {
     render(

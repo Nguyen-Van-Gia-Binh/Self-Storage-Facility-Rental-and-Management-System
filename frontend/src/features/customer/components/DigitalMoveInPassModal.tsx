@@ -240,6 +240,7 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
         if (onSuccessCheckIn) {
           onSuccessCheckIn(pinResult);
         }
+        handleClose();
       } catch (err: any) {
         console.error('Lỗi khi thực hiện check-in online:', err);
         setSignatureError(err.message || 'Không thể kích hoạt check-in online. Vui lòng thử lại hoặc liên hệ hotline.');
@@ -251,6 +252,7 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
       if (onConfirmSignature) {
         onConfirmSignature(finalSignerName);
       }
+      handleClose();
     }
   };
 
@@ -281,6 +283,7 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
       if (onRejectHandover) {
         onRejectHandover(rejectionAction, finalReason);
       }
+      handleClose();
     } catch (err: any) {
       console.error('Lỗi khi từ chối nhận kho:', err);
       setRejectionError(

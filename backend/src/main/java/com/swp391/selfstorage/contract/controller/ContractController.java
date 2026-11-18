@@ -122,7 +122,7 @@ public class ContractController {
         }
         List<Long> facilities = scopeForContract(currentUser, id);
         ContractResponse response = contractService.getContractById(id, facilities);
-        if (currentUser.getRole() == UserRole.STORAGE_CUSTOMER && !response.getCustomerId().equals(currentUser.getId())) {
+        if (currentUser.getRole() == UserRole.STORAGE_CUSTOMER && !java.util.Objects.equals(response.getCustomerId(), currentUser.getId())) {
             throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không có quyền xem hợp đồng này");
         }
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy thông tin hợp đồng thành công"));
@@ -144,7 +144,7 @@ public class ContractController {
 
         if (currentUser.getRole() == UserRole.STORAGE_CUSTOMER) {
             ContractResponse contract = contractService.getContractById(id, List.of());
-            if (!contract.getCustomerId().equals(currentUser.getId())) {
+            if (!java.util.Objects.equals(contract.getCustomerId(), currentUser.getId())) {
                 throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không có quyền check-in hợp đồng này");
             }
             facilities = List.of();
@@ -170,7 +170,7 @@ public class ContractController {
 
         if (currentUser.getRole() == UserRole.STORAGE_CUSTOMER) {
             ContractResponse contract = contractService.getContractById(id, List.of());
-            if (!contract.getCustomerId().equals(currentUser.getId())) {
+            if (!java.util.Objects.equals(contract.getCustomerId(), currentUser.getId())) {
                 throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không có quyền thao tác trên hợp đồng này");
             }
             facilities = List.of();
@@ -245,7 +245,7 @@ public class ContractController {
         List<Long> facilities = resolveFacilityScope(currentUser, null);
         if (currentUser.getRole() == UserRole.STORAGE_CUSTOMER) {
             ContractResponse contract = contractService.getContractById(id, facilities);
-            if (!contract.getCustomerId().equals(currentUser.getId())) {
+            if (!java.util.Objects.equals(contract.getCustomerId(), currentUser.getId())) {
                 throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không có quyền báo trả kho cho hợp đồng này");
             }
         }

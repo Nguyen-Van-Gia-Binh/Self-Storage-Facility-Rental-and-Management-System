@@ -760,7 +760,10 @@ export const MyUnitsPage: React.FC = () => {
             setSelectedDetailContract(null);
             setCancellingReservation(r);
           }}
-          onCheckInSuccess={loadContracts}
+          onCheckInSuccess={(msg?: string) => {
+            if (msg) showToast(msg);
+            loadContracts();
+          }}
           renewalNoticeDays={noticeDays > 0 ? noticeDays : undefined}
           holdHours={holdHours}
         />

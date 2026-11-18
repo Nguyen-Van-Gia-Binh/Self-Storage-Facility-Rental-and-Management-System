@@ -544,6 +544,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
         passData={moveInPassData}
         onSuccessCheckIn={() => {
           contract.status = 'ACTIVE';
+          setShowPassModal(false);
           onCheckInSuccess?.();
           onRefresh?.();
         }}
@@ -557,6 +558,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
             contract.rejectionReason = reason;
             contract.unitNumber = '-';
           }
+          setShowPassModal(false);
           onRefresh?.();
         }}
       />

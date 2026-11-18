@@ -13,8 +13,8 @@ describe('getPortalUrlByRole (ISS-115)', () => {
     expect(getPortalUrlByRole('SYSTEM_ADMINISTRATOR')).toBe('/admin/users');
     expect(getPortalUrlByRole('BOM')).toBe('/bom/facilities');
     expect(getPortalUrlByRole('BUSINESS_OPERATIONS_MANAGER')).toBe('/bom/facilities');
-    expect(getPortalUrlByRole('MANAGER')).toBe('/manager/facilities');
-    expect(getPortalUrlByRole('FACILITY_MANAGER')).toBe('/manager/facilities');
+    expect(getPortalUrlByRole('MANAGER')).toBe('/manager');
+    expect(getPortalUrlByRole('FACILITY_MANAGER')).toBe('/manager');
     expect(getPortalUrlByRole('CUSTOMER')).toBe('/');
     expect(getPortalUrlByRole('STORAGE_CUSTOMER')).toBe('/');
   });

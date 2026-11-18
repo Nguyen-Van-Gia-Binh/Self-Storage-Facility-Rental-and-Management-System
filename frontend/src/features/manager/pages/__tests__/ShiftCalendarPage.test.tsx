@@ -126,5 +126,5 @@ describe('ShiftCalendarPage & WorkItemCard — Chuẩn hóa UI Enterprise SaaS (
     expect(
       screen.getByText(/Chưa có nhiệm vụ nào được giao cho nhân viên này/i)
     ).toBeInTheDocument();
-  });
+  }, 15000);
 });

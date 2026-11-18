@@ -42,6 +42,13 @@ class StorageUnitIntegrityAuditTest {
                 AND status = 'PENDING_CHECK_IN'
             )
         """);
+        jdbcTemplate.update("""
+            UPDATE storage_unit SET status = 'CLEANING'
+            WHERE status NOT IN ('OCCUPIED', 'CLEANING') AND id IN (
+                SELECT storage_unit_id FROM rental_contract
+                WHERE storage_unit_id IS NOT NULL AND status = 'PENDING_RETURN'
+            )
+        """);
     }
 
     @Test
