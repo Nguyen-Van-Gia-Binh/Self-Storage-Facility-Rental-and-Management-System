@@ -83,6 +83,8 @@ export function isClimateUnitType(ut: { code?: string; name?: string; descriptio
   const desc = (ut.description || '').toLowerCase();
   return (
     code.includes('CLIMATE') ||
+    code.includes('-AC-') ||
+    code.endsWith('-AC') ||
     name.includes('lạnh') ||
     name.includes('máy lạnh') ||
     name.includes('điều hòa') ||
@@ -93,47 +95,31 @@ export function isClimateUnitType(ut: { code?: string; name?: string; descriptio
 }
 
 /**
- * Xác định nhóm kích thước chuẩn (XS, S, M, L, XL) từ mã, tên loại kho và diện tích
+ * Xác định nhóm kích thước chuẩn (XS, S, M, L, XL) từ mã, tên loại kho và diện tích (V39: 5–100 m²).
+ * Ưu tiên khớp mã/tên trước, chỉ fallback theo diện tích khi không có ký hiệu cỡ kho.
  */
 export function resolveSizeCategory(codeOrName: string, areaM2?: number): UnitSizeCategory {
   const upper = (codeOrName || '').toUpperCase();
   const lower = (codeOrName || '').toLowerCase();
 
-  if (upper.includes('XS') || (areaM2 != null && areaM2 > 0 && areaM2 <= 1.5)) {
-    return 'XS';
-  }
-  if (upper.includes('XL') || (areaM2 != null && areaM2 > 12.0)) {
-    return 'XL';
-  }
-  if (
-    upper.includes('-L') ||
-    upper.includes(' L') ||
-    upper.endsWith(' L') ||
-    upper.includes('LARGE') ||
-    lower.includes('lớn') ||
-    (areaM2 != null && areaM2 > 7.0 && areaM2 <= 12.0)
-  ) {
+  if (upper.includes('XS')) return 'XS';
+  if (upper.includes('XL')) return 'XL';
+  if (upper.includes('-L') || upper.includes(' L') || upper.includes('LARGE') || lower.includes('lớn')) {
     return 'L';
   }
-  if (
-    upper.includes('-M') ||
-    upper.includes(' M') ||
-    upper.endsWith(' M') ||
-    upper.includes('MEDIUM') ||
-    lower.includes('vừa') ||
-    (areaM2 != null && areaM2 > 3.5 && areaM2 <= 7.0)
-  ) {
+  if (upper.includes('-M') || upper.includes(' M') || upper.includes('MEDIUM') || lower.includes('vừa')) {
     return 'M';
   }
-  if (
-    upper.includes('-S') ||
-    upper.includes(' S') ||
-    upper.endsWith(' S') ||
-    upper.includes('SMALL') ||
-    lower.includes('nhỏ') ||
-    (areaM2 != null && areaM2 <= 3.5)
-  ) {
+  if (upper.includes('-S') || upper.includes(' S') || upper.includes('SMALL') || lower.includes('nhỏ')) {
     return 'S';
+  }
+
+  if (areaM2 != null && areaM2 > 0) {
+    if (areaM2 <= 8) return 'XS';
+    if (areaM2 <= 22) return 'S';
+    if (areaM2 <= 45) return 'M';
+    if (areaM2 <= 80) return 'L';
+    return 'XL';
   }
   return 'M';
 }
