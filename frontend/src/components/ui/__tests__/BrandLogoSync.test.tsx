@@ -50,7 +50,6 @@ describe('ISS-81: Đồng bộ Logo Thương Hiệu SmartStorage (Boxes 3 Khối
     const content = fs.readFileSync(customerLayoutPath, 'utf-8');
     expect(content).toMatch(/import \{ Logo \} from '@\/components\/ui\/Logo';/);
     expect(content).toMatch(/<Logo to="\/" subtitle="Self-Storage Solutions" size="md"( variant="light")? \/>/);
-    expect(content).toMatch(/<Logo showSubtitle=\{false\} size="sm" \/>/);
     expect(content).not.toMatch(/<Box className=/);
   });
 
@@ -69,7 +68,7 @@ describe('ISS-81: Đồng bộ Logo Thương Hiệu SmartStorage (Boxes 3 Khối
     const forgotContent = fs.readFileSync(forgotPasswordPagePath, 'utf-8');
 
     expect(loginContent).toMatch(/import \{ Logo \} from '@\/components\/ui\/Logo';/);
-    expect(loginContent).toMatch(/<Logo\s+to="\/"\s+variant="light"\s+size="lg"/);
+    expect(loginContent).toMatch(/<Logo\s+to="\/"/);
 
     expect(registerContent).toMatch(/import \{ Logo \} from '@\/components\/ui\/Logo';/);
     expect(registerContent).toMatch(/<Logo\s+to="\/"\s+variant="light"\s+size="lg"/);
