@@ -20,6 +20,9 @@ public class RenewalQuoteResponse {
     private LocalDate newEndDate;
     private Long monthlyPriceSnapshot;
     private Long rentalFeeAmount;
+    private Long discountAmount;
+    private Double discountPercentage;
+    private String discountProgramName;
     private Long lateAdminFee;
     private Boolean isForceRenewal;
     private Long overdueFeeSettled;

@@ -131,7 +131,7 @@ public class ReservationServiceImpl implements ReservationService {
         long rawRent = Math.max(0, monthlyPrice) * quotedMonths;
         com.swp391.selfstorage.policy.service.DiscountProgramService.BestDiscountResult bestDiscount =
                 discountProgramService != null
-                        ? discountProgramService.findBestDiscount(request.getFacilityId(), request.getUnitTypeId(), quotedMonths, rawRent, LocalDate.now())
+                        ? discountProgramService.findBestDiscount(request.getFacilityId(), request.getUnitTypeId(), quotedMonths, rawRent, AppliedPriceLookup.todayVn())
                         : fallbackDiscount(rawRent, quotedMonths);
 
         CalculatePriceResponse response = quote(monthlyPrice, quotedMonths, multiplier, bestDiscount);
@@ -321,7 +321,7 @@ public class ReservationServiceImpl implements ReservationService {
         long rawRent = Math.max(0, monthlyPrice) * months;
         com.swp391.selfstorage.policy.service.DiscountProgramService.BestDiscountResult bestDiscount =
                 discountProgramService != null
-                        ? discountProgramService.findBestDiscount(request.getFacilityId(), request.getUnitTypeId(), months, rawRent, LocalDate.now())
+                        ? discountProgramService.findBestDiscount(request.getFacilityId(), request.getUnitTypeId(), months, rawRent, AppliedPriceLookup.todayVn())
                         : fallbackDiscount(rawRent, months);
         CalculatePriceResponse pricing = quote(monthlyPrice, months, multiplier, bestDiscount);
         applySurcharges(pricing, request.getFacilityId());

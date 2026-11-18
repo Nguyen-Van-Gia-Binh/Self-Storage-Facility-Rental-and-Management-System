@@ -31,6 +31,7 @@ import com.swp391.selfstorage.policy.entity.PolicyVersion;
 import com.swp391.selfstorage.policy.repository.ExtraFeeTypeRepository;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
+import com.swp391.selfstorage.policy.service.DiscountProgramService;
 import com.swp391.selfstorage.policy.service.PolicyNumbers;
 import com.swp391.selfstorage.policy.service.SurchargeAmountCalculator;
 import com.swp391.selfstorage.payment.constant.PaymentStatus;
@@ -144,6 +145,9 @@ public class ContractServiceImpl implements ContractService {
 
         @Autowired(required = false)
         private FacilityUnitTypePriceRepository facilityUnitTypePriceRepository;
+
+        @Autowired(required = false)
+        private DiscountProgramService discountProgramService;
 
         private static final List<SupportStatus> RELOCATION_TICKET_STATUSES = List.of(
                         SupportStatus.NEW, SupportStatus.ASSIGNED, SupportStatus.IN_PROGRESS, SupportStatus.RESOLVED, SupportStatus.CLOSED);
@@ -3258,8 +3262,15 @@ public class ContractServiceImpl implements ContractService {
                 }
                 BigDecimal multiplier = (policy != null && policy.getDepositMultiplier() != null) ? policy.getDepositMultiplier() : BigDecimal.ONE;
                 long rawRent = monthlyPrice * rentalMonths;
+                DiscountProgramService.BestDiscountResult bestDiscount = discountProgramService != null
+                                ? discountProgramService.findBestDiscount(
+                                                request.getFacilityId(), request.getUnitTypeId(),
+                                                rentalMonths, rawRent, AppliedPriceLookup.todayVn())
+                                : null;
+                long discountAmount = bestDiscount != null ? bestDiscount.discountAmount() : 0L;
+                long finalRent = Math.max(0L, rawRent - discountAmount);
                 long deposit = Math.round((monthlyPrice * multiplier.doubleValue()) / 1000.0) * 1000;
-                long totalPayable = rawRent + deposit;
+                long totalPayable = finalRent + deposit;
 
                 // 7. Tạo bản ghi Reservation CONFIRMED để bảo toàn toàn vẹn schema CSDL
                 String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
@@ -3275,9 +3286,10 @@ public class ContractServiceImpl implements ContractService {
                 reservation.setEndDateExclusive(endDateExclusive);
                 reservation.setMonthlyPriceSnapshot(monthlyPrice);
                 reservation.setPolicyVersionId(policyVersionId);
-                reservation.setDiscountAmount(0L);
+                reservation.setDiscountProgramId(bestDiscount != null ? bestDiscount.programId() : null);
+                reservation.setDiscountAmount(discountAmount);
                 reservation.setDepositAmount(deposit);
-                reservation.setTotalRentalFee(rawRent);
+                reservation.setTotalRentalFee(finalRent);
                 reservation.setTotalPayable(totalPayable);
                 reservation.setStatus(ReservationStatus.CONFIRMED);
                 reservation.setHoldExpiresAt(OffsetDateTime.now(ZoneOffset.UTC).plusDays(2));
@@ -3312,7 +3324,7 @@ public class ContractServiceImpl implements ContractService {
                                 .endDateExclusive(endDateExclusive)
                                 .rentalMonths(rentalMonths)
                                 .monthlyPrice(monthlyPrice)
-                                .totalRentalFee(rawRent)
+                                .totalRentalFee(finalRent)
                                 .depositAmount(deposit)
                                 .depositBalance(deposit)
                                 .status(ContractStatus.PENDING_CHECK_IN)

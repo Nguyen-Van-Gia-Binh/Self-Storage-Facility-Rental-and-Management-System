@@ -8,6 +8,7 @@ import {
   Mail,
 } from 'lucide-react';
 import { createDirectContract, type CreateDirectContractRequest } from '@/api/contract';
+import { calculateBookingPrice, type CalculatePriceResponse } from '@/api/reservation';
 import { DateField } from '@/components/ui/DateField';
 import { fetchUnitTypes, fetchStorageUnits } from '@/api/unit';
 import { getUsers, type AppUser } from '@/api/user';
@@ -68,6 +69,29 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
   const formRef = useRef<HTMLFormElement>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [priceQuote, setPriceQuote] = useState<CalculatePriceResponse | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || !selectedFacilityId || !selectedUnitTypeId || rentalMonths <= 0) {
+      setPriceQuote(null);
+      return;
+    }
+    let active = true;
+    calculateBookingPrice({
+      facilityId: selectedFacilityId,
+      unitTypeId: selectedUnitTypeId,
+      months: rentalMonths,
+    })
+      .then((res) => {
+        if (active) setPriceQuote(res);
+      })
+      .catch(() => {
+        if (active) setPriceQuote(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isOpen, selectedFacilityId, selectedUnitTypeId, rentalMonths]);
 
   const showError = (msg: string) => {
     setErrorMessage(msg);
@@ -277,12 +301,15 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
     onClose();
   };
 
-  // Calculated values
+  // Calculated values (đồng bộ trực tiếp với DiscountProgramService từ Backend)
   const currentUnitType = unitTypes.find((ut) => ut.id === selectedUnitTypeId);
-  const monthlyPrice = currentUnitType?.monthlyPrice || 0;
-  const depositAmount = monthlyPrice; // 1 month deposit
-  const totalRent = monthlyPrice * rentalMonths;
-  const totalPayment = totalRent + depositAmount;
+  const monthlyPrice = priceQuote?.monthlyPrice || currentUnitType?.monthlyPrice || 0;
+  const depositAmount = priceQuote?.depositAmount ?? monthlyPrice;
+  const totalRent = priceQuote?.rawRentTotal ?? monthlyPrice * rentalMonths;
+  const discountAmount = priceQuote?.discountAmount || 0;
+  const discountProgramName = priceQuote?.discountProgramName || null;
+  const finalRent = Math.max(0, totalRent - discountAmount);
+  const totalPayment = finalRent + depositAmount;
 
   // Calculate End Date
   const calculateEndDate = (start: string, months: number) => {
@@ -836,6 +863,14 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
                   {totalRent.toLocaleString('vi-VN')} đ
                 </span>
               </div>
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-emerald-700 font-medium">
+                  <span className="truncate pr-2">
+                    {discountProgramName ? `Ưu đãi (${discountProgramName}):` : 'Chiết khấu áp dụng:'}
+                  </span>
+                  <span className="tabular-nums shrink-0">-{discountAmount.toLocaleString('vi-VN')} đ</span>
+                </div>
+              )}
               <div className="flex justify-between items-baseline border-t border-gray-200 pt-2 mt-2">
                 <span className="font-bold text-gray-900 text-base">Tổng thanh toán ban đầu:</span>
                 <span className="font-bold text-brand-600 text-xl tabular-nums">

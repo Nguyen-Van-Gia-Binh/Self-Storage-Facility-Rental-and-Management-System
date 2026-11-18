@@ -29,6 +29,7 @@ import com.swp391.selfstorage.policy.service.PolicyService;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
+import com.swp391.selfstorage.policy.service.DiscountProgramService;
 import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
 import com.swp391.selfstorage.unit.entity.UnitType;
 import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
@@ -74,6 +75,9 @@ public class RenewalServiceImpl implements RenewalService {
     @Autowired(required = false)
     private UserRepository userRepository;
 
+    @Autowired(required = false)
+    private DiscountProgramService discountProgramService;
+
     /**
      * 1. Tính toán báo giá xem trước cho khách hàng trước khi thanh toán (Quote).
      */
@@ -93,14 +97,18 @@ public class RenewalServiceImpl implements RenewalService {
         // 4. Lấy đơn giá thuê tháng hiện tại (Snapshot giá theo BR-REN-05)
         long monthlyPrice = getLatestMonthlyPrice(contract);
 
-        // 5. Tính toán tài chính
-        long rentalFeeAmount = monthlyPrice * months;
+        // 5. Tính toán tài chính & áp dụng chương trình chiết khấu tốt nhất từ DB (BR-PRI-01, BR-REN-07)
+        long rawRent = monthlyPrice * months;
+        DiscountProgramService.BestDiscountResult discount = resolveRenewalDiscount(contract, months, rawRent);
+        long rentalFeeAmount = Math.max(0L, rawRent - discount.discountAmount());
         long overdueFee = (contract.getStatus() == ContractStatus.OVERDUE) ? contract.getOverdueFeeAccrued() : 0L;
         long totalAmount = rentalFeeAmount + overdueFee;
 
-        return renewalMapper.toQuoteResponse(
+        RenewalQuoteResponse quote = renewalMapper.toQuoteResponse(
                 contract, months, newEndDate, monthlyPrice,
                 rentalFeeAmount, overdueFee, totalAmount, activePolicy.getId());
+        applyDiscountMetadata(quote, discount);
+        return quote;
     }
 
     /**
@@ -270,13 +278,16 @@ public class RenewalServiceImpl implements RenewalService {
                 }
 
                 long monthlyPrice = getLatestMonthlyPrice(contract);
-                long rentalFeeAmount = monthlyPrice * months;
+                long rawRent = monthlyPrice * months;
+                DiscountProgramService.BestDiscountResult discount = resolveRenewalDiscount(contract, months, rawRent);
+                long rentalFeeAmount = Math.max(0L, rawRent - discount.discountAmount());
                 long lateAdminFee = LATE_ADMIN_FEE;
                 long totalAmount = rentalFeeAmount + lateAdminFee;
 
                 RenewalQuoteResponse quote = renewalMapper.toQuoteResponse(
                         contract, months, newEndDate, monthlyPrice,
                         rentalFeeAmount, lateAdminFee, true, 0L, totalAmount, activePolicy.getId());
+                applyDiscountMetadata(quote, discount);
 
                 quote.setHasCapacityConflict(true);
                 quote.setCanReassignAlternative(true);
@@ -300,13 +311,37 @@ public class RenewalServiceImpl implements RenewalService {
         }
 
         long monthlyPrice = getLatestMonthlyPrice(contract);
-        long rentalFeeAmount = monthlyPrice * months;
+        long rawRent = monthlyPrice * months;
+        DiscountProgramService.BestDiscountResult discount = resolveRenewalDiscount(contract, months, rawRent);
+        long rentalFeeAmount = Math.max(0L, rawRent - discount.discountAmount());
         long lateAdminFee = LATE_ADMIN_FEE; // renewal.late_admin_fee theo BR-REN-10
         long totalAmount = rentalFeeAmount + lateAdminFee;
 
-        return renewalMapper.toQuoteResponse(
+        RenewalQuoteResponse quote = renewalMapper.toQuoteResponse(
                 contract, months, newEndDate, monthlyPrice,
                 rentalFeeAmount, lateAdminFee, true, 0L, totalAmount, activePolicy.getId());
+        applyDiscountMetadata(quote, discount);
+        return quote;
+    }
+
+    private DiscountProgramService.BestDiscountResult resolveRenewalDiscount(
+            RentalContract contract, int months, long rawRent) {
+        if (discountProgramService == null || rawRent <= 0 || months <= 0) {
+            return new DiscountProgramService.BestDiscountResult(null, null, 0.0, 0L);
+        }
+        DiscountProgramService.BestDiscountResult result = discountProgramService.findBestDiscount(
+                contract.getFacilityId(), contract.getUnitTypeId(), months, rawRent, AppliedPriceLookup.todayVn());
+        return result != null ? result : new DiscountProgramService.BestDiscountResult(null, null, 0.0, 0L);
+    }
+
+    private void applyDiscountMetadata(
+            RenewalQuoteResponse quote, DiscountProgramService.BestDiscountResult discount) {
+        if (quote == null || discount == null) {
+            return;
+        }
+        quote.setDiscountAmount(discount.discountAmount());
+        quote.setDiscountPercentage(discount.discountRate());
+        quote.setDiscountProgramName(discount.programName());
     }
 
     /**

@@ -9,6 +9,7 @@ import com.swp391.selfstorage.policy.dto.DiscountProgramResponse;
 import com.swp391.selfstorage.policy.dto.UpdateDiscountProgramRequest;
 import com.swp391.selfstorage.policy.entity.DiscountProgram;
 import com.swp391.selfstorage.policy.repository.DiscountProgramRepository;
+import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
 import com.swp391.selfstorage.policy.service.DiscountProgramService;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
 import org.springframework.data.domain.Page;
@@ -42,7 +43,7 @@ public class DiscountProgramServiceImpl implements DiscountProgramService {
         if (rawRent <= 0 || months <= 0) {
             return new BestDiscountResult(null, null, 0.0, 0L);
         }
-        LocalDate queryDate = date != null ? date : LocalDate.now();
+        LocalDate queryDate = date != null ? date : AppliedPriceLookup.todayVn();
         List<DiscountProgram> applicable = discountProgramRepository.findApplicablePrograms(
                 queryDate, months, facilityId, unitTypeId);
 
