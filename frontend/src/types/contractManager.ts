@@ -16,6 +16,26 @@ export type ManagerContractStatus =
   | 'TERMINATED'
   | 'CANCELLED';
 
+export interface ContractPaymentTransaction {
+  id: number;
+  transactionType: string;
+  amount: number;
+  status: string;
+  paymentMethod: string;
+  orderCode?: number | null;
+  providerReference?: string | null;
+  renewalMonths?: number | null;
+  paidAt?: string | null;
+  createdAt?: string | null;
+}
+
+export interface ContractUnpaidExtraCharge {
+  id: number;
+  amount: number;
+  reason?: string | null;
+  createdAt?: string | null;
+}
+
 export interface ManagerContractItem {
   id: number;
   code: string;
@@ -42,6 +62,7 @@ export interface ManagerContractItem {
   returnDate?: string;
   rentalMonths: number;
   monthlyPrice: number;
+  totalRentalFee?: number;
   depositAmount: number;
   depositBalance: number;
   status: ManagerContractStatus;
@@ -74,6 +95,8 @@ export interface ManagerContractItem {
   openSupportRequestId?: number | null;
   createdAt?: string;
   returnRequestCreatedAt?: string;
+  paymentTransactions?: ContractPaymentTransaction[];
+  unpaidExtraCharges?: ContractUnpaidExtraCharge[];
 }
 
 export interface ContractKpiData {

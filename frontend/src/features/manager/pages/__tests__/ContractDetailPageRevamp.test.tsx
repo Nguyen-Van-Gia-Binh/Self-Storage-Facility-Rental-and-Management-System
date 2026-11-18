@@ -178,4 +178,100 @@ describe('ContractDetailPage — Enterprise SaaS Redesign', () => {
     expect(bannerRender.container.textContent).toContain('10/01/2027');
     expect(bannerRender.container.textContent).not.toContain('2027-01-10');
   });
+
+  it('hiển thị đầy đủ các giao dịch thanh toán thực tế từ DB, công nợ chưa tất toán và tổng hợp đối soát', async () => {
+    const richContract: ManagerContractItem = {
+      ...activeContract,
+      id: 9099,
+      code: 'CTR-LEDGER-01',
+      rentalMonths: 6,
+      monthlyPrice: 2_000_000,
+      totalRentalFee: 12_000_000,
+      depositAmount: 2_000_000,
+      accruedOverdueFee: 350_000,
+      paymentTransactions: [
+        {
+          id: 40,
+          transactionType: 'OVERDUE_PENALTY',
+          amount: 350_000,
+          status: 'PENDING',
+          paymentMethod: 'VNPAY',
+          orderCode: 900040,
+          createdAt: '2026-11-18T03:00:00Z',
+        },
+        {
+          id: 30,
+          transactionType: 'DEPOSIT_REFUND',
+          amount: 500_000,
+          status: 'SUCCESS',
+          paymentMethod: 'BANK_TRANSFER',
+          orderCode: 900030,
+          paidAt: '2026-11-01T07:15:00Z',
+          createdAt: '2026-11-01T07:10:00Z',
+        },
+        {
+          id: 20,
+          transactionType: 'CONTRACT_RENEWAL',
+          amount: 6_200_000,
+          status: 'SUCCESS',
+          paymentMethod: 'CASH',
+          orderCode: 900020,
+          providerReference: 'FORCE_RENEW_9099',
+          renewalMonths: 3,
+          paidAt: '2026-09-10T02:30:00Z',
+          createdAt: '2026-09-10T02:30:00Z',
+        },
+        {
+          id: 10,
+          transactionType: 'INITIAL_PAYMENT',
+          amount: 14_000_000,
+          status: 'SUCCESS',
+          paymentMethod: 'VNPAY',
+          orderCode: 900010,
+          paidAt: '2026-05-15T01:05:00Z',
+          createdAt: '2026-05-15T01:00:00Z',
+        },
+      ],
+      unpaidExtraCharges: [
+        {
+          id: 7,
+          amount: 150_000,
+          reason: 'Cấp lại thẻ từ ra vào',
+          createdAt: '2026-11-12T04:00:00Z',
+        },
+      ],
+    };
+
+    mockGetManagerContractById.mockResolvedValue(richContract);
+    renderPage(9099);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'CTR-LEDGER-01' })).toBeInTheDocument();
+    });
+
+    const card = screen.getByTestId('payment-history-card');
+    const text = card.textContent || '';
+
+    expect(text).toContain('(4 giao dịch)');
+    expect(text).toContain('Thanh toán phí phạt quá hạn');
+    expect(text).toContain('Chờ thanh toán');
+    expect(text).toContain('Hoàn trả tiền cọc');
+    expect(text).toContain('Chuyển khoản');
+    expect(text).toContain('Gia hạn hợp đồng (+3 tháng) — T-20');
+    expect(text).toContain('Tiền mặt');
+    expect(text).toContain('Thanh toán hợp đồng ban đầu');
+    expect(text).toContain('Gồm tiền thuê 6 tháng (12.000.000 đ) + cọc 2.000.000 đ');
+    expect(text).toContain('#900010');
+    expect(text).toContain('15/05/2026 08:05');
+
+    // Unpaid debt section
+    expect(text).toContain('Khoản công nợ chưa tất toán');
+    expect(text).toContain('Phí phạt quá hạn tích lũy');
+    expect(text).toContain('Cấp lại thẻ từ ra vào');
+
+    // Footer reconciliation totals: collected = 14M + 6.2M = 20.2M, refunded = 500k, debt = 350k + 150k = 500k
+    expect(text).toContain('Tổng đã thu: 20.200.000 đ');
+    expect(text).toContain('Đã hoàn trả: 500.000 đ');
+    expect(text).toContain('Còn nợ: 500.000 đ');
+  });
 });

@@ -412,6 +412,8 @@ export function mapBackendToManagerContractItem(c: any): ManagerContractItem {
     returnNoticeDate:
       c.returnNoticeDate ||
       (c.returnRequestCreatedAt ? String(c.returnRequestCreatedAt).split('T')[0] : undefined),
+    paymentTransactions: Array.isArray(c.paymentTransactions) ? c.paymentTransactions : undefined,
+    unpaidExtraCharges: Array.isArray(c.unpaidExtraCharges) ? c.unpaidExtraCharges : undefined,
   };
 }
 

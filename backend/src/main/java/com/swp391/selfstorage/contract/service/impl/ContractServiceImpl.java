@@ -223,8 +223,82 @@ public class ContractServiceImpl implements ContractService {
                                 ? contractRepository.findById(contractId)
                                 : contractRepository.findByIdAndFacilityIdIn(contractId, facilityIds);
 
-                return contractOpt.map(this::toResponse)
+                RentalContract contract = contractOpt
                                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+                ContractResponse response = toResponse(contract);
+                response.setPaymentTransactions(loadPaymentTransactions(contract));
+                response.setUnpaidExtraCharges(loadUnpaidExtraCharges(contract));
+                return response;
+        }
+
+        private List<ContractResponse.PaymentTransactionItem> loadPaymentTransactions(RentalContract contract) {
+                if (paymentTransactionRepository == null) {
+                        return List.of();
+                }
+                Map<Long, PaymentTransaction> merged = new LinkedHashMap<>();
+                if (contract.getId() != null) {
+                        List<PaymentTransaction> byContract = paymentTransactionRepository.findByContractId(contract.getId());
+                        if (byContract != null) {
+                                for (PaymentTransaction tx : byContract) {
+                                        if (tx != null && tx.getId() != null) {
+                                                merged.put(tx.getId(), tx);
+                                        }
+                                }
+                        }
+                }
+                if (contract.getReservationId() != null) {
+                        List<PaymentTransaction> byReservation = paymentTransactionRepository.findByReservationId(contract.getReservationId());
+                        if (byReservation != null) {
+                                for (PaymentTransaction tx : byReservation) {
+                                        if (tx != null && tx.getId() != null) {
+                                                merged.putIfAbsent(tx.getId(), tx);
+                                        }
+                                }
+                        }
+                }
+                return merged.values().stream()
+                                .sorted(java.util.Comparator
+                                                .comparing((PaymentTransaction tx) -> tx.getPaidAt() != null ? tx.getPaidAt() : tx.getCreatedAt(),
+                                                                java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder()))
+                                                .thenComparing(PaymentTransaction::getId,
+                                                                java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())))
+                                .map(tx -> ContractResponse.PaymentTransactionItem.builder()
+                                                .id(tx.getId())
+                                                .transactionType(tx.getTransactionType())
+                                                .amount(tx.getAmount())
+                                                .status(tx.getStatus())
+                                                .paymentMethod(tx.getPaymentMethod())
+                                                .orderCode(tx.getOrderCode())
+                                                .providerReference(tx.getProviderReference())
+                                                .renewalMonths(tx.getRenewalMonths())
+                                                .paidAt(tx.getPaidAt())
+                                                .createdAt(tx.getCreatedAt())
+                                                .build())
+                                .toList();
+        }
+
+        private List<ContractResponse.UnpaidExtraChargeItem> loadUnpaidExtraCharges(RentalContract contract) {
+                if (extraChargeRepository == null || contract.getId() == null) {
+                        return List.of();
+                }
+                List<ContractExtraCharge> unpaid = extraChargeRepository
+                                .findByContractIdAndStatus(contract.getId(), ExtraChargeStatus.UNPAID);
+                if (unpaid == null || unpaid.isEmpty()) {
+                        return List.of();
+                }
+                return unpaid.stream()
+                                .sorted(java.util.Comparator
+                                                .comparing(ContractExtraCharge::getCreatedAt,
+                                                                java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder()))
+                                                .thenComparing(ContractExtraCharge::getId,
+                                                                java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())))
+                                .map(c -> ContractResponse.UnpaidExtraChargeItem.builder()
+                                                .id(c.getId())
+                                                .amount(c.getAmount())
+                                                .reason(c.getReason())
+                                                .createdAt(c.getCreatedAt())
+                                                .build())
+                                .toList();
         }
 
         @Override
