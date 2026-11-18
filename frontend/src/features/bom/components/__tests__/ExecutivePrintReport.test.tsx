@@ -66,7 +66,7 @@ describe('ExecutivePrintReport — Ledger Typography PDF', () => {
     cleanup();
   });
 
-  it('uses monochrome Ledger formatting: em-dash for zero, no repeated "đ" in table cells, no tfoot duplication, and hides all-zero occupancy columns', () => {
+  it('uses formal Vietnamese contract typography (Times New Roman), official administrative header, monochrome Ledger tables, and 3-column signature block', () => {
     const { container } = render(
       <ExecutivePrintReport
         revenue={mockRevenue}
@@ -81,8 +81,20 @@ describe('ExecutivePrintReport — Ledger Typography PDF', () => {
       />
     );
 
-    // Letterhead is rendered inside a div (not <header>, which global print CSS hides!)
+    // Formal contract serif font (Times New Roman) matching ContractPrintDocument
+    const article = container.querySelector('article.ss-report') as HTMLElement | null;
+    expect(article).not.toBeNull();
+    expect(article?.style.fontFamily).toContain('Times New Roman');
+
+    // Formal Vietnamese administrative header (Left org + Right National Motto)
     expect(container.querySelector('.ss-letterhead')?.tagName).toBe('DIV');
+    expect(screen.getByText('CÔNG TY SMARTSTORAGE')).toBeInTheDocument();
+    expect(screen.getByText(/Bộ phận: BOM Operations/i)).toBeInTheDocument();
+    expect(screen.getByText('CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM')).toBeInTheDocument();
+    expect(screen.getByText('Độc lập - Tự do - Hạnh phúc')).toBeInTheDocument();
+
+    // Italic period subtitle centered under report title
+    expect(screen.getByText(/Từ ngày 20\/10\/2026 đến ngày 18\/11\/2026/i)).toBeInTheDocument();
 
     // Currency unit stated in metadata & section headers, NOT repeated as "đ" or "₫" inside data cells
     expect(screen.getAllByText(/VND/i).length).toBeGreaterThan(0);
@@ -103,10 +115,10 @@ describe('ExecutivePrintReport — Ledger Typography PDF', () => {
     expect(tables[1].textContent).not.toContain('Vệ sinh');
     expect(tables[1].textContent).not.toContain('Bảo trì');
 
-    // Structured 3-column approval sign-off block with date lines
-    expect(screen.getByText(/NGƯỜI LẬP BIỂU/i)).toBeInTheDocument();
-    expect(screen.getByText(/PHỤ TRÁCH VẬN HÀNH/i)).toBeInTheDocument();
-    expect(screen.getByText(/GIÁM ĐỐC ĐIỀU HÀNH/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/Ngày .* tháng .* năm/i).length).toBe(3);
+    // Structured 3-column approval sign-off block with date line
+    expect(screen.getByText('NGƯỜI LẬP BIỂU')).toBeInTheDocument();
+    expect(screen.getByText('PHỤ TRÁCH VẬN HÀNH')).toBeInTheDocument();
+    expect(screen.getByText('GIÁM ĐỐC ĐIỀU HÀNH')).toBeInTheDocument();
+    expect(screen.getByText(/ngày .* tháng .* năm 2026/i)).toBeInTheDocument();
   });
 });
