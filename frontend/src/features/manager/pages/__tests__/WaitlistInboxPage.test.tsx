@@ -2,7 +2,7 @@
 /// <reference types="node" />
 import '@testing-library/jest-dom/vitest';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, waitFor, cleanup, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { WaitlistInboxPage } from '../WaitlistInboxPage';
@@ -205,6 +205,39 @@ describe('WaitlistInboxPage (FM Waitlist — Enterprise Status Design System)', 
       const createBtn = screen.getByRole('button', { name: /^Tạo HĐ$/i });
       expect(createBtn).toBeDisabled();
       expect(screen.getByText('10/12/2026')).toBeInTheDocument();
+    });
+  });
+
+  it('hỗ trợ tùy chọn Toàn cơ sở mặc định gộp dữ liệu từ tất cả cơ sở được phân công và lọc theo từng cơ sở', async () => {
+    const twoFacilities: FacilityListItem[] = [
+      { id: 1, name: 'Cơ sở Quận 1', code: 'FAC-Q1', address: 'HCM' } as FacilityListItem,
+      { id: 2, name: 'Cơ sở Cầu Giấy', code: 'FAC-CG', address: 'HN' } as FacilityListItem,
+    ];
+    vi.mocked(facilityApi.fetchMyAssignedFacilities).mockResolvedValue(twoFacilities);
+    vi.mocked(waitlistApi.fetchFacilityWaitlists).mockImplementation(async (fid) =>
+      fid === 1
+        ? [{ ...mockWaitlists[0], id: 201, facilityId: 1, facilityName: 'Cơ sở Quận 1', customerName: 'Khách Q1' }]
+        : [{ ...mockWaitlists[0], id: 202, facilityId: 2, facilityName: 'Cơ sở Cầu Giấy', customerName: 'Khách CG' }]
+    );
+
+    render(
+      <MemoryRouter>
+        <WaitlistInboxPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: /Toàn cơ sở \(2\)/i })).toBeInTheDocument();
+      expect(screen.getByText('Khách Q1')).toBeInTheDocument();
+      expect(screen.getByText('Khách CG')).toBeInTheDocument();
+    });
+
+    const select = screen.getByRole('combobox');
+    fireEvent.change(select, { target: { value: '2' } });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Khách Q1')).not.toBeInTheDocument();
+      expect(screen.getByText('Khách CG')).toBeInTheDocument();
     });
   });
 });
