@@ -424,7 +424,7 @@ public class WaitlistServiceImpl implements WaitlistService {
 
     @Override
     public int expirePastWaitlists() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = AppliedPriceLookup.todayVn();
         int expired = waitlistRepository.expirePastWaitlists(
                 today,
                 WaitlistStatus.EXPIRED,

@@ -18,7 +18,7 @@ public class WaitlistLockExpiryJob {
 
     private final WaitlistService waitlistService;
 
-    @Scheduled(cron = "${app.cron.waitlist-lock-expiry:0 */5 * * * *}")
+    @Scheduled(cron = "${app.cron.waitlist-lock-expiry:0 */5 * * * ?}", zone = "Asia/Ho_Chi_Minh")
     public void cleanupExpiredLocks() {
         try {
             int unlocked = waitlistService.cleanupExpiredLocks();
