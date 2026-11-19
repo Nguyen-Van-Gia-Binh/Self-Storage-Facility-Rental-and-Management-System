@@ -15,11 +15,12 @@ class SettlementCheckMigrationTest {
 
     @Test
     void migrationAllowsEveryPaymentTransactionTypeIncludingSettlement() throws Exception {
-        String sql = Files.readString(Path.of("src/main/resources/db/migration/V27__settlement_paid_at_and_cancel_rates.sql"));
+        String sql = Files.readString(Path.of("src/main/resources/db/migration/V43__add_double_deposit_compensation_fields.sql"));
         for (PaymentTransactionType type : PaymentTransactionType.values()) {
             assertTrue(sql.contains("'" + type.name() + "'"), type.name());
         }
-        assertTrue(sql.contains("paid_at"));
+        String sqlV27 = Files.readString(Path.of("src/main/resources/db/migration/V27__settlement_paid_at_and_cancel_rates.sql"));
+        assertTrue(sqlV27.contains("paid_at"));
     }
 
     @Test
