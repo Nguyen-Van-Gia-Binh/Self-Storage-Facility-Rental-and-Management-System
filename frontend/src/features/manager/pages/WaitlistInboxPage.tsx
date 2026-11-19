@@ -25,6 +25,28 @@ function formatDisplayDate(iso?: string): string {
   return /^\d{4}-\d{2}-\d{2}/.test(trimmed) ? formatDateVN(trimmed.slice(0, 10)) : trimmed;
 }
 
+function checkIsArchived(item: WaitlistResponse): boolean {
+  if (item.status === 'REJECTED' || item.status === 'CANCELLED' || item.status === 'EXPIRED') {
+    return true;
+  }
+  // BR-WAT-06: Quá hạn ngày mong muốn targetStartDate mà không có ô trống -> Tự động xếp vào mục lưu trữ
+  if (
+    (item.status === 'WAITING' || item.status === 'CONTACTING' || item.status === 'PENDING_FOLLOW_UP') &&
+    item.targetStartDate
+  ) {
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (item.targetStartDate < todayStr && (item.availableCapacity ?? 0) <= 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function checkIsActive(item: WaitlistResponse): boolean {
+  if (checkIsArchived(item)) return false;
+  return item.status === 'WAITING' || item.status === 'CONTACTING' || item.status === 'PENDING_FOLLOW_UP';
+}
+
 export const WaitlistInboxPage: React.FC = () => {
   const navigate = useNavigate();
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
@@ -130,11 +152,11 @@ export const WaitlistInboxPage: React.FC = () => {
   const filteredWaitlists = safeWaitlists.filter((item) => {
     let matchesTab = true;
     if (statusTab === 'ACTIVE') {
-      matchesTab = item.status === 'WAITING' || item.status === 'CONTACTING' || item.status === 'PENDING_FOLLOW_UP';
+      matchesTab = checkIsActive(item);
     } else if (statusTab === 'CONVERTED') {
       matchesTab = item.status === 'CONVERTED';
     } else if (statusTab === 'ARCHIVED') {
-      matchesTab = item.status === 'REJECTED' || item.status === 'CANCELLED';
+      matchesTab = checkIsArchived(item);
     }
 
     const matchesSearch =
@@ -148,13 +170,9 @@ export const WaitlistInboxPage: React.FC = () => {
   });
 
   // KPI counts
-  const countActive = safeWaitlists.filter(
-    (w) => w.status === 'WAITING' || w.status === 'CONTACTING' || w.status === 'PENDING_FOLLOW_UP'
-  ).length;
+  const countActive = safeWaitlists.filter(checkIsActive).length;
   const countConverted = safeWaitlists.filter((w) => w.status === 'CONVERTED').length;
-  const countArchived = safeWaitlists.filter(
-    (w) => w.status === 'REJECTED' || w.status === 'CANCELLED'
-  ).length;
+  const countArchived = safeWaitlists.filter(checkIsArchived).length;
 
   return (
     <div className="space-y-6 p-6">
@@ -335,16 +353,13 @@ export const WaitlistInboxPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredWaitlists.map((item) => {
-                  const isActive =
-                    item.status === 'WAITING' ||
-                    item.status === 'CONTACTING' ||
-                    item.status === 'PENDING_FOLLOW_UP';
+                  const isArchived = checkIsArchived(item);
+                  const isActive = checkIsActive(item);
                   const isContacting = item.status === 'CONTACTING';
                   const isConverted = item.status === 'CONVERTED';
-                  const isArchived =
-                    item.status === 'REJECTED' ||
-                    item.status === 'CANCELLED' ||
-                    item.status === 'EXPIRED';
+                  const isExpired =
+                    item.status === 'EXPIRED' ||
+                    (isArchived && item.status !== 'REJECTED' && item.status !== 'CANCELLED');
 
                   return (
                     <tr
@@ -419,7 +434,7 @@ export const WaitlistInboxPage: React.FC = () => {
                         ) : isArchived ? (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
                             <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                            Đã lưu trữ
+                            {isExpired ? 'Hết hạn (Lưu trữ)' : 'Đã lưu trữ'}
                           </span>
                         ) : isContacting ? (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
@@ -491,7 +506,9 @@ export const WaitlistInboxPage: React.FC = () => {
                           </span>
                         ) : isArchived ? (
                           <span className="text-xs text-gray-500">
-                            {item.contactNotes || 'Đã lưu trữ'}
+                            {isExpired
+                              ? 'Tự động lưu trữ (Hết ngày mong muốn)'
+                              : item.contactNotes || 'Đã lưu trữ'}
                           </span>
                         ) : null}
                       </td>

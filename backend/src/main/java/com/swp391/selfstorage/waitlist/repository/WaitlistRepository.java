@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -64,5 +65,19 @@ public interface WaitlistRepository extends JpaRepository<Waitlist, Long> {
             @Param("reservationIds") Collection<Long> reservationIds,
             @Param("followUpStatus") WaitlistStatus followUpStatus,
             @Param("convertedStatus") WaitlistStatus convertedStatus
+    );
+
+    /**
+     * BR-WAT-06: Tự động chuyển các đơn Waitlist sang EXPIRED khi ngày mong muốn targetStartDate
+     * đã qua (hết ngày waitlist) mà chưa được chốt thuê/đặt cọc.
+     */
+    @Modifying
+    @Query("UPDATE Waitlist w SET w.status = :expiredStatus, " +
+            "w.contactNotes = CONCAT(COALESCE(w.contactNotes, ''), ' [Tự động lưu trữ: Hết hạn ngày mong muốn thuê kho (BR-WAT-06)]') " +
+            "WHERE w.targetStartDate < :today AND w.status IN (:activeStatuses)")
+    int expirePastWaitlists(
+            @Param("today") LocalDate today,
+            @Param("expiredStatus") WaitlistStatus expiredStatus,
+            @Param("activeStatuses") Collection<WaitlistStatus> activeStatuses
     );
 }

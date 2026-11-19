@@ -154,11 +154,11 @@ public class WaitlistServiceImpl implements WaitlistService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<WaitlistResponse> getMyWaitlists(UserPrincipal currentUser) {
         if (currentUser == null || currentUser.getId() == null) {
             throw new CustomException(ErrorCode.UNAUTHORIZED);
         }
+        expirePastWaitlists();
         List<Waitlist> list = waitlistRepository.findByCustomerIdOrderByCreatedAtDesc(currentUser.getId());
         return enrichResponses(list);
     }
@@ -188,12 +188,21 @@ public class WaitlistServiceImpl implements WaitlistService {
 
     @Override
     public List<WaitlistResponse> getFacilityWaitlists(Long facilityId, UserPrincipal currentUser) {
-        // Hybrid Step 1: Lazy Unlock trên câu đọc
+        // Hybrid Step 1: Lazy Unlock và Expiration trên câu đọc (BR-WAT-06)
         cleanupExpiredLocks();
+        expirePastWaitlists();
 
         List<Waitlist> list = waitlistRepository.findByFacilityIdAndStatusInOrderByCreatedAtAsc(
                 facilityId,
-                Arrays.asList(WaitlistStatus.WAITING, WaitlistStatus.CONTACTING, WaitlistStatus.PENDING_FOLLOW_UP, WaitlistStatus.CONVERTED)
+                Arrays.asList(
+                        WaitlistStatus.WAITING,
+                        WaitlistStatus.CONTACTING,
+                        WaitlistStatus.PENDING_FOLLOW_UP,
+                        WaitlistStatus.CONVERTED,
+                        WaitlistStatus.REJECTED,
+                        WaitlistStatus.CANCELLED,
+                        WaitlistStatus.EXPIRED
+                )
         );
 
         return enrichResponses(list);
@@ -411,6 +420,20 @@ public class WaitlistServiceImpl implements WaitlistService {
     public int cleanupExpiredLocks() {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         return waitlistRepository.unlockExpiredContacting(WaitlistStatus.WAITING, WaitlistStatus.CONTACTING, now);
+    }
+
+    @Override
+    public int expirePastWaitlists() {
+        LocalDate today = LocalDate.now();
+        int expired = waitlistRepository.expirePastWaitlists(
+                today,
+                WaitlistStatus.EXPIRED,
+                Arrays.asList(WaitlistStatus.WAITING, WaitlistStatus.CONTACTING, WaitlistStatus.PENDING_FOLLOW_UP)
+        );
+        if (expired > 0) {
+            log.info("[WaitlistService] Đã tự động chuyển {} đơn Waitlist quá hạn targetStartDate sang EXPIRED (Lưu trữ theo BR-WAT-06)", expired);
+        }
+        return expired;
     }
 
     // --- Helper Methods ---
