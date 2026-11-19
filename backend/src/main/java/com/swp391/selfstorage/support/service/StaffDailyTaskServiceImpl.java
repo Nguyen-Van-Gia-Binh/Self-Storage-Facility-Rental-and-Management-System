@@ -266,7 +266,12 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                             ? c.getCreatedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
                             : null;
 
-                    boolean isCompleted = c.getStatus() == ContractStatus.ACTIVE || c.getCheckinDate() != null;
+                    boolean isTerminalState = c.getStatus() == ContractStatus.CLOSED
+                            || c.getStatus() == ContractStatus.CANCELLED
+                            || c.getStatus() == ContractStatus.TERMINATED;
+                    boolean isCompleted = c.getStatus() == ContractStatus.ACTIVE
+                            || isTerminalState
+                            || c.getCheckinDate() != null;
                     boolean isTodayTask = false;
                     boolean isLatePending = false;
 
@@ -290,6 +295,10 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                             // Ngày tương lai: chỉ hiện đúng lịch hẹn của ngày đó, không carry-over việc trễ
                             isTodayTask = scheduledDate != null && scheduledDate.isEqual(date);
                         }
+                    } else if (isTerminalState) {
+                        // Hợp đồng đã đóng/hủy: chỉ hiển thị ở tab 'Đã xong' nếu đã từng check-in trong ngày này
+                        LocalDate checkinDate = c.getCheckinDate();
+                        isTodayTask = checkinDate != null && checkinDate.isEqual(date);
                     } else {
                         LocalDate checkinDate = c.getCheckinDate();
                         isTodayTask = (checkinDate != null && checkinDate.isEqual(date))
@@ -598,13 +607,19 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
     }
 
     private DailyCheckInTaskDto toCheckInDto(RentalContract c, RequestCache cache) {
-        boolean completed = c.getStatus() == ContractStatus.ACTIVE || c.getCheckinDate() != null;
+        boolean isTerminalState = c.getStatus() == ContractStatus.CLOSED
+                || c.getStatus() == ContractStatus.CANCELLED
+                || c.getStatus() == ContractStatus.TERMINATED;
+        boolean completed = c.getStatus() == ContractStatus.ACTIVE || isTerminalState || c.getCheckinDate() != null;
         String status;
-        if (completed) {
+        if (c.getStatus() == ContractStatus.ACTIVE || c.getCheckinDate() != null) {
             status = "COMPLETED";
         } else if (c.getStatus() == ContractStatus.TERMINATED) {
             status = "TERMINATED";
-            completed = true;
+        } else if (c.getStatus() == ContractStatus.CLOSED) {
+            status = "CLOSED";
+        } else if (c.getStatus() == ContractStatus.CANCELLED) {
+            status = "CANCELLED";
         } else {
             status = "PENDING";
         }

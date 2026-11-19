@@ -651,4 +651,45 @@ class StaffDailyTaskServiceTest {
         assertThat(dto.isOnlineCheckIn()).isTrue();
         assertThat(dto.getConditionNote()).contains("check-in online");
     }
+
+    @Test
+    @DisplayName("Hợp đồng đã đóng (CLOSED) không bao giờ hiển thị thành nhiệm vụ check-in chờ xử lý")
+    void shouldNotIncludeClosedContractInPendingCheckInTasks() {
+        LocalDate today = LocalDate.now();
+
+        when(userRepository.findById(8L)).thenReturn(Optional.of(sampleStaff));
+        when(userFacilityAssignmentRepository.findFacilityIdsByUserId(8L)).thenReturn(List.of(1L));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(sampleFacility));
+
+        RentalContract closedContract = RentalContract.builder()
+                .id(502L)
+                .code("CTR-20261117-CLOSED")
+                .customerId(15L)
+                .facilityId(1L)
+                .storageUnitId(null)
+                .status(ContractStatus.CLOSED)
+                .startDate(today)
+                .build();
+
+        StaffDailyAssignment checkInAssignment = StaffDailyAssignment.builder()
+                .id(2L)
+                .staffId(8L)
+                .facilityId(1L)
+                .workDate(today)
+                .taskType(AssignmentTaskType.HANDOVER)
+                .referenceType("CONTRACT")
+                .referenceId(502L)
+                .build();
+
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(
+                org.mockito.ArgumentMatchers.eq(8L), any(), org.mockito.ArgumentMatchers.eq(today)))
+                .thenReturn(List.of(checkInAssignment));
+        when(rentalContractRepository.findById(502L)).thenReturn(Optional.of(closedContract));
+
+        StaffDailyTasksResponse response = staffDailyTaskService.getDailyTasks(8L, today, true, staffPrincipal);
+
+        // Với pendingOnly = true, hợp đồng CLOSED không được lọt vào danh sách chờ xử lý
+        assertThat(response.getCheckInTasks()).isEmpty();
+        assertThat(response.getPendingCheckIns()).isEmpty();
+    }
 }
