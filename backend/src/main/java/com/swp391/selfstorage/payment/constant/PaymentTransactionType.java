@@ -10,6 +10,7 @@ public enum PaymentTransactionType {
     RENT_REFUND,
     DEPOSIT_REFUND,
     RESCHEDULE_FEE,
-    RENEWAL_PAYMENT
+    RENEWAL_PAYMENT,
+    COMPENSATION
 }
 
