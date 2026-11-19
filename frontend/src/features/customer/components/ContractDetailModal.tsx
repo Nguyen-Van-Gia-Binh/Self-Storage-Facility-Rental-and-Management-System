@@ -213,8 +213,13 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   const scheduledReturnDate = effectiveDetail?.scheduledReturnDate || contract.scheduledReturnDate || (effectiveStatus === 'PENDING_RETURN' ? 'Chờ kiểm tra hiện trường' : undefined);
   const hasSettlement = isClosed || Boolean(effectiveDetail?.settledAt) || Boolean(effectiveDetail?.settlementType);
   const hasUpgradeAddendum = isUpgraded;
-  const hasAnyAddenda = renewals.length > 0 || Boolean(relocationCode) || isReturnScheduled || hasSettlement || hasUpgradeAddendum;
-  const addendaCount = renewals.length + (relocationCode ? 1 : 0) + (isReturnScheduled ? 1 : 0) + (hasSettlement ? 1 : 0) + (hasUpgradeAddendum ? 1 : 0);
+  const isDoubleDepositCompensated = Boolean(
+    effectiveDetail?.isDoubleDepositCompensation ?? (contract as any)?.isDoubleDepositCompensation
+  );
+  const compensationPenalty = effectiveDetail?.compensationAmount ?? (contract as any)?.compensationAmount ?? effectiveDeposit;
+  const compensationTotalPayout = effectiveDetail?.totalPayoutAmount ?? (effectiveTotalRentalFee + 2 * effectiveDeposit);
+  const hasAnyAddenda = renewals.length > 0 || Boolean(relocationCode) || isReturnScheduled || hasSettlement || hasUpgradeAddendum || isDoubleDepositCompensated;
+  const addendaCount = renewals.length + (relocationCode ? 1 : 0) + (isReturnScheduled ? 1 : 0) + (hasSettlement ? 1 : 0) + (hasUpgradeAddendum ? 1 : 0) + (isDoubleDepositCompensated ? 1 : 0);
 
   // Dữ liệu quyết toán tất toán hợp đồng (PL-SETTLEMENT)
   const settlementType = effectiveDetail?.settlementType || (
@@ -283,7 +288,45 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
           <div className="space-y-6 text-xs relative z-10">
               {/* Chỉ hiển thị 1 banner trạng thái quan trọng nhất tại 1 thời điểm */}
               {(effectiveStatus === 'TERMINATED' || isCancelledAtHandover) ? (
-                isOverdueTerminated ? (
+                isDoubleDepositCompensated ? (
+                  /* Trường hợp 3A+: Cháy kho 100% -> Bồi thường Phạt cọc gấp đôi (Điều 328 BLDS · BR-BMP-02) */
+                  <div className="p-4 rounded-xl bg-rose-50 border border-rose-300 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-rose-900 font-bold text-xs uppercase">
+                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                        <span>Bồi thường Phạt cọc gấp đôi do Cháy kho (Điều 328 BLDS · BR-BMP-02)</span>
+                      </div>
+                      <span className="text-[11px] font-bold bg-rose-600 text-white px-2.5 py-0.5 rounded-md shrink-0">
+                        Phạt cọc 2x
+                      </span>
+                    </div>
+                    <p className="text-xs text-rose-900 leading-relaxed">
+                      Cơ sở cháy kho 100% không còn ô cùng loại hoặc lớn hơn để bàn giao: <strong>{effectiveDetail?.compensationReason || (contract as any)?.compensationReason || 'Sự cố mặt bằng không thể bố trí ô thay thế'}</strong>.
+                    </p>
+                    <div className="bg-white/80 rounded-lg p-3 border border-rose-200 text-xs space-y-1.5">
+                      <div className="flex justify-between text-gray-700">
+                        <span>• Hoàn 100% tiền thuê đã đóng:</span>
+                        <span className="font-semibold">{formatVND(effectiveTotalRentalFee)}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-700">
+                        <span>• Hoàn 100% tiền cọc gốc:</span>
+                        <span className="font-semibold">{formatVND(effectiveDeposit)}</span>
+                      </div>
+                      <div className="flex justify-between text-rose-700 font-medium">
+                        <span>• Tiền phạt cọc vi phạm nghĩa vụ (100% cọc):</span>
+                        <span className="font-bold">+ {formatVND(compensationPenalty)}</span>
+                      </div>
+                      <div className="flex justify-between pt-2 border-t border-rose-200 text-sm font-bold text-rose-800">
+                        <span>TỔNG TIỀN QUÝ KHÁCH NHẬN VỀ:</span>
+                        <span>{formatVND(compensationTotalPayout)}</span>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-rose-800 font-medium flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 shrink-0 text-rose-600" />
+                      <span>Kế toán sẽ chuyển khoản hoàn tất trong vòng <strong>3 ngày làm việc</strong>.</span>
+                    </p>
+                  </div>
+                ) : isOverdueTerminated ? (
                   /* Trường hợp 3A: Quá hạn D+7 cưỡng chế chấm dứt & Niêm phong Kho Tổng */
                   <div className="p-4 rounded-lg bg-purple-50 border border-purple-200 space-y-1.5">
                     <div className="flex items-center justify-between gap-2">

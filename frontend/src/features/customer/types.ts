@@ -151,6 +151,14 @@ export interface RentedContract {
   originalUnitTypeId?: number;
   originalUnitTypeName?: string;
   upgradeReason?: string;
+  isDoubleDepositCompensation?: boolean;
+  compensationAmount?: number;
+  compensationReason?: string;
+  compensationApprovedBy?: number;
+  compensationApprovedByName?: string;
+  compensationApprovedAt?: string;
+  totalPayoutAmount?: number;
+  disbursementDeadlineDays?: number;
   createdAt?: string;
 }
 
