@@ -6,7 +6,6 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
-  Clock,
   Info,
   MapPin,
   RefreshCw,
@@ -698,7 +697,8 @@ export const AllocationPage: React.FC = () => {
               ) : (
                 displayedQueue.map((row) => {
                   const daysLeft = daysUntil(row.startDate);
-                  const isTodayOrPast = daysLeft <= 0;
+                  const isPast = daysLeft < 0;
+                  const isToday = daysLeft === 0;
                   const isSoon = daysLeft > 0 && daysLeft < 3;
                   const needsImmediateAllocation =
                     row.kind === 'CONTRACT_RELOCATION' || !row.isAssigned;
@@ -751,34 +751,25 @@ export const AllocationPage: React.FC = () => {
                           <span className="font-semibold text-gray-900 tabular-nums">
                             {formatDate(row.startDate)}
                           </span>
-                          {/* Chỉ cảnh báo GẤP khi đơn CHƯA GÁN Ô hoặc CẦN ĐỔI Ô DO SỰ CỐ */}
-                          {needsImmediateAllocation ? (
+                          {/* Chỉ thông báo khi CHƯA gán ô kho (hoặc cần đổi do sự cố). Khi đã gán rồi thì ẩn hoàn toàn */}
+                          {needsImmediateAllocation && (
                             <>
-                              {isTodayOrPast && (
+                              {isPast && (
                                 <span className="text-xs font-semibold text-rose-600 mt-0.5 flex items-center gap-1">
                                   <AlertCircle className="w-3 h-3 shrink-0" />
-                                  Cần gán gấp (Hôm nay)
+                                  Muộn {Math.abs(daysLeft)} ngày
+                                </span>
+                              )}
+                              {isToday && (
+                                <span className="text-xs font-semibold text-rose-600 mt-0.5 flex items-center gap-1">
+                                  <AlertCircle className="w-3 h-3 shrink-0" />
+                                  Gấp (Hôm nay)
                                 </span>
                               )}
                               {isSoon && (
                                 <span className="text-xs font-semibold text-amber-600 mt-0.5 flex items-center gap-1">
                                   <AlertCircle className="w-3 h-3 shrink-0" />
-                                  Cần gán gấp ({daysLeft} ngày)
-                                </span>
-                              )}
-                            </>
-                          ) : (
-                            /* Khi ĐÃ GÁN Ô XONG: Chỉ hiển thị tiến độ nhận kho nhẹ nhàng, không báo động đỏ */
-                            <>
-                              {isTodayOrPast && (
-                                <span className="text-xs font-medium text-blue-600 mt-0.5 flex items-center gap-1">
-                                  <Clock className="w-3 h-3 shrink-0" />
-                                  Nhận kho hôm nay
-                                </span>
-                              )}
-                              {isSoon && (
-                                <span className="text-xs font-medium text-gray-500 mt-0.5">
-                                  Nhận sau {daysLeft} ngày
+                                  Gấp ({daysLeft} ngày)
                                 </span>
                               )}
                             </>
