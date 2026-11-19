@@ -97,6 +97,9 @@ export function mapBackendSummaryToCheckInContract(item: any): CheckInContract {
     originalUnitTypeId: item.originalUnitTypeId,
     originalUnitTypeName: item.originalUnitTypeName,
     upgradeReason: item.upgradeReason,
+    isOnlineCheckIn: Boolean(item.isOnlineCheckIn || item.onlineCheckIn || (item.checkinConditionNote && (item.checkinConditionNote.toLowerCase().includes('online') || item.checkinConditionNote.toLowerCase().includes('ký số')))),
+    checkinConditionNote: item.checkinConditionNote || item.conditionNote,
+    handoverAt: item.handoverAt,
     createdAt: item.createdAt || undefined,
   };
 }

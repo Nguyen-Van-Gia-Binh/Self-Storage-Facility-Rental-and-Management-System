@@ -5,6 +5,8 @@ import {
   KeyRound,
   ClipboardCheck,
   CheckCheck,
+  Globe,
+  CheckCircle2,
 } from 'lucide-react';
 import type { StaffDailyTaskReport, DailyIncidentTask, DailyCheckInTask, DailyReturnTask } from '@/types';
 import { StaffWeekCalendarStrip, formatLocalDate } from './StaffWeekCalendarStrip';
@@ -221,6 +223,26 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-200">
                   <AlertTriangle className="w-3 h-3 text-rose-500" />
                   Trễ {item.daysLate} ngày
+                </span>
+              )}
+              {isDone && item.isOnlineCheckIn && (
+                <span
+                  data-testid="badge-online-checkin"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200"
+                  title="Khách hàng tự nhận kho từ xa & ký số điện tử"
+                >
+                  <Globe className="w-3 h-3 text-indigo-600" />
+                  Check-in Online
+                </span>
+              )}
+              {isDone && !item.isOnlineCheckIn && (
+                <span
+                  data-testid="badge-counter-checkin"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  title="Bàn giao trực tiếp tại quầy"
+                >
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  Tại quầy
                 </span>
               )}
             </div>

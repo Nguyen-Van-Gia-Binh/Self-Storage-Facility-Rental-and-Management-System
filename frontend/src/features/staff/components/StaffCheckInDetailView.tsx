@@ -3,6 +3,8 @@ import {
   KeyRound,
   CheckCircle2,
   AlertCircle,
+  Globe,
+  FileText,
 } from 'lucide-react';
 import type { DailyCheckInTask, CheckInContract, CheckInSubmitRequest, HandoverRejectRequest } from '@/types';
 import { getContractById, getPendingContracts, checkInContract, rejectHandoverContract } from '@/api/contract';
@@ -185,6 +187,13 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
   };
 
   const isDone = Boolean(contract && (contract.status === 'ACTIVE' || task.completed || task.status === 'COMPLETED'));
+  const isOnlineCheckIn = Boolean(
+    contract?.isOnlineCheckIn ||
+    task?.isOnlineCheckIn ||
+    contract?.checkinConditionNote?.toLowerCase().includes('online') ||
+    task?.conditionNote?.toLowerCase().includes('online')
+  );
+  const conditionNote = contract?.checkinConditionNote || task?.conditionNote;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -235,6 +244,39 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
                     <strong className="font-mono text-teal-700">{contract.storageUnitCode}</strong>. Khách có thể dùng mã PIN hoặc ứng dụng SmartStorage để mở khóa 24/7.
                   </p>
                 </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                  {isOnlineCheckIn ? (
+                    <span
+                      data-testid="detail-online-checkin-badge"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200"
+                    >
+                      <Globe className="w-3.5 h-3.5 text-indigo-600" />
+                      Hình thức: Khách hàng tự Check-in Online & Ký số điện tử
+                    </span>
+                  ) : (
+                    <span
+                      data-testid="detail-counter-checkin-badge"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      Hình thức: Bàn giao trực tiếp tại quầy cơ sở
+                    </span>
+                  )}
+                </div>
+
+                {conditionNote && (
+                  <div
+                    data-testid="detail-handover-condition-note"
+                    className="bg-slate-50 border border-slate-200/90 rounded-xl p-3 text-left max-w-md mx-auto text-xs text-slate-600 space-y-1"
+                  >
+                    <p className="font-semibold text-slate-700 flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-slate-500" />
+                      Ghi chú xác nhận bàn giao:
+                    </p>
+                    <p className="text-slate-600 italic pl-5">{conditionNote}</p>
+                  </div>
+                )}
 
                 <div className="pt-2">
                   <button

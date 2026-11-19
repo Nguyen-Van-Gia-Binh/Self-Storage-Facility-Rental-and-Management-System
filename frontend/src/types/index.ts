@@ -141,6 +141,9 @@ export interface CheckInContract {
   originalUnitTypeId?: number;
   originalUnitTypeName?: string;
   upgradeReason?: string;
+  isOnlineCheckIn?: boolean;
+  checkinConditionNote?: string;
+  handoverAt?: string;
   createdAt?: string;
 }
 
@@ -269,6 +272,9 @@ export interface DailyCheckInTask {
   scheduledEndTime?: string;
   isLate?: boolean;
   daysLate?: number;
+  isOnlineCheckIn?: boolean;
+  conditionNote?: string;
+  handoverAt?: string;
 }
 
 export interface DailyReturnTask {
@@ -289,6 +295,9 @@ export interface DailyReturnTask {
   scheduledEndTime?: string;
   isLate?: boolean;
   daysLate?: number;
+  isOnlineCheckIn?: boolean;
+  conditionNote?: string;
+  handoverAt?: string;
 }
 
 export interface DailyIncidentTask {

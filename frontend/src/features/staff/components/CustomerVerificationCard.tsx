@@ -7,6 +7,7 @@ import {
   MapPin,
   Check,
   Sparkles,
+  Globe,
 } from 'lucide-react';
 import type { CheckInContract } from '../../../types';
 import { formatDateVN } from '@/features/customer/utils/unitPickerHelpers';
@@ -70,6 +71,17 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
           {contract.code}
         </span>
       </div>
+
+      {/* Huy hiệu phương thức check-in nếu đã kích hoạt */}
+      {contract.status === 'ACTIVE' && (contract.isOnlineCheckIn || contract.checkinConditionNote?.toLowerCase().includes('online')) && (
+        <div
+          data-testid="verification-online-checkin-banner"
+          className="flex items-center gap-2 p-2.5 bg-indigo-50 border border-indigo-100 rounded-lg text-xs font-semibold text-indigo-700"
+        >
+          <Globe className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+          <span>Khách tự check-in Online & ký số điện tử</span>
+        </div>
+      )}
 
       {/* Cảnh báo nhẹ khi đang chờ FM phân bổ ô mới */}
       {isRelocating && (

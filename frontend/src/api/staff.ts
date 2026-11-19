@@ -137,6 +137,9 @@ export async function getStaffDailyTasks(
       completed: Boolean(ci.completed || ci.status === 'COMPLETED' || ci.status === 'ACTIVE'),
       isLate: Boolean(ci.late || ci.isLate),
       daysLate: ci.daysLate ?? 0,
+      isOnlineCheckIn: Boolean(ci.isOnlineCheckIn || ci.onlineCheckIn || (ci.conditionNote && (ci.conditionNote.toLowerCase().includes('online') || ci.conditionNote.toLowerCase().includes('ký số')))),
+      conditionNote: ci.conditionNote,
+      handoverAt: ci.handoverAt,
     })),
     pendingReturns: rawReturns.map((rt: any) => ({
       ...rt,
