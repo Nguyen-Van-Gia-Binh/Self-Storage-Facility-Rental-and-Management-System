@@ -678,7 +678,11 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                     || (hr.getStaffId() != null && Objects.equals(hr.getStaffId(), c.getCustomerId()));
         }
 
-        if ((c.getStatus() == ContractStatus.CLOSED || c.getStatus() == ContractStatus.CANCELLED) && conditionNote == null) {
+        if (c.isDoubleDepositCompensation()) {
+            long totalPayout = c.getTotalRentalFee() + 2 * c.getDepositAmount();
+            java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+            conditionNote = "Cháy kho 100% · Bồi thường phạt cọc gấp đôi (Đ.328 BLDS): " + nf.format(totalPayout) + " đ";
+        } else if ((c.getStatus() == ContractStatus.CLOSED || c.getStatus() == ContractStatus.CANCELLED) && conditionNote == null) {
             long refundAmount = 0;
             if (paymentTransactionRepository != null) {
                 try {
@@ -721,6 +725,8 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                 .isOnlineCheckIn(isOnline)
                 .conditionNote(conditionNote)
                 .handoverAt(handoverAt)
+                .isDoubleDepositCompensation(c.isDoubleDepositCompensation())
+                .compensationAmount(c.getCompensationAmount())
                 .build();
         dto.setScheduledStartTime(c.getScheduledStartTime());
         dto.setScheduledEndTime(c.getScheduledEndTime());

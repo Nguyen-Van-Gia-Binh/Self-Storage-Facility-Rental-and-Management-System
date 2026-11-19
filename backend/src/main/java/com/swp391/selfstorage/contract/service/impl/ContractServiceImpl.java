@@ -1164,6 +1164,155 @@ public class ContractServiceImpl implements ContractService {
                                 .build();
         }
 
+        @Override
+        @Transactional
+        public EmergencyCompensationResponse executeDoubleDepositCompensation(Long contractId,
+                        EmergencyCompensationRequest request, Long managerId, List<Long> facilityIds) {
+                Optional<RentalContract> contractOpt = (facilityIds == null || facilityIds.isEmpty())
+                                ? contractRepository.findById(contractId)
+                                : contractRepository.findByIdAndFacilityIdIn(contractId, facilityIds);
+
+                RentalContract contract = contractOpt
+                                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND, "Không tìm thấy hợp đồng."));
+
+                // 1. Kiểm tra trạng thái hợp đồng: phải là PENDING_CHECK_IN (hoặc đang chờ nhận kho / bàn giao)
+                if (contract.getStatus() != ContractStatus.PENDING_CHECK_IN) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Chỉ có thể kích hoạt bồi thường phạt cọc cho hợp đồng đang chờ nhận kho (PENDING_CHECK_IN).");
+                }
+
+                Long facilityId = contract.getFacilityId();
+                Long currentUnitTypeId = contract.getUnitTypeId();
+
+                // 2. Guardrail Cháy kho 100% (Zero Capacity Check):
+                // 2a. Kiểm tra ô cùng loại còn trống hay không
+                long availableSameType = (storageUnitRepository != null && currentUnitTypeId != null)
+                                ? storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(facilityId, currentUnitTypeId, StorageUnitStatus.AVAILABLE)
+                                : 0;
+
+                if (availableSameType > 0) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Cơ sở vẫn còn " + availableSameType + " ô kho cùng loại khả dụng. Không được kích hoạt bồi thường khi chưa hết ô!");
+                }
+
+                // 2b. Kiểm tra xem cơ sở có còn ô lớn hơn khả dụng để nâng hạng miễn phí (BR-BMP-01) hay không
+                UnitType currentType = (unitTypeRepository != null && currentUnitTypeId != null)
+                                ? unitTypeRepository.findById(currentUnitTypeId).orElse(null)
+                                : null;
+
+                BigDecimal currentArea = (currentType != null && currentType.getWidthM() != null && currentType.getLengthM() != null)
+                                ? currentType.getWidthM().multiply(currentType.getLengthM())
+                                : BigDecimal.ZERO;
+                String currentEnv = (currentType != null && currentType.getEnvironment() != null)
+                                ? currentType.getEnvironment().trim().toUpperCase()
+                                : "STANDARD";
+
+                if (unitTypeRepository != null && storageUnitRepository != null) {
+                        List<UnitType> allTypes = unitTypeRepository.findAll();
+                        for (UnitType ut : allTypes) {
+                                if (ut.getId().equals(currentUnitTypeId)) continue;
+                                String utEnv = ut.getEnvironment() != null ? ut.getEnvironment().trim().toUpperCase() : "STANDARD";
+                                if (!currentEnv.equalsIgnoreCase(utEnv)) continue;
+
+                                BigDecimal area = (ut.getWidthM() != null && ut.getLengthM() != null)
+                                                ? ut.getWidthM().multiply(ut.getLengthM())
+                                                : BigDecimal.ZERO;
+                                if (area.compareTo(currentArea) > 0) {
+                                        long availableLarger = storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(
+                                                        facilityId, ut.getId(), StorageUnitStatus.AVAILABLE);
+                                        if (availableLarger > 0) {
+                                                throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                                                "Cơ sở vẫn còn " + availableLarger + " ô kho lớn hơn (" + ut.getName() + " - " + area + "m²) khả dụng để nâng hạng đền bù miễn phí theo BR-BMP-01. Không được kích hoạt phạt cọc!");
+                                        }
+                                }
+                        }
+                }
+
+                // 3. Tính toán bồi thường theo Điều 328 BLDS (Phạt cọc bội tín):
+                // - Hoàn 100% tiền thuê đã đóng
+                // - Hoàn 100% tiền cọc gốc
+                // - Cơ sở đền thêm 100% tiền cọc (Khoản phạt cọc)
+                // => Tổng khách nhận = Tiền thuê + 2 x Tiền cọc
+                long rentRefundAmount = contract.getTotalRentalFee();
+                long depositRefundAmount = contract.getDepositAmount();
+                long penaltyAmount = contract.getDepositAmount();
+                long totalPayoutAmount = rentRefundAmount + depositRefundAmount + penaltyAmount;
+
+                OffsetDateTime now = OffsetDateTime.now();
+
+                // 4. Cập nhật hợp đồng
+                contract.setStatus(ContractStatus.TERMINATED);
+                contract.setStorageUnitId(null);
+                contract.setEndDateExclusive(LocalDate.now());
+                contract.setDoubleDepositCompensation(true);
+                contract.setCompensationAmount(penaltyAmount);
+                contract.setCompensationReason(request.getReason() != null && !request.getReason().isBlank()
+                                ? request.getReason()
+                                : "Cơ sở cháy kho 100% không còn ô cùng loại hoặc lớn hơn để bàn giao (BR-BMP-02 / Điều 328 BLDS)");
+                contract.setCompensationApprovedBy(managerId);
+                contract.setCompensationApprovedAt(now);
+                contract.setClosedAt(now);
+                contractRepository.save(contract);
+
+                // 5. Đóng phiếu hỗ trợ và lưu biên bản giao nhận/trả kho
+                closeOpenSupportTickets(contractId);
+
+                if (returnRequestRepository != null) {
+                        returnRequestRepository.save(ReturnRequest.builder()
+                                        .contractId(contractId)
+                                        .requestedReturnDate(LocalDate.now())
+                                        .status(ReturnRequestStatus.COMPLETED)
+                                        .isIntact(false)
+                                        .conditionNote("Cháy kho 100% - Bồi thường phạt cọc gấp đôi Điều 328 BLDS: " + contract.getCompensationReason())
+                                        .inspectedAt(now)
+                                        .inspectedBy(managerId)
+                                        .damageCost(0L)
+                                        .depositRefundAmount(depositRefundAmount + penaltyAmount)
+                                        .build());
+                }
+
+                // 6. Ghi các giao dịch hoàn tiền & đền bù vào payment_transaction
+                long orderBase = System.currentTimeMillis();
+                savePendingRefund(contract.getId(), contract.getReservationId(), "RENT_REFUND", rentRefundAmount,
+                                "HOÀN TIỀN THUÊ DO CHÁY KHO 100% (ĐIỀU 328 BLDS)", orderBase);
+                savePendingRefund(contract.getId(), contract.getReservationId(), "DEPOSIT_REFUND", depositRefundAmount,
+                                "HOÀN CỌC GỐC DO CHÁY KHO 100% (ĐIỀU 328 BLDS)", orderBase + 1);
+                savePendingRefund(contract.getId(), contract.getReservationId(), "COMPENSATION", penaltyAmount,
+                                "TIỀN PHẠT CỌC BỒI TÍN DO CHÁY KHO 100% (ĐIỀU 328 BLDS)", orderBase + 2);
+
+                String managerName = "Quản lý cơ sở";
+                if (managerId != null && userService != null) {
+                        try {
+                                var mgr = userService.getUserById(managerId);
+                                if (mgr != null && mgr.getFullName() != null) {
+                                        managerName = mgr.getFullName();
+                                }
+                        } catch (Exception ignored) {}
+                }
+
+                log.info("Kích hoạt bồi thường phạt cọc gấp đôi BR-BMP-02 thành công cho HĐ [{}]: Tiền thuê={}, Cọc={}, Phạt={}, Tổng={}",
+                                contract.getCode(), rentRefundAmount, depositRefundAmount, penaltyAmount, totalPayoutAmount);
+
+                return EmergencyCompensationResponse.builder()
+                                .contractId(contract.getId())
+                                .contractCode(contract.getCode())
+                                .customerName(contract.getCustomerName())
+                                .customerPhone(contract.getCustomerPhone())
+                                .rentRefundAmount(rentRefundAmount)
+                                .depositRefundAmount(depositRefundAmount)
+                                .penaltyAmount(penaltyAmount)
+                                .totalPayoutAmount(totalPayoutAmount)
+                                .disbursementDeadlineDays(3)
+                                .reason(contract.getCompensationReason())
+                                .status("TERMINATED_COMPENSATED")
+                                .approvedAt(now)
+                                .approvedByName(managerName)
+                                .message("Kích hoạt bồi thường phạt cọc gấp đôi (Điều 328 BLDS) thành công. Tổng số tiền hoàn trả: "
+                                                + String.format("%,d đ", totalPayoutAmount)
+                                                + " (Giải ngân trong 3 ngày làm việc).")
+                                .build();
+        }
+
         private Map<Long, SupportRequest> findRelocationTickets(List<RentalContract> contracts) {
                 Map<Long, SupportRequest> result = new HashMap<>();
                 if (supportRequestRepository == null || contracts == null || contracts.isEmpty()) {
@@ -3189,6 +3338,28 @@ public class ContractServiceImpl implements ContractService {
                         });
                 }
                 r.setUpgradeReason(c.getUpgradeReason());
+
+                // BR-BMP-02: Bồi thường phạt cọc gấp đôi (Điều 328 BLDS)
+                r.setIsDoubleDepositCompensation(c.isDoubleDepositCompensation());
+                r.setCompensationAmount(c.getCompensationAmount());
+                r.setCompensationReason(c.getCompensationReason());
+                r.setCompensationApprovedBy(c.getCompensationApprovedBy());
+                r.setCompensationApprovedAt(c.getCompensationApprovedAt());
+                if (c.isDoubleDepositCompensation()) {
+                        long rentPart = c.getTotalRentalFee();
+                        long depositPart = c.getDepositAmount();
+                        long penaltyPart = c.getCompensationAmount() > 0 ? c.getCompensationAmount() : depositPart;
+                        r.setTotalPayoutAmount(rentPart + depositPart + penaltyPart);
+                        r.setDisbursementDeadlineDays(3);
+                        if (c.getCompensationApprovedBy() != null && userService != null) {
+                                try {
+                                        var approver = userService.getUserById(c.getCompensationApprovedBy());
+                                        if (approver != null) {
+                                                r.setCompensationApprovedByName(approver.getFullName());
+                                        }
+                                } catch (Exception ignored) {}
+                        }
+                }
 
                 return r;
         }

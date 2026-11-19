@@ -61,6 +61,14 @@ public class ContractResponse {
     private Long originalUnitTypeId;
     private String originalUnitTypeName;
     private String upgradeReason;
+    private Boolean isDoubleDepositCompensation;
+    private Long compensationAmount;
+    private String compensationReason;
+    private Long compensationApprovedBy;
+    private String compensationApprovedByName;
+    private OffsetDateTime compensationApprovedAt;
+    private Long totalPayoutAmount;
+    private Integer disbursementDeadlineDays;
     private Boolean isOnlineCheckIn;
     private String checkinConditionNote;
     private OffsetDateTime handoverAt;

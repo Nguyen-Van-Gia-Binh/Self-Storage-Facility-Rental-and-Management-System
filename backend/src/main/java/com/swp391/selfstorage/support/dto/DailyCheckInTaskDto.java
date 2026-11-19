@@ -70,6 +70,12 @@ public class DailyCheckInTaskDto {
     @Schema(description = "Thời điểm thực hiện bàn giao / nhận kho")
     private java.time.OffsetDateTime handoverAt;
 
+    @Schema(description = "Cờ đánh dấu bồi thường phạt cọc gấp đôi do cháy kho 100% (BR-BMP-02 / Điều 328 BLDS)")
+    private boolean isDoubleDepositCompensation;
+
+    @Schema(description = "Khoản tiền bồi thường phạt cọc")
+    private Long compensationAmount;
+
     public DailyCheckInTaskDto() {
     }
 
@@ -241,6 +247,12 @@ public class DailyCheckInTaskDto {
     public java.time.OffsetDateTime getHandoverAt() { return handoverAt; }
     public void setHandoverAt(java.time.OffsetDateTime handoverAt) { this.handoverAt = handoverAt; }
 
+    public boolean isDoubleDepositCompensation() { return isDoubleDepositCompensation; }
+    public void setDoubleDepositCompensation(boolean doubleDepositCompensation) { isDoubleDepositCompensation = doubleDepositCompensation; }
+
+    public Long getCompensationAmount() { return compensationAmount; }
+    public void setCompensationAmount(Long compensationAmount) { this.compensationAmount = compensationAmount; }
+
     public static class Builder {
         private Long contractId;
         private String contractCode;
@@ -259,6 +271,8 @@ public class DailyCheckInTaskDto {
         private boolean isOnlineCheckIn;
         private String conditionNote;
         private java.time.OffsetDateTime handoverAt;
+        private boolean isDoubleDepositCompensation;
+        private Long compensationAmount;
 
         public Builder contractId(Long contractId) {
             this.contractId = contractId;
@@ -345,12 +359,24 @@ public class DailyCheckInTaskDto {
             return this;
         }
 
+        public Builder isDoubleDepositCompensation(boolean isDoubleDepositCompensation) {
+            this.isDoubleDepositCompensation = isDoubleDepositCompensation;
+            return this;
+        }
+
+        public Builder compensationAmount(Long compensationAmount) {
+            this.compensationAmount = compensationAmount;
+            return this;
+        }
+
         public DailyCheckInTaskDto build() {
             DailyCheckInTaskDto dto = new DailyCheckInTaskDto(contractId, contractCode, reservationId, customerId, customerName, customerPhone,
                     storageUnitId, storageUnitCode, facilityId, facilityName, scheduledDate, status, completed, checkinGraceDays);
             dto.setOnlineCheckIn(isOnlineCheckIn);
             dto.setConditionNote(conditionNote);
             dto.setHandoverAt(handoverAt);
+            dto.setDoubleDepositCompensation(isDoubleDepositCompensation);
+            dto.setCompensationAmount(compensationAmount);
             return dto;
         }
     }
