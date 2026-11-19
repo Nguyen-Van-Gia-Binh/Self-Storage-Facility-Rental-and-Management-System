@@ -127,7 +127,7 @@ export interface CheckInContract {
   depositAmount: number;
   totalPayable: number;
   isFullyPaid: boolean;
-  status: 'PENDING_CHECK_IN' | 'PENDING_CHECKIN' | 'ACTIVE' | 'TERMINATED' | 'OVERDUE';
+  status: 'PENDING_CHECK_IN' | 'PENDING_CHECKIN' | 'ACTIVE' | 'TERMINATED' | 'OVERDUE' | 'CLOSED' | 'CANCELLED';
   appointmentTime: string;
   graceDaysRemaining: number;
   checkinGraceDays?: number;

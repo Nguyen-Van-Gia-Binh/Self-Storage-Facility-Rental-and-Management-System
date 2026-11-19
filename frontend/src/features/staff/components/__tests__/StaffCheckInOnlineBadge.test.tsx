@@ -43,6 +43,20 @@ describe('Staff Desk Check-In Online Badge & Method Verification', () => {
         isOnlineCheckIn: false,
         conditionNote: 'Bàn giao trực tiếp tại quầy',
       },
+      {
+        contractId: 203,
+        contractCode: 'CTR-CANCELLED-003',
+        unitCode: '---',
+        customerName: 'Lê Thanh Tùng',
+        customerPhone: '0868268970',
+        startDate: '2026-11-19',
+        appointmentTime: 'Hôm nay',
+        isFullyPaid: true,
+        status: 'CLOSED',
+        completed: true,
+        isOnlineCheckIn: false,
+        conditionNote: 'Khách hủy nhận kho · Đã hoàn tiền 4.200.000 đ',
+      },
     ],
     pendingReturns: [],
     openSupportRequests: [],
@@ -69,6 +83,12 @@ describe('Staff Desk Check-In Online Badge & Method Verification', () => {
     const counterBadge = screen.getByTestId('badge-counter-checkin');
     expect(counterBadge).toBeInTheDocument();
     expect(counterBadge).toHaveTextContent('Tại quầy');
+
+    // Kiểm tra huy hiệu Đã hủy & Hoàn tiền cho đơn CLOSED/CANCELLED
+    const cancelledBadge = screen.getByTestId('badge-cancelled-refund');
+    expect(cancelledBadge).toBeInTheDocument();
+    expect(cancelledBadge).toHaveTextContent('Đã hủy & Hoàn tiền');
+    expect(screen.getByText(/Khách hủy nhận kho · Đã hoàn tiền 4.200.000 đ/i)).toBeInTheDocument();
   });
 
   it('CustomerVerificationCard hiển thị banner xác nhận khi khách hàng đã check-in online thành công', () => {
@@ -110,5 +130,40 @@ describe('Staff Desk Check-In Online Badge & Method Verification', () => {
     const banner = screen.getByTestId('verification-online-checkin-banner');
     expect(banner).toBeInTheDocument();
     expect(banner).toHaveTextContent('Khách tự check-in Online & ký số điện tử');
+  });
+
+  it('CustomerVerificationCard hiển thị banner khi đơn đã kết thúc do khách hủy & hoàn tiền', () => {
+    const cancelledContract: CheckInContract = {
+      id: 203,
+      code: 'CTR-CANCELLED-003',
+      reservationId: 103,
+      reservationCode: 'RSV-003',
+      customerId: 106,
+      customerName: 'Lê Thanh Tùng',
+      customerPhone: '0868268970',
+      customerIdentityNumber: '21143243242',
+      facilityId: 2,
+      facilityName: 'Kho Quận 7 - TP.HCM',
+      storageUnitId: undefined,
+      storageUnitCode: '---',
+      unitTypeId: 1,
+      unitTypeName: 'Kho Tiêu Chuẩn S',
+      startDate: '2026-11-17',
+      endDateExclusive: '2026-11-18',
+      rentalMonths: 3,
+      monthlyPrice: 1050000,
+      totalRentalFee: 3150000,
+      depositAmount: 1050000,
+      totalPayable: 4200000,
+      isFullyPaid: true,
+      status: 'CLOSED',
+      appointmentTime: 'Bắt đầu 2026-11-17',
+    };
+
+    render(<CustomerVerificationCard contract={cancelledContract} />);
+
+    const banner = screen.getByTestId('verification-cancelled-banner');
+    expect(banner).toBeInTheDocument();
+    expect(banner).toHaveTextContent('Hợp đồng đã kết thúc · Khách hủy nhận kho & hoàn tất hoàn tiền');
   });
 });

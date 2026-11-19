@@ -7,6 +7,7 @@ import {
   CheckCheck,
   Globe,
   CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 import type { StaffDailyTaskReport, DailyIncidentTask, DailyCheckInTask, DailyReturnTask } from '@/types';
 import { StaffWeekCalendarStrip, formatLocalDate } from './StaffWeekCalendarStrip';
@@ -78,7 +79,15 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
   }, [selectedDate]);
 
   // Helper nhận diện công việc đã xong
-  const isCheckInDone = (c: any) => Boolean(c.completed || c.status === 'COMPLETED' || c.status === 'ACTIVE');
+  const isCheckInDone = (c: any) =>
+    Boolean(
+      c.completed ||
+        c.status === 'COMPLETED' ||
+        c.status === 'ACTIVE' ||
+        c.status === 'CLOSED' ||
+        c.status === 'CANCELLED' ||
+        c.status === 'TERMINATED'
+    );
   const isReturnDone = (r: any) => Boolean(r.completed || r.status === 'COMPLETED' || r.status === 'INSPECTED' || r.status === 'RETURNED');
   const isIncidentDone = (i: DailyIncidentTask) => isSupportTaskDone(i);
 
@@ -187,7 +196,11 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
   // Render từng thẻ Check-in gọn gàng (chỉ thông tin nhận diện cốt lõi, chi tiết nằm bên trong)
   const renderCheckInItem = (item: DailyCheckInTask) => {
     const isDone = isCheckInDone(item);
-    const isLate = Boolean(item.isLate && !isDone);
+    const isCancelled =
+      item.status === 'CLOSED' ||
+      item.status === 'CANCELLED' ||
+      item.status === 'TERMINATED';
+    const isLate = Boolean(item.isLate && !isDone && !isCancelled);
     const handleGoToCheckIn = () => {
       setActiveTaskView({ type: 'checkin', task: item });
     };
@@ -197,7 +210,9 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
         key={item.reservationId || item.contractId}
         onClick={handleGoToCheckIn}
         className={`relative overflow-hidden px-4 py-3.5 rounded-xl border transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer ${
-          isDone
+          isCancelled
+            ? 'border-rose-200/80 bg-rose-50/15 hover:border-rose-300'
+            : isDone
             ? 'border-emerald-200/80 bg-emerald-50/15 hover:border-emerald-300'
             : 'border-slate-200 bg-white hover:border-slate-300 shadow-2xs hover:shadow-sm'
         }`}
@@ -209,12 +224,14 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
         <div className={`flex items-center gap-3.5 flex-1 min-w-0 ${isLate ? 'pl-1.5' : ''}`}>
           <div
             className={`px-2.5 py-1.5 min-w-[4.75rem] rounded-lg flex items-center justify-center shrink-0 font-mono font-bold text-xs whitespace-nowrap border ${
-              isDone
+              isCancelled
+                ? 'bg-slate-50 text-slate-400 border-slate-200 border-dashed'
+                : isDone
                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                 : 'bg-slate-100 text-slate-700 border-slate-200'
             }`}
           >
-            {item.unitCode}
+            {item.unitCode || '---'}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -225,7 +242,17 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                   Trễ {item.daysLate} ngày
                 </span>
               )}
-              {isDone && item.isOnlineCheckIn && (
+              {isDone && isCancelled && (
+                <span
+                  data-testid="badge-cancelled-refund"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200"
+                  title="Khách hàng hủy nhận kho & Đã hoàn tất hoàn tiền"
+                >
+                  <XCircle className="w-3 h-3 text-rose-600" />
+                  Đã hủy & Hoàn tiền
+                </span>
+              )}
+              {isDone && !isCancelled && item.isOnlineCheckIn && (
                 <span
                   data-testid="badge-online-checkin"
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200"
@@ -235,7 +262,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                   Check-in Online
                 </span>
               )}
-              {isDone && !item.isOnlineCheckIn && (
+              {isDone && !isCancelled && !item.isOnlineCheckIn && (
                 <span
                   data-testid="badge-counter-checkin"
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
@@ -249,6 +276,12 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
             <p className="text-xs sm:text-sm text-slate-500 truncate mt-0.5">
               {item.facilityName || 'Cơ sở phụ trách'} · Ngày bắt đầu: {item.startDate || ('scheduledDate' in item ? (item as any).scheduledDate : 'Hôm nay')}
             </p>
+            {item.conditionNote && (
+              <p className={`text-xs mt-0.5 flex items-center gap-1 truncate ${isCancelled ? 'text-rose-600 font-medium' : 'text-slate-500'}`}>
+                <span className="font-medium text-slate-500">Ghi chú:</span>
+                <span>{item.conditionNote}</span>
+              </p>
+            )}
           </div>
         </div>
 

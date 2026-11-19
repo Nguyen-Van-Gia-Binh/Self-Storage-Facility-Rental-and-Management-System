@@ -691,5 +691,14 @@ class StaffDailyTaskServiceTest {
         // Với pendingOnly = true, hợp đồng CLOSED không được lọt vào danh sách chờ xử lý
         assertThat(response.getCheckInTasks()).isEmpty();
         assertThat(response.getPendingCheckIns()).isEmpty();
+
+        // Với pendingOnly = false, hợp đồng CLOSED xuất hiện ở danh sách để đưa vào tab 'Đã xong'
+        when(userRepository.findById(15L)).thenReturn(Optional.of(sampleCustomer));
+        StaffDailyTasksResponse fullResponse = staffDailyTaskService.getDailyTasks(8L, today, false, staffPrincipal);
+        assertThat(fullResponse.getCheckInTasks()).hasSize(1);
+        var completedDto = fullResponse.getCheckInTasks().get(0);
+        assertThat(completedDto.isCompleted()).isTrue();
+        assertThat(completedDto.getStatus()).isEqualTo("CLOSED");
+        assertThat(completedDto.getConditionNote()).contains("Hợp đồng đã kết thúc");
     }
 }

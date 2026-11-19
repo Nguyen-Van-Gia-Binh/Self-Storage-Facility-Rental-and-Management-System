@@ -8,6 +8,7 @@ import {
   Check,
   Sparkles,
   Globe,
+  XCircle,
 } from 'lucide-react';
 import type { CheckInContract } from '../../../types';
 import { formatDateVN } from '@/features/customer/utils/unitPickerHelpers';
@@ -80,6 +81,16 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
         >
           <Globe className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
           <span>Khách tự check-in Online & ký số điện tử</span>
+        </div>
+      )}
+
+      {(contract.status === 'CLOSED' || contract.status === 'CANCELLED') && (
+        <div
+          data-testid="verification-cancelled-banner"
+          className="flex items-center gap-2 p-2.5 bg-rose-50 border border-rose-100 rounded-lg text-xs font-semibold text-rose-700"
+        >
+          <XCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+          <span>Hợp đồng đã kết thúc · Khách hủy nhận kho & hoàn tất hoàn tiền</span>
         </div>
       )}
 

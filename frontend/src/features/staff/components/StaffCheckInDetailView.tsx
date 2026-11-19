@@ -5,6 +5,7 @@ import {
   AlertCircle,
   Globe,
   FileText,
+  XCircle,
 } from 'lucide-react';
 import type { DailyCheckInTask, CheckInContract, CheckInSubmitRequest, HandoverRejectRequest } from '@/types';
 import { getContractById, getPendingContracts, checkInContract, rejectHandoverContract } from '@/api/contract';
@@ -186,7 +187,21 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
     }
   };
 
-  const isDone = Boolean(contract && (contract.status === 'ACTIVE' || task.completed || task.status === 'COMPLETED'));
+  const isCancelled = Boolean(
+    contract?.status === 'CLOSED' ||
+      contract?.status === 'CANCELLED' ||
+      contract?.status === 'TERMINATED' ||
+      task?.status === 'CLOSED' ||
+      task?.status === 'CANCELLED' ||
+      task?.status === 'TERMINATED'
+  );
+  const isDone = Boolean(
+    contract &&
+      (contract.status === 'ACTIVE' ||
+        isCancelled ||
+        task.completed ||
+        task.status === 'COMPLETED')
+  );
   const isOnlineCheckIn = Boolean(
     contract?.isOnlineCheckIn ||
     task?.isOnlineCheckIn ||
@@ -230,7 +245,45 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
 
           {/* CỘT PHẢI (8/12): Biên bản bàn giao hoặc Trạng thái đã xong */}
           <div className="lg:col-span-8">
-            {isDone ? (
+            {isCancelled ? (
+              <div className="bg-white rounded-2xl border border-rose-200 p-6 sm:p-8 text-center space-y-4 shadow-xs">
+                <div className="w-14 h-14 bg-rose-100 text-rose-700 rounded-2xl flex items-center justify-center mx-auto">
+                  <XCircle className="w-8 h-8" />
+                </div>
+                <div className="space-y-1.5 max-w-md mx-auto">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                    Hợp đồng đã kết thúc / Hủy nhận kho
+                  </h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Khách hàng <strong className="text-slate-900">{contract.customerName}</strong> đã hủy đơn nhận kho.
+                    Hệ thống và ban quản lý đã hoàn tất thủ tục hủy và hoàn tiền cọc/tiền thuê.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                  <span
+                    data-testid="detail-cancelled-badge"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200"
+                  >
+                    <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                    Trạng thái: Đã hủy & Hoàn tất thủ tục hoàn tiền
+                  </span>
+                </div>
+
+                {conditionNote && (
+                  <div
+                    data-testid="detail-handover-condition-note"
+                    className="bg-rose-50/50 border border-rose-200/80 rounded-xl p-3 text-left max-w-md mx-auto text-xs text-slate-700 space-y-1"
+                  >
+                    <p className="font-semibold text-rose-800 flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-rose-600" />
+                      Thông tin xử lý:
+                    </p>
+                    <p className="text-slate-700 font-medium pl-5">{conditionNote}</p>
+                  </div>
+                )}
+              </div>
+            ) : isDone ? (
               <div className="bg-white rounded-2xl border border-emerald-200/90 p-6 sm:p-8 text-center space-y-4 shadow-xs">
                 <div className="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto">
                   <CheckCircle2 className="w-8 h-8" />
