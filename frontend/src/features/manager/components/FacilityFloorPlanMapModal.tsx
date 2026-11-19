@@ -21,6 +21,7 @@ export interface FacilityFloorPlanMapModalProps {
   allowedUnitTypeId?: number;
   targetUnitTypeName?: string;
   onSelectUnit?: (unit: StorageUnitResponse) => void;
+  onTriggerDoubleDepositCompensation?: () => void;
   initialUnits?: StorageUnitResponse[];
 }
 
@@ -33,6 +34,7 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
   allowedUnitTypeId,
   targetUnitTypeName,
   onSelectUnit,
+  onTriggerDoubleDepositCompensation,
   initialUnits,
 }) => {
   const [units, setUnits] = useState<StorageUnitResponse[]>(initialUnits || []);
@@ -214,6 +216,15 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
     return uArea > targetArea;
   };
 
+  const upgradeAvailableUnits = useMemo(() => {
+    if (!isUpgradeCompensationMode) return [];
+    return units.filter((u) => checkIsUpgradeUnit(u));
+  }, [units, isUpgradeCompensationMode, checkIsUpgradeUnit]);
+
+  const isLevel3OutOfStock = Boolean(
+    !loading && isPickerMode && allowedUnitTypeId && sameTypeAvailableCount === 0 && upgradeAvailableUnits.length === 0
+  );
+
   // Enterprise 1px border + light tint status styling (zero thick ring-4, zero scale-105, zero floating shadow)
   const getTileStyle = (
     status: string,
@@ -348,14 +359,20 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
               })}
             </div>
 
-            {/* Cảnh báo Chế độ Đền bù Nâng hạng (Cam/Đỏ rõ ràng) */}
-            {!loading && isUpgradeCompensationMode && (
+            {/* Cảnh báo Chế độ Đền bù Nâng hạng / Cháy kho 100% */}
+            {!loading && isLevel3OutOfStock ? (
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-rose-50 text-rose-900 border border-rose-300 px-2.5 py-1 rounded-md">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                <span className="font-bold text-rose-800">CƠ SỞ CHÁY KHO 100% (BR-BMP-02)</span>
+                <span className="text-rose-700">· Hết ô cùng loại &amp; ô nâng hạng</span>
+              </span>
+            ) : !loading && isUpgradeCompensationMode ? (
               <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-orange-50 text-orange-900 border border-orange-200 px-2.5 py-1 rounded-md">
                 <AlertTriangle className="w-3.5 h-3.5 text-orange-600 shrink-0" />
                 <span className="font-semibold text-orange-800">Chế độ Đền bù Nâng hạng</span>
                 <span className="text-orange-700">· Hết ô cùng loại</span>
               </span>
-            )}
+            ) : null}
           </div>
 
           {/* Dropdown lọc chuẩn + Badge tổng số tách biệt */}
@@ -383,6 +400,34 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
             )}
           </div>
         </div>
+
+        {/* Callout kích hoạt bồi thường phạt cọc gấp đôi khi cháy kho 100% */}
+        {!loading && isLevel3OutOfStock && (
+          <div className="mx-5 my-3 p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex flex-wrap items-center justify-between gap-3 animate-in fade-in">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-4 h-4 text-rose-600" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-rose-900">
+                  Cơ sở không còn mặt bằng khả dụng để bàn giao (Hết 100% ô cùng loại và ô lớn hơn)
+                </p>
+                <p className="text-[11px] text-rose-700 mt-0.5">
+                  Theo Điều 328 BLDS và BR-BMP-02: Ban Quản lý kích hoạt bồi thường Phạt cọc gấp đôi (Hoàn 100% tiền thuê + 200% tiền cọc).
+                </p>
+              </div>
+            </div>
+            {onTriggerDoubleDepositCompensation && (
+              <button
+                type="button"
+                onClick={onTriggerDoubleDepositCompensation}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors cursor-pointer shrink-0 flex items-center gap-1.5"
+              >
+                <span>🚨 Kích hoạt Bồi thường Phạt cọc gấp đôi (BR-BMP-02)</span>
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Nội dung Sơ đồ 2D */}
         <div className="flex-1 overflow-y-auto p-5 bg-white space-y-4">

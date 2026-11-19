@@ -21,6 +21,7 @@ import type { FacilityListItem } from '@/types';
 import type { StorageUnitResponse } from '@/types/unit';
 import { tokenStorage } from '@/utils/tokenStorage';
 import { FacilityFloorPlanMapModal } from '../components/FacilityFloorPlanMapModal';
+import { EmergencyCompensationModal } from '../components/EmergencyCompensationModal';
 
 function daysUntil(isoDate: string): number {
   const today = new Date();
@@ -127,6 +128,19 @@ export const AllocationPage: React.FC = () => {
   const [modalUnit, setModalUnit] = useState<StorageUnitResponse | null>(null);
   const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
   const [staffError, setStaffError] = useState<string | null>(null);
+  const [compensationModalContract, setCompensationModalContract] = useState<{
+    id: number;
+    code: string;
+    customerName: string;
+    customerPhone: string;
+    customerEmail?: string;
+    facilityName: string;
+    unitTypeName: string;
+    totalRentalFee?: number;
+    depositAmount?: number;
+    monthlyPrice?: number;
+    rentalMonths?: number;
+  } | null>(null);
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToast({ text, type });
@@ -813,7 +827,28 @@ export const AllocationPage: React.FC = () => {
 
                       {/* Cột 5: Nút thao tác theo đúng Action Hierarchy (Primary Mint vs Secondary Outline) */}
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end">
+                        <div className="flex items-center justify-end gap-2">
+                          {row.kind === 'CONTRACT_RELOCATION' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCompensationModalContract({
+                                  id: row.contractId || row.rawId,
+                                  code: row.code,
+                                  customerName: row.customerName,
+                                  customerPhone: row.customerPhone,
+                                  customerEmail: row.customerEmail,
+                                  facilityName: row.facilityName,
+                                  unitTypeName: row.unitTypeName,
+                                  rentalMonths: row.rentalMonths,
+                                });
+                              }}
+                              className="px-3 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-300 text-xs sm:text-sm font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+                              title="Kích hoạt bồi thường phạt cọc gấp đôi nếu cơ sở cháy kho 100% (Điều 328 BLDS)"
+                            >
+                              🚨 Phạt cọc 2x (BR-BMP-02)
+                            </button>
+                          )}
                           {needsImmediateAllocation ? (
                             <button
                               type="button"
@@ -855,6 +890,35 @@ export const AllocationPage: React.FC = () => {
           onSelectUnit={(unit) => {
             setIsFloorPlanOpen(false);
             openAssignModal(unit);
+          }}
+          onTriggerDoubleDepositCompensation={() => {
+            setIsFloorPlanOpen(false);
+            setCompensationModalContract({
+              id: selected.contractId || selected.rawId,
+              code: selected.code,
+              customerName: selected.customerName,
+              customerPhone: selected.customerPhone,
+              customerEmail: selected.customerEmail,
+              facilityName: selected.facilityName,
+              unitTypeName: selected.unitTypeName,
+              rentalMonths: selected.rentalMonths,
+            });
+          }}
+        />
+      )}
+
+      {/* Modal Bồi thường Phạt cọc Gấp đôi (BR-BMP-02 / Điều 328 BLDS) */}
+      {compensationModalContract && (
+        <EmergencyCompensationModal
+          isOpen={Boolean(compensationModalContract)}
+          onClose={() => setCompensationModalContract(null)}
+          contract={compensationModalContract}
+          onSuccess={(res) => {
+            showToast(
+              `Đã kích hoạt bồi thường phạt cọc gấp đôi cho HĐ ${res.contractCode}. Tổng tiền hoàn trả: ${new Intl.NumberFormat('vi-VN').format(res.totalPayoutAmount)} đ!`,
+              'success'
+            );
+            loadQueue(facilityId, true);
           }}
         />
       )}
