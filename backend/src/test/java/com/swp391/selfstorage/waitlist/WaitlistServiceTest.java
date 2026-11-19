@@ -525,18 +525,6 @@ class WaitlistServiceTest {
     }
 
     @Test
-    @DisplayName("cleanupExpiredLocks: Giải phóng các bản ghi CONTACTING quá hạn")
-    void cleanupExpiredLocks_Success() {
-        when(waitlistRepository.unlockExpiredContacting(eq(WaitlistStatus.WAITING), eq(WaitlistStatus.CONTACTING), any()))
-                .thenReturn(3);
-
-        int unlocked = waitlistService.cleanupExpiredLocks();
-
-        assertEquals(3, unlocked);
-        verify(waitlistRepository, times(1)).unlockExpiredContacting(any(), any(), any());
-    }
-
-    @Test
     @DisplayName("expirePastWaitlists: Tự động chuyển các đơn Waitlist quá hạn targetStartDate sang EXPIRED")
     void expirePastWaitlists_Success() {
         when(waitlistRepository.expirePastWaitlists(any(), eq(WaitlistStatus.EXPIRED), any()))

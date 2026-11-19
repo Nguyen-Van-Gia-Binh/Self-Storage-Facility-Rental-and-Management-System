@@ -188,8 +188,7 @@ public class WaitlistServiceImpl implements WaitlistService {
 
     @Override
     public List<WaitlistResponse> getFacilityWaitlists(Long facilityId, UserPrincipal currentUser) {
-        // Hybrid Step 1: Lazy Unlock và Expiration trên câu đọc (BR-WAT-06)
-        cleanupExpiredLocks();
+        // Hybrid Step 1: Lazy Expiration trên câu đọc (BR-WAT-06)
         expirePastWaitlists();
 
         List<Waitlist> list = waitlistRepository.findByFacilityIdAndStatusInOrderByCreatedAtAsc(
@@ -414,12 +413,6 @@ public class WaitlistServiceImpl implements WaitlistService {
         waitlist.setContactTimeoutAt(null);
         Waitlist saved = waitlistRepository.save(waitlist);
         return enrichResponses(Collections.singletonList(saved)).get(0);
-    }
-
-    @Override
-    public int cleanupExpiredLocks() {
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        return waitlistRepository.unlockExpiredContacting(WaitlistStatus.WAITING, WaitlistStatus.CONTACTING, now);
     }
 
     @Override

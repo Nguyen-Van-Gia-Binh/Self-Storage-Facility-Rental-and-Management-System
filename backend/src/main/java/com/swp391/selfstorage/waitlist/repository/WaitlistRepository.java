@@ -40,18 +40,6 @@ public interface WaitlistRepository extends JpaRepository<Waitlist, Long> {
             @Param("allowedStatuses") Collection<WaitlistStatus> allowedStatuses
     );
 
-    /**
-     * Guardrail 1 & 3: Tự động giải phóng các bản ghi CONTACTING quá hạn 2 giờ về WAITING.
-     */
-    @Modifying
-    @Query("UPDATE Waitlist w SET w.status = :waitingStatus, w.assignedFmId = NULL, w.contactTimeoutAt = NULL " +
-            "WHERE w.status = :contactingStatus AND w.contactTimeoutAt < :now")
-    int unlockExpiredContacting(
-            @Param("waitingStatus") WaitlistStatus waitingStatus,
-            @Param("contactingStatus") WaitlistStatus contactingStatus,
-            @Param("now") OffsetDateTime now
-    );
-
     List<Waitlist> findByConvertedReservationIdIn(Collection<Long> reservationIds);
 
     /**
