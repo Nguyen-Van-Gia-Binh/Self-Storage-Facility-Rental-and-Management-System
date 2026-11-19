@@ -5,6 +5,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DailyTasksOverview } from '../DailyTasksOverview';
 import { CustomerVerificationCard } from '../CustomerVerificationCard';
+import { EmergencyCompensationPrintDocument } from '../EmergencyCompensationPrintDocument';
 import type { StaffDailyTaskReport, CheckInContract } from '@/types';
 
 describe('Staff Desk Check-In Online Badge & Method Verification', () => {
@@ -57,6 +58,21 @@ describe('Staff Desk Check-In Online Badge & Method Verification', () => {
         isOnlineCheckIn: false,
         conditionNote: 'Khách hủy nhận kho · Đã hoàn tiền 4.200.000 đ',
       },
+      {
+        contractId: 204,
+        contractCode: 'CTR-DEMO-DOUBLE-DEPOSIT',
+        unitCode: 'Q7-AC-XL101',
+        customerName: 'Trịnh Thăng Bình',
+        customerPhone: '0909123456',
+        startDate: '2026-11-19',
+        appointmentTime: 'Hôm nay',
+        isFullyPaid: true,
+        status: 'TERMINATED',
+        completed: true,
+        isOnlineCheckIn: false,
+        isDoubleDepositCompensation: true,
+        conditionNote: 'Cháy kho 100% · Bồi thường phạt cọc gấp đôi (Đ.328 BLDS · BR-BMP-02)',
+      },
     ],
     pendingReturns: [],
     openSupportRequests: [],
@@ -89,6 +105,11 @@ describe('Staff Desk Check-In Online Badge & Method Verification', () => {
     expect(cancelledBadge).toBeInTheDocument();
     expect(cancelledBadge).toHaveTextContent('Đã hủy & Hoàn tiền');
     expect(screen.getByText(/Khách hủy nhận kho · Đã hoàn tiền 4.200.000 đ/i)).toBeInTheDocument();
+
+    // Kiểm tra huy hiệu Bồi thường Phạt cọc gấp đôi BR-BMP-02
+    const compensationBadge = screen.getByTestId('badge-double-deposit-compensation');
+    expect(compensationBadge).toBeInTheDocument();
+    expect(compensationBadge).toHaveTextContent('Đã hủy & Phạt cọc 2x (BR-BMP-02)');
   });
 
   it('CustomerVerificationCard hiển thị banner xác nhận khi khách hàng đã check-in online thành công', () => {
@@ -165,5 +186,39 @@ describe('Staff Desk Check-In Online Badge & Method Verification', () => {
     const banner = screen.getByTestId('verification-cancelled-banner');
     expect(banner).toBeInTheDocument();
     expect(banner).toHaveTextContent('Hợp đồng đã kết thúc · Khách hủy nhận kho & hoàn tất hoàn tiền');
+  });
+
+  it('EmergencyCompensationPrintDocument hiển thị đúng căn cứ Điều 328 BLDS và công thức phạt cọc gấp đôi', () => {
+    const compensationContract: CheckInContract = {
+      id: 204,
+      code: 'CTR-DEMO-DOUBLE-DEPOSIT',
+      customerName: 'Trịnh Thăng Bình',
+      customerPhone: '0909123456',
+      customerIdentityNumber: '079090123456',
+      facilityId: 2,
+      facilityName: 'Kho Quận 7 - TP.HCM',
+      unitTypeName: 'Kho Máy Lạnh XL (100m²)',
+      monthlyPrice: 6000000,
+      totalRentalFee: 18000000,
+      depositAmount: 6000000,
+      isDoubleDepositCompensation: true,
+      compensationAmount: 6000000,
+      totalPayoutAmount: 30000000,
+      compensationReason: 'Cháy kho 100% không còn ô bàn giao hay nâng hạng',
+      compensationApprovedByName: 'Nguyễn Văn Quản Lý',
+      compensationApprovedAt: '2026-11-19T10:00:00',
+    };
+
+    render(
+      <EmergencyCompensationPrintDocument
+        contract={compensationContract}
+        onClose={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/BIÊN BẢN BỒI THƯỜNG VI PHẠM NGHĨA VỤ BÀN GIAO/i)).toBeInTheDocument();
+    expect(screen.getByText(/Căn cứ Điều 328 Bộ luật Dân sự 2015/i)).toBeInTheDocument();
+    expect(screen.getByText(/18.000.000 đ/i)).toBeInTheDocument();
+    expect(screen.getByText(/30.000.000 đ/i)).toBeInTheDocument();
   });
 });

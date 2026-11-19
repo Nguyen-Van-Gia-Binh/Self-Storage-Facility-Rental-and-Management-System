@@ -6,6 +6,9 @@ import {
   Globe,
   FileText,
   XCircle,
+  Printer,
+  Flame,
+  AlertTriangle,
 } from 'lucide-react';
 import type { DailyCheckInTask, CheckInContract, CheckInSubmitRequest, HandoverRejectRequest } from '@/types';
 import { getContractById, getPendingContracts, checkInContract, rejectHandoverContract } from '@/api/contract';
@@ -14,6 +17,7 @@ import { CustomerVerificationCard } from './CustomerVerificationCard';
 import { HandoverInspectionForm } from './HandoverInspectionForm';
 import { AccessCodePinModal } from './AccessCodePinModal';
 import { HandoverRejectionModal, type HandoverRejectionAction } from './HandoverRejectionModal';
+import { EmergencyCompensationPrintDocument } from './EmergencyCompensationPrintDocument';
 
 export interface StaffCheckInDetailViewProps {
   task: DailyCheckInTask;
@@ -37,6 +41,7 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
   const [isPinModalOpen, setIsPinModalOpen] = useState<boolean>(false);
   const [currentPin, setCurrentPin] = useState<string>('');
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState<boolean>(false);
+  const [isPrintCompensationOpen, setIsPrintCompensationOpen] = useState<boolean>(false);
 
   // Toast notification
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -195,6 +200,17 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
       task?.status === 'CANCELLED' ||
       task?.status === 'TERMINATED'
   );
+  const isDoubleDepositCompensated = Boolean(
+    contract?.isDoubleDepositCompensation ||
+      task?.isDoubleDepositCompensation ||
+      (contract?.compensationAmount && contract.compensationAmount > 0) ||
+      contract?.checkinConditionNote?.toLowerCase().includes('phạt cọc') ||
+      task?.conditionNote?.toLowerCase().includes('phạt cọc') ||
+      contract?.checkinConditionNote?.toLowerCase().includes('đ.328 blds') ||
+      task?.conditionNote?.toLowerCase().includes('đ.328 blds') ||
+      contract?.checkinConditionNote?.toLowerCase().includes('cháy kho') ||
+      task?.conditionNote?.toLowerCase().includes('cháy kho')
+  );
   const isDone = Boolean(
     contract &&
       (contract.status === 'ACTIVE' ||
@@ -247,40 +263,116 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
           <div className="lg:col-span-8">
             {isCancelled ? (
               <div className="bg-white rounded-2xl border border-rose-200 p-6 sm:p-8 text-center space-y-4 shadow-xs">
-                <div className="w-14 h-14 bg-rose-100 text-rose-700 rounded-2xl flex items-center justify-center mx-auto">
-                  <XCircle className="w-8 h-8" />
-                </div>
-                <div className="space-y-1.5 max-w-md mx-auto">
-                  <h3 className="text-base sm:text-lg font-bold text-slate-900">
-                    Hợp đồng đã kết thúc / Hủy nhận kho
-                  </h3>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Khách hàng <strong className="text-slate-900">{contract.customerName}</strong> đã hủy đơn nhận kho.
-                    Hệ thống và ban quản lý đã hoàn tất thủ tục hủy và hoàn tiền cọc/tiền thuê.
-                  </p>
-                </div>
+                {isDoubleDepositCompensated ? (
+                  <>
+                    <div className="w-14 h-14 bg-rose-100 text-rose-700 rounded-2xl flex items-center justify-center mx-auto">
+                      <Flame className="w-8 h-8" />
+                    </div>
+                    <div className="space-y-1.5 max-w-lg mx-auto">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300 mb-1">
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-700" />
+                        CẤP 3: BỒI THƯỜNG PHẠT CỌC GẤP ĐÔI (ĐIỀU 328 BLDS · BR-BMP-02)
+                      </div>
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                        Cháy kho không có ô bàn giao — Đã bồi thường &amp; Thanh lý
+                      </h3>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        Cơ sở đã hết ô cùng loại và không có ô lớn hơn để nâng hạng miễn phí. Hợp đồng của khách hàng{' '}
+                        <strong className="text-slate-900">{contract.customerName}</strong> đã được kích hoạt thanh lý
+                        và bồi thường <strong>phạt cọc gấp đôi</strong> theo đúng quy định pháp luật.
+                      </p>
+                    </div>
 
-                <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-                  <span
-                    data-testid="detail-cancelled-badge"
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200"
-                  >
-                    <XCircle className="w-3.5 h-3.5 text-rose-600" />
-                    Trạng thái: Đã hủy & Hoàn tất thủ tục hoàn tiền
-                  </span>
-                </div>
+                    <div className="bg-rose-50/70 border border-rose-200 rounded-2xl p-4 max-w-lg mx-auto text-left text-xs space-y-2">
+                      <div className="flex justify-between items-center text-slate-700">
+                        <span>Hoàn lại 100% tiền thuê đã đóng:</span>
+                        <strong className="font-mono text-slate-900">
+                          {new Intl.NumberFormat('vi-VN').format(contract.totalRentalFee || (contract.monthlyPrice * contract.rentalMonths) || 0)} đ
+                        </strong>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-700">
+                        <span>Hoàn lại 100% tiền cọc gốc:</span>
+                        <strong className="font-mono text-slate-900">
+                          {new Intl.NumberFormat('vi-VN').format(contract.depositAmount || contract.monthlyPrice || 0)} đ
+                        </strong>
+                      </div>
+                      <div className="flex justify-between items-center text-rose-700 font-semibold">
+                        <span>Tiền cơ sở chịu phạt đền bù (100% cọc):</span>
+                        <strong className="font-mono text-rose-700">
+                          +{new Intl.NumberFormat('vi-VN').format(contract.compensationAmount || contract.depositAmount || contract.monthlyPrice || 0)} đ
+                        </strong>
+                      </div>
+                      <div className="border-t border-rose-200 pt-2 flex justify-between items-center text-sm font-bold text-rose-900">
+                        <span>Tổng tiền khách nhận về (Hoàn trả + Đền bù):</span>
+                        <span className="font-mono text-base text-rose-700">
+                          {new Intl.NumberFormat('vi-VN').format(contract.totalPayoutAmount || ((contract.totalRentalFee || 0) + (contract.depositAmount || 0) * 2))} đ
+                        </span>
+                      </div>
+                    </div>
 
-                {conditionNote && (
-                  <div
-                    data-testid="detail-handover-condition-note"
-                    className="bg-rose-50/50 border border-rose-200/80 rounded-xl p-3 text-left max-w-md mx-auto text-xs text-slate-700 space-y-1"
-                  >
-                    <p className="font-semibold text-rose-800 flex items-center gap-1.5">
-                      <FileText className="w-3.5 h-3.5 text-rose-600" />
-                      Thông tin xử lý:
-                    </p>
-                    <p className="text-slate-700 font-medium pl-5">{conditionNote}</p>
-                  </div>
+                    {conditionNote && (
+                      <div
+                        data-testid="detail-handover-condition-note"
+                        className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-left max-w-lg mx-auto text-xs text-slate-700 space-y-1"
+                      >
+                        <p className="font-semibold text-slate-800 flex items-center gap-1.5">
+                          <FileText className="w-3.5 h-3.5 text-slate-600" />
+                          Lý do &amp; Ghi chú xử lý:
+                        </p>
+                        <p className="text-slate-700 font-medium pl-5">{conditionNote}</p>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                      <button
+                        type="button"
+                        data-testid="btn-print-compensation"
+                        onClick={() => setIsPrintCompensationOpen(true)}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                      >
+                        <Printer className="w-4 h-4" />
+                        <span>In Biên bản Bồi thường &amp; Thanh lý (A4)</span>
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-14 h-14 bg-rose-100 text-rose-700 rounded-2xl flex items-center justify-center mx-auto">
+                      <XCircle className="w-8 h-8" />
+                    </div>
+                    <div className="space-y-1.5 max-w-md mx-auto">
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                        Hợp đồng đã kết thúc / Hủy nhận kho
+                      </h3>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        Khách hàng <strong className="text-slate-900">{contract.customerName}</strong> đã hủy đơn nhận kho.
+                        Hệ thống và ban quản lý đã hoàn tất thủ tục hủy và hoàn tiền cọc/tiền thuê.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                      <span
+                        data-testid="detail-cancelled-badge"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200"
+                      >
+                        <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                        Trạng thái: Đã hủy &amp; Hoàn tất thủ tục hoàn tiền
+                      </span>
+                    </div>
+
+                    {conditionNote && (
+                      <div
+                        data-testid="detail-handover-condition-note"
+                        className="bg-rose-50/50 border border-rose-200/80 rounded-xl p-3 text-left max-w-md mx-auto text-xs text-slate-700 space-y-1"
+                      >
+                        <p className="font-semibold text-rose-800 flex items-center gap-1.5">
+                          <FileText className="w-3.5 h-3.5 text-rose-600" />
+                          Thông tin xử lý:
+                        </p>
+                        <p className="text-slate-700 font-medium pl-5">{conditionNote}</p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             ) : isDone ? (
@@ -376,6 +468,14 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
           contract={contract}
           onConfirmRejection={handleRejectionConfirm}
           isSubmitting={isSubmitting}
+        />
+      )}
+
+      {/* Modal in biên bản bồi thường thanh lý A4 */}
+      {contract && isPrintCompensationOpen && (
+        <EmergencyCompensationPrintDocument
+          contract={contract}
+          onClose={() => setIsPrintCompensationOpen(false)}
         />
       )}
     </div>

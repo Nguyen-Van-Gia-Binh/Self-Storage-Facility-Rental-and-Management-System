@@ -243,14 +243,25 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                 </span>
               )}
               {isDone && isCancelled && (
-                <span
-                  data-testid="badge-cancelled-refund"
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200"
-                  title="Khách hàng hủy nhận kho & Đã hoàn tất hoàn tiền"
-                >
-                  <XCircle className="w-3 h-3 text-rose-600" />
-                  Đã hủy & Hoàn tiền
-                </span>
+                ((item as any).isDoubleDepositCompensation || item.conditionNote?.includes('Bồi thường phạt cọc') || item.conditionNote?.includes('Đ.328 BLDS')) ? (
+                  <span
+                    data-testid="badge-double-deposit-compensation"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300"
+                    title="Cháy kho 100% · Bồi thường phạt cọc gấp đôi (Điều 328 BLDS / BR-BMP-02)"
+                  >
+                    <AlertTriangle className="w-3 h-3 text-rose-600" />
+                    Đã hủy &amp; Phạt cọc 2x (BR-BMP-02)
+                  </span>
+                ) : (
+                  <span
+                    data-testid="badge-cancelled-refund"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200"
+                    title="Khách hàng hủy nhận kho & Đã hoàn tất hoàn tiền"
+                  >
+                    <XCircle className="w-3 h-3 text-rose-600" />
+                    Đã hủy &amp; Hoàn tiền
+                  </span>
+                )
               )}
               {isDone && !isCancelled && item.isOnlineCheckIn && (
                 <span

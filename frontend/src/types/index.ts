@@ -281,6 +281,9 @@ export interface DailyCheckInTask {
   isLate?: boolean;
   daysLate?: number;
   isOnlineCheckIn?: boolean;
+  isDoubleDepositCompensation?: boolean;
+  compensationAmount?: number;
+  totalPayoutAmount?: number;
   conditionNote?: string;
   handoverAt?: string;
 }
@@ -304,6 +307,9 @@ export interface DailyReturnTask {
   isLate?: boolean;
   daysLate?: number;
   isOnlineCheckIn?: boolean;
+  isDoubleDepositCompensation?: boolean;
+  compensationAmount?: number;
+  totalPayoutAmount?: number;
   conditionNote?: string;
   handoverAt?: string;
 }
