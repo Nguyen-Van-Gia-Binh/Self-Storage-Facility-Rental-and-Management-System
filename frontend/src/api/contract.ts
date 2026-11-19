@@ -10,6 +10,8 @@ import type {
   ReturnInspectionRequest,
   ReturnInspectionResponse,
   SettlementPreviewData,
+  EmergencyCompensationRequest,
+  EmergencyCompensationResponse,
 } from '../types';
 import type {
   ManagerContractItem,
@@ -777,4 +779,21 @@ export async function getContractRenewalHistory(
     console.warn(`[getContractRenewalHistory] Could not load renewals for contract ${contractId}:`, error);
     return [];
   }
+}
+
+/**
+ * BR-BMP-02: Kích hoạt Bồi thường Phạt cọc Gấp đôi khi cơ sở cháy kho 100% (Điều 328 BLDS)
+ * POST /api/v1/contracts/{id}/emergency-compensation
+ */
+export async function executeDoubleDepositCompensation(
+  contractId: number | string,
+  data: EmergencyCompensationRequest
+): Promise<ApiResponse<EmergencyCompensationResponse>> {
+  return apiClient<ApiResponse<EmergencyCompensationResponse>>(
+    `/contracts/${contractId}/emergency-compensation`,
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }
+  );
 }

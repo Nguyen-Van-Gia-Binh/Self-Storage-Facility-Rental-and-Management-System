@@ -141,6 +141,14 @@ export interface CheckInContract {
   originalUnitTypeId?: number;
   originalUnitTypeName?: string;
   upgradeReason?: string;
+  isDoubleDepositCompensation?: boolean;
+  compensationAmount?: number;
+  compensationReason?: string;
+  compensationApprovedBy?: number;
+  compensationApprovedByName?: string;
+  compensationApprovedAt?: string;
+  totalPayoutAmount?: number;
+  disbursementDeadlineDays?: number;
   isOnlineCheckIn?: boolean;
   checkinConditionNote?: string;
   handoverAt?: string;
@@ -457,4 +465,26 @@ export interface MoveInPassData {
   checkInWindow: string;
   status: 'PENDING_CHECKIN';
   totalPaid: number;
+}
+
+export interface EmergencyCompensationRequest {
+  reason: string;
+  notes?: string;
+}
+
+export interface EmergencyCompensationResponse {
+  contractId: number;
+  contractCode: string;
+  customerName: string;
+  customerPhone: string;
+  rentRefundAmount: number;
+  depositRefundAmount: number;
+  penaltyAmount: number;
+  totalPayoutAmount: number;
+  disbursementDeadlineDays: number;
+  reason: string;
+  status: string;
+  approvedAt: string;
+  approvedByName: string;
+  message: string;
 }
