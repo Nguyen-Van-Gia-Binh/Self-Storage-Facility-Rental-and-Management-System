@@ -4,7 +4,9 @@ import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
+import com.swp391.selfstorage.contract.entity.HandoverRecord;
 import com.swp391.selfstorage.contract.entity.RentalContract;
+import com.swp391.selfstorage.contract.repository.HandoverRecordRepository;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.contract.repository.ReturnRequestRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
@@ -51,6 +53,13 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
 
     @Autowired(required = false)
     private ReturnRequestRepository returnRequestRepository;
+
+    @Autowired(required = false)
+    private HandoverRecordRepository handoverRecordRepository;
+
+    public void setHandoverRecordRepository(HandoverRecordRepository handoverRecordRepository) {
+        this.handoverRecordRepository = handoverRecordRepository;
+    }
 
     public StaffDailyTaskServiceImpl(
             SupportRequestRepository supportRequestRepository,
@@ -156,6 +165,7 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         final Map<Long, Facility> facilities = new HashMap<>();
         final Map<Long, Optional<RentalContract>> contracts = new HashMap<>();
         final Map<Long, Optional<com.swp391.selfstorage.contract.entity.ReturnRequest>> returnRequests = new HashMap<>();
+        final Map<Long, Optional<HandoverRecord>> handoverRecords = new HashMap<>();
         Integer activeGraceDays = null;
     }
 
@@ -163,6 +173,12 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         if (id == null) return Optional.empty();
         if (cache == null) return rentalContractRepository.findById(id);
         return cache.contracts.computeIfAbsent(id, k -> rentalContractRepository.findById(k));
+    }
+
+    private Optional<HandoverRecord> getHandoverRecordCached(Long contractId, RequestCache cache) {
+        if (contractId == null || handoverRecordRepository == null) return Optional.empty();
+        if (cache == null) return handoverRecordRepository.findByContractId(contractId);
+        return cache.handoverRecords.computeIfAbsent(contractId, k -> handoverRecordRepository.findByContractId(k));
     }
 
     private Optional<com.swp391.selfstorage.contract.entity.ReturnRequest> getReturnRequestCached(Long contractId, RequestCache cache) {
@@ -619,6 +635,20 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
             }
         }
 
+        String conditionNote = null;
+        java.time.OffsetDateTime handoverAt = null;
+        boolean isOnline = false;
+
+        var hrOpt = getHandoverRecordCached(c.getId(), cache);
+        if (hrOpt.isPresent()) {
+            var hr = hrOpt.get();
+            conditionNote = hr.getConditionNote();
+            handoverAt = hr.getHandoverAt();
+            isOnline = (conditionNote != null && (conditionNote.toLowerCase().contains("online") || conditionNote.toLowerCase().contains("ký số")))
+                    || (hr.getStaffId() == null && hr.isCustomerConfirmed())
+                    || (hr.getStaffId() != null && Objects.equals(hr.getStaffId(), c.getCustomerId()));
+        }
+
         DailyCheckInTaskDto dto = DailyCheckInTaskDto.builder()
                 .contractId(c.getId())
                 .contractCode(c.getCode())
@@ -634,6 +664,9 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                 .status(status)
                 .completed(completed)
                 .checkinGraceDays(resolveCheckinGraceDays(c, cache))
+                .isOnlineCheckIn(isOnline)
+                .conditionNote(conditionNote)
+                .handoverAt(handoverAt)
                 .build();
         dto.setScheduledStartTime(c.getScheduledStartTime());
         dto.setScheduledEndTime(c.getScheduledEndTime());

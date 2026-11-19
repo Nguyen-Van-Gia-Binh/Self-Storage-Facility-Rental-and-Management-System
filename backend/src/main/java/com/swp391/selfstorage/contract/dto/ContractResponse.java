@@ -61,6 +61,9 @@ public class ContractResponse {
     private Long originalUnitTypeId;
     private String originalUnitTypeName;
     private String upgradeReason;
+    private Boolean isOnlineCheckIn;
+    private String checkinConditionNote;
+    private OffsetDateTime handoverAt;
     private List<PaymentTransactionItem> paymentTransactions;
     private List<UnpaidExtraChargeItem> unpaidExtraCharges;
 

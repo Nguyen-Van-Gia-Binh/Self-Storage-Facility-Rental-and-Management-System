@@ -3160,11 +3160,18 @@ public class ContractServiceImpl implements ContractService {
                                         }
                                 });
                         }
-                        if ((r.getRelocationEligible() == null || !r.getRelocationEligible()) && handoverRecordRepository != null) {
+                        if (handoverRecordRepository != null) {
                                 handoverRecordRepository.findByContractId(c.getId()).ifPresent(hr -> {
                                         if (hr.isRejected() && c.getStatus() == ContractStatus.PENDING_CHECK_IN) {
                                                 r.setRelocationEligible(true);
                                         }
+                                        r.setCheckinConditionNote(hr.getConditionNote());
+                                        r.setHandoverAt(hr.getHandoverAt());
+                                        boolean isOnline = (hr.getConditionNote() != null && 
+                                                (hr.getConditionNote().toLowerCase().contains("online") || hr.getConditionNote().toLowerCase().contains("ký số")))
+                                                || (hr.getStaffId() == null && hr.isCustomerConfirmed())
+                                                || (hr.getStaffId() != null && Objects.equals(hr.getStaffId(), c.getCustomerId()));
+                                        r.setIsOnlineCheckIn(isOnline);
                                 });
                         }
                 }

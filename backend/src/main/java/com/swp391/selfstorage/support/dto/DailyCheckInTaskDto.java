@@ -61,6 +61,15 @@ public class DailyCheckInTaskDto {
     @Schema(description = "Giờ kết thúc hẹn tiếp đón")
     private java.time.LocalTime scheduledEndTime;
 
+    @Schema(description = "Cờ đánh dấu khách tự check-in online từ xa & ký số điện tử")
+    private boolean isOnlineCheckIn;
+
+    @Schema(description = "Ghi chú bàn giao / kiểm tra ô kho")
+    private String conditionNote;
+
+    @Schema(description = "Thời điểm thực hiện bàn giao / nhận kho")
+    private java.time.OffsetDateTime handoverAt;
+
     public DailyCheckInTaskDto() {
     }
 
@@ -223,6 +232,15 @@ public class DailyCheckInTaskDto {
     public java.time.LocalTime getScheduledEndTime() { return scheduledEndTime; }
     public void setScheduledEndTime(java.time.LocalTime scheduledEndTime) { this.scheduledEndTime = scheduledEndTime; }
 
+    public boolean isOnlineCheckIn() { return isOnlineCheckIn; }
+    public void setOnlineCheckIn(boolean onlineCheckIn) { isOnlineCheckIn = onlineCheckIn; }
+
+    public String getConditionNote() { return conditionNote; }
+    public void setConditionNote(String conditionNote) { this.conditionNote = conditionNote; }
+
+    public java.time.OffsetDateTime getHandoverAt() { return handoverAt; }
+    public void setHandoverAt(java.time.OffsetDateTime handoverAt) { this.handoverAt = handoverAt; }
+
     public static class Builder {
         private Long contractId;
         private String contractCode;
@@ -238,6 +256,9 @@ public class DailyCheckInTaskDto {
         private String status;
         private boolean completed;
         private Integer checkinGraceDays;
+        private boolean isOnlineCheckIn;
+        private String conditionNote;
+        private java.time.OffsetDateTime handoverAt;
 
         public Builder contractId(Long contractId) {
             this.contractId = contractId;
@@ -309,9 +330,28 @@ public class DailyCheckInTaskDto {
             return this;
         }
 
+        public Builder isOnlineCheckIn(boolean isOnlineCheckIn) {
+            this.isOnlineCheckIn = isOnlineCheckIn;
+            return this;
+        }
+
+        public Builder conditionNote(String conditionNote) {
+            this.conditionNote = conditionNote;
+            return this;
+        }
+
+        public Builder handoverAt(java.time.OffsetDateTime handoverAt) {
+            this.handoverAt = handoverAt;
+            return this;
+        }
+
         public DailyCheckInTaskDto build() {
-            return new DailyCheckInTaskDto(contractId, contractCode, reservationId, customerId, customerName, customerPhone,
+            DailyCheckInTaskDto dto = new DailyCheckInTaskDto(contractId, contractCode, reservationId, customerId, customerName, customerPhone,
                     storageUnitId, storageUnitCode, facilityId, facilityName, scheduledDate, status, completed, checkinGraceDays);
+            dto.setOnlineCheckIn(isOnlineCheckIn);
+            dto.setConditionNote(conditionNote);
+            dto.setHandoverAt(handoverAt);
+            return dto;
         }
     }
 }
