@@ -1183,7 +1183,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                       )}
                       {settlementDamage > 0 && (
                         <div className="flex justify-between items-center text-rose-700">
-                          <span>4. Khấu trừ bồi thường hư hại ô kho:</span>
+                          <span>4. Khấu trừ bồi thường hư hại ô kho &amp; chi phí phát sinh:</span>
                           <span className="font-semibold">-{formatVND(settlementDamage)}</span>
                         </div>
                       )}
@@ -1205,7 +1205,12 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                         {settlementPayable > 0 ? (
                           <>
                             <span className="text-rose-700">Số tiền Khách hàng nộp bù:</span>
-                            <span className="text-rose-700 text-sm">{formatVND(settlementPayable)} (Đã thu)</span>
+                            <span className="text-rose-700 text-sm">
+                              {formatVND(settlementPayable)}{' '}
+                              <span className="text-[11px] font-normal">
+                                ({isClosed ? 'Đã thu' : 'Chờ thanh toán VNPay'})
+                              </span>
+                            </span>
                           </>
                         ) : (
                           <>

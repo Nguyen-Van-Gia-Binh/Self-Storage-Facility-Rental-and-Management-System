@@ -68,6 +68,7 @@ class CustomerRentalServiceTest {
     @Mock private com.swp391.selfstorage.support.repository.SupportRequestRepository supportRequestRepository;
     @Mock private com.swp391.selfstorage.contract.service.ContractService contractService;
     @Mock private com.swp391.selfstorage.user.repository.AuditLogRepository auditLogRepository;
+    @Mock private com.swp391.selfstorage.contract.repository.ContractExtraChargeRepository contractExtraChargeRepository;
 
     @InjectMocks
     private CustomerRentalServiceImpl customerRentalService;
@@ -789,6 +790,111 @@ class CustomerRentalServiceTest {
         assertEquals(settledTime, res.getSettledAt());
         assertEquals("Trần Quản Lý", res.getSettledByName());
         assertEquals("Biên bản nghiệm thu hoàn tất, xước sơn nhẹ trừ 200k", res.getSettlementNote());
+    }
+
+    @Test
+    @DisplayName("Cộng dồn chi phí hư hại danh mục từ contract_extra_charge vào settlementDamageCost")
+    void getMyRentalDetailAggregatesCatalogExtraChargesIntoSettlementDamageCost() {
+        RentalContract contract = RentalContract.builder()
+                .id(888L)
+                .code("CTR-202611-0888")
+                .customerId(15L)
+                .facilityId(1L)
+                .storageUnitId(42L)
+                .unitTypeId(7L)
+                .status(ContractStatus.PENDING_RETURN)
+                .startDate(LocalDate.now().minusMonths(1))
+                .endDateExclusive(LocalDate.now().plusMonths(2))
+                .monthlyPrice(1_000_000L)
+                .depositAmount(1_000_000L)
+                .depositBalance(1_000_000L)
+                .build();
+
+        com.swp391.selfstorage.contract.entity.ReturnRequest returnReq = com.swp391.selfstorage.contract.entity.ReturnRequest.builder()
+                .contractId(888L)
+                .status(com.swp391.selfstorage.contract.entity.ReturnRequestStatus.PENDING)
+                .damageCost(0L)
+                .conditionNote("Hư hại ổ khóa và vỡ bóng đèn")
+                .build();
+
+        com.swp391.selfstorage.contract.entity.ContractExtraCharge charge1 = com.swp391.selfstorage.contract.entity.ContractExtraCharge.builder()
+                .id(1L)
+                .contractId(888L)
+                .amount(250_000L)
+                .reason("DAMAGE: Thay ổ khóa thông minh")
+                .build();
+        com.swp391.selfstorage.contract.entity.ContractExtraCharge charge2 = com.swp391.selfstorage.contract.entity.ContractExtraCharge.builder()
+                .id(2L)
+                .contractId(888L)
+                .amount(3_000_000L)
+                .reason("DAMAGE: Bồi thường cửa hỏng")
+                .build();
+
+        com.swp391.selfstorage.contract.dto.SettlementPreviewResponse preview = com.swp391.selfstorage.contract.dto.SettlementPreviewResponse.builder()
+                .contractId(888L)
+                .settlementType("NORMAL")
+                .depositAmount(1_000_000L)
+                .damageCost(0L)
+                .unpaidExtraCharges(3_250_000L)
+                .overdueFee(0L)
+                .depositRefundAmount(0L)
+                .payableAmount(2_250_000L)
+                .build();
+
+        when(rentalContractRepository.findById(888L)).thenReturn(Optional.of(contract));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(facility));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(storageUnit));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+        when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(888L)).thenReturn(Optional.of(returnReq));
+        when(contractExtraChargeRepository.findByContractId(888L)).thenReturn(List.of(charge1, charge2));
+        when(contractService.getSettlementPreview(888L, null)).thenReturn(preview);
+
+        CustomerRentalDetailResponse res = customerRentalService.getMyRentalDetail(888L, customerUser);
+
+        assertNotNull(res);
+        assertEquals(3_250_000L, res.getSettlementDamageCost());
+        assertEquals(2_250_000L, res.getSettlementPayableAmount());
+    }
+
+    @Test
+    @DisplayName("Hợp đồng PENDING_RETURN có đơn nợ SETTLEMENT PENDING được gán totalOutstandingDebt để mở nút thanh toán")
+    void populateRentalSummarySetsOutstandingDebtForPendingSettlementDeficit() {
+        RentalContract contract = RentalContract.builder()
+                .id(999L)
+                .code("CTR-202611-0999")
+                .customerId(15L)
+                .facilityId(1L)
+                .storageUnitId(42L)
+                .unitTypeId(7L)
+                .status(ContractStatus.PENDING_RETURN)
+                .startDate(LocalDate.now().minusMonths(1))
+                .endDateExclusive(LocalDate.now().plusMonths(1))
+                .monthlyPrice(1_000_000L)
+                .depositAmount(1_000_000L)
+                .build();
+
+        com.swp391.selfstorage.payment.entity.PaymentTransaction pendingSettlementTx =
+                com.swp391.selfstorage.payment.entity.PaymentTransaction.builder()
+                        .id(99L)
+                        .contractId(999L)
+                        .transactionType("SETTLEMENT")
+                        .amount(3_250_000L)
+                        .status("PENDING")
+                        .build();
+
+        when(rentalContractRepository.findByCustomerIdAndStatus(eq(15L), eq(ContractStatus.PENDING_RETURN), any(Pageable.class)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(contract)));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(facility));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(storageUnit));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+        when(paymentTransactionRepository.findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(999L, "SETTLEMENT"))
+                .thenReturn(Optional.of(pendingSettlementTx));
+
+        PageResponse<CustomerRentalSummaryResponse> page = customerRentalService.getMyRentals(customerUser, "PENDING_RETURN", PageRequest.of(0, 10));
+
+        assertNotNull(page);
+        assertEquals(1, page.getContent().size());
+        assertEquals(3_250_000L, page.getContent().get(0).getTotalOutstandingDebt());
     }
 
     @Test
