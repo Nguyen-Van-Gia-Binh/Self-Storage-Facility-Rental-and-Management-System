@@ -97,7 +97,7 @@ export const ManagerDashboardPage: React.FC = () => {
           Promise.allSettled(
             assignedFacilities.map((f) => fetchStorageUnits(f.id, { size: 500 }))
           ),
-          listReservations({ status: 'PAID', size: 100 }),
+          listReservations({ status: 'CONFIRMED', size: 100 }),
           getManagerContracts({ status: 'ALL' }),
           getManagementSupportRequests({}),
         ]);
