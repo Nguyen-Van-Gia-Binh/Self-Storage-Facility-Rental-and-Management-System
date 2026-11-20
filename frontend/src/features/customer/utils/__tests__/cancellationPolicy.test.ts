@@ -83,5 +83,40 @@ describe('calculateCancellationRefund — Chính sách hủy đặt chỗ 3 tầ
     expect(result.refundableRentalFee).toBe(2400000);
     expect(result.tierBadge).toBe('Phạt 100% cọc');
   });
+
+  it('Áp dụng tham số BOM policy tùy chỉnh: cancelFullRefundDays = 10, cancelMidRefundRate = 0.7 (hoàn 70% cọc / phạt 30%)', () => {
+    const customPolicy = {
+      cancelFullRefundDays: 10,
+      cancelMidRefundRate: 0.7,
+      cancelFullRefundHours: 48,
+      cancelLateRefundRate: 0,
+    };
+
+    // Cách 9 ngày: Với policy mặc định 7 ngày thì là EARLY_FULL, nhưng với custom 10 ngày thì rơi vào MID_PARTIAL
+    const resultMid = calculateCancellationRefund({
+      ...baseParams,
+      startDateStr: '2026-11-15', // cách 9 ngày < 10 ngày
+      policy: customPolicy as any,
+    });
+
+    expect(resultMid.tier).toBe('MID_PARTIAL');
+    expect(resultMid.daysUntilStart).toBe(9);
+    expect(resultMid.depositRefund).toBe(560000); // 70% của 800k
+    expect(resultMid.depositPenalty).toBe(240000); // Phạt 30% cọc = 240k
+    expect(resultMid.tierBadge).toContain('Phạt 30% cọc');
+    expect(resultMid.totalRefund).toBe(2960000); // 2.4M + 560k
+
+    // Cách 12 ngày >= 10 ngày: Rơi vào EARLY_FULL
+    const resultFull = calculateCancellationRefund({
+      ...baseParams,
+      startDateStr: '2026-11-18', // cách 12 ngày >= 10 ngày
+      policy: customPolicy as any,
+    });
+
+    expect(resultFull.tier).toBe('EARLY_FULL');
+    expect(resultFull.depositRefund).toBe(800000);
+    expect(resultFull.depositPenalty).toBe(0);
+    expect(resultFull.totalRefund).toBe(3200000);
+  });
 });
 

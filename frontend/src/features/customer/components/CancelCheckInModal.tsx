@@ -7,6 +7,7 @@ import { formatVND } from '../utils/pricing';
 import { cancelReservationApi } from '@/api/reservation';
 import { calculateCancellationRefund } from '../utils/cancellationPolicy';
 import { cancelContractPendingCheckIn } from '@/api/customerRentals';
+import { useActivePolicy } from '@/hooks/useActivePolicy';
 
 function formatDateVN(dateStr?: string): string {
   if (!dateStr) return '';
@@ -34,6 +35,7 @@ export const CancelCheckInModal: React.FC<CancelCheckInModalProps> = ({
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const policy = useActivePolicy();
 
   const calc = useMemo(() => {
     if (!contract) return null;
@@ -43,8 +45,9 @@ export const CancelCheckInModal: React.FC<CancelCheckInModalProps> = ({
       depositAmount: contract.depositHeld || 0,
       monthlyRent: contract.monthlyRent || 0,
       rentalMonths: contract.rentalMonths || 1,
+      policy,
     });
-  }, [contract]);
+  }, [contract, policy]);
 
   if (!contract || !calc) return null;
 
@@ -185,7 +188,7 @@ export const CancelCheckInModal: React.FC<CancelCheckInModalProps> = ({
             <div className="flex justify-between text-slate-600">
               <span>
                 {totalDeductions > 0
-                  ? `Trừ tiền cọc (${calc.tier === 'MID_PARTIAL' ? 'Phạt 50% cọc' : 'Phạt 100% cọc'}):`
+                  ? `Trừ tiền cọc (${calc.tierBadge}):`
                   : 'Khấu trừ tiền cọc:'}
               </span>
               <span className={`font-semibold ${totalDeductions > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>

@@ -251,6 +251,8 @@ export async function fetchActivePolicy(): Promise<ActivePolicyInfo> {
     reservationHoldHours: Number(res.reservationHoldHours ?? 48),
     rentalDailyDivisor: Number(res.rentalDailyDivisor ?? 30),
     checkinGraceDays: Number(res.checkinGraceDays ?? 10),
+    cancelFullRefundDays: Number(res.cancelFullRefundDays ?? 7),
+    cancelMidRefundRate: Number(res.cancelMidRefundRate ?? 0.5),
     cancelFullRefundHours: Number(res.cancelFullRefundHours ?? 48),
     cancelLateRefundRate: Number(res.cancelLateRefundRate ?? 0.0),
     renewalMinMonths: Number(res.renewalMinMonths ?? 1),
@@ -283,6 +285,8 @@ export interface PolicyPublishPayload {
   rentalBufferDays: number;
   rentalDailyDivisor: number;
   checkinGraceDays: number;
+  cancelFullRefundDays: number;
+  cancelMidRefundRate: number;
   cancelFullRefundHours: number;
   cancelLateRefundRate: number;
   cancelNoShowRefundRate: number;

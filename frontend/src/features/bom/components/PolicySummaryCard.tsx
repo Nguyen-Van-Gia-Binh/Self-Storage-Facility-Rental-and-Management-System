@@ -74,6 +74,8 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
     );
   }
 
+  const cancelFullDays = policy.cancelFullRefundDays ?? 7;
+  const cancelMidPct = Math.round((policy.cancelMidRefundRate ?? 0.5) * 100);
   const cancelLatePct = Math.round(policy.cancelLateRefundRate * 100);
   const overdueDailyPct = Math.round(policy.overdueDailyRate * 100);
   const overdueCapPct = Math.round(policy.overdueCapRate * 100);
@@ -90,8 +92,8 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
         },
         {
           label: 'Chính sách hủy đặt chỗ',
-          description: `Hủy trước ${policy.cancelFullRefundHours}h hoàn 100%; sau ${policy.cancelFullRefundHours}h hoàn ${cancelLatePct}%.`,
-          value: `Hoàn 100% / ${cancelLatePct}%`,
+          description: `≥${cancelFullDays} ngày hoàn 100% cọc; 2-${cancelFullDays - 1} ngày hoàn ${cancelMidPct}%; <${policy.cancelFullRefundHours}h hoàn ${cancelLatePct}%.`,
+          value: `Hoàn 100% / ${cancelMidPct}% / ${cancelLatePct}%`,
         },
       ],
     },

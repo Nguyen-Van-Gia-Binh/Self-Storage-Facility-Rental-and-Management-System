@@ -2,6 +2,7 @@ package com.swp391.selfstorage.payment.event;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -52,46 +53,67 @@ public class PaymentEventListener {
         saveRefundPart(existing, event, event.getDepositRefundAmount(), "DEPOSIT_REFUND",
                 "Hoàn cọc quyết toán hợp đồng #", orderCode);
 
-        // 2. Nợ thêm do hư hại/quá hạn vượt tiền cọc -> Tạo giao dịch thu nợ
+        // 2. Nợ thêm do hư hại/quá hạn vượt tiền cọc -> Tạo/cập nhật giao dịch thu nợ SETTLEMENT
         if (event.getPayableAmount() > 0) {
-            PaymentTransaction payableTxn = PaymentTransaction.builder()
-                    .contractId(event.getContractId())
-                    .amount(event.getPayableAmount())
-                    .transactionType("SETTLEMENT")
-                    .paymentMethod("VNPAY")
-                    .status("PENDING")
-                    .providerReference("Thu nợ thanh lý hợp đồng #" + event.getContractId())
-                    .orderCode(System.currentTimeMillis())
-                    .build();
+            Optional<PaymentTransaction> existingPayable = existing.stream()
+                    .filter(t -> "SETTLEMENT".equalsIgnoreCase(t.getTransactionType()))
+                    .findFirst();
 
-            paymentTransactionRepository.save(payableTxn);
-            log.info("Đã tạo bản ghi SETTLEMENT PENDING cho contractId={}", event.getContractId());
+            Instant paidAt = event.getSettledAt() != null ? event.getSettledAt().toInstant() : Instant.now();
+            boolean isConfirmed = event.isConfirmPaid();
+
+            if (existingPayable.isPresent()) {
+                PaymentTransaction payableTxn = existingPayable.get();
+                if (isConfirmed && !"SUCCESS".equalsIgnoreCase(payableTxn.getStatus())) {
+                    payableTxn.setStatus("SUCCESS");
+                    payableTxn.setPaymentMethod("CASH");
+                    payableTxn.setPaidAt(paidAt);
+                    payableTxn.setAmount(event.getPayableAmount());
+                    paymentTransactionRepository.save(payableTxn);
+                    log.info("Đã cập nhật SETTLEMENT sang SUCCESS (CASH) cho contractId={}", event.getContractId());
+                }
+            } else {
+                PaymentTransaction payableTxn = PaymentTransaction.builder()
+                        .contractId(event.getContractId())
+                        .amount(event.getPayableAmount())
+                        .transactionType("SETTLEMENT")
+                        .paymentMethod(isConfirmed ? "CASH" : "VNPAY")
+                        .status(isConfirmed ? "SUCCESS" : "PENDING")
+                        .paidAt(isConfirmed ? paidAt : null)
+                        .providerReference("Thu nợ thanh lý hợp đồng #" + event.getContractId())
+                        .orderCode(System.currentTimeMillis())
+                        .build();
+
+                paymentTransactionRepository.save(payableTxn);
+                log.info("Đã tạo bản ghi SETTLEMENT {} ({}) cho contractId={}",
+                        isConfirmed ? "SUCCESS" : "PENDING", isConfirmed ? "CASH" : "VNPAY", event.getContractId());
+            }
         }
     }
 
-    /** Ghi một phần hoàn nếu chưa có dòng cùng loại. Trả về true khi vừa ghi. */
+    /** Ghi hoặc cập nhật phần hoàn sang SUCCESS khi hợp đồng đã quyết toán. */
     private boolean saveRefundPart(List<PaymentTransaction> existing, ContractSettledEvent event,
             long amount, String type, String referencePrefix, long orderCode) {
         if (amount <= 0 || paymentTransactionRepository == null) {
             return false;
         }
-        PaymentTransaction matched = existing.stream()
+        Optional<PaymentTransaction> existingTxn = existing.stream()
                 .filter(t -> type.equalsIgnoreCase(t.getTransactionType()))
-                .findFirst().orElse(null);
-        if (matched != null) {
-            if ("PENDING_REFUND".equalsIgnoreCase(matched.getStatus())) {
-                matched.setStatus("SUCCESS");
-                if (matched.getPaidAt() == null) {
-                    matched.setPaidAt(event.getSettledAt() != null ? event.getSettledAt().toInstant() : Instant.now());
-                }
-                paymentTransactionRepository.save(matched);
-                log.info("Cập nhật giao dịch {} #{} sang SUCCESS cho contractId={}", type, matched.getId(), event.getContractId());
-            } else {
-                log.info("Hợp đồng contractId={} đã có {}, bỏ qua tạo trùng", event.getContractId(), type);
+                .findFirst();
+
+        Instant paidAt = event.getSettledAt() != null ? event.getSettledAt().toInstant() : Instant.now();
+        if (existingTxn.isPresent()) {
+            PaymentTransaction txn = existingTxn.get();
+            if (!"SUCCESS".equalsIgnoreCase(txn.getStatus())) {
+                txn.setStatus("SUCCESS");
+                txn.setPaidAt(paidAt);
+                txn.setAmount(amount);
+                paymentTransactionRepository.save(txn);
+                log.info("Hợp đồng contractId={} đã cập nhật {} sang SUCCESS", event.getContractId(), type);
             }
             return false;
         }
-        Instant paidAt = event.getSettledAt() != null ? event.getSettledAt().toInstant() : Instant.now();
+
         paymentTransactionRepository.save(PaymentTransaction.builder()
                 .contractId(event.getContractId())
                 .amount(amount)

@@ -107,8 +107,8 @@ class PaymentEventListenerTest {
     }
 
     @Test
-    @DisplayName("FM-04: handleContractSettled khi có payableAmount > 0 -> Lưu giao dịch SETTLEMENT PENDING")
-    void handleContractSettled_WhenPayable_ShouldSaveSettlementTransaction() {
+    @DisplayName("FM-04: handleContractSettled khi có payableAmount > 0 và confirmPaid == true -> Lưu SETTLEMENT SUCCESS (CASH)")
+    void handleContractSettled_WhenPayableAndConfirmPaid_ShouldSaveSettlementSuccess() {
         ContractSettledEvent event = ContractSettledEvent.builder()
                 .contractId(301L)
                 .customerId(15L)
@@ -116,6 +116,7 @@ class PaymentEventListenerTest {
                 .depositRefundAmount(0L)
                 .payableAmount(500_000L)
                 .settledAt(OffsetDateTime.now())
+                .confirmPaid(true)
                 .build();
 
         paymentEventListener.handleContractSettled(event);
@@ -126,8 +127,64 @@ class PaymentEventListenerTest {
 
         assertEquals(301L, saved.getContractId());
         assertEquals("SETTLEMENT", saved.getTransactionType());
-        assertEquals("PENDING", saved.getStatus());
+        assertEquals("SUCCESS", saved.getStatus());
         assertEquals(500_000L, saved.getAmount());
+        assertEquals("CASH", saved.getPaymentMethod());
+        assertNotNull(saved.getPaidAt());
+    }
+
+    @Test
+    @DisplayName("FM-04: handleContractSettled khi có payableAmount > 0 và confirmPaid == false -> Lưu SETTLEMENT PENDING (VNPAY)")
+    void handleContractSettled_WhenPayableAndNotConfirmPaid_ShouldSaveSettlementPending() {
+        ContractSettledEvent event = ContractSettledEvent.builder()
+                .contractId(303L)
+                .customerId(15L)
+                .facilityId(1L)
+                .depositRefundAmount(0L)
+                .payableAmount(600_000L)
+                .settledAt(OffsetDateTime.now())
+                .confirmPaid(false)
+                .build();
+
+        paymentEventListener.handleContractSettled(event);
+
+        ArgumentCaptor<PaymentTransaction> captor = ArgumentCaptor.forClass(PaymentTransaction.class);
+        verify(paymentTransactionRepository).save(captor.capture());
+        PaymentTransaction saved = captor.getValue();
+
+        assertEquals(303L, saved.getContractId());
+        assertEquals("SETTLEMENT", saved.getTransactionType());
+        assertEquals("PENDING", saved.getStatus());
+        assertEquals(600_000L, saved.getAmount());
         assertEquals("VNPAY", saved.getPaymentMethod());
+    }
+
+    @Test
+    @DisplayName("FM-04: handleContractSettled khi đã có PENDING_REFUND -> Cập nhật sang SUCCESS thay vì bỏ qua")
+    void handleContractSettled_WhenExistingPendingRefund_ShouldUpdateToSuccess() {
+        PaymentTransaction pendingRefund = PaymentTransaction.builder()
+                .contractId(304L)
+                .transactionType("DEPOSIT_REFUND")
+                .amount(1_000_000L)
+                .status("PENDING_REFUND")
+                .build();
+
+        org.mockito.Mockito.when(paymentTransactionRepository.findByContractId(304L))
+                .thenReturn(java.util.List.of(pendingRefund));
+
+        ContractSettledEvent event = ContractSettledEvent.builder()
+                .contractId(304L)
+                .customerId(15L)
+                .facilityId(1L)
+                .depositRefundAmount(1_000_000L)
+                .payableAmount(0L)
+                .settledAt(OffsetDateTime.now())
+                .build();
+
+        paymentEventListener.handleContractSettled(event);
+
+        assertEquals("SUCCESS", pendingRefund.getStatus());
+        assertNotNull(pendingRefund.getPaidAt());
+        verify(paymentTransactionRepository).save(pendingRefund);
     }
 }

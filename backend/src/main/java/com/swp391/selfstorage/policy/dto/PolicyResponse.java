@@ -22,6 +22,8 @@ public class PolicyResponse {
     private Integer rentalBufferDays;
     private Integer rentalDailyDivisor;
     private Integer checkinGraceDays;
+    private Integer cancelFullRefundDays;
+    private BigDecimal cancelMidRefundRate;
     private Integer cancelFullRefundHours;
     private BigDecimal cancelLateRefundRate;
     private BigDecimal cancelNoShowRefundRate;

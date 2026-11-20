@@ -10,6 +10,8 @@ type FormState = {
   rentalBufferDays: string;
   rentalDailyDivisor: string;
   checkinGraceDays: string;
+  cancelFullRefundDays: string;
+  cancelMidRefundRate: string;
   cancelFullRefundHours: string;
   cancelLateRefundRate: string;
   cancelNoShowRefundRate: string;
@@ -51,6 +53,8 @@ function emptyForm(): FormState {
     rentalBufferDays: '8',
     rentalDailyDivisor: '30',
     checkinGraceDays: '10',
+    cancelFullRefundDays: '7',
+    cancelMidRefundRate: '50',
     cancelFullRefundHours: '48',
     cancelLateRefundRate: '0',
     cancelNoShowRefundRate: '0',
@@ -84,6 +88,8 @@ function fromPolicy(policy: PolicyPublishPayload): FormState {
     rentalBufferDays: String(policy.rentalBufferDays ?? 8),
     rentalDailyDivisor: String(policy.rentalDailyDivisor ?? 30),
     checkinGraceDays: String(policy.checkinGraceDays ?? 10),
+    cancelFullRefundDays: String(policy.cancelFullRefundDays ?? 7),
+    cancelMidRefundRate: rateToPercent(policy.cancelMidRefundRate, 0.5),
     cancelFullRefundHours: String(policy.cancelFullRefundHours ?? 48),
     cancelLateRefundRate: rateToPercent(policy.cancelLateRefundRate, 0),
     cancelNoShowRefundRate: rateToPercent(policy.cancelNoShowRefundRate, 0),
@@ -182,7 +188,12 @@ export const BomPolicyPage: React.FC = () => {
       }
       seen.add(item);
     }
+    const cancelDays = Number(form.cancelFullRefundDays);
+    if (!Number.isInteger(cancelDays) || cancelDays < 1) {
+      return 'Số ngày hủy hoàn 100% cọc phải là số nguyên lớn hơn hoặc bằng 1';
+    }
     const rates: Array<[string, string]> = [
+      ['Tỷ lệ hoàn cọc khi hủy lửng', form.cancelMidRefundRate],
       ['Tỷ lệ hoàn khi hủy muộn', form.cancelLateRefundRate],
       ['Tỷ lệ hoàn no-show', form.cancelNoShowRefundRate],
       ['Phí quá hạn mỗi ngày', form.overdueDailyRate],
@@ -223,6 +234,8 @@ export const BomPolicyPage: React.FC = () => {
       rentalBufferDays: Number(form.rentalBufferDays),
       rentalDailyDivisor: Number(form.rentalDailyDivisor),
       checkinGraceDays: Number(form.checkinGraceDays),
+      cancelFullRefundDays: Number(form.cancelFullRefundDays),
+      cancelMidRefundRate: percentToRate(form.cancelMidRefundRate),
       cancelFullRefundHours: Number(form.cancelFullRefundHours),
       cancelLateRefundRate: percentToRate(form.cancelLateRefundRate),
       cancelNoShowRefundRate: percentToRate(form.cancelNoShowRefundRate),
@@ -300,8 +313,10 @@ export const BomPolicyPage: React.FC = () => {
         <h2 className="font-semibold text-slate-900 text-base">Hủy và trả kho</h2>
         <p className="text-xs text-slate-500">Cơ sở hủy thì hoàn 100%. Không có ô tỷ lệ phạt cho trường hợp này.</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Field label="Giờ hủy được hoàn 100%" value={form.cancelFullRefundHours} onChange={set('cancelFullRefundHours')} />
-          <Field label="Tỷ lệ hoàn khi hủy muộn (%)" value={form.cancelLateRefundRate} step="0.1" onChange={set('cancelLateRefundRate')} />
+          <Field label="Số ngày hủy hoàn 100% cọc (ngày)" value={form.cancelFullRefundDays} onChange={set('cancelFullRefundDays')} />
+          <Field label="Tỷ lệ hoàn cọc khi hủy lửng 2-6 ngày (%)" value={form.cancelMidRefundRate} step="0.1" onChange={set('cancelMidRefundRate')} />
+          <Field label="Mốc giờ hủy sát giờ (giờ)" value={form.cancelFullRefundHours} onChange={set('cancelFullRefundHours')} />
+          <Field label="Tỷ lệ hoàn khi hủy sát giờ (%)" value={form.cancelLateRefundRate} step="0.1" onChange={set('cancelLateRefundRate')} />
           <Field label="Tỷ lệ hoàn no-show (%)" value={form.cancelNoShowRefundRate} step="0.1" onChange={set('cancelNoShowRefundRate')} />
           <Field
             label="Thời hạn khóa quyền gia hạn (ngày trước hết hạn)"

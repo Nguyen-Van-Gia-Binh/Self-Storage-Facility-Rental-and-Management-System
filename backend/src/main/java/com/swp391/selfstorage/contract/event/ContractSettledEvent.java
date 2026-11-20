@@ -12,4 +12,6 @@ public class ContractSettledEvent {
     private final long depositRefundAmount;
     private final long payableAmount;
     private final OffsetDateTime settledAt;
+    @Builder.Default
+    private final boolean confirmPaid = true;
 }

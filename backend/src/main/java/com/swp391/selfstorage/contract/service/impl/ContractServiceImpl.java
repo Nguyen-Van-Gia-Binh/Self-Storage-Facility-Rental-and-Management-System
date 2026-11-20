@@ -1986,6 +1986,7 @@ public class ContractServiceImpl implements ContractService {
                                                         .depositRefundAmount(0L)
                                                         .payableAmount(payableAmount)
                                                         .settledAt(OffsetDateTime.now())
+                                                        .confirmPaid(false)
                                                         .build());
 
                                         return SettlementApprovalResponse.builder()
@@ -2055,6 +2056,7 @@ public class ContractServiceImpl implements ContractService {
                                         .depositRefundAmount(0L)
                                         .payableAmount(payableAmount)
                                         .settledAt(OffsetDateTime.now())
+                                        .confirmPaid(false)
                                         .build());
 
                         return SettlementApprovalResponse.builder()
@@ -2306,6 +2308,7 @@ public class ContractServiceImpl implements ContractService {
                                         .depositRefundAmount(depositRefund)
                                         .payableAmount(payableAmount)
                                         .settledAt(returnReq.getSettledAt())
+                                        .confirmPaid(true)
                                         .build());
                 }
 
