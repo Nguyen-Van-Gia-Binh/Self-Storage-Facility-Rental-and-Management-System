@@ -64,12 +64,19 @@ export interface AssignTaskPayload {
 }
 
 export type SupportCategory = 
-  | 'ACCESS_ISSUE'       // Kẹt cửa, hỏng khóa số, mất mã PIN
-  | 'FACILITY_DAMAGE'    // Hư hỏng vách ngăn, trần, sàn
-  | 'FACILITY_LEAK'      // Thấm dột, ẩm mốc, điều hòa
-  | 'CLEANLINESS'        // Vệ sinh, rác, côn trùng
-  | 'PAYMENT_BILLING'    // Thắc mắc thanh toán, phụ phí
-  | 'OTHER';             // Yêu cầu hỗ trợ khác
+  | 'LOCK_ACCESS'        // Sự cố khóa, mã PIN ra vào (Database / Backend chuẩn)
+  | 'UNIT_DAMAGE'        // Hư hại ô kho, cửa, sàn, trần
+  | 'PAYMENT'            // Vấn đề thanh toán, tiền cọc
+  | 'BELONGINGS'         // Tài sản lưu trữ, mượn xe nâng
+  | 'OTHER'              // Yêu cầu hỗ trợ khác
+  // Các alias tương thích ngược dữ liệu cũ:
+  | 'ACCESS_ISSUE'       // Alias LOCK_ACCESS
+  | 'LOST_KEY'           // Alias LOCK_ACCESS
+  | 'FACILITY_DAMAGE'    // Alias UNIT_DAMAGE
+  | 'FACILITY_LEAK'      // Alias UNIT_DAMAGE
+  | 'POWER_ISSUE'        // Alias UNIT_DAMAGE
+  | 'CLEANLINESS'        // Alias OTHER / UNIT_DAMAGE
+  | 'PAYMENT_BILLING';   // Alias PAYMENT
 
 export type SupportStatus = 
   | 'NEW'                // Mới gửi (SupportStatus.java)

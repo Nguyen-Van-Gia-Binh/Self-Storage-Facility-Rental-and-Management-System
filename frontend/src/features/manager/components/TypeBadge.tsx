@@ -12,6 +12,33 @@ const CATEGORY_CONFIG: Record<
   string,
   { label: string; icon: React.FC<{ className?: string }>; className: string }
 > = {
+  // 5 Danh mục chuẩn Backend / Database
+  LOCK_ACCESS: {
+    label: 'Khóa & Mã PIN',
+    icon: KeyRound,
+    className: 'bg-amber-50 text-amber-700 border-amber-200/80',
+  },
+  UNIT_DAMAGE: {
+    label: 'Hư hỏng kho & Đèn',
+    icon: Wrench,
+    className: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
+  },
+  PAYMENT: {
+    label: 'Thanh toán & Phí',
+    icon: Receipt,
+    className: 'bg-purple-50 text-purple-700 border-purple-200/80',
+  },
+  BELONGINGS: {
+    label: 'Tài sản & Xe đẩy',
+    icon: Sparkles,
+    className: 'bg-teal-50 text-teal-700 border-teal-200/80',
+  },
+  OTHER: {
+    label: 'Sự cố khác',
+    icon: HelpCircle,
+    className: 'bg-slate-100 text-slate-700 border-slate-200',
+  },
+  // Các alias tương thích dữ liệu cũ
   ACCESS_ISSUE: {
     label: 'Khóa cửa & PIN',
     icon: KeyRound,
@@ -23,7 +50,7 @@ const CATEGORY_CONFIG: Record<
     className: 'bg-rose-50 text-rose-700 border-rose-200/80',
   },
   FACILITY_DAMAGE: {
-    label: 'Hư hỏng vách/cửa',
+    label: 'Hư hỏng kho & Đèn',
     icon: Wrench,
     className: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
   },
@@ -43,14 +70,9 @@ const CATEGORY_CONFIG: Record<
     className: 'bg-teal-50 text-teal-700 border-teal-200/80',
   },
   PAYMENT_BILLING: {
-    label: 'Hóa đơn & Cước phí',
+    label: 'Thanh toán & Phí',
     icon: Receipt,
     className: 'bg-purple-50 text-purple-700 border-purple-200/80',
-  },
-  OTHER: {
-    label: 'Sự cố khác',
-    icon: HelpCircle,
-    className: 'bg-slate-100 text-slate-700 border-slate-200',
   },
 };
 

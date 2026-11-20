@@ -144,8 +144,8 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
           return fee.category === 'DAMAGE';
         }
 
-        // Các sự cố khác: cho phép DAMAGE hoặc VALUE_ADDED (tiện ích bốc xếp)
-        return fee.category === 'DAMAGE' || fee.category === 'VALUE_ADDED';
+        // Các sự cố khác: cho phép DAMAGE, VALUE_ADDED hoặc ACCESS_KEY
+        return fee.category === 'DAMAGE' || fee.category === 'VALUE_ADDED' || fee.category === 'ACCESS_KEY';
       });
       setAllSurcharges(validFees);
     } catch (err) {
@@ -154,7 +154,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
     } finally {
       setLoadingSurcharges(false);
     }
-  }, [incidentDetail.facilityId, task.facilityId]);
+  }, [incidentDetail.facilityId, incidentDetail.category, task.facilityId, task.category]);
 
   useEffect(() => {
     loadSurcharges();
@@ -165,6 +165,18 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
     completed: incidentDetail.completed ?? task.completed,
     contractStatus: incidentDetail.contractStatus ?? task.contractStatus,
   });
+
+  // Nhãn phân loại phụ phí: Khi sự cố là Khóa/PIN nhưng khoản sửa chữa là khóa/cửa cuốn, hiển thị rõ "Sửa chữa hệ thống khóa / cửa"
+  const getFeeCategorySubLabel = (fee: SurchargeItem): string => {
+    const targetCategory = (incidentDetail.category ?? task.category ?? '').toUpperCase();
+    if (
+      (targetCategory.includes('LOCK') || targetCategory.includes('ACCESS') || targetCategory.includes('KEY')) &&
+      fee.category === 'DAMAGE'
+    ) {
+      return 'Sửa chữa hệ thống khóa / cửa';
+    }
+    return feeCategoryLabel(fee.category);
+  };
 
   // Tính số tiền của từng phụ phí theo công thức chuẩn catalogLineAmount từ Backend
   const calculateFeeAmount = (fee: SurchargeItem): number => {
@@ -578,7 +590,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                               />
                               <span className="min-w-0">
                                 <span className="block text-sm font-medium text-slate-900">{fee.name}</span>
-                                <span className="block text-xs text-slate-500">{feeCategoryLabel(fee.category)}</span>
+                                <span className="block text-xs text-slate-500">{getFeeCategorySubLabel(fee)}</span>
                               </span>
                             </span>
                             <span className="num text-sm text-slate-900 shrink-0">
@@ -638,7 +650,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                               />
                               <span className="min-w-0">
                                 <span className="block text-sm font-medium text-slate-900">{fee.name}</span>
-                                <span className="block text-xs text-slate-500">{feeCategoryLabel(fee.category)}</span>
+                                <span className="block text-xs text-slate-500">{getFeeCategorySubLabel(fee)}</span>
                               </span>
                             </span>
                             <span className="num text-sm text-slate-900 shrink-0">

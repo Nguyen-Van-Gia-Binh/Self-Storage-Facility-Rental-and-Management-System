@@ -132,7 +132,13 @@ export const IncidentListPage: React.FC = () => {
     }
 
     if (selectedCategory !== 'ALL') {
-      result = result.filter((t) => t.category === selectedCategory);
+      result = result.filter((t) => {
+        if (t.category === selectedCategory) return true;
+        if (selectedCategory === 'LOCK_ACCESS' && (t.category === 'ACCESS_ISSUE' || t.category === 'LOST_KEY')) return true;
+        if (selectedCategory === 'UNIT_DAMAGE' && (t.category === 'FACILITY_DAMAGE' || t.category === 'FACILITY_LEAK' || t.category === 'POWER_ISSUE')) return true;
+        if (selectedCategory === 'PAYMENT' && t.category === 'PAYMENT_BILLING') return true;
+        return false;
+      });
     }
 
     if (searchKeyword.trim()) {
@@ -340,13 +346,10 @@ export const IncidentListPage: React.FC = () => {
               className="px-3 py-1.5 bg-white text-xs font-medium border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-gray-700 cursor-pointer"
             >
               <option value="ALL">Tất cả loại sự cố</option>
-              <option value="ACCESS_ISSUE">Khóa cửa & PIN</option>
-              <option value="LOST_KEY">Mất chìa khóa</option>
-              <option value="FACILITY_DAMAGE">Hư bản lề / vách cửa</option>
-              <option value="FACILITY_LEAK">Ngập nước / ẩm mốc</option>
-              <option value="POWER_ISSUE">Điện & chiếu sáng</option>
-              <option value="CLEANLINESS">Vệ sinh kho bãi</option>
-              <option value="PAYMENT_BILLING">Hóa đơn & phụ phí</option>
+              <option value="LOCK_ACCESS">Khóa & Mã PIN</option>
+              <option value="UNIT_DAMAGE">Hư hỏng kho & Đèn</option>
+              <option value="PAYMENT">Thanh toán & Phí</option>
+              <option value="BELONGINGS">Tài sản & Xe đẩy</option>
               <option value="OTHER">Sự cố khác</option>
             </select>
 
