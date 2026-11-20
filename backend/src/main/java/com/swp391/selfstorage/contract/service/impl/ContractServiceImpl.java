@@ -795,6 +795,14 @@ public class ContractServiceImpl implements ContractService {
                                         .rescheduledAt(c.getRescheduledAt())
                                         .createdAt(c.getCreatedAt())
                                         .returnRequestCreatedAt(returnRequestCreatedAt)
+                                        .totalRentalFee(c.getTotalRentalFee())
+                                        .isDoubleDepositCompensation(c.isDoubleDepositCompensation())
+                                        .compensationAmount(c.getCompensationAmount() > 0 ? c.getCompensationAmount() : null)
+                                        .compensationReason(c.getCompensationReason())
+                                        .totalPayoutAmount(c.isDoubleDepositCompensation()
+                                                ? c.getTotalRentalFee() + c.getDepositAmount()
+                                                        + (c.getCompensationAmount() > 0 ? c.getCompensationAmount() : c.getDepositAmount())
+                                                : null)
                                         .build();
                 }).toList();
 

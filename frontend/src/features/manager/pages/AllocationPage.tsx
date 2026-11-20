@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   AlertCircle,
+  AlertTriangle,
   ArrowLeftRight,
   ArrowRight,
   Check,
@@ -14,11 +15,12 @@ import {
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import { assignUnit, listReservations, reassignStaffApi, type ReservationResponse } from '@/api/reservation';
 import { getManagerContracts, reassignStorageUnit } from '@/api/contract';
+import { fetchStorageUnits, fetchUnitTypes } from '@/api/unit';
 import type { ManagerContractItem } from '@/types/contractManager';
 import { getStaffWorkload } from '@/features/manager/api/staffAssignmentApi';
 import type { StaffWorkloadItem } from '@/features/manager/types/staffAssignment';
 import type { FacilityListItem } from '@/types';
-import type { StorageUnitResponse } from '@/types/unit';
+import type { StorageUnitResponse, UnitTypeResponse } from '@/types/unit';
 import { tokenStorage } from '@/utils/tokenStorage';
 import { FacilityFloorPlanMapModal } from '../components/FacilityFloorPlanMapModal';
 import { EmergencyCompensationModal } from '../components/EmergencyCompensationModal';
@@ -72,6 +74,10 @@ export interface AllocationQueueItem {
   assignedStaffId?: number;
   assignedStaffName?: string;
   isAssigned: boolean;
+  // Thông tin tài chính (cần cho EmergencyCompensationModal)
+  totalRentalFee?: number;
+  depositAmount?: number;
+  monthlyPrice?: number;
 }
 
 function getCustomerInfo(row: ReservationResponse) {
@@ -122,6 +128,9 @@ export const AllocationPage: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [assigningUnitId, setAssigningUnitId] = useState<number | null>(null);
   const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [availableUnits, setAvailableUnits] = useState<StorageUnitResponse[]>([]);
+  const [unitTypes, setUnitTypes] = useState<UnitTypeResponse[]>([]);
+  const [facilityTotalUnitsCount, setFacilityTotalUnitsCount] = useState<number>(0);
 
   // Modal State for 2D Floor Plan & Assignment Form
   const [isFloorPlanOpen, setIsFloorPlanOpen] = useState(false);
@@ -331,6 +340,9 @@ export const AllocationPage: React.FC = () => {
           assignedStaffId: c.assignedStaffId,
           assignedStaffName: c.assignedStaffName,
           isAssigned: false,
+          totalRentalFee: c.totalRentalFee,
+          depositAmount: c.depositAmount,
+          monthlyPrice: c.monthlyPrice,
         }));
 
       const merged = [...pendingContractAllocations, ...pendingRsv, ...relocationContracts]
@@ -358,12 +370,106 @@ export const AllocationPage: React.FC = () => {
         if (current != null && merged.some((row) => row.id === current)) return current;
         return merged[0]?.id ?? null;
       });
+
+      // Tải danh sách ô kho và danh mục loại kho để kiểm tra tình trạng Cháy kho (BR-BMP-02)
+      try {
+        const facIdToQuery = id && id > 0 ? id : facilitiesRef.current[0]?.id;
+        if (facIdToQuery) {
+          const [unitsRes, typesRes] = await Promise.all([
+            fetchStorageUnits(facIdToQuery, { page: 0, size: 500 }),
+            fetchUnitTypes(facIdToQuery),
+          ]);
+          const allUnitsList = unitsRes.content || [];
+          setFacilityTotalUnitsCount(allUnitsList.length);
+          setAvailableUnits(allUnitsList.filter((u) => u.status === 'AVAILABLE'));
+          setUnitTypes(typesRes.content || (Array.isArray(typesRes) ? typesRes : []));
+        }
+      } catch (e) {
+        console.warn('Lỗi khi nạp ô kho khả dụng cơ sở:', e);
+      }
+
       return merged;
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
+
+  // Kiểm tra tình trạng hết ô cùng loại và hết ô nâng hạng (Cháy kho 100% Cấp 3)
+  const checkRowOutOfStock = useCallback(
+    (row: AllocationQueueItem): boolean => {
+      if (
+        row.isAssigned &&
+        row.storageUnitCode &&
+        row.storageUnitCode !== 'Chờ gán lại ô kho' &&
+        row.storageUnitCode !== 'Chưa gán'
+      ) {
+        return false;
+      }
+      // Nếu chưa có dữ liệu ô kho của cơ sở được nạp thì chưa thể khẳng định cháy kho
+      if (facilityTotalUnitsCount === 0) return false;
+
+      const facUnits = availableUnits.filter((u) => u.facilityId === row.facilityId);
+      // Nếu cơ sở có tổng ô > 0 nhưng không còn bất kỳ ô AVAILABLE nào -> Cháy kho 100%
+      if (facUnits.length === 0) return true;
+
+      // 1. Kiểm tra cùng loại
+      const sameTypeUnits = facUnits.filter((u) => u.unitTypeId === row.unitTypeId);
+      if (sameTypeUnits.length > 0) return false;
+
+      // 2. Kiểm tra nâng hạng (cùng môi trường, diện tích lớn hơn)
+      const targetType = unitTypes.find((ut) => ut.id === row.unitTypeId);
+      const targetEnv = (
+        targetType?.environment ||
+        (row.unitTypeName?.toLowerCase().includes('máy lạnh') ? 'CLIMATE_CONTROLLED' : 'STANDARD')
+      ).toUpperCase();
+
+      let targetArea = 0;
+      if (targetType?.areaM2) {
+        targetArea = Number(targetType.areaM2);
+      } else if (targetType?.widthM && targetType?.depthM) {
+        targetArea = Number(targetType.widthM) * Number(targetType.depthM);
+      } else {
+        const name = (row.unitTypeName || targetType?.name || '').toUpperCase();
+        if (name.includes('XL')) targetArea = 15;
+        else if (name.includes('XS')) targetArea = 1;
+        else if (name.includes(' S') || name.endsWith('S') || name.includes('-S')) targetArea = 3;
+        else if (name.includes(' M') || name.endsWith('M') || name.includes('-M')) targetArea = 6;
+        else if (name.includes(' L') || name.endsWith('L') || name.includes('-L')) targetArea = 10;
+      }
+
+      const upgradeUnits = facUnits.filter((u) => {
+        if (u.unitTypeId === row.unitTypeId) return false;
+        const uType = unitTypes.find((ut) => ut.id === u.unitTypeId);
+        const uEnv = (
+          uType?.environment ||
+          (u.unitTypeCode?.includes('AC') || u.unitTypeName?.toLowerCase().includes('máy lạnh')
+            ? 'CLIMATE_CONTROLLED'
+            : 'STANDARD')
+        ).toUpperCase();
+        if (uEnv !== targetEnv) return false;
+
+        let uArea = 0;
+        if (uType?.areaM2) {
+          uArea = Number(uType.areaM2);
+        } else if (uType?.widthM && uType?.depthM) {
+          uArea = Number(uType.widthM) * Number(uType.depthM);
+        } else {
+          const name = (u.unitTypeName || uType?.name || u.unitTypeCode || '').toUpperCase();
+          if (name.includes('XL')) uArea = 15;
+          else if (name.includes('XS')) uArea = 1;
+          else if (name.includes(' S') || name.endsWith('S') || name.includes('-S')) uArea = 3;
+          else if (name.includes(' M') || name.endsWith('M') || name.includes('-M')) uArea = 6;
+          else if (name.includes(' L') || name.endsWith('L') || name.includes('-L')) uArea = 10;
+        }
+
+        return uArea > targetArea;
+      });
+
+      return upgradeUnits.length === 0;
+    },
+    [availableUnits, unitTypes]
+  );
 
   const loadStaff = useCallback(async (id: number) => {
     try {
@@ -716,6 +822,7 @@ export const AllocationPage: React.FC = () => {
                   const isSoon = daysLeft > 0 && daysLeft < 3;
                   const needsImmediateAllocation =
                     row.kind === 'CONTRACT_RELOCATION' || !row.isAssigned;
+                  const isOutOfStock = checkRowOutOfStock(row);
 
                   return (
                     <tr
@@ -795,10 +902,17 @@ export const AllocationPage: React.FC = () => {
                       <td className="px-6 py-4">
                         {row.kind === 'CONTRACT_RELOCATION' ? (
                           <div className="flex flex-col gap-1 items-start">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                              Cần đổi ô (Sự cố)
-                            </span>
+                            {isOutOfStock ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
+                                Cháy kho 100% (Không còn ô)
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                Cần đổi ô (Sự cố)
+                              </span>
+                            )}
                             {row.assignedStaffName && (
                               <span className="text-xs text-gray-500">
                                 NV: {row.assignedStaffName}
@@ -817,6 +931,11 @@ export const AllocationPage: React.FC = () => {
                               </span>
                             )}
                           </div>
+                        ) : isOutOfStock ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                            Hết ô trống
+                          </span>
                         ) : (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
@@ -828,28 +947,48 @@ export const AllocationPage: React.FC = () => {
                       {/* Cột 5: Nút thao tác theo đúng Action Hierarchy (Primary Mint vs Secondary Outline) */}
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {row.kind === 'CONTRACT_RELOCATION' && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCompensationModalContract({
-                                  id: row.contractId || row.rawId,
-                                  code: row.code,
-                                  customerName: row.customerName,
-                                  customerPhone: row.customerPhone,
-                                  customerEmail: row.customerEmail,
-                                  facilityName: row.facilityName,
-                                  unitTypeName: row.unitTypeName,
-                                  rentalMonths: row.rentalMonths,
-                                });
-                              }}
-                              className="px-3 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-300 text-xs sm:text-sm font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap"
-                              title="Kích hoạt bồi thường phạt cọc gấp đôi nếu cơ sở cháy kho 100% (Điều 328 BLDS)"
-                            >
-                              🚨 Phạt cọc 2x (BR-BMP-02)
-                            </button>
-                          )}
-                          {needsImmediateAllocation ? (
+                          {row.kind === 'CONTRACT_RELOCATION' ? (
+                            isOutOfStock ? (
+                              // ĐÃ HẾT Ô (CHÁY KHO): BỎ NÚT GÁN Ô KHO, CHỈ HIỂN THỊ NÚT PHẠT ĐỀN CỌC 2X
+                              <button
+                                type="button"
+                                data-testid="btn-allocation-double-deposit"
+                                onClick={() => {
+                                  setCompensationModalContract({
+                                    id: row.contractId || row.rawId,
+                                    code: row.code,
+                                    customerName: row.customerName,
+                                    customerPhone: row.customerPhone,
+                                    customerEmail: row.customerEmail,
+                                    facilityName: row.facilityName,
+                                    unitTypeName: row.unitTypeName,
+                                    rentalMonths: row.rentalMonths,
+                                    totalRentalFee: row.totalRentalFee,
+                                    depositAmount: row.depositAmount,
+                                    monthlyPrice: row.monthlyPrice,
+                                  });
+                                }}
+                                className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap shadow-xs flex items-center gap-1.5"
+                                title="Kích hoạt bồi thường phạt cọc gấp đôi do cơ sở cháy kho 100% (Điều 328 BLDS & BR-BMP-02)"
+                              >
+                                <AlertTriangle className="w-4 h-4 text-white" />
+                                <span>Phạt cọc 2x (BR-BMP-02)</span>
+                              </button>
+                            ) : (
+                              // CÒN Ô: HIỂN THỊ NÚT GÁN Ô KHO ĐỂ FM CHỌN Ô MỚI CHO KHÁCH
+                              <button
+                                type="button"
+                                onClick={() => handleOpenFloorPlan(row)}
+                                className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
+                              >
+                                {needsImmediateAllocation ? 'Gán ô kho' : 'Đổi ô'}
+                              </button>
+                            )
+                          ) : isOutOfStock && !row.isAssigned ? (
+                            <span className="text-xs text-rose-600 font-medium px-2.5 py-1.5 bg-rose-50 rounded-lg border border-rose-200">
+                              Hết ô trống
+                            </span>
+                          ) : needsImmediateAllocation ? (
                             <button
                               type="button"
                               onClick={() => handleOpenFloorPlan(row)}
@@ -902,6 +1041,9 @@ export const AllocationPage: React.FC = () => {
               facilityName: selected.facilityName,
               unitTypeName: selected.unitTypeName,
               rentalMonths: selected.rentalMonths,
+              totalRentalFee: selected.totalRentalFee,
+              depositAmount: selected.depositAmount,
+              monthlyPrice: selected.monthlyPrice,
             });
           }}
         />

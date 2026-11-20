@@ -7,6 +7,7 @@ import * as facilityApi from '@/api/facility';
 import * as reservationApi from '@/api/reservation';
 import * as contractApi from '@/api/contract';
 import * as staffAssignmentApi from '@/features/manager/api/staffAssignmentApi';
+import * as unitApi from '@/api/unit';
 import type { FacilityListItem } from '@/types';
 import type { ReservationResponse } from '@/api/reservation';
 import type { ManagerContractItem } from '@/types/contractManager';
@@ -26,6 +27,11 @@ vi.mock('@/api/reservation', () => ({
 vi.mock('@/api/contract', () => ({
   getManagerContracts: vi.fn(),
   reassignStorageUnit: vi.fn(),
+}));
+
+vi.mock('@/api/unit', () => ({
+  fetchStorageUnits: vi.fn().mockResolvedValue({ content: [], totalElements: 0 }),
+  fetchUnitTypes: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock('@/features/manager/api/staffAssignmentApi', () => ({
@@ -714,5 +720,84 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     const confirmBtn = screen.getByRole('button', { name: /Xác nhận điều chuyển/i });
     expect(confirmBtn.className).toContain('bg-blue-600');
     expect(confirmBtn.className).toContain('text-white');
+  });
+
+  it('14. Khi cơ sở cháy kho 100% (không còn ô trống cùng loại hoặc nâng hạng): bỏ hoàn toàn nút Gán ô kho, chỉ hiển thị nút Phạt cọc 2x (BR-BMP-02)', async () => {
+    vi.mocked(facilityApi.fetchMyAssignedFacilities).mockResolvedValue([mockFacilities[0]]);
+    vi.mocked(reservationApi.listReservations).mockResolvedValue([]);
+
+    // Mock cơ sở có 1 ô nhưng đã bị OCCUPIED (không còn ô AVAILABLE nào -> Cháy kho 100%)
+    vi.mocked(unitApi.fetchStorageUnits).mockResolvedValue({
+      content: [
+        {
+          id: 101,
+          unitCode: 'Q7-AC-XL101',
+          facilityId: 2,
+          unitTypeId: 5,
+          status: 'OCCUPIED',
+        } as StorageUnitResponse,
+      ],
+      totalElements: 1,
+      totalPages: 1,
+      page: 0,
+      size: 10,
+    });
+    vi.mocked(unitApi.fetchUnitTypes).mockResolvedValue([
+      {
+        id: 5,
+        typeName: 'Kho Máy Lạnh XL',
+        environment: 'CLIMATE_CONTROLLED',
+        areaM2: 20,
+      } as any,
+    ]);
+
+    // Hợp đồng gặp sự cố cần đổi ô nhưng cơ sở đã cháy kho
+    vi.mocked(contractApi.getManagerContracts).mockResolvedValue([
+      {
+        id: 9999,
+        code: 'CTR-20261120-5225',
+        reservationCode: 'RSV-20261120-9999',
+        customerName: 'Lê Thanh Tùng',
+        customerPhone: '0868268970',
+        customerEmail: 'thanhtung@gmail.com',
+        facilityId: 2,
+        facilityName: 'Cơ sở Quận 7 - TP.HCM',
+        unitTypeId: 5,
+        unitTypeName: 'Kho Máy Lạnh XL',
+        storageUnitId: null,
+        storageUnitCode: 'Chờ gán lại ô kho',
+        rentalMonths: 3,
+        status: 'ACTIVE',
+        relocationEligible: true,
+        startDate: '2026-11-20',
+        endDate: '2027-02-20',
+      } as unknown as ManagerContractItem,
+    ]);
+
+    render(<AllocationPage />);
+
+    // Đợi danh sách nạp xong
+    await waitFor(() => {
+      expect(screen.getByText('CTR-20261120-5225')).toBeDefined();
+    });
+
+    // 1. Phải có huy hiệu Cháy kho 100%
+    expect(screen.getByText(/Cháy kho 100%/i)).toBeDefined();
+
+    // 2. Nút "Gán ô kho" hoặc "Đổi ô" PHẢI BỊ BỎ ĐI HOÀN TOÀN
+    expect(screen.queryByRole('button', { name: /Gán ô kho/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Đổi ô/i })).toBeNull();
+
+    // 3. Nút "Phạt cọc 2x (BR-BMP-02)" PHẢI XUẤT HIỆN
+    const penaltyBtn = screen.getByTestId('btn-allocation-double-deposit');
+    expect(penaltyBtn).toBeDefined();
+    expect(penaltyBtn.textContent).toContain('Phạt cọc 2x (BR-BMP-02)');
+
+    // 4. Bấm vào nút Phạt cọc 2x -> Modal Bồi thường phạt cọc gấp đôi phải mở ra
+    fireEvent.click(penaltyBtn);
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /Kích hoạt Bồi thường Phạt cọc Gấp đôi/i })).toBeDefined();
+    });
+    expect(screen.getAllByText(/Điều 328 Bộ luật Dân sự 2015/i).length).toBeGreaterThanOrEqual(1);
   });
 });
