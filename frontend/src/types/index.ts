@@ -407,6 +407,8 @@ export interface ActivePolicyInfo {
   reservationHoldHours: number;
   rentalDailyDivisor: number;
   checkinGraceDays: number;
+  cancelFullRefundDays?: number;
+  cancelMidRefundRate?: number;
   cancelFullRefundHours: number;
   cancelLateRefundRate: number;
   renewalMinMonths: number;

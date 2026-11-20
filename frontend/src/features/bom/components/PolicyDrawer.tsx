@@ -37,6 +37,8 @@ type FormState = {
   rentalBufferDays: string;
   rentalDailyDivisor: string;
   checkinGraceDays: string;
+  cancelFullRefundDays: string;
+  cancelMidRefundRate: string;
   cancelFullRefundHours: string;
   cancelLateRefundRate: string;
   cancelNoShowRefundRate: string;
@@ -84,6 +86,8 @@ function fromPolicySource(source?: ActivePolicyInfo | Record<string, unknown> | 
       rentalBufferDays: '8',
       rentalDailyDivisor: '30',
       checkinGraceDays: '10',
+      cancelFullRefundDays: '7',
+      cancelMidRefundRate: '50',
       cancelFullRefundHours: '48',
       cancelLateRefundRate: '50',
       cancelNoShowRefundRate: '0',
@@ -118,6 +122,8 @@ function fromPolicySource(source?: ActivePolicyInfo | Record<string, unknown> | 
     rentalBufferDays: String(s.rentalBufferDays ?? 8),
     rentalDailyDivisor: String(s.rentalDailyDivisor ?? 30),
     checkinGraceDays: String(s.checkinGraceDays ?? 10),
+    cancelFullRefundDays: String(s.cancelFullRefundDays ?? 7),
+    cancelMidRefundRate: rateToPercent(s.cancelMidRefundRate as number, 0.5),
     cancelFullRefundHours: String(s.cancelFullRefundHours ?? 48),
     cancelLateRefundRate: rateToPercent(s.cancelLateRefundRate as number, 0.5),
     cancelNoShowRefundRate: rateToPercent(s.cancelNoShowRefundRate as number, 0),
@@ -145,8 +151,10 @@ const DIFF_META: Record<keyof Omit<FormState, 'confirmed' | 'effectiveDate'>, { 
   rentalBufferDays: { label: 'Ngày đệm sau thuê', unit: 'ngày' },
   rentalDailyDivisor: { label: 'Quy ước ngày / tháng', unit: 'ngày' },
   checkinGraceDays: { label: 'Ân hạn nhận kho', unit: 'ngày' },
-  cancelFullRefundHours: { label: 'Giờ hủy hoàn 100%', unit: 'giờ' },
-  cancelLateRefundRate: { label: 'Hoàn tiền hủy muộn', unit: '%' },
+  cancelFullRefundDays: { label: 'Ngày hủy hoàn 100% cọc', unit: 'ngày' },
+  cancelMidRefundRate: { label: 'Hoàn cọc hủy lửng 2-6 ngày', unit: '%' },
+  cancelFullRefundHours: { label: 'Mốc giờ hủy sát giờ', unit: 'giờ' },
+  cancelLateRefundRate: { label: 'Hoàn tiền hủy sát giờ', unit: '%' },
   cancelNoShowRefundRate: { label: 'Hoàn tiền vắng mặt', unit: '%' },
   renewalReminderDays: { label: 'Mốc nhắc gia hạn', unit: 'ngày' },
   renewalMinMonths: { label: 'Kỳ hạn tối thiểu', unit: 'tháng' },
@@ -256,7 +264,12 @@ export const PolicyDrawer: React.FC<PolicyDrawerProps> = ({
       }
       seen.add(item);
     }
+    const cancelDays = Number(form.cancelFullRefundDays);
+    if (!Number.isInteger(cancelDays) || cancelDays < 1) {
+      return 'Số ngày hủy hoàn 100% cọc phải là số nguyên lớn hơn hoặc bằng 1';
+    }
     const rates: Array<[string, string]> = [
+      ['Tỷ lệ hoàn cọc khi hủy lửng', form.cancelMidRefundRate],
       ['Tỷ lệ hoàn khi hủy muộn', form.cancelLateRefundRate],
       ['Tỷ lệ hoàn no-show', form.cancelNoShowRefundRate],
       ['Phí quá hạn mỗi ngày', form.overdueDailyRate],
@@ -299,6 +312,8 @@ export const PolicyDrawer: React.FC<PolicyDrawerProps> = ({
       rentalBufferDays: Number(form.rentalBufferDays),
       rentalDailyDivisor: Number(form.rentalDailyDivisor),
       checkinGraceDays: Number(form.checkinGraceDays),
+      cancelFullRefundDays: Number(form.cancelFullRefundDays),
+      cancelMidRefundRate: percentToRate(form.cancelMidRefundRate),
       cancelFullRefundHours: Number(form.cancelFullRefundHours),
       cancelLateRefundRate: percentToRate(form.cancelLateRefundRate),
       cancelNoShowRefundRate: percentToRate(form.cancelNoShowRefundRate),
@@ -647,8 +662,57 @@ export const PolicyDrawer: React.FC<PolicyDrawerProps> = ({
             {sections.cancellation && (
               <div className="p-4 bg-white grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
+                  <label htmlFor="cancel-full-refund-days-input" className="block text-xs font-semibold text-slate-700 mb-1">
+                    Số ngày hủy hoàn 100% cọc
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="cancel-full-refund-days-input"
+                      type="number"
+                      disabled={isReadOnly}
+                      value={form.cancelFullRefundDays}
+                      onChange={(e) => setField('cancelFullRefundDays')(e.target.value)}
+                      className={`w-full px-3 py-2 pr-14 border rounded-lg text-sm font-semibold tabular-nums ${
+                        isReadOnly
+                          ? 'bg-slate-50 text-slate-700 border-slate-200 cursor-default'
+                          : 'bg-white text-slate-900 border-slate-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500'
+                      }`}
+                    />
+                    <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-xs font-medium text-slate-400 pointer-events-none">
+                      ngày
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Trước mốc này (≥ N ngày) hoàn 100% tiền thuê + cọc</p>
+                </div>
+
+                <div>
+                  <label htmlFor="cancel-mid-refund-rate-input" className="block text-xs font-semibold text-slate-700 mb-1">
+                    Tỷ lệ hoàn cọc khi hủy lửng 2-6 ngày
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="cancel-mid-refund-rate-input"
+                      type="number"
+                      step="0.1"
+                      disabled={isReadOnly}
+                      value={form.cancelMidRefundRate}
+                      onChange={(e) => setField('cancelMidRefundRate')(e.target.value)}
+                      className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm font-semibold tabular-nums ${
+                        isReadOnly
+                          ? 'bg-slate-50 text-slate-700 border-slate-200 cursor-default'
+                          : 'bg-white text-slate-900 border-slate-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500'
+                      }`}
+                    />
+                    <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-xs font-medium text-slate-400 pointer-events-none">
+                      %
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Hủy từ 48h đến trước N ngày (phạt phần cọc còn lại)</p>
+                </div>
+
+                <div>
                   <label htmlFor="cancel-full-refund-input" className="block text-xs font-semibold text-slate-700 mb-1">
-                    Hạn giờ hủy được hoàn 100%
+                    Mốc giờ hủy sát giờ
                   </label>
                   <div className="relative">
                     <input
@@ -667,12 +731,12 @@ export const PolicyDrawer: React.FC<PolicyDrawerProps> = ({
                       giờ
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Trước mốc này được hoàn 100% tiền cọc</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Dưới mốc này (&lt; 48h) tính là hủy sát giờ</p>
                 </div>
 
                 <div>
                   <label htmlFor="cancel-late-refund-input" className="block text-xs font-semibold text-slate-700 mb-1">
-                    Tỷ lệ hoàn tiền khi hủy muộn
+                    Tỷ lệ hoàn khi hủy sát giờ
                   </label>
                   <div className="relative">
                     <input
@@ -692,7 +756,32 @@ export const PolicyDrawer: React.FC<PolicyDrawerProps> = ({
                       %
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Sau mốc trên, chỉ hoàn N% tiền cọc</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Hủy dưới 48h trước giờ nhận (mặc định 0%: phạt 100% cọc)</p>
+                </div>
+
+                <div>
+                  <label htmlFor="cancel-no-show-refund-input" className="block text-xs font-semibold text-slate-700 mb-1">
+                    Tỷ lệ hoàn khi vắng mặt (no-show)
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="cancel-no-show-refund-input"
+                      type="number"
+                      step="0.1"
+                      disabled={isReadOnly}
+                      value={form.cancelNoShowRefundRate}
+                      onChange={(e) => setField('cancelNoShowRefundRate')(e.target.value)}
+                      className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm font-semibold tabular-nums ${
+                        isReadOnly
+                          ? 'bg-slate-50 text-slate-700 border-slate-200 cursor-default'
+                          : 'bg-white text-slate-900 border-slate-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500'
+                      }`}
+                    />
+                    <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-xs font-medium text-slate-400 pointer-events-none">
+                      %
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Hết ân hạn không đến nhận kho (mặc định 0%: phạt 100% cọc)</p>
                 </div>
 
                 <div>
@@ -741,6 +830,31 @@ export const PolicyDrawer: React.FC<PolicyDrawerProps> = ({
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-0.5">Thời hạn đối soát hoàn tất hoàn tiền</p>
+                </div>
+
+                <div>
+                  <label htmlFor="return-early-refund-input" className="block text-xs font-semibold text-slate-700 mb-1">
+                    Tỷ lệ hoàn tiền khi trả kho sớm
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="return-early-refund-input"
+                      type="number"
+                      step="0.1"
+                      disabled={isReadOnly}
+                      value={form.returnEarlyRefundRate}
+                      onChange={(e) => setField('returnEarlyRefundRate')(e.target.value)}
+                      className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm font-semibold tabular-nums ${
+                        isReadOnly
+                          ? 'bg-slate-50 text-slate-700 border-slate-200 cursor-default'
+                          : 'bg-white text-slate-900 border-slate-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500'
+                      }`}
+                    />
+                    <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-xs font-medium text-slate-400 pointer-events-none">
+                      %
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Tỷ lệ hoàn tiền thuê những ngày chưa sử dụng</p>
                 </div>
               </div>
             )}

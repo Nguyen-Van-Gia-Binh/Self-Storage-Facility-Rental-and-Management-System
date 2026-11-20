@@ -4,6 +4,8 @@
  * Người thực hiện: Nguyễn Phạm Xuân Nhi (Frontend Lead — WS2)
  */
 
+import type { ActivePolicyInfo } from '@/types';
+
 export interface CancellationParams {
   startDateStr?: string | null;
   createdAtStr?: string | null;
@@ -11,6 +13,7 @@ export interface CancellationParams {
   monthlyRent: number;
   rentalMonths: number;
   now?: Date;
+  policy?: Partial<ActivePolicyInfo> | null;
 }
 
 export type CancellationTierType =
@@ -69,31 +72,39 @@ export function calculateCancellationRefund(params: CancellationParams): Cancell
   const refundableRentalFee = totalRentalFee;
   let explanation: string;
 
-  // 1. Hủy sớm (trước >= 7 ngày) — BR-CAN-01
-  if (daysUntilStart >= 7) {
+  const fullRefundDays = params.policy?.cancelFullRefundDays ?? 7;
+  const midRefundRate = params.policy?.cancelMidRefundRate ?? 0.5;
+  const lateHours = params.policy?.cancelFullRefundHours ?? 48;
+  const lateRefundRate = params.policy?.cancelLateRefundRate ?? 0;
+  const lateDays = Math.ceil(lateHours / 24);
+
+  // 1. Hủy sớm (trước >= fullRefundDays ngày) — BR-CAN-01
+  if (daysUntilStart >= fullRefundDays) {
     tier = 'EARLY_FULL';
     depositRefund = depositAmount;
     depositPenalty = 0;
-    tierName = 'Hủy sớm (trước ≥ 7 ngày)';
+    tierName = `Hủy sớm (trước ≥ ${fullRefundDays} ngày)`;
     tierBadge = 'Hoàn 100% Cọc & Tiền thuê';
     explanation = '';
   }
-  // 2. Hủy trước 2 – 6 ngày — BR-CAN-02
-  else if (daysUntilStart >= 2) {
+  // 2. Hủy trước lateDays – (fullRefundDays - 1) ngày — BR-CAN-02
+  else if (daysUntilStart >= lateDays) {
     tier = 'MID_PARTIAL';
-    depositRefund = Math.round(depositAmount * 0.5);
+    depositRefund = Math.round(depositAmount * midRefundRate);
     depositPenalty = depositAmount - depositRefund;
+    const penaltyPct = Math.round((1 - midRefundRate) * 100);
     tierName = `Hủy trước ${daysUntilStart} ngày`;
-    tierBadge = 'Phạt 50% cọc';
+    tierBadge = `Phạt ${penaltyPct}% cọc`;
     explanation = '';
   }
-  // 3. Hủy sát giờ (< 48 giờ) — BR-CAN-03
+  // 3. Hủy sát giờ (< lateHours giờ) — BR-CAN-03
   else {
     tier = 'LATE_NO_DEPOSIT';
-    depositRefund = 0;
-    depositPenalty = depositAmount;
-    tierName = 'Hủy sát giờ (dưới 48 giờ)';
-    tierBadge = 'Phạt 100% cọc';
+    depositRefund = Math.round(depositAmount * lateRefundRate);
+    depositPenalty = depositAmount - depositRefund;
+    const penaltyPct = Math.round((1 - lateRefundRate) * 100);
+    tierName = `Hủy sát giờ (dưới ${lateHours} giờ)`;
+    tierBadge = penaltyPct === 100 ? 'Phạt 100% cọc' : `Phạt ${penaltyPct}% cọc`;
     explanation = '';
   }
 

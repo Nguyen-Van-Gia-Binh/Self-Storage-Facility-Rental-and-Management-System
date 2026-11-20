@@ -13,10 +13,12 @@ const mockActivePolicy: any = {
   rentalBufferDays: 15,
   rentalDailyDivisor: 30,
   checkinGraceDays: 10,
+  cancelFullRefundDays: 7,
+  cancelMidRefundRate: 0.5,
   cancelFullRefundHours: 48,
   cancelLateRefundRate: 0.5,
   cancelNoShowRefundRate: 0,
-  renewalReminderDays: '60,7,3,1',
+  renewalReminderDays: '60,30,25,21',
   renewalMinMonths: 1,
   renewalMaxMonths: 12,
   overdueGraceDays: 3,
@@ -87,6 +89,16 @@ describe('PolicyDrawer', () => {
     // Diff preview box should show the change
     expect(screen.getByText(/Xem trước thay đổi/i)).toBeInTheDocument();
     expect(screen.getByText(/Hệ số cọc:/i)).toBeInTheDocument();
+
+    const cancelDaysInput = screen.getByLabelText(/Số ngày hủy hoàn 100% cọc/i) as HTMLInputElement;
+    expect(cancelDaysInput.value).toBe('7');
+    const cancelMidInput = screen.getByLabelText(/Tỷ lệ hoàn cọc khi hủy lửng 2-6 ngày/i) as HTMLInputElement;
+    expect(cancelMidInput.value).toBe('50');
+
+    await act(async () => {
+      fireEvent.change(cancelDaysInput, { target: { value: '10' } });
+    });
+    expect(screen.getByText(/Ngày hủy hoàn 100% cọc:/i)).toBeInTheDocument();
   });
 
   it('validates confirmation checkbox before submitting', async () => {

@@ -44,6 +44,15 @@ public class CreatePolicyRequest {
     @Min(value = 0, message = "Số ngày ân hạn nhận kho không được âm")
     private Integer checkinGraceDays;
 
+    @NotNull(message = "Số ngày hủy hoàn 100% cọc không được để trống")
+    @Min(value = 1, message = "Số ngày hủy hoàn 100% cọc phải lớn hơn hoặc bằng 1 ngày")
+    private Integer cancelFullRefundDays;
+
+    @NotNull(message = "Tỉ lệ hoàn cọc khi hủy lửng không được để trống")
+    @DecimalMin(value = "0.0", message = "Tỉ lệ hoàn tiền tối thiểu là 0.0")
+    @DecimalMax(value = "1.0", message = "Tỉ lệ hoàn tiền tối đa là 1.0 (100%)")
+    private BigDecimal cancelMidRefundRate;
+
     @NotNull(message = "Số giờ hủy nhận hoàn tiền 100% không được để trống")
     @Min(value = 0, message = "Số giờ hủy không được âm")
     private Integer cancelFullRefundHours;
