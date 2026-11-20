@@ -1262,6 +1262,17 @@ public class ContractServiceImpl implements ContractService {
                 contract.setClosedAt(now);
                 contractRepository.save(contract);
 
+                // Giải phóng và hủy đơn đặt chỗ (Reservation) liên kết để giải phóng slot khai thác
+                if (contract.getReservationId() != null && reservationRepository != null) {
+                        reservationRepository.findById(contract.getReservationId()).ifPresent(rsv -> {
+                                rsv.setStatus(ReservationStatus.CANCELLED);
+                                rsv.setStorageUnitId(null);
+                                rsv.setCancelledAt(now);
+                                rsv.setCancelReason("Bồi thường phạt cọc gấp đôi do cháy kho (Điều 328 BLDS)");
+                                reservationRepository.save(rsv);
+                        });
+                }
+
                 // 5. Đóng phiếu hỗ trợ và lưu biên bản giao nhận/trả kho
                 closeOpenSupportTickets(contractId);
 
