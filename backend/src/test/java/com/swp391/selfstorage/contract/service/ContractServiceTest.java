@@ -1455,8 +1455,16 @@ class ContractServiceTest {
         assertEquals(72_000_000L, res.getTotalPayoutAmount());
         assertEquals(3, res.getDisbursementDeadlineDays());
 
-        // Verify 3 transactions saved (RENT_REFUND, DEPOSIT_REFUND, COMPENSATION)
-        verify(paymentTransactionRepository, times(3)).save(any(PaymentTransaction.class));
+        // Verify 3 transactions saved (RENT_REFUND, DEPOSIT_REFUND, COMPENSATION) at status SUCCESS with paidAt
+        org.mockito.ArgumentCaptor<PaymentTransaction> captor =
+                org.mockito.ArgumentCaptor.forClass(PaymentTransaction.class);
+        verify(paymentTransactionRepository, times(3)).save(captor.capture());
+        List<PaymentTransaction> savedTxns = captor.getAllValues();
+        assertEquals(3, savedTxns.size());
+        for (PaymentTransaction tx : savedTxns) {
+            assertEquals("SUCCESS", tx.getStatus());
+            assertNotNull(tx.getPaidAt());
+        }
     }
 
     @Test

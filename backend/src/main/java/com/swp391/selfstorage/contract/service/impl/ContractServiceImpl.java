@@ -1279,14 +1279,15 @@ public class ContractServiceImpl implements ContractService {
                                         .build());
                 }
 
-                // 6. Ghi các giao dịch hoàn tiền & đền bù vào payment_transaction
+                // 6. Ghi các giao dịch hoàn tiền & đền bù vào payment_transaction ở trạng thái SUCCESS vì FM đã duyệt quyết toán
                 long orderBase = System.currentTimeMillis();
-                savePendingRefund(contract.getId(), contract.getReservationId(), "RENT_REFUND", rentRefundAmount,
-                                "HOÀN TIỀN THUÊ DO CHÁY KHO 100% (ĐIỀU 328 BLDS)", orderBase);
-                savePendingRefund(contract.getId(), contract.getReservationId(), "DEPOSIT_REFUND", depositRefundAmount,
-                                "HOÀN CỌC GỐC DO CHÁY KHO 100% (ĐIỀU 328 BLDS)", orderBase + 1);
-                savePendingRefund(contract.getId(), contract.getReservationId(), "COMPENSATION", penaltyAmount,
-                                "TIỀN PHẠT CỌC BỒI TÍN DO CHÁY KHO 100% (ĐIỀU 328 BLDS)", orderBase + 2);
+                Instant payoutTime = now.toInstant();
+                saveRefundTransaction(contract.getId(), contract.getReservationId(), "RENT_REFUND", rentRefundAmount,
+                                "HOÀN TIỀN THUÊ DO CHÁY KHO 100% (ĐIỀU 328 BLDS)", orderBase, "SUCCESS", payoutTime);
+                saveRefundTransaction(contract.getId(), contract.getReservationId(), "DEPOSIT_REFUND", depositRefundAmount,
+                                "HOÀN CỌC GỐC DO CHÁY KHO 100% (ĐIỀU 328 BLDS)", orderBase + 1, "SUCCESS", payoutTime);
+                saveRefundTransaction(contract.getId(), contract.getReservationId(), "COMPENSATION", penaltyAmount,
+                                "TIỀN PHẠT CỌC BỒI TÍN DO CHÁY KHO 100% (ĐIỀU 328 BLDS)", orderBase + 2, "SUCCESS", payoutTime);
 
                 String managerName = "Quản lý cơ sở";
                 if (managerId != null && userService != null) {
@@ -1916,10 +1917,11 @@ public class ContractServiceImpl implements ContractService {
                                         if (rentTxn != null) {
                                                 rentTxn.setAmount(cancelPreview.getEarlyRentRefund());
                                                 rentTxn.setStatus(PaymentStatus.SUCCESS.name());
+                                                rentTxn.setPaidAt(Instant.now());
                                                 paymentTransactionRepository.save(rentTxn);
                                         } else {
-                                                savePendingRefund(contract.getId(), contract.getReservationId(), "RENT_REFUND",
-                                                                cancelPreview.getEarlyRentRefund(), "Hoàn tiền thuê hủy nhận kho", System.currentTimeMillis());
+                                                saveRefundTransaction(contract.getId(), contract.getReservationId(), "RENT_REFUND",
+                                                                cancelPreview.getEarlyRentRefund(), "Hoàn tiền thuê hủy nhận kho", System.currentTimeMillis(), "SUCCESS", Instant.now());
                                         }
                                 } else if (rentTxn != null && "PENDING_REFUND".equalsIgnoreCase(rentTxn.getStatus())) {
                                         paymentTransactionRepository.delete(rentTxn);
@@ -1930,10 +1932,11 @@ public class ContractServiceImpl implements ContractService {
                                         if (depTxn != null) {
                                                 depTxn.setAmount(actualDepRefund);
                                                 depTxn.setStatus(PaymentStatus.SUCCESS.name());
+                                                depTxn.setPaidAt(Instant.now());
                                                 paymentTransactionRepository.save(depTxn);
                                         } else {
-                                                savePendingRefund(contract.getId(), contract.getReservationId(), "DEPOSIT_REFUND",
-                                                                actualDepRefund, "Hoàn cọc hủy nhận kho", System.currentTimeMillis() + 1);
+                                                saveRefundTransaction(contract.getId(), contract.getReservationId(), "DEPOSIT_REFUND",
+                                                                actualDepRefund, "Hoàn cọc hủy nhận kho", System.currentTimeMillis() + 1, "SUCCESS", Instant.now());
                                         }
                                 } else if (depTxn != null && "PENDING_REFUND".equalsIgnoreCase(depTxn.getStatus())) {
                                         paymentTransactionRepository.delete(depTxn);
@@ -3107,9 +3110,8 @@ public class ContractServiceImpl implements ContractService {
                 return toResponse(saved);
         }
 
-        /** PIN theo độ dài trong snapshot hợp đồng, không ghim 6 số. */
-        private void savePendingRefund(Long contractId, Long reservationId, String type, long amount, String reason,
-                        long orderCode) {
+        private void saveRefundTransaction(Long contractId, Long reservationId, String type, long amount, String reason,
+                        long orderCode, String status, Instant paidAt) {
                 if (amount <= 0 || paymentTransactionRepository == null) {
                         return;
                 }
@@ -3119,10 +3121,16 @@ public class ContractServiceImpl implements ContractService {
                                 .amount(amount)
                                 .transactionType(type)
                                 .paymentMethod("BANK_TRANSFER")
-                                .status("PENDING_REFUND")
+                                .status(status)
+                                .paidAt(paidAt)
                                 .providerReference(reason)
                                 .orderCode(orderCode)
                                 .build());
+        }
+
+        private void savePendingRefund(Long contractId, Long reservationId, String type, long amount, String reason,
+                        long orderCode) {
+                saveRefundTransaction(contractId, reservationId, type, amount, reason, orderCode, "PENDING_REFUND", null);
         }
 
         private String generateUniquePin(int length) {

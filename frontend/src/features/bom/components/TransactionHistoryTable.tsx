@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { getPaymentHistory, confirmRefundPayout, type PaymentHistoryPage } from '@/api/payment';
+import { getPaymentHistory, type PaymentHistoryPage } from '@/api/payment';
 import { formatCurrency } from '@/utils/format';
 import { TablePagination } from '@/components/ui/TablePagination';
-import { CheckCircle2, RefreshCw } from 'lucide-react';
 
 const TYPE_LABELS: Record<string, string> = {
   INITIAL_PAYMENT: 'Thanh toán giữ chỗ',
@@ -88,30 +87,6 @@ export const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = (
   const [pageSize, setPageSize] = useState(10);
   const [data, setData] = useState<PaymentHistoryPage | null>(null);
   const [error, setError] = useState(false);
-  const [confirmingId, setConfirmingId] = useState<number | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const handleConfirmRefund = async (id: number) => {
-    setConfirmingId(id);
-    try {
-      await confirmRefundPayout(id);
-      setToastMessage(`Đã xác nhận giải ngân chuyển khoản thành công cho giao dịch #${id}!`);
-      setTimeout(() => setToastMessage(null), 4000);
-      setData((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          content: prev.content.map((item) =>
-            item.id === id ? { ...item, status: 'SUCCESS', paidAt: new Date().toISOString() } : item
-          ),
-        };
-      });
-    } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Lỗi khi xác nhận hoàn tiền');
-    } finally {
-      setConfirmingId(null);
-    }
-  };
 
   useEffect(() => {
     setPage(0);
@@ -143,13 +118,6 @@ export const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = (
         )}
       </div>
 
-      {toastMessage && (
-        <div className="mx-4 my-2.5 p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-md flex items-center gap-2 animate-in fade-in duration-150">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
       {error ? (
         <p className="p-8 text-center text-sm text-rose-600">Không tải được lịch sử giao dịch. Thử lại sau.</p>
       ) : !data ? (
@@ -174,7 +142,6 @@ export const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = (
                   <th className="py-2.5 px-3">Phương thức</th>
                   <th className="py-2.5 px-3">Trạng thái</th>
                   <th className="py-2.5 px-4 text-right">Số tiền</th>
-                  <th className="py-2.5 px-3 text-center">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
@@ -220,26 +187,6 @@ export const TransactionHistoryTable: React.FC<TransactionHistoryTableProps> = (
                       >
                         {outflow ? '-' : ''}
                         {formatCurrency(t.amount)}
-                      </td>
-                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                        {t.status === 'PENDING_REFUND' ? (
-                          <button
-                            type="button"
-                            onClick={() => handleConfirmRefund(t.id)}
-                            disabled={confirmingId === t.id}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-                            title="Xác nhận đã chuyển khoản giải ngân hoàn tất cho khách hàng"
-                          >
-                            {confirmingId === t.id ? (
-                              <RefreshCw className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <CheckCircle2 className="w-3 h-3" />
-                            )}
-                            <span>{confirmingId === t.id ? 'Đang duyệt...' : 'Xác nhận chuyển'}</span>
-                          </button>
-                        ) : (
-                          <span className="text-gray-300 text-xs">—</span>
-                        )}
                       </td>
                     </tr>
                   );
