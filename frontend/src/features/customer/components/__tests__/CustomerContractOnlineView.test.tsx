@@ -355,4 +355,40 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
     expect(screen.getAllByText('15/11/2026').length).toBeGreaterThanOrEqual(1);
     unmount();
   });
+
+  it('ContractDetailModal hiển thị huy hiệu và thông báo nâng hạng đền bù miễn phí (BR-BMP-01)', async () => {
+    const upgradedContract: RentedContract = {
+      ...sampleContract,
+      id: '999',
+      contractNumber: 'CTR-UPGRADE-001',
+      unitNumber: 'Q7-XL301',
+      unitTypeName: 'Kho Tiêu Chuẩn XL',
+      unitDimensions: '10.0m x 10.0m x 5.0m',
+      monthlyRent: 1050000,
+      isUpgradedCompensation: true,
+      originalUnitTypeName: 'Kho Tiêu Chuẩn S',
+      upgradeReason: 'Hết ô kho cùng loại tại thời điểm bàn giao (BR-BMP-01)',
+    };
+
+    const { unmount } = render(
+      <ContractDetailModal
+        isOpen={true}
+        onClose={vi.fn()}
+        contract={upgradedContract}
+      />
+    );
+
+    // Kiểm tra huy hiệu nâng hạng tại Điều 2
+    expect(screen.getAllByText(/Nâng hạng đền bù \(BR-BMP-01\)/i).length).toBeGreaterThanOrEqual(1);
+
+    // Kiểm tra card giải trình chính sách BR-BMP-01
+    expect(screen.getByText(/Xác nhận Nâng hạng Đền bù Miễn phí \(Chính sách BR-BMP-01 & BR-CHK-06\)/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Kho Tiêu Chuẩn S/i).length).toBeGreaterThanOrEqual(1);
+
+    // Kiểm tra phụ lục PL-UPGRADE
+    expect(screen.getByText('PL-UPGRADE')).toBeInTheDocument();
+    expect(screen.getByText(/Phụ lục Nâng hạng Đền bù Ô kho Miễn phí/i)).toBeInTheDocument();
+
+    unmount();
+  });
 });

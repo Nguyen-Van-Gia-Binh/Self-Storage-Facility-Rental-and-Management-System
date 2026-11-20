@@ -4,7 +4,9 @@ import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
+import com.swp391.selfstorage.contract.entity.HandoverRecord;
 import com.swp391.selfstorage.contract.entity.RentalContract;
+import com.swp391.selfstorage.contract.repository.HandoverRecordRepository;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.contract.repository.ReturnRequestRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
@@ -51,6 +53,21 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
 
     @Autowired(required = false)
     private ReturnRequestRepository returnRequestRepository;
+
+    @Autowired(required = false)
+    private HandoverRecordRepository handoverRecordRepository;
+
+    @Autowired(required = false)
+    private com.swp391.selfstorage.payment.repository.PaymentTransactionRepository paymentTransactionRepository;
+
+    public void setHandoverRecordRepository(HandoverRecordRepository handoverRecordRepository) {
+        this.handoverRecordRepository = handoverRecordRepository;
+    }
+
+    public void setPaymentTransactionRepository(
+            com.swp391.selfstorage.payment.repository.PaymentTransactionRepository paymentTransactionRepository) {
+        this.paymentTransactionRepository = paymentTransactionRepository;
+    }
 
     public StaffDailyTaskServiceImpl(
             SupportRequestRepository supportRequestRepository,
@@ -156,6 +173,7 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         final Map<Long, Facility> facilities = new HashMap<>();
         final Map<Long, Optional<RentalContract>> contracts = new HashMap<>();
         final Map<Long, Optional<com.swp391.selfstorage.contract.entity.ReturnRequest>> returnRequests = new HashMap<>();
+        final Map<Long, Optional<HandoverRecord>> handoverRecords = new HashMap<>();
         Integer activeGraceDays = null;
     }
 
@@ -163,6 +181,12 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         if (id == null) return Optional.empty();
         if (cache == null) return rentalContractRepository.findById(id);
         return cache.contracts.computeIfAbsent(id, k -> rentalContractRepository.findById(k));
+    }
+
+    private Optional<HandoverRecord> getHandoverRecordCached(Long contractId, RequestCache cache) {
+        if (contractId == null || handoverRecordRepository == null) return Optional.empty();
+        if (cache == null) return handoverRecordRepository.findByContractId(contractId);
+        return cache.handoverRecords.computeIfAbsent(contractId, k -> handoverRecordRepository.findByContractId(k));
     }
 
     private Optional<com.swp391.selfstorage.contract.entity.ReturnRequest> getReturnRequestCached(Long contractId, RequestCache cache) {
@@ -250,7 +274,12 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                             ? c.getCreatedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
                             : null;
 
-                    boolean isCompleted = c.getStatus() == ContractStatus.ACTIVE || c.getCheckinDate() != null;
+                    boolean isTerminalState = c.getStatus() == ContractStatus.CLOSED
+                            || c.getStatus() == ContractStatus.CANCELLED
+                            || c.getStatus() == ContractStatus.TERMINATED;
+                    boolean isCompleted = c.getStatus() == ContractStatus.ACTIVE
+                            || isTerminalState
+                            || c.getCheckinDate() != null;
                     boolean isTodayTask = false;
                     boolean isLatePending = false;
 
@@ -274,6 +303,16 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                             // Ngày tương lai: chỉ hiện đúng lịch hẹn của ngày đó, không carry-over việc trễ
                             isTodayTask = scheduledDate != null && scheduledDate.isEqual(date);
                         }
+                    } else if (isTerminalState) {
+                        // Hợp đồng đã đóng/hủy: Hiển thị ở mục 'Đã xong' nếu lịch hẹn nhận thuộc ngày 'date', hoặc ngày đóng/hủy thuộc ngày 'date'
+                        LocalDate closedDate = c.getClosedAt() != null
+                                ? c.getClosedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
+                                : null;
+                        LocalDate checkinDate = c.getCheckinDate();
+                        isTodayTask = (scheduledDate != null && scheduledDate.isEqual(date))
+                                || (closedDate != null && closedDate.isEqual(date))
+                                || (checkinDate != null && checkinDate.isEqual(date))
+                                || (workDate != null && workDate.isEqual(date));
                     } else {
                         LocalDate checkinDate = c.getCheckinDate();
                         isTodayTask = (checkinDate != null && checkinDate.isEqual(date))
@@ -582,13 +621,19 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
     }
 
     private DailyCheckInTaskDto toCheckInDto(RentalContract c, RequestCache cache) {
-        boolean completed = c.getStatus() == ContractStatus.ACTIVE || c.getCheckinDate() != null;
+        boolean isTerminalState = c.getStatus() == ContractStatus.CLOSED
+                || c.getStatus() == ContractStatus.CANCELLED
+                || c.getStatus() == ContractStatus.TERMINATED;
+        boolean completed = c.getStatus() == ContractStatus.ACTIVE || isTerminalState || c.getCheckinDate() != null;
         String status;
-        if (completed) {
+        if (c.getStatus() == ContractStatus.ACTIVE || c.getCheckinDate() != null) {
             status = "COMPLETED";
         } else if (c.getStatus() == ContractStatus.TERMINATED) {
             status = "TERMINATED";
-            completed = true;
+        } else if (c.getStatus() == ContractStatus.CLOSED) {
+            status = "CLOSED";
+        } else if (c.getStatus() == ContractStatus.CANCELLED) {
+            status = "CANCELLED";
         } else {
             status = "PENDING";
         }
@@ -619,6 +664,49 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
             }
         }
 
+        String conditionNote = null;
+        java.time.OffsetDateTime handoverAt = null;
+        boolean isOnline = false;
+
+        var hrOpt = getHandoverRecordCached(c.getId(), cache);
+        if (hrOpt.isPresent()) {
+            var hr = hrOpt.get();
+            conditionNote = hr.getConditionNote();
+            handoverAt = hr.getHandoverAt();
+            isOnline = (conditionNote != null && (conditionNote.toLowerCase().contains("online") || conditionNote.toLowerCase().contains("ký số")))
+                    || (hr.getStaffId() == null && hr.isCustomerConfirmed())
+                    || (hr.getStaffId() != null && Objects.equals(hr.getStaffId(), c.getCustomerId()));
+        }
+
+        if (c.isDoubleDepositCompensation()) {
+            long totalPayout = c.getTotalRentalFee() + 2 * c.getDepositAmount();
+            java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+            conditionNote = "Cháy kho 100% · Bồi thường phạt cọc gấp đôi (Đ.328 BLDS): " + nf.format(totalPayout) + " đ";
+        } else if ((c.getStatus() == ContractStatus.CLOSED || c.getStatus() == ContractStatus.CANCELLED) && conditionNote == null) {
+            long refundAmount = 0;
+            if (paymentTransactionRepository != null) {
+                try {
+                    var txs = paymentTransactionRepository.findByContractId(c.getId());
+                    if (txs != null) {
+                        for (var tx : txs) {
+                            if ("SUCCESS".equalsIgnoreCase(tx.getStatus())
+                                    && tx.getTransactionType() != null
+                                    && tx.getTransactionType().toUpperCase().contains("REFUND")) {
+                                refundAmount += tx.getAmount() != null ? tx.getAmount() : 0;
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+            if (refundAmount > 0) {
+                java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+                conditionNote = "Khách hủy nhận kho · Đã hoàn tiền " + nf.format(refundAmount) + " đ";
+            } else {
+                conditionNote = "Hợp đồng đã kết thúc · Đã xử lý hủy và hoàn tất thủ tục";
+            }
+        }
+
         DailyCheckInTaskDto dto = DailyCheckInTaskDto.builder()
                 .contractId(c.getId())
                 .contractCode(c.getCode())
@@ -634,6 +722,11 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                 .status(status)
                 .completed(completed)
                 .checkinGraceDays(resolveCheckinGraceDays(c, cache))
+                .isOnlineCheckIn(isOnline)
+                .conditionNote(conditionNote)
+                .handoverAt(handoverAt)
+                .isDoubleDepositCompensation(c.isDoubleDepositCompensation())
+                .compensationAmount(c.getCompensationAmount())
                 .build();
         dto.setScheduledStartTime(c.getScheduledStartTime());
         dto.setScheduledEndTime(c.getScheduledEndTime());

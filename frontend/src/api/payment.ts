@@ -191,6 +191,15 @@ export async function createPayment(request: CreatePaymentRequest): Promise<Paym
 }
 
 /**
+ * BOM / Quản lý xác nhận đã giải ngân chuyển khoản hoàn tiền (POST /payments/{id}/confirm-refund)
+ */
+export async function confirmRefundPayout(paymentId: number): Promise<any> {
+  return await apiClient<any>(`/payments/${paymentId}/confirm-refund`, {
+    method: 'POST',
+  });
+}
+
+/**
  * Sinh mã Thẻ nhận kho điện tử (Move-in Pass) sau khi thanh toán thành công
  */
 export function generateMoveInPass(data: Omit<MoveInPassData, 'passCode' | 'status'>): MoveInPassData {

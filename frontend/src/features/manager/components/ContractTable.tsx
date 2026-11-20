@@ -199,7 +199,11 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                       status={c.status}
                       size="sm"
                       customLabel={
-                        c.status === 'CANCELLED' ? 'Hủy · Chờ hoàn tiền' : undefined
+                        c.isDoubleDepositCompensation
+                          ? 'Đã đền bù 2x cọc (BR-BMP-02)'
+                          : c.status === 'CANCELLED'
+                            ? 'Hủy · Chờ hoàn tiền'
+                            : undefined
                       }
                     />
                     {isOverdue && c.overdueDays !== undefined && (
@@ -258,6 +262,8 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                   <td className="py-3.5 px-4 text-right whitespace-nowrap">
                     <div className="inline-flex items-center justify-end gap-2">
                       {onApproveSettlement &&
+                        !c.isDoubleDepositCompensation &&
+                        !c.closedAt &&
                         (c.status === 'INSPECTED' ||
                           c.status === 'TERMINATED' ||
                           c.status === 'CANCELLED') && (
@@ -274,6 +280,19 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                             <span>Duyệt quyết toán</span>
                           </button>
                         )}
+                      {(c.status === 'RELOCATION_PENDING' || (c.relocationEligible && c.status === 'PENDING_CHECK_IN')) && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectContract(c);
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-rose-700 bg-rose-50 border border-rose-300 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer"
+                          title="Hợp đồng gặp sự cố cần đổi ô kho hoặc bồi thường phạt cọc"
+                        >
+                          <span>Sự cố / Phạt cọc</span>
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={(e) => {

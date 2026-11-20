@@ -14,9 +14,10 @@ const TYPE_LABELS: Record<string, string> = {
   REFUND: 'Hoàn tiền',
   RENT_REFUND: 'Hoàn tiền thuê',
   DEPOSIT_REFUND: 'Hoàn cọc',
+  COMPENSATION: 'Bồi thường phạt cọc',
 };
 
-const OUTFLOW_TYPES = new Set(['REFUND', 'RENT_REFUND', 'DEPOSIT_REFUND']);
+const OUTFLOW_TYPES = new Set(['REFUND', 'RENT_REFUND', 'DEPOSIT_REFUND', 'COMPENSATION']);
 
 const STATUS_STYLES: Record<string, { label: string; className: string; dotClass: string }> = {
   SUCCESS: {

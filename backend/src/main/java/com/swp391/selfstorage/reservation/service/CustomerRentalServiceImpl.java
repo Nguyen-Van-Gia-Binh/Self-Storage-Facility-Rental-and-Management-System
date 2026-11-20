@@ -643,6 +643,28 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
                         }
                     });
         }
+
+        // Thông tin nâng hạng đền bù miễn phí (Upgrade Compensation - BR-BMP-01)
+        res.setIsUpgradedCompensation(contract.isUpgradedCompensation());
+        res.setOriginalUnitTypeId(contract.getOriginalUnitTypeId());
+        if (contract.getOriginalUnitTypeId() != null && unitTypeRepository != null) {
+            unitTypeRepository.findById(contract.getOriginalUnitTypeId()).ifPresent(ut -> {
+                res.setOriginalUnitTypeName(ut.getName());
+            });
+        }
+        res.setUpgradeReason(contract.getUpgradeReason());
+        // Bồi thường phạt cọc gấp đôi BR-BMP-02 / Điều 328 BLDS
+        res.setIsDoubleDepositCompensation(contract.isDoubleDepositCompensation());
+        if (contract.isDoubleDepositCompensation()) {
+            long penaltyAmount = contract.getCompensationAmount() > 0
+                    ? contract.getCompensationAmount()
+                    : contract.getDepositAmount();
+            res.setCompensationAmount(penaltyAmount);
+            res.setCompensationReason(contract.getCompensationReason());
+            res.setCompensationApprovedAt(contract.getCompensationApprovedAt());
+            res.setTotalPayoutAmount(contract.getTotalRentalFee() + contract.getDepositAmount() + penaltyAmount);
+            res.setDisbursementDeadlineDays(3);
+        }
     }
 
     @Transactional

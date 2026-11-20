@@ -116,6 +116,33 @@ public class RentalContract {
     @Column(name = "customer_identity_number", length = 20)
     private String customerIdentityNumber;
 
+    @Column(name = "is_upgraded_compensation", nullable = false)
+    @Builder.Default
+    private boolean isUpgradedCompensation = false;
+
+    @Column(name = "original_unit_type_id")
+    private Long originalUnitTypeId;
+
+    @Column(name = "upgrade_reason", columnDefinition = "TEXT")
+    private String upgradeReason;
+
+    @Column(name = "is_double_deposit_compensation", nullable = false)
+    @Builder.Default
+    private boolean isDoubleDepositCompensation = false;
+
+    @Column(name = "compensation_amount", nullable = false)
+    @Builder.Default
+    private long compensationAmount = 0;
+
+    @Column(name = "compensation_reason", columnDefinition = "TEXT")
+    private String compensationReason;
+
+    @Column(name = "compensation_approved_by")
+    private Long compensationApprovedBy;
+
+    @Column(name = "compensation_approved_at")
+    private OffsetDateTime compensationApprovedAt;
+
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) createdAt = OffsetDateTime.now();
@@ -220,4 +247,28 @@ public class RentalContract {
 
     public String getCustomerIdentityNumber() { return customerIdentityNumber; }
     public void setCustomerIdentityNumber(String customerIdentityNumber) { this.customerIdentityNumber = customerIdentityNumber; }
+
+    public boolean isUpgradedCompensation() { return isUpgradedCompensation; }
+    public void setUpgradedCompensation(boolean isUpgradedCompensation) { this.isUpgradedCompensation = isUpgradedCompensation; }
+
+    public Long getOriginalUnitTypeId() { return originalUnitTypeId; }
+    public void setOriginalUnitTypeId(Long originalUnitTypeId) { this.originalUnitTypeId = originalUnitTypeId; }
+
+    public String getUpgradeReason() { return upgradeReason; }
+    public void setUpgradeReason(String upgradeReason) { this.upgradeReason = upgradeReason; }
+
+    public boolean isDoubleDepositCompensation() { return isDoubleDepositCompensation; }
+    public void setDoubleDepositCompensation(boolean isDoubleDepositCompensation) { this.isDoubleDepositCompensation = isDoubleDepositCompensation; }
+
+    public long getCompensationAmount() { return compensationAmount; }
+    public void setCompensationAmount(long compensationAmount) { this.compensationAmount = compensationAmount; }
+
+    public String getCompensationReason() { return compensationReason; }
+    public void setCompensationReason(String compensationReason) { this.compensationReason = compensationReason; }
+
+    public Long getCompensationApprovedBy() { return compensationApprovedBy; }
+    public void setCompensationApprovedBy(Long compensationApprovedBy) { this.compensationApprovedBy = compensationApprovedBy; }
+
+    public OffsetDateTime getCompensationApprovedAt() { return compensationApprovedAt; }
+    public void setCompensationApprovedAt(OffsetDateTime compensationApprovedAt) { this.compensationApprovedAt = compensationApprovedAt; }
 }

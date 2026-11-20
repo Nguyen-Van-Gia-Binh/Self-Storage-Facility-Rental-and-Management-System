@@ -31,5 +31,5 @@ public interface WaitlistService {
 
     WaitlistResponse followUp(Long id, FollowUpWaitlistRequest request, UserPrincipal currentUser);
 
-    int cleanupExpiredLocks();
+    int expirePastWaitlists();
 }

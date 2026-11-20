@@ -6,6 +6,9 @@ import {
   ArrowLeft,
   MapPin,
   Check,
+  Sparkles,
+  Globe,
+  XCircle,
 } from 'lucide-react';
 import type { CheckInContract } from '../../../types';
 import { formatDateVN } from '@/features/customer/utils/unitPickerHelpers';
@@ -69,6 +72,27 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
           {contract.code}
         </span>
       </div>
+
+      {/* Huy hiệu phương thức check-in nếu đã kích hoạt */}
+      {contract.status === 'ACTIVE' && (contract.isOnlineCheckIn || contract.checkinConditionNote?.toLowerCase().includes('online')) && (
+        <div
+          data-testid="verification-online-checkin-banner"
+          className="flex items-center gap-2 p-2.5 bg-indigo-50 border border-indigo-100 rounded-lg text-xs font-semibold text-indigo-700"
+        >
+          <Globe className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+          <span>Khách tự check-in Online & ký số điện tử</span>
+        </div>
+      )}
+
+      {(contract.status === 'CLOSED' || contract.status === 'CANCELLED') && (
+        <div
+          data-testid="verification-cancelled-banner"
+          className="flex items-center gap-2 p-2.5 bg-rose-50 border border-rose-100 rounded-lg text-xs font-semibold text-rose-700"
+        >
+          <XCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+          <span>Hợp đồng đã kết thúc · Khách hủy nhận kho & hoàn tất hoàn tiền</span>
+        </div>
+      )}
 
       {/* Cảnh báo nhẹ khi đang chờ FM phân bổ ô mới */}
       {isRelocating && (
@@ -141,14 +165,27 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
 
         <div className="flex justify-between items-start gap-3">
           <span className="text-gray-500 shrink-0">Loại kho</span>
-          <span className="font-medium text-gray-900 text-right">
-            {contract.unitTypeName}
+          <div className="text-right">
+            <div className="flex items-center justify-end gap-1.5 flex-wrap">
+              <span className="font-medium text-gray-900">{contract.unitTypeName}</span>
+              {contract.isUpgradedCompensation && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  <Sparkles className="w-3 h-3 text-emerald-600" />
+                  Nâng hạng đền bù
+                </span>
+              )}
+            </div>
             {contract.unitTypeDimensions && (
               <span className="block text-xs text-gray-500 font-normal">
                 ({contract.unitTypeDimensions})
               </span>
             )}
-          </span>
+            {contract.isUpgradedCompensation && (
+              <span className="block text-[11px] text-emerald-700 font-medium mt-0.5">
+                (Gốc: {contract.originalUnitTypeName || 'Loại ban đầu'} · BR-BMP-01)
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex justify-between items-center gap-3">
@@ -160,6 +197,18 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
             {contract.facilityName}
           </span>
         </div>
+
+        {contract.isUpgradedCompensation && (
+          <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-left">
+            <div className="flex items-center gap-1.5 text-emerald-800 text-xs font-semibold">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>Chính sách đền bù BR-BMP-01</span>
+            </div>
+            <p className="text-[11px] text-emerald-700 mt-0.5 leading-relaxed">
+              Khách được nâng hạng miễn phí từ <strong>{contract.originalUnitTypeName || 'hạng gốc'}</strong> sang <strong>{contract.unitTypeName}</strong>. Đơn giá thuê và tiền cọc được giữ nguyên 100%.
+            </p>
+          </div>
+        )}
 
         {onOpenFloorPlan && !isRelocating && (
           <div className="pt-1 flex justify-end">

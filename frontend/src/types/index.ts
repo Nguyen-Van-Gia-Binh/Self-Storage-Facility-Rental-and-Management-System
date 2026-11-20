@@ -127,7 +127,7 @@ export interface CheckInContract {
   depositAmount: number;
   totalPayable: number;
   isFullyPaid: boolean;
-  status: 'PENDING_CHECK_IN' | 'PENDING_CHECKIN' | 'ACTIVE' | 'TERMINATED' | 'OVERDUE';
+  status: 'PENDING_CHECK_IN' | 'PENDING_CHECKIN' | 'ACTIVE' | 'TERMINATED' | 'OVERDUE' | 'CLOSED' | 'CANCELLED';
   appointmentTime: string;
   graceDaysRemaining: number;
   checkinGraceDays?: number;
@@ -137,6 +137,21 @@ export interface CheckInContract {
   relocationEligible?: boolean;
   isAwaitingRelocation?: boolean;
   originalDefectiveUnitCode?: string;
+  isUpgradedCompensation?: boolean;
+  originalUnitTypeId?: number;
+  originalUnitTypeName?: string;
+  upgradeReason?: string;
+  isDoubleDepositCompensation?: boolean;
+  compensationAmount?: number;
+  compensationReason?: string;
+  compensationApprovedBy?: number;
+  compensationApprovedByName?: string;
+  compensationApprovedAt?: string;
+  totalPayoutAmount?: number;
+  disbursementDeadlineDays?: number;
+  isOnlineCheckIn?: boolean;
+  checkinConditionNote?: string;
+  handoverAt?: string;
   createdAt?: string;
 }
 
@@ -211,11 +226,13 @@ export interface SettlementPreviewData {
   earlyRentRefund?: number;
   earlyReturn?: boolean;
   pendingSettlementOrderCode?: number;
-  settlementType?: 'EARLY_RETURN' | 'NORMAL' | 'OVERDUE_TERMINATED' | 'REJECTED_CHECKIN' | 'CANCELLED_CHECKIN';
+  settlementType?: 'EARLY_RETURN' | 'NORMAL' | 'OVERDUE_TERMINATED' | 'REJECTED_CHECKIN' | 'CANCELLED_CHECKIN' | 'DOUBLE_DEPOSIT_COMPENSATION';
   unusedDays?: number;
   dailyRent?: number;
   depositForfeited?: number;
   totalRentalFee?: number;
+  compensationAmount?: number;
+  doubleDepositCompensation?: boolean;
 }
 
 export interface ReturnContractDetail {
@@ -265,6 +282,12 @@ export interface DailyCheckInTask {
   scheduledEndTime?: string;
   isLate?: boolean;
   daysLate?: number;
+  isOnlineCheckIn?: boolean;
+  isDoubleDepositCompensation?: boolean;
+  compensationAmount?: number;
+  totalPayoutAmount?: number;
+  conditionNote?: string;
+  handoverAt?: string;
 }
 
 export interface DailyReturnTask {
@@ -285,6 +308,12 @@ export interface DailyReturnTask {
   scheduledEndTime?: string;
   isLate?: boolean;
   daysLate?: number;
+  isOnlineCheckIn?: boolean;
+  isDoubleDepositCompensation?: boolean;
+  compensationAmount?: number;
+  totalPayoutAmount?: number;
+  conditionNote?: string;
+  handoverAt?: string;
 }
 
 export interface DailyIncidentTask {
@@ -444,4 +473,26 @@ export interface MoveInPassData {
   checkInWindow: string;
   status: 'PENDING_CHECKIN';
   totalPaid: number;
+}
+
+export interface EmergencyCompensationRequest {
+  reason: string;
+  notes?: string;
+}
+
+export interface EmergencyCompensationResponse {
+  contractId: number;
+  contractCode: string;
+  customerName: string;
+  customerPhone: string;
+  rentRefundAmount: number;
+  depositRefundAmount: number;
+  penaltyAmount: number;
+  totalPayoutAmount: number;
+  disbursementDeadlineDays: number;
+  reason: string;
+  status: string;
+  approvedAt: string;
+  approvedByName: string;
+  message: string;
 }

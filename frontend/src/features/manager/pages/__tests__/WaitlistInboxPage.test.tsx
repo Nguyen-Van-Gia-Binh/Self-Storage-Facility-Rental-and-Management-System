@@ -240,4 +240,48 @@ describe('WaitlistInboxPage (FM Waitlist — Enterprise Status Design System)', 
       expect(screen.getByText('Khách CG')).toBeInTheDocument();
     });
   });
+
+  it('tự động chuyển đơn quá hạn ngày mong muốn targetStartDate sang mục Lưu trữ theo BR-WAT-06', async () => {
+    const expiredWaitlists: WaitlistResponse[] = [
+      {
+        id: 301,
+        customerId: 3,
+        facilityId: 1,
+        unitTypeId: 5,
+        unitTypeName: 'Kho Lớn (15m2)',
+        customerName: 'Khách Quá Hạn',
+        customerPhone: '0933333333',
+        targetStartDate: '2020-01-01',
+        rentalMonths: 3,
+        status: 'WAITING',
+        availableCapacity: 0,
+        createdAt: '2020-01-01T10:00:00Z',
+        updatedAt: '2020-01-01T10:00:00Z',
+      },
+    ];
+
+    vi.mocked(facilityApi.fetchMyAssignedFacilities).mockResolvedValue(mockFacilities);
+    vi.mocked(waitlistApi.fetchFacilityWaitlists).mockResolvedValue(expiredWaitlists);
+
+    render(
+      <MemoryRouter>
+        <WaitlistInboxPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      // Tab Đang chờ có 0 đơn, Tab Đã lưu trữ có 1 đơn
+      expect(screen.getByRole('button', { name: /Đang chờ \(0\)/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Đã lưu trữ \(1\)/i })).toBeInTheDocument();
+    });
+
+    // Chuyển sang tab Đã lưu trữ
+    fireEvent.click(screen.getByRole('button', { name: /Đã lưu trữ \(1\)/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Khách Quá Hạn')).toBeInTheDocument();
+      expect(screen.getByText('Hết hạn (Lưu trữ)')).toBeInTheDocument();
+      expect(screen.getByText('Tự động lưu trữ (Hết ngày mong muốn)')).toBeInTheDocument();
+    });
+  });
 });

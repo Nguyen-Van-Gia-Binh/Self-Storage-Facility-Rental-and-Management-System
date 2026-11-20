@@ -88,6 +88,21 @@ public class CustomerRentalSummaryResponse {
     private String customerEmail;
     private String customerIdentityNumber;
 
+    // Thông tin nâng hạng đền bù miễn phí (Upgrade Compensation - BR-BMP-01)
+    private Boolean isUpgradedCompensation;
+    private Long originalUnitTypeId;
+    private String originalUnitTypeName;
+    private String upgradeReason;
+
+    // Thông tin bồi thường phạt cọc gấp đôi (BR-BMP-02 / Điều 328 BLDS)
+    private Boolean isDoubleDepositCompensation;
+    private Long compensationAmount;
+    private String compensationReason;
+    private String compensationApprovedByName;
+    private java.time.OffsetDateTime compensationApprovedAt;
+    private Long totalPayoutAmount;
+    private Integer disbursementDeadlineDays;
+
     public CustomerRentalSummaryResponse() {}
 
     // Getters and Setters
@@ -250,4 +265,37 @@ public class CustomerRentalSummaryResponse {
 
     public String getCustomerIdentityNumber() { return customerIdentityNumber; }
     public void setCustomerIdentityNumber(String customerIdentityNumber) { this.customerIdentityNumber = customerIdentityNumber; }
+
+    public Boolean getIsUpgradedCompensation() { return isUpgradedCompensation; }
+    public void setIsUpgradedCompensation(Boolean isUpgradedCompensation) { this.isUpgradedCompensation = isUpgradedCompensation; }
+
+    public Long getOriginalUnitTypeId() { return originalUnitTypeId; }
+    public void setOriginalUnitTypeId(Long originalUnitTypeId) { this.originalUnitTypeId = originalUnitTypeId; }
+
+    public String getOriginalUnitTypeName() { return originalUnitTypeName; }
+    public void setOriginalUnitTypeName(String originalUnitTypeName) { this.originalUnitTypeName = originalUnitTypeName; }
+
+    public String getUpgradeReason() { return upgradeReason; }
+    public void setUpgradeReason(String upgradeReason) { this.upgradeReason = upgradeReason; }
+
+    public Boolean getIsDoubleDepositCompensation() { return isDoubleDepositCompensation; }
+    public void setIsDoubleDepositCompensation(Boolean isDoubleDepositCompensation) { this.isDoubleDepositCompensation = isDoubleDepositCompensation; }
+
+    public Long getCompensationAmount() { return compensationAmount; }
+    public void setCompensationAmount(Long compensationAmount) { this.compensationAmount = compensationAmount; }
+
+    public String getCompensationReason() { return compensationReason; }
+    public void setCompensationReason(String compensationReason) { this.compensationReason = compensationReason; }
+
+    public String getCompensationApprovedByName() { return compensationApprovedByName; }
+    public void setCompensationApprovedByName(String compensationApprovedByName) { this.compensationApprovedByName = compensationApprovedByName; }
+
+    public java.time.OffsetDateTime getCompensationApprovedAt() { return compensationApprovedAt; }
+    public void setCompensationApprovedAt(java.time.OffsetDateTime compensationApprovedAt) { this.compensationApprovedAt = compensationApprovedAt; }
+
+    public Long getTotalPayoutAmount() { return totalPayoutAmount; }
+    public void setTotalPayoutAmount(Long totalPayoutAmount) { this.totalPayoutAmount = totalPayoutAmount; }
+
+    public Integer getDisbursementDeadlineDays() { return disbursementDeadlineDays; }
+    public void setDisbursementDeadlineDays(Integer disbursementDeadlineDays) { this.disbursementDeadlineDays = disbursementDeadlineDays; }
 }

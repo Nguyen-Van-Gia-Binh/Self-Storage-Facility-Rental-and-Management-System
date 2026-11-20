@@ -501,11 +501,19 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                           {contract.unitNumber}
                         </button>
                       )}
-                      <span className="text-[11px] font-medium text-gray-500">
+                      <span className="text-[11px] font-medium text-gray-500 inline-flex items-center gap-1 flex-wrap">
                         {(contract.unitTypeName || 'Tiêu chuẩn')
                           .replace(/^Kho\s+/i, '')
                           .replace(/\s*\([^)]*\)/g, '')
                           .trim()}
+                        {contract.isUpgradedCompensation && (
+                          <span
+                            className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200"
+                            title="Nâng hạng đền bù miễn phí (BR-BMP-01)"
+                          >
+                            Nâng hạng
+                          </span>
+                        )}
                       </span>
                     </div>
                   </td>
@@ -672,7 +680,11 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                         Đã hủy · Chờ hoàn
                       </StatusLabel>
                     ) : (contract.status as string) === 'TERMINATED' ? (
-                      (contract.depositHeld === 0 || (contract.overdueDays ?? 0) >= 7) ? (
+                      contract.isDoubleDepositCompensation ? (
+                        <StatusLabel tone="danger" title="Cháy kho 100% · Bồi thường phạt cọc gấp đôi theo Điều 328 BLDS (BR-BMP-02)">
+                          Đền bù cọc 2x (BR-BMP-02)
+                        </StatusLabel>
+                      ) : (contract.depositHeld === 0 || (contract.overdueDays ?? 0) >= 7) ? (
                         <StatusLabel tone="danger">Bị niêm phong</StatusLabel>
                       ) : (contract.handoverRejected || contract.contractNumber?.includes('REJ') || contract.contractNumber?.includes('REFUND')) ? (
                         <StatusLabel tone="danger" title={contract.rejectionReason || 'Từ chối nhận bàn giao tại hiện trường'}>

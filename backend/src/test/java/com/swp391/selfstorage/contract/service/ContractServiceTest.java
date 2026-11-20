@@ -572,6 +572,10 @@ class ContractServiceTest {
         assertEquals(8L, contract.getUnitTypeId()); // Đã nâng hạng sang loại mới
         assertEquals(750_000L, contract.getMonthlyPrice()); // Bảo lưu giá thuê ban đầu
         assertEquals(750_000L, contract.getDepositAmount()); // Bảo lưu tiền cọc ban đầu
+        assertTrue(contract.isUpgradedCompensation());
+        assertEquals(7L, contract.getOriginalUnitTypeId());
+        assertNotNull(contract.getUpgradeReason());
+        assertTrue(contract.getUpgradeReason().contains("Nâng hạng đền bù miễn phí"));
         assertEquals(StorageUnitStatus.MAINTENANCE, oldUnit.getStatus());
         assertEquals(StorageUnitStatus.RESERVED, newUnit.getStatus());
         assertFalse(ticket.getRelocationRequired());
@@ -1396,5 +1400,97 @@ class ContractServiceTest {
         assertEquals(1, resp.getUnpaidExtraCharges().size());
         assertEquals(150_000L, resp.getUnpaidExtraCharges().get(0).getAmount());
         assertEquals("Cấp lại thẻ từ ra vào", resp.getUnpaidExtraCharges().get(0).getReason());
+    }
+
+    @Test
+    @DisplayName("BR-BMP-02: executeDoubleDepositCompensation thanh toán bồi thường phạt cọc gấp đôi khi cháy kho 100%")
+    void shouldExecuteDoubleDepositCompensation_successfully_whenOutOfStock() {
+        RentalContract contract = RentalContract.builder()
+                .id(999L)
+                .code("CTR-DEMO-DOUBLE-DEPOSIT")
+                .reservationId(888L)
+                .customerId(12L)
+                .customerName("Nguyễn Phạm Xuân Nhi")
+                .customerPhone("0973499377")
+                .facilityId(2L)
+                .unitTypeId(10L)
+                .status(ContractStatus.PENDING_CHECK_IN)
+                .startDate(LocalDate.now())
+                .endDateExclusive(LocalDate.now().plusMonths(1))
+                .rentalMonths(1)
+                .monthlyPrice(24_000_000L)
+                .totalRentalFee(24_000_000L)
+                .depositAmount(24_000_000L)
+                .depositBalance(24_000_000L)
+                .build();
+
+        UnitType ut10 = UnitType.builder()
+                .id(10L)
+                .code("UT-AC-XL")
+                .name("Kho Máy Lạnh XL")
+                .widthM(new BigDecimal("10.00"))
+                .lengthM(new BigDecimal("10.00"))
+                .heightM(new BigDecimal("5.00"))
+                .environment("CLIMATE_CONTROLLED")
+                .build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(999L, List.of(2L))).thenReturn(Optional.of(contract));
+        when(unitTypeRepository.findById(10L)).thenReturn(Optional.of(ut10));
+        when(storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(2L, 10L, StorageUnitStatus.AVAILABLE)).thenReturn(0L);
+        when(unitTypeRepository.findAll()).thenReturn(List.of(ut10));
+
+        EmergencyCompensationRequest request = EmergencyCompensationRequest.builder()
+                .reason("Cơ sở cháy kho 100% không còn ô cùng loại hoặc lớn hơn để bàn giao")
+                .build();
+
+        EmergencyCompensationResponse res = contractService.executeDoubleDepositCompensation(999L, request, 8L, List.of(2L));
+
+        assertNotNull(res);
+        assertEquals(ContractStatus.TERMINATED, contract.getStatus());
+        assertTrue(contract.isDoubleDepositCompensation());
+        assertEquals(24_000_000L, contract.getCompensationAmount());
+        assertEquals(24_000_000L, res.getRentRefundAmount());
+        assertEquals(24_000_000L, res.getDepositRefundAmount());
+        assertEquals(24_000_000L, res.getPenaltyAmount());
+        assertEquals(72_000_000L, res.getTotalPayoutAmount());
+        assertEquals(3, res.getDisbursementDeadlineDays());
+
+        // Verify 3 transactions saved (RENT_REFUND, DEPOSIT_REFUND, COMPENSATION) at status SUCCESS with paidAt
+        org.mockito.ArgumentCaptor<PaymentTransaction> captor =
+                org.mockito.ArgumentCaptor.forClass(PaymentTransaction.class);
+        verify(paymentTransactionRepository, times(3)).save(captor.capture());
+        List<PaymentTransaction> savedTxns = captor.getAllValues();
+        assertEquals(3, savedTxns.size());
+        for (PaymentTransaction tx : savedTxns) {
+            assertEquals("SUCCESS", tx.getStatus());
+            assertNotNull(tx.getPaidAt());
+        }
+    }
+
+    @Test
+    @DisplayName("BR-BMP-02: executeDoubleDepositCompensation ném lỗi khi cơ sở vẫn còn ô trống cùng loại")
+    void shouldThrowError_whenUnitsStillAvailable() {
+        RentalContract contract = RentalContract.builder()
+                .id(999L)
+                .code("CTR-DEMO-DOUBLE-DEPOSIT")
+                .facilityId(2L)
+                .unitTypeId(10L)
+                .status(ContractStatus.PENDING_CHECK_IN)
+                .totalRentalFee(24_000_000L)
+                .depositAmount(24_000_000L)
+                .build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(999L, List.of(2L))).thenReturn(Optional.of(contract));
+        when(storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(2L, 10L, StorageUnitStatus.AVAILABLE)).thenReturn(1L);
+
+        EmergencyCompensationRequest request = EmergencyCompensationRequest.builder()
+                .reason("Cơ sở muốn kích hoạt bồi thường sớm")
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> contractService.executeDoubleDepositCompensation(999L, request, 8L, List.of(2L)));
+
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("Cơ sở vẫn còn 1 ô kho cùng loại"));
     }
 }

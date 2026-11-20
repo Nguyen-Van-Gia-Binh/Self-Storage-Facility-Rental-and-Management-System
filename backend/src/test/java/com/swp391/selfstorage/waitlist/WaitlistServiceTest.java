@@ -525,14 +525,37 @@ class WaitlistServiceTest {
     }
 
     @Test
-    @DisplayName("cleanupExpiredLocks: Giải phóng các bản ghi CONTACTING quá hạn")
-    void cleanupExpiredLocks_Success() {
-        when(waitlistRepository.unlockExpiredContacting(eq(WaitlistStatus.WAITING), eq(WaitlistStatus.CONTACTING), any()))
-                .thenReturn(3);
+    @DisplayName("expirePastWaitlists: Tự động chuyển các đơn Waitlist quá hạn targetStartDate sang EXPIRED")
+    void expirePastWaitlists_Success() {
+        when(waitlistRepository.expirePastWaitlists(any(), eq(WaitlistStatus.EXPIRED), any()))
+                .thenReturn(2);
 
-        int unlocked = waitlistService.cleanupExpiredLocks();
+        int expired = waitlistService.expirePastWaitlists();
 
-        assertEquals(3, unlocked);
-        verify(waitlistRepository, times(1)).unlockExpiredContacting(any(), any(), any());
+        assertEquals(2, expired);
+        verify(waitlistRepository, times(1)).expirePastWaitlists(any(), eq(WaitlistStatus.EXPIRED), any());
+    }
+
+    @Test
+    @DisplayName("getFacilityWaitlists: Thực hiện lazy expiry và truy vấn đầy đủ danh sách gồm cả EXPIRED/REJECTED/CANCELLED")
+    void getFacilityWaitlists_IncludesArchivedStatuses() {
+        Waitlist w1 = Waitlist.builder()
+                .customerId(10L)
+                .facilityId(1L)
+                .unitTypeId(5L)
+                .status(WaitlistStatus.EXPIRED)
+                .targetStartDate(LocalDate.now().minusDays(1))
+                .build();
+        w1.setId(101L);
+
+        when(waitlistRepository.findByFacilityIdAndStatusInOrderByCreatedAtAsc(eq(1L), any()))
+                .thenReturn(List.of(w1));
+
+        List<WaitlistResponse> responses = waitlistService.getFacilityWaitlists(1L, fmUser);
+
+        assertNotNull(responses);
+        assertEquals(1, responses.size());
+        assertEquals(WaitlistStatus.EXPIRED, responses.get(0).getStatus());
+        verify(waitlistRepository, times(1)).expirePastWaitlists(any(), eq(WaitlistStatus.EXPIRED), any());
     }
 }

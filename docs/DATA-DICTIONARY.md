@@ -323,6 +323,9 @@ Hợp đồng thuê ô kho chính thức (`Flow 2, 3, 6`, `state-machine-contrac
 | `updated_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày cập nhật |
 | `reschedule_count` | `INT` | Có | `DEFAULT 0` | Số lần dời ngày nhận kho đã thực hiện (tối đa 1 lần duy nhất theo `BR-RES-06`) |
 | `rescheduled_at` | `DATETIMEOFFSET` | Không | | Mốc thời gian khách hàng thực hiện dời ngày nhận kho gần nhất (`BR-RES-06`) |
+| `is_upgraded_compensation` | `BOOLEAN` | Có | `DEFAULT FALSE` | Cờ ghi nhận hợp đồng được nâng hạng đền bù miễn phí sang ô lớn hơn do hết ô cùng loại hoặc sự cố (`BR-BMP-01`, `BR-CHK-06`) |
+| `original_unit_type_id` | `BIGINT` | Không | `FK` $\rightarrow$ `unit_type(id)` | Loại ô kho ban đầu khách hàng đã đặt trước khi được nâng hạng đền bù |
+| `upgrade_reason` | `TEXT` | Không | | Lý do và ghi nhận đền bù nâng hạng bảo lưu đơn giá gốc (`BR-BMP-01`) |
 
 ### 4.3. Bảng `contract_renewal`
 Lịch sử các lần gia hạn hợp đồng thuê kho (`BR-REN-*`).

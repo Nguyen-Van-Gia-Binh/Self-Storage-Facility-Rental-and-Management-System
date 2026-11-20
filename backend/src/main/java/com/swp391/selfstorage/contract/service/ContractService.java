@@ -55,4 +55,9 @@ public interface ContractService {
 
     /** Tạo hợp đồng trực tiếp tại quầy / chốt đơn Waitlist / đặt trước dài hạn (> 30 ngày). */
     ContractResponse createDirectContract(CreateDirectContractRequest request, UserPrincipal currentUser);
+
+    /**
+     * Bồi thường phạt cọc gấp đôi khi cơ sở cháy kho 100% không còn ô cùng loại và lớn hơn (BR-BMP-02 / Điều 328 BLDS).
+     */
+    EmergencyCompensationResponse executeDoubleDepositCompensation(Long contractId, EmergencyCompensationRequest request, Long managerId, List<Long> facilityIds);
 }

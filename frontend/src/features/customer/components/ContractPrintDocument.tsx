@@ -94,6 +94,9 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
     ? undefined
     : (detail?.relocationSupportRequestCode || contract.relocationSupportRequestCode);
   const relocationReason = detail?.relocationReason || contract.relocationReason;
+  const isUpgraded = Boolean(detail?.isUpgradedCompensation ?? contract.isUpgradedCompensation);
+  const originalTypeName = detail?.originalUnitTypeName || contract.originalUnitTypeName;
+  const upgradeNoticeReason = detail?.upgradeReason || contract.upgradeReason || 'Hết ô kho cùng loại tại thời điểm bàn giao (BR-BMP-01)';
 
   // Lấy ngày lập hợp đồng
   const baseContractDate = detail?.checkinDate || contract.checkinDate || effectiveStartDate;
@@ -266,6 +269,12 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
         {relocationCode && (
           <div className="mt-1.5 text-[11px] text-slate-800 italic">
             <strong>* Phụ lục điều chuyển kỹ thuật ({relocationCode}):</strong> Ô kho được điều chuyển từ ô ban đầu sang <strong>{effectiveUnitNumber}</strong> ({relocationReason}). Toàn bộ đơn giá thuê và tiền cọc bảo đảm được giữ nguyên vẹn.
+          </div>
+        )}
+
+        {isUpgraded && (
+          <div className="mt-2 p-2.5 bg-slate-50 border border-slate-300 rounded text-[11px] text-slate-800 leading-relaxed">
+            <strong>* Phụ lục Nâng hạng Đền bù Miễn phí (Chính sách BR-BMP-01 & BR-CHK-06):</strong> Ô kho đã được Cơ sở tự động nâng cấp miễn phí từ loại kho ban đầu {originalTypeName ? <strong>({originalTypeName})</strong> : ''} sang loại kho lớn hơn <strong>{effectiveUnitTypeName} ({effectiveDimensions})</strong>. Toàn bộ đơn giá thuê gốc ({formatCurrencyVND(effectiveMonthlyRent)}/tháng) và tiền cọc ({formatCurrencyVND(effectiveDeposit)}) được bảo lưu 100% trong suốt kỳ hạn hợp đồng. Lý do: {upgradeNoticeReason}.
           </div>
         )}
       </section>

@@ -795,6 +795,14 @@ public class ContractServiceImpl implements ContractService {
                                         .rescheduledAt(c.getRescheduledAt())
                                         .createdAt(c.getCreatedAt())
                                         .returnRequestCreatedAt(returnRequestCreatedAt)
+                                        .totalRentalFee(c.getTotalRentalFee())
+                                        .isDoubleDepositCompensation(c.isDoubleDepositCompensation())
+                                        .compensationAmount(c.getCompensationAmount() > 0 ? c.getCompensationAmount() : null)
+                                        .compensationReason(c.getCompensationReason())
+                                        .totalPayoutAmount(c.isDoubleDepositCompensation()
+                                                ? c.getTotalRentalFee() + c.getDepositAmount()
+                                                        + (c.getCompensationAmount() > 0 ? c.getCompensationAmount() : c.getDepositAmount())
+                                                : null)
                                         .build();
                 }).toList();
 
@@ -1049,11 +1057,24 @@ public class ContractServiceImpl implements ContractService {
 
                 long monthlyPriceSnapshot = contract.getMonthlyPrice();
                 long depositSnapshot = contract.getDepositAmount();
+                Long originalTypeId = contract.getOriginalUnitTypeId() != null
+                                ? contract.getOriginalUnitTypeId()
+                                : (oldUnit != null ? oldUnit.getUnitTypeId() : contract.getUnitTypeId());
+
                 contract.setStorageUnitId(newUnit.getId());
                 contract.setUnitTypeId(newUnit.getUnitTypeId());
                 contract.setRelocationSupportRequestId(ticket != null ? ticket.getId() : null);
                 contract.setMonthlyPrice(monthlyPriceSnapshot);
                 contract.setDepositAmount(depositSnapshot);
+
+                if (isUpgradeCompensation) {
+                        contract.setUpgradedCompensation(true);
+                        contract.setOriginalUnitTypeId(originalTypeId);
+                        String reasonText = (request.getReason() != null && !request.getReason().isBlank())
+                                        ? request.getReason()
+                                        : (ticket != null && ticket.getDescription() != null ? ticket.getDescription() : "Hết ô kho cùng loại tại thời điểm bàn giao (BR-BMP-01)");
+                        contract.setUpgradeReason("Nâng hạng đền bù miễn phí do " + reasonText + ". Bảo lưu 100% đơn giá gốc.");
+                }
                 contractRepository.save(contract);
 
                 if (contract.getReservationId() != null && reservationRepository != null) {
@@ -1148,6 +1169,156 @@ public class ContractServiceImpl implements ContractService {
                                 .openSupportRequestId(null)
                                 .rescheduleCount(contract.getRescheduleCount())
                                 .rescheduledAt(contract.getRescheduledAt())
+                                .build();
+        }
+
+        @Override
+        @Transactional
+        public EmergencyCompensationResponse executeDoubleDepositCompensation(Long contractId,
+                        EmergencyCompensationRequest request, Long managerId, List<Long> facilityIds) {
+                Optional<RentalContract> contractOpt = (facilityIds == null || facilityIds.isEmpty())
+                                ? contractRepository.findById(contractId)
+                                : contractRepository.findByIdAndFacilityIdIn(contractId, facilityIds);
+
+                RentalContract contract = contractOpt
+                                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND, "Không tìm thấy hợp đồng."));
+
+                // 1. Kiểm tra trạng thái hợp đồng: phải là PENDING_CHECK_IN (hoặc đang chờ nhận kho / bàn giao)
+                if (contract.getStatus() != ContractStatus.PENDING_CHECK_IN) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Chỉ có thể kích hoạt bồi thường phạt cọc cho hợp đồng đang chờ nhận kho (PENDING_CHECK_IN).");
+                }
+
+                Long facilityId = contract.getFacilityId();
+                Long currentUnitTypeId = contract.getUnitTypeId();
+
+                // 2. Guardrail Cháy kho 100% (Zero Capacity Check):
+                // 2a. Kiểm tra ô cùng loại còn trống hay không
+                long availableSameType = (storageUnitRepository != null && currentUnitTypeId != null)
+                                ? storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(facilityId, currentUnitTypeId, StorageUnitStatus.AVAILABLE)
+                                : 0;
+
+                if (availableSameType > 0) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Cơ sở vẫn còn " + availableSameType + " ô kho cùng loại khả dụng. Không được kích hoạt bồi thường khi chưa hết ô!");
+                }
+
+                // 2b. Kiểm tra xem cơ sở có còn ô lớn hơn khả dụng để nâng hạng miễn phí (BR-BMP-01) hay không
+                UnitType currentType = (unitTypeRepository != null && currentUnitTypeId != null)
+                                ? unitTypeRepository.findById(currentUnitTypeId).orElse(null)
+                                : null;
+
+                BigDecimal currentArea = (currentType != null && currentType.getWidthM() != null && currentType.getLengthM() != null)
+                                ? currentType.getWidthM().multiply(currentType.getLengthM())
+                                : BigDecimal.ZERO;
+                String currentEnv = (currentType != null && currentType.getEnvironment() != null)
+                                ? currentType.getEnvironment().trim().toUpperCase()
+                                : "STANDARD";
+
+                if (unitTypeRepository != null && storageUnitRepository != null) {
+                        List<UnitType> allTypes = unitTypeRepository.findAll();
+                        for (UnitType ut : allTypes) {
+                                if (ut.getId().equals(currentUnitTypeId)) continue;
+                                String utEnv = ut.getEnvironment() != null ? ut.getEnvironment().trim().toUpperCase() : "STANDARD";
+                                if (!currentEnv.equalsIgnoreCase(utEnv)) continue;
+
+                                BigDecimal area = (ut.getWidthM() != null && ut.getLengthM() != null)
+                                                ? ut.getWidthM().multiply(ut.getLengthM())
+                                                : BigDecimal.ZERO;
+                                if (area.compareTo(currentArea) > 0) {
+                                        long availableLarger = storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(
+                                                        facilityId, ut.getId(), StorageUnitStatus.AVAILABLE);
+                                        if (availableLarger > 0) {
+                                                throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                                                "Cơ sở vẫn còn " + availableLarger + " ô kho lớn hơn (" + ut.getName() + " - " + area + "m²) khả dụng để nâng hạng đền bù miễn phí theo BR-BMP-01. Không được kích hoạt phạt cọc!");
+                                        }
+                                }
+                        }
+                }
+
+                // 3. Tính toán bồi thường theo Điều 328 BLDS (Phạt cọc bội tín):
+                // - Hoàn 100% tiền thuê đã đóng
+                // - Hoàn 100% tiền cọc gốc
+                // - Cơ sở đền thêm 100% tiền cọc (Khoản phạt cọc)
+                // => Tổng khách nhận = Tiền thuê + 2 x Tiền cọc
+                long rentRefundAmount = contract.getTotalRentalFee();
+                long depositRefundAmount = contract.getDepositAmount();
+                long penaltyAmount = contract.getDepositAmount();
+                long totalPayoutAmount = rentRefundAmount + depositRefundAmount + penaltyAmount;
+
+                OffsetDateTime now = OffsetDateTime.now();
+
+                // 4. Cập nhật hợp đồng
+                contract.setStatus(ContractStatus.TERMINATED);
+                contract.setStorageUnitId(null);
+                contract.setEndDateExclusive(LocalDate.now());
+                contract.setDoubleDepositCompensation(true);
+                contract.setCompensationAmount(penaltyAmount);
+                contract.setCompensationReason(request.getReason() != null && !request.getReason().isBlank()
+                                ? request.getReason()
+                                : "Cơ sở cháy kho 100% không còn ô cùng loại hoặc lớn hơn để bàn giao (BR-BMP-02 / Điều 328 BLDS)");
+                contract.setCompensationApprovedBy(managerId);
+                contract.setCompensationApprovedAt(now);
+                contract.setClosedAt(now);
+                contractRepository.save(contract);
+
+                // 5. Đóng phiếu hỗ trợ và lưu biên bản giao nhận/trả kho
+                closeOpenSupportTickets(contractId);
+
+                if (returnRequestRepository != null) {
+                        returnRequestRepository.save(ReturnRequest.builder()
+                                        .contractId(contractId)
+                                        .requestedReturnDate(LocalDate.now())
+                                        .status(ReturnRequestStatus.COMPLETED)
+                                        .isIntact(false)
+                                        .conditionNote("Cháy kho 100% - Bồi thường phạt cọc gấp đôi Điều 328 BLDS: " + contract.getCompensationReason())
+                                        .inspectedAt(now)
+                                        .inspectedBy(managerId)
+                                        .damageCost(0L)
+                                        .depositRefundAmount(totalPayoutAmount)
+                                        .build());
+                }
+
+                // 6. Ghi các giao dịch hoàn tiền & đền bù vào payment_transaction ở trạng thái SUCCESS vì FM đã duyệt quyết toán
+                long orderBase = System.currentTimeMillis();
+                Instant payoutTime = now.toInstant();
+                saveRefundTransaction(contract.getId(), contract.getReservationId(), "RENT_REFUND", rentRefundAmount,
+                                "HOÀN TIỀN THUÊ DO CHÁY KHO 100% (ĐIỀU 328 BLDS)", orderBase, "SUCCESS", payoutTime);
+                saveRefundTransaction(contract.getId(), contract.getReservationId(), "DEPOSIT_REFUND", depositRefundAmount,
+                                "HOÀN CỌC GỐC DO CHÁY KHO 100% (ĐIỀU 328 BLDS)", orderBase + 1, "SUCCESS", payoutTime);
+                saveRefundTransaction(contract.getId(), contract.getReservationId(), "COMPENSATION", penaltyAmount,
+                                "TIỀN PHẠT CỌC BỒI TÍN DO CHÁY KHO 100% (ĐIỀU 328 BLDS)", orderBase + 2, "SUCCESS", payoutTime);
+
+                String managerName = "Quản lý cơ sở";
+                if (managerId != null && userService != null) {
+                        try {
+                                var mgr = userService.getUserById(managerId);
+                                if (mgr != null && mgr.getFullName() != null) {
+                                        managerName = mgr.getFullName();
+                                }
+                        } catch (Exception ignored) {}
+                }
+
+                log.info("Kích hoạt bồi thường phạt cọc gấp đôi BR-BMP-02 thành công cho HĐ [{}]: Tiền thuê={}, Cọc={}, Phạt={}, Tổng={}",
+                                contract.getCode(), rentRefundAmount, depositRefundAmount, penaltyAmount, totalPayoutAmount);
+
+                return EmergencyCompensationResponse.builder()
+                                .contractId(contract.getId())
+                                .contractCode(contract.getCode())
+                                .customerName(contract.getCustomerName())
+                                .customerPhone(contract.getCustomerPhone())
+                                .rentRefundAmount(rentRefundAmount)
+                                .depositRefundAmount(depositRefundAmount)
+                                .penaltyAmount(penaltyAmount)
+                                .totalPayoutAmount(totalPayoutAmount)
+                                .disbursementDeadlineDays(3)
+                                .reason(contract.getCompensationReason())
+                                .status("TERMINATED_COMPENSATED")
+                                .approvedAt(now)
+                                .approvedByName(managerName)
+                                .message("Kích hoạt bồi thường phạt cọc gấp đôi (Điều 328 BLDS) thành công. Tổng số tiền hoàn trả: "
+                                                + String.format("%,d đ", totalPayoutAmount)
+                                                + " (Giải ngân trong 3 ngày làm việc).")
                                 .build();
         }
 
@@ -1530,6 +1701,29 @@ public class ContractServiceImpl implements ContractService {
                 RentalContract contract = contractOpt
                                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
 
+                if (contract.isDoubleDepositCompensation()) {
+                        long rentAmount = contract.getTotalRentalFee() > 0
+                                        ? contract.getTotalRentalFee()
+                                        : contract.getMonthlyPrice() * Math.max(1, contract.getRentalMonths());
+                        long deposit = contract.getDepositAmount();
+                        long penalty = contract.getCompensationAmount() > 0 ? contract.getCompensationAmount() : deposit;
+                        long totalPayout = rentAmount + deposit + penalty;
+                        return SettlementPreviewResponse.builder()
+                                        .contractId(contract.getId())
+                                        .settlementType("DOUBLE_DEPOSIT_COMPENSATION")
+                                        .depositAmount(deposit)
+                                        .totalRentalFee(rentAmount)
+                                        .damageCost(0L)
+                                        .overdueFee(0L)
+                                        .unpaidExtraCharges(0L)
+                                        .depositRefundAmount(totalPayout)
+                                        .payableAmount(0L)
+                                        .earlyRentRefund(rentAmount)
+                                        .compensationAmount(penalty)
+                                        .doubleDepositCompensation(true)
+                                        .build();
+                }
+
                 if (isCustomerCancelledCheckIn(contract)) {
                         return computeCancelledCheckInPreview(contract);
                 }
@@ -1674,6 +1868,11 @@ public class ContractServiceImpl implements ContractService {
                 RentalContract contract = contractOpt
                                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
 
+                if (contract.isDoubleDepositCompensation()) {
+                        throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
+                                        "Hợp đồng đã được duyệt quyết toán bồi thường phạt cọc gấp đôi (Điều 328 BLDS / BR-BMP-02) hoàn tất trước đó.");
+                }
+
                 if (contract.getStatus() != ContractStatus.PENDING_RETURN
                                 && contract.getStatus() != ContractStatus.OVERDUE
                                 && contract.getStatus() != ContractStatus.TERMINATED
@@ -1718,10 +1917,11 @@ public class ContractServiceImpl implements ContractService {
                                         if (rentTxn != null) {
                                                 rentTxn.setAmount(cancelPreview.getEarlyRentRefund());
                                                 rentTxn.setStatus(PaymentStatus.SUCCESS.name());
+                                                rentTxn.setPaidAt(Instant.now());
                                                 paymentTransactionRepository.save(rentTxn);
                                         } else {
-                                                savePendingRefund(contract.getId(), contract.getReservationId(), "RENT_REFUND",
-                                                                cancelPreview.getEarlyRentRefund(), "Hoàn tiền thuê hủy nhận kho", System.currentTimeMillis());
+                                                saveRefundTransaction(contract.getId(), contract.getReservationId(), "RENT_REFUND",
+                                                                cancelPreview.getEarlyRentRefund(), "Hoàn tiền thuê hủy nhận kho", System.currentTimeMillis(), "SUCCESS", Instant.now());
                                         }
                                 } else if (rentTxn != null && "PENDING_REFUND".equalsIgnoreCase(rentTxn.getStatus())) {
                                         paymentTransactionRepository.delete(rentTxn);
@@ -1732,10 +1932,11 @@ public class ContractServiceImpl implements ContractService {
                                         if (depTxn != null) {
                                                 depTxn.setAmount(actualDepRefund);
                                                 depTxn.setStatus(PaymentStatus.SUCCESS.name());
+                                                depTxn.setPaidAt(Instant.now());
                                                 paymentTransactionRepository.save(depTxn);
                                         } else {
-                                                savePendingRefund(contract.getId(), contract.getReservationId(), "DEPOSIT_REFUND",
-                                                                actualDepRefund, "Hoàn cọc hủy nhận kho", System.currentTimeMillis() + 1);
+                                                saveRefundTransaction(contract.getId(), contract.getReservationId(), "DEPOSIT_REFUND",
+                                                                actualDepRefund, "Hoàn cọc hủy nhận kho", System.currentTimeMillis() + 1, "SUCCESS", Instant.now());
                                         }
                                 } else if (depTxn != null && "PENDING_REFUND".equalsIgnoreCase(depTxn.getStatus())) {
                                         paymentTransactionRepository.delete(depTxn);
@@ -2071,6 +2272,22 @@ public class ContractServiceImpl implements ContractService {
                 contract.setAccessCode(null);
                 contractRepository.save(contract);
 
+                // Tự động chuyển tất cả các giao dịch PENDING_REFUND của HĐ sang SUCCESS khi FM duyệt quyết toán
+                if (paymentTransactionRepository != null && contract.getId() != null) {
+                        List<PaymentTransaction> txns = paymentTransactionRepository.findByContractId(contract.getId());
+                        if (txns != null) {
+                                for (PaymentTransaction txn : txns) {
+                                        if ("PENDING_REFUND".equalsIgnoreCase(txn.getStatus())) {
+                                                txn.setStatus("SUCCESS");
+                                                if (txn.getPaidAt() == null) {
+                                                        txn.setPaidAt(Instant.now());
+                                                }
+                                                paymentTransactionRepository.save(txn);
+                                        }
+                                }
+                        }
+                }
+
                 if (contract.getStorageUnitId() != null && storageUnitRepository != null) {
                         storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(unit -> {
                                 if (unit.getStatus() == StorageUnitStatus.OCCUPIED) {
@@ -2119,6 +2336,11 @@ public class ContractServiceImpl implements ContractService {
 
                 RentalContract contract = contractOpt
                                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+
+                if (contract.isDoubleDepositCompensation()) {
+                        throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
+                                        "Hợp đồng đã được duyệt quyết toán bồi thường phạt cọc gấp đôi (Điều 328 BLDS / BR-BMP-02) hoàn tất trước đó.");
+                }
 
                 if (contract.getStatus() != ContractStatus.PENDING_RETURN) {
                         throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_RETURN);
@@ -2904,9 +3126,8 @@ public class ContractServiceImpl implements ContractService {
                 return toResponse(saved);
         }
 
-        /** PIN theo độ dài trong snapshot hợp đồng, không ghim 6 số. */
-        private void savePendingRefund(Long contractId, Long reservationId, String type, long amount, String reason,
-                        long orderCode) {
+        private void saveRefundTransaction(Long contractId, Long reservationId, String type, long amount, String reason,
+                        long orderCode, String status, Instant paidAt) {
                 if (amount <= 0 || paymentTransactionRepository == null) {
                         return;
                 }
@@ -2916,10 +3137,16 @@ public class ContractServiceImpl implements ContractService {
                                 .amount(amount)
                                 .transactionType(type)
                                 .paymentMethod("BANK_TRANSFER")
-                                .status("PENDING_REFUND")
+                                .status(status)
+                                .paidAt(paidAt)
                                 .providerReference(reason)
                                 .orderCode(orderCode)
                                 .build());
+        }
+
+        private void savePendingRefund(Long contractId, Long reservationId, String type, long amount, String reason,
+                        long orderCode) {
+                saveRefundTransaction(contractId, reservationId, type, amount, reason, orderCode, "PENDING_REFUND", null);
         }
 
         private String generateUniquePin(int length) {
@@ -3147,11 +3374,18 @@ public class ContractServiceImpl implements ContractService {
                                         }
                                 });
                         }
-                        if ((r.getRelocationEligible() == null || !r.getRelocationEligible()) && handoverRecordRepository != null) {
+                        if (handoverRecordRepository != null) {
                                 handoverRecordRepository.findByContractId(c.getId()).ifPresent(hr -> {
                                         if (hr.isRejected() && c.getStatus() == ContractStatus.PENDING_CHECK_IN) {
                                                 r.setRelocationEligible(true);
                                         }
+                                        r.setCheckinConditionNote(hr.getConditionNote());
+                                        r.setHandoverAt(hr.getHandoverAt());
+                                        boolean isOnline = (hr.getConditionNote() != null && 
+                                                (hr.getConditionNote().toLowerCase().contains("online") || hr.getConditionNote().toLowerCase().contains("ký số")))
+                                                || (hr.getStaffId() == null && hr.isCustomerConfirmed())
+                                                || (hr.getStaffId() != null && Objects.equals(hr.getStaffId(), c.getCustomerId()));
+                                        r.setIsOnlineCheckIn(isOnline);
                                 });
                         }
                 }
@@ -3159,6 +3393,37 @@ public class ContractServiceImpl implements ContractService {
                 if (Boolean.TRUE.equals(r.getRelocationEligible())
                                 && c.getStatus() == ContractStatus.PENDING_CHECK_IN) {
                         r.setStorageUnitCode("Chờ gán lại ô kho");
+                }
+
+                r.setIsUpgradedCompensation(c.isUpgradedCompensation());
+                r.setOriginalUnitTypeId(c.getOriginalUnitTypeId());
+                if (c.getOriginalUnitTypeId() != null && unitTypeRepository != null) {
+                        unitTypeRepository.findById(c.getOriginalUnitTypeId()).ifPresent(ut -> {
+                                r.setOriginalUnitTypeName(ut.getName());
+                        });
+                }
+                r.setUpgradeReason(c.getUpgradeReason());
+
+                // BR-BMP-02: Bồi thường phạt cọc gấp đôi (Điều 328 BLDS)
+                r.setIsDoubleDepositCompensation(c.isDoubleDepositCompensation());
+                r.setCompensationAmount(c.getCompensationAmount());
+                r.setCompensationReason(c.getCompensationReason());
+                r.setCompensationApprovedBy(c.getCompensationApprovedBy());
+                r.setCompensationApprovedAt(c.getCompensationApprovedAt());
+                if (c.isDoubleDepositCompensation()) {
+                        long rentPart = c.getTotalRentalFee();
+                        long depositPart = c.getDepositAmount();
+                        long penaltyPart = c.getCompensationAmount() > 0 ? c.getCompensationAmount() : depositPart;
+                        r.setTotalPayoutAmount(rentPart + depositPart + penaltyPart);
+                        r.setDisbursementDeadlineDays(3);
+                        if (c.getCompensationApprovedBy() != null && userService != null) {
+                                try {
+                                        var approver = userService.getUserById(c.getCompensationApprovedBy());
+                                        if (approver != null) {
+                                                r.setCompensationApprovedByName(approver.getFullName());
+                                        }
+                                } catch (Exception ignored) {}
+                        }
                 }
 
                 return r;

@@ -68,6 +68,18 @@ export interface BackendRentalSummary {
   handoverRejected?: boolean;
   rejectionReason?: string;
   scheduledReturnDate?: string;
+  isUpgradedCompensation?: boolean;
+  originalUnitTypeId?: number;
+  originalUnitTypeName?: string;
+  upgradeReason?: string;
+  isDoubleDepositCompensation?: boolean;
+  compensationAmount?: number;
+  compensationReason?: string;
+  compensationApprovedBy?: number;
+  compensationApprovedByName?: string;
+  compensationApprovedAt?: string;
+  totalPayoutAmount?: number;
+  disbursementDeadlineDays?: number;
   createdAt?: string;
 }
 
@@ -88,6 +100,18 @@ export interface CustomerRentalSummary {
   depositAmount?: number;
   rescheduleCount?: number;
   rescheduledAt?: string;
+  isUpgradedCompensation?: boolean;
+  originalUnitTypeId?: number;
+  originalUnitTypeName?: string;
+  upgradeReason?: string;
+  isDoubleDepositCompensation?: boolean;
+  compensationAmount?: number;
+  compensationReason?: string;
+  compensationApprovedBy?: number;
+  compensationApprovedByName?: string;
+  compensationApprovedAt?: string;
+  totalPayoutAmount?: number;
+  disbursementDeadlineDays?: number;
 }
 
 export interface CustomerRentalDetail extends CustomerRentalSummary {
@@ -220,6 +244,18 @@ export function mapBackendRentalToContract(item: BackendRentalSummary): RentedCo
     relocationEligible: Boolean(item.relocationEligible),
     handoverRejected: Boolean(item.handoverRejected),
     rejectionReason: item.rejectionReason,
+    isUpgradedCompensation: Boolean(item.isUpgradedCompensation),
+    originalUnitTypeId: item.originalUnitTypeId,
+    originalUnitTypeName: item.originalUnitTypeName,
+    upgradeReason: item.upgradeReason,
+    isDoubleDepositCompensation: Boolean(item.isDoubleDepositCompensation),
+    compensationAmount: item.compensationAmount,
+    compensationReason: item.compensationReason,
+    compensationApprovedBy: item.compensationApprovedBy,
+    compensationApprovedByName: item.compensationApprovedByName,
+    compensationApprovedAt: item.compensationApprovedAt,
+    totalPayoutAmount: item.totalPayoutAmount,
+    disbursementDeadlineDays: item.disbursementDeadlineDays,
     createdAt: item.createdAt ? String(item.createdAt) : undefined,
   };
 }

@@ -7,6 +7,8 @@ import {
   Repeat,
   RefreshCw,
   AlertCircle,
+  AlertTriangle,
+  Flame,
   ChevronDown,
   ChevronUp,
   Receipt,
@@ -17,6 +19,7 @@ import {
   UserPlus,
   UserCheck,
   MapPin,
+  Sparkles,
 } from 'lucide-react';
 import {
   getManagerContracts,
@@ -40,6 +43,7 @@ import { FacilityFloorPlanMapModal } from '../components/FacilityFloorPlanMapMod
 import { ContractFinancialModal } from '../components/ContractFinancialModal';
 import { SettlementApprovalModal } from '../components/SettlementApprovalModal';
 import { ForceRenewalModal } from '../components/ForceRenewalModal';
+import { EmergencyCompensationModal } from '../components/EmergencyCompensationModal';
 import { ContractDetailModal } from '@/features/customer/components/ContractDetailModal';
 
 const fmt = (p: number) => new Intl.NumberFormat('vi-VN').format(p) + ' đ';
@@ -169,6 +173,7 @@ export const ContractDetailPage: React.FC = () => {
   const [eContractModalOpen, setEContractModalOpen] = useState(false);
   const [floorPlanOpen, setFloorPlanOpen] = useState(false);
   const [forceRenewalModalOpen, setForceRenewalModalOpen] = useState(false);
+  const [isCompensationModalOpen, setIsCompensationModalOpen] = useState(false);
 
   // Feedback & Settlement Debt state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -343,9 +348,23 @@ export const ContractDetailPage: React.FC = () => {
     !isCancelled &&
     Boolean(contract.relocationEligible) &&
     (isActive || isPendingCheckIn);
+  const canCompensate = Boolean(
+    contract &&
+      !isTerminated &&
+      !isCancelled &&
+      contract.status !== 'CLOSED' &&
+      (canRelocate ||
+        contract.status === 'RELOCATION_PENDING' ||
+        contract.storageUnitCode === 'Chờ gán lại ô kho' ||
+        contract.relocationEligible ||
+        (isPendingCheckIn && (!contract.storageUnitId || contract.storageUnitCode === 'Chưa gán')))
+  );
   // Cho phép duyệt quyết toán khi nhân viên ĐÃ nghiệm thu hoặc hợp đồng ở trạng thái TERMINATED / CANCELLED
+  // (LOẠI TRỪ trường hợp hợp đồng đã duyệt bồi thường phạt cọc gấp đôi BR-BMP-02 vì bản chất đã được quyết toán xong)
   const isSettlementReady =
-    (isInspected || isTerminated || isCancelled) && contract.status !== 'CLOSED';
+    !contract.isDoubleDepositCompensation &&
+    (isInspected || isTerminated || isCancelled) &&
+    contract.status !== 'CLOSED';
 
   // Điều kiện Force Renewal (FM-01, BR-REN-01, BR-REN-10): Hợp đồng ACTIVE và còn < 20 ngày
   const daysRemaining = contract.endDateExclusive
@@ -490,6 +509,31 @@ export const ContractDetailPage: React.FC = () => {
             </button>
           )}
 
+          {canCompensate && (
+            <button
+              type="button"
+              data-testid="btn-contract-emergency-compensation"
+              onClick={() => setIsCompensationModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 border border-rose-300 text-rose-700 text-sm font-bold rounded-lg hover:bg-rose-100 transition-colors cursor-pointer shadow-2xs"
+              title="Kích hoạt duyệt quyết toán & bồi thường phạt cọc gấp đôi nếu cơ sở cháy kho 100% (Điều 328 BLDS & BR-BMP-02)"
+            >
+              <AlertTriangle className="w-4 h-4 text-rose-600" />
+              <span>🚨 Duyệt quyết toán &amp; Phạt cọc 2x (BR-BMP-02)</span>
+            </button>
+          )}
+
+          {contract.isDoubleDepositCompensation && (
+            <button
+              type="button"
+              onClick={() => setSettlementModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 border border-emerald-300 text-emerald-800 text-sm font-semibold rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer shadow-2xs"
+              title="Xem chi tiết bảng kê quyết toán chi hoàn & phạt cọc gấp đôi (BR-BMP-02)"
+            >
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>Đã duyệt quyết toán bồi thường 2x</span>
+            </button>
+          )}
+
           {canForceRenew && (
             <button
               type="button"
@@ -619,14 +663,72 @@ export const ContractDetailPage: React.FC = () => {
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setFloorPlanOpen(true)}
-            className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <Repeat className="w-3.5 h-3.5" />
-            <span>Tiến hành Đổi ô kho (Sơ đồ 2D)</span>
-          </button>
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setIsCompensationModalOpen(true)}
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition-colors shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+              title="Kích hoạt duyệt quyết toán & bồi thường phạt cọc gấp đôi nếu cơ sở cháy kho 100% (Điều 328 BLDS & BR-BMP-02)"
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-white" />
+              <span>🚨 Duyệt quyết toán &amp; Phạt cọc 2x (BR-BMP-02)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFloorPlanOpen(true)}
+              className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <Repeat className="w-3.5 h-3.5" />
+              <span>Tiến hành Đổi ô kho (Sơ đồ 2D)</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Banner Hợp đồng Bồi thường Phạt cọc Gấp đôi theo Điều 328 BLDS & BR-BMP-02 */}
+      {contract.isDoubleDepositCompensation && (
+        <div className="bg-rose-50 border border-rose-200 text-rose-950 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in">
+          <div className="flex items-start gap-3.5">
+            <div className="p-2.5 rounded-xl bg-rose-100 text-rose-700 shrink-0 mt-0.5">
+              <Flame className="w-6 h-6 text-rose-600" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="text-base font-bold text-rose-950">
+                  Hợp đồng Bồi thường Phạt cọc Gấp đôi (Điều 328 BLDS · BR-BMP-02)
+                </h4>
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300">
+                  Đã thanh lý &amp; Lệnh chuyển khoản 3 ngày
+                </span>
+              </div>
+              <p className="text-xs text-rose-800 leading-relaxed max-w-3xl">
+                Cơ sở đã hết 100% ô khả dụng cùng loại và không có ô lớn hơn để nâng hạng miễn phí.
+                Ban quản lý đã hoàn tất thủ tục bồi thường phạt cọc gấp đôi theo đúng quy định pháp luật.
+                {contract.compensationReason && (
+                  <span className="block mt-0.5 font-medium italic">
+                    Lý do: {contract.compensationReason}
+                  </span>
+                )}
+              </p>
+              <div className="pt-2 flex flex-wrap gap-4 text-xs font-mono text-rose-900 border-t border-rose-200/80 items-center justify-between">
+                <div className="flex flex-wrap gap-4 items-center">
+                  <span>Hoàn tiền thuê: <strong>{fmt(contract.totalRentalFee || (contract.monthlyPrice * contract.rentalMonths) || 0)}</strong></span>
+                  <span>Hoàn cọc gốc: <strong>{fmt(contract.depositAmount || 0)}</strong></span>
+                  <span>Tiền phạt đền bù: <strong>+{fmt(contract.compensationAmount || contract.depositAmount || 0)}</strong></span>
+                  <span className="font-bold text-rose-700 text-sm">Tổng tiền hoàn trả: <strong>{fmt(contract.totalPayoutAmount || ((contract.totalRentalFee || 0) + (contract.depositAmount || 0) * 2))}</strong></span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSettlementModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-rose-300 text-rose-800 text-xs font-semibold rounded-lg hover:bg-rose-100/60 transition-colors cursor-pointer shadow-2xs"
+                  title="Xem bảng kê quyết toán chi hoàn & phạt cọc gấp đôi"
+                >
+                  <Receipt className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Xem bảng kê quyết toán bồi thường</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -672,8 +774,8 @@ export const ContractDetailPage: React.FC = () => {
         </div>
       )}
 
-      {/* Banner Hợp đồng Chấm dứt (do Cưỡng chế quá hạn D+7 hoặc do Sự cố bàn giao) */}
-      {isTerminated && !isCancelled && (
+      {/* Banner Hợp đồng Chấm dứt (do Cưỡng chế quá hạn D+7 hoặc do Sự cố bàn giao thường - LOẠI TRỪ HĐ đã bồi thường phạt cọc 2x) */}
+      {isTerminated && !isCancelled && !contract.isDoubleDepositCompensation && (
         <div className="bg-rose-50 border border-rose-200 text-rose-950 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -1204,6 +1306,12 @@ export const ContractDetailPage: React.FC = () => {
                 <span className="text-gray-500">Loại ô kho:</span>
                 <span className="font-medium text-gray-900 text-right">
                   {contract.unitTypeName || 'Kho tiêu chuẩn'}
+                  {contract.isUpgradedCompensation && (
+                    <span className="ml-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      <Sparkles className="w-3 h-3 text-emerald-600" />
+                      Nâng hạng đền bù
+                    </span>
+                  )}
                   {canRelocate && isPendingCheckIn ? ' (Đang điều phối đổi ô)' : ''}
                 </span>
               </div>
@@ -1322,6 +1430,37 @@ export const ContractDetailPage: React.FC = () => {
           allowedUnitTypeId={canRelocate ? contract.unitTypeId : undefined}
           targetUnitTypeName={canRelocate ? contract.unitTypeName : undefined}
           onSelectUnit={canRelocate ? handleFloorPlanReassign : undefined}
+          onTriggerDoubleDepositCompensation={() => {
+            setFloorPlanOpen(false);
+            setIsCompensationModalOpen(true);
+          }}
+        />
+      )}
+
+      {/* Modal Bồi thường Phạt cọc Gấp đôi (BR-BMP-02 / Điều 328 BLDS) */}
+      {isCompensationModalOpen && contract && (
+        <EmergencyCompensationModal
+          isOpen={isCompensationModalOpen}
+          onClose={() => setIsCompensationModalOpen(false)}
+          contract={{
+            id: contract.id,
+            code: contract.code,
+            customerName: contract.customerName,
+            customerPhone: contract.customerPhone,
+            customerEmail: contract.customerEmail,
+            facilityName: contract.facilityName,
+            unitTypeName: contract.unitTypeName,
+            rentalMonths: contract.rentalMonths,
+            totalRentalFee: contract.totalRentalFee,
+            depositAmount: contract.depositAmount,
+            monthlyPrice: contract.monthlyPrice,
+          }}
+          onSuccess={(res) => {
+            showToast(
+              `Đã kích hoạt bồi thường phạt cọc gấp đôi cho HĐ ${res.contractCode}. Tổng tiền hoàn trả: ${fmt(res.totalPayoutAmount)}!`
+            );
+            loadData(true);
+          }}
         />
       )}
 

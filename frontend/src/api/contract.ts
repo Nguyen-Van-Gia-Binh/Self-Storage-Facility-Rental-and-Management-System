@@ -10,6 +10,8 @@ import type {
   ReturnInspectionRequest,
   ReturnInspectionResponse,
   SettlementPreviewData,
+  EmergencyCompensationRequest,
+  EmergencyCompensationResponse,
 } from '../types';
 import type {
   ManagerContractItem,
@@ -93,6 +95,13 @@ export function mapBackendSummaryToCheckInContract(item: any): CheckInContract {
     assignedStaffName: item.assignedStaffName,
     relocationEligible: item.relocationEligible === true,
     isAwaitingRelocation: item.relocationEligible === true,
+    isUpgradedCompensation: item.isUpgradedCompensation === true,
+    originalUnitTypeId: item.originalUnitTypeId,
+    originalUnitTypeName: item.originalUnitTypeName,
+    upgradeReason: item.upgradeReason,
+    isOnlineCheckIn: Boolean(item.isOnlineCheckIn || item.onlineCheckIn || (item.checkinConditionNote && (item.checkinConditionNote.toLowerCase().includes('online') || item.checkinConditionNote.toLowerCase().includes('ký số')))),
+    checkinConditionNote: item.checkinConditionNote || item.conditionNote,
+    handoverAt: item.handoverAt,
     createdAt: item.createdAt || undefined,
   };
 }
@@ -396,6 +405,7 @@ export function mapBackendToManagerContractItem(c: any): ManagerContractItem {
     ...c,
     status: mappedStatus,
     storageUnitCode: displayStorageUnitCode,
+    isDoubleDepositCompensation: Boolean(c.isDoubleDepositCompensation ?? c.doubleDepositCompensation),
     relocationEligible: isAwaitingRelocation || Boolean(c.relocationEligible),
     isAwaitingRelocation,
     isInspected,
@@ -770,4 +780,21 @@ export async function getContractRenewalHistory(
     console.warn(`[getContractRenewalHistory] Could not load renewals for contract ${contractId}:`, error);
     return [];
   }
+}
+
+/**
+ * BR-BMP-02: Kích hoạt Bồi thường Phạt cọc Gấp đôi khi cơ sở cháy kho 100% (Điều 328 BLDS)
+ * POST /api/v1/contracts/{id}/emergency-compensation
+ */
+export async function executeDoubleDepositCompensation(
+  contractId: number | string,
+  data: EmergencyCompensationRequest
+): Promise<ApiResponse<EmergencyCompensationResponse>> {
+  return apiClient<ApiResponse<EmergencyCompensationResponse>>(
+    `/contracts/${contractId}/emergency-compensation`,
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }
+  );
 }

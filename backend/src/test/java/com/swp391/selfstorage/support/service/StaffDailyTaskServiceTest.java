@@ -4,7 +4,9 @@ import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
+import com.swp391.selfstorage.contract.entity.HandoverRecord;
 import com.swp391.selfstorage.contract.entity.RentalContract;
+import com.swp391.selfstorage.contract.repository.HandoverRecordRepository;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
@@ -69,6 +71,9 @@ class StaffDailyTaskServiceTest {
     @Mock
     private PolicyVersionRepository policyVersionRepository;
 
+    @Mock
+    private HandoverRecordRepository handoverRecordRepository;
+
     @InjectMocks
     private StaffDailyTaskServiceImpl staffDailyTaskService;
 
@@ -103,6 +108,8 @@ class StaffDailyTaskServiceTest {
 
         managerPrincipal = new UserPrincipal(2L, "manager@test.com", "hash", "Lê Văn Manager",
                 UserRole.FACILITY_MANAGER, UserStatus.ACTIVE, List.of(1L), Collections.emptyList());
+
+        ReflectionTestUtils.setField(staffDailyTaskService, "handoverRecordRepository", handoverRecordRepository);
     }
 
     private RentalContract createContract(Long id, String code, Long resId, Long custId, Long facId, Long unitId,
@@ -595,5 +602,103 @@ class StaffDailyTaskServiceTest {
                 .assignedStaffId(8L)
                 .createdAt(today.atStartOfDay(StaffDailyTaskServiceImpl.VN_ZONE).toOffsetDateTime())
                 .build();
+    }
+
+    @Test
+    @DisplayName("Nhiệm vụ check-in đã xong nhận diện đúng cờ isOnlineCheckIn và conditionNote khi khách tự check-in online")
+    void shouldIdentifyOnlineCheckIn_whenCustomerCheckedInOnline() {
+        LocalDate today = LocalDate.now(StaffDailyTaskServiceImpl.VN_ZONE);
+
+        when(userRepository.findById(8L)).thenReturn(Optional.of(sampleStaff));
+        when(userFacilityAssignmentRepository.findFacilityIdsByUserId(8L)).thenReturn(List.of(1L));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(sampleFacility));
+
+        RentalContract activeContract = createContract(501L, "CTR-ONLINE-001", 1042L, 15L, 1L, 101L,
+                today, today.plusMonths(1), ContractStatus.ACTIVE, today, null);
+
+        StaffDailyAssignment checkInAssignment = StaffDailyAssignment.builder()
+                .id(1L)
+                .staffId(8L)
+                .facilityId(1L)
+                .workDate(today)
+                .taskType(AssignmentTaskType.HANDOVER)
+                .referenceType("CONTRACT")
+                .referenceId(501L)
+                .build();
+
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(
+                org.mockito.ArgumentMatchers.eq(8L), any(), org.mockito.ArgumentMatchers.eq(today)))
+                .thenReturn(List.of(checkInAssignment));
+        when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(activeContract));
+        when(storageUnitRepository.findById(101L)).thenReturn(Optional.of(sampleUnit));
+        when(userRepository.findById(15L)).thenReturn(Optional.of(sampleCustomer));
+
+        HandoverRecord hr = HandoverRecord.builder()
+                .id(99L)
+                .contractId(501L)
+                .staffId(null)
+                .customerConfirmed(true)
+                .conditionNote("Khách hàng check-in online và ký số điện tử (Đạt 4/4 tiêu chí): Nguyễn Văn Customer")
+                .handoverAt(OffsetDateTime.now())
+                .build();
+        when(handoverRecordRepository.findByContractId(501L)).thenReturn(Optional.of(hr));
+
+        StaffDailyTasksResponse response = staffDailyTaskService.getDailyTasks(8L, today, false, staffPrincipal);
+
+        assertThat(response.getCheckInTasks()).hasSize(1);
+        com.swp391.selfstorage.support.dto.DailyCheckInTaskDto dto = response.getCheckInTasks().get(0);
+        assertThat(dto.isCompleted()).isTrue();
+        assertThat(dto.isOnlineCheckIn()).isTrue();
+        assertThat(dto.getConditionNote()).contains("check-in online");
+    }
+
+    @Test
+    @DisplayName("Hợp đồng đã đóng (CLOSED) không bao giờ hiển thị thành nhiệm vụ check-in chờ xử lý")
+    void shouldNotIncludeClosedContractInPendingCheckInTasks() {
+        LocalDate today = LocalDate.now();
+
+        when(userRepository.findById(8L)).thenReturn(Optional.of(sampleStaff));
+        when(userFacilityAssignmentRepository.findFacilityIdsByUserId(8L)).thenReturn(List.of(1L));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(sampleFacility));
+
+        RentalContract closedContract = RentalContract.builder()
+                .id(502L)
+                .code("CTR-20261117-CLOSED")
+                .customerId(15L)
+                .facilityId(1L)
+                .storageUnitId(null)
+                .status(ContractStatus.CLOSED)
+                .startDate(today)
+                .build();
+
+        StaffDailyAssignment checkInAssignment = StaffDailyAssignment.builder()
+                .id(2L)
+                .staffId(8L)
+                .facilityId(1L)
+                .workDate(today)
+                .taskType(AssignmentTaskType.HANDOVER)
+                .referenceType("CONTRACT")
+                .referenceId(502L)
+                .build();
+
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(
+                org.mockito.ArgumentMatchers.eq(8L), any(), org.mockito.ArgumentMatchers.eq(today)))
+                .thenReturn(List.of(checkInAssignment));
+        when(rentalContractRepository.findById(502L)).thenReturn(Optional.of(closedContract));
+
+        StaffDailyTasksResponse response = staffDailyTaskService.getDailyTasks(8L, today, true, staffPrincipal);
+
+        // Với pendingOnly = true, hợp đồng CLOSED không được lọt vào danh sách chờ xử lý
+        assertThat(response.getCheckInTasks()).isEmpty();
+        assertThat(response.getPendingCheckIns()).isEmpty();
+
+        // Với pendingOnly = false, hợp đồng CLOSED xuất hiện ở danh sách để đưa vào tab 'Đã xong'
+        when(userRepository.findById(15L)).thenReturn(Optional.of(sampleCustomer));
+        StaffDailyTasksResponse fullResponse = staffDailyTaskService.getDailyTasks(8L, today, false, staffPrincipal);
+        assertThat(fullResponse.getCheckInTasks()).hasSize(1);
+        var completedDto = fullResponse.getCheckInTasks().get(0);
+        assertThat(completedDto.isCompleted()).isTrue();
+        assertThat(completedDto.getStatus()).isEqualTo("CLOSED");
+        assertThat(completedDto.getConditionNote()).contains("Hợp đồng đã kết thúc");
     }
 }

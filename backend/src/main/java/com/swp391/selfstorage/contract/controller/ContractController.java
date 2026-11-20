@@ -231,6 +231,20 @@ public class ContractController {
         return ResponseEntity.ok(ApiResponse.success(response, "Đổi ô kho thành công"));
     }
 
+    /** BR-BMP-02: Kích hoạt bồi thường phạt cọc gấp đôi khi cơ sở cháy kho 100% (Điều 328 BLDS) */
+    @PostMapping("/{id}/emergency-compensation")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @Operation(summary = "Kích hoạt bồi thường phạt cọc gấp đôi khi cơ sở cháy kho 100% (BR-BMP-02 / Điều 328 BLDS)")
+    public ResponseEntity<ApiResponse<EmergencyCompensationResponse>> executeDoubleDepositCompensation(
+            @PathVariable Long id,
+            @Valid @RequestBody EmergencyCompensationRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        Long managerId = requireUserId(currentUser);
+        List<Long> facilities = resolveFacilityScope(currentUser, null);
+        EmergencyCompensationResponse response = contractService.executeDoubleDepositCompensation(id, request, managerId, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, response.getMessage()));
+    }
+
     /** T4.3: Khách hoặc Staff đăng ký thông báo trả kho (FS-04) */
     @PostMapping("/{id}/return-notices")
     @PreAuthorize("isAuthenticated()")
