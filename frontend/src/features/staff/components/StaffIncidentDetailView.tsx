@@ -120,12 +120,33 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
     setLoadingSurcharges(true);
     try {
       const targetFacilityId = incidentDetail.facilityId ?? task.facilityId;
+      const targetCategory = (incidentDetail.category ?? task.category ?? '').toUpperCase();
       const list = await fetchSurcharges({ isActive: true });
-      const validFees = list.filter(
-        (fee) =>
-          fee.isActive &&
-          (fee.facilityId == null || fee.facilityId === targetFacilityId),
-      );
+      const validFees = list.filter((fee) => {
+        if (!fee.isActive) return false;
+        if (fee.facilityId != null && fee.facilityId !== targetFacilityId) return false;
+
+        // Phí Vệ sinh (CLEANING) là phí Trả kho (Flow 3), loại bỏ 100% khỏi Flow 7 Xử lý sự cố
+        if (fee.category === 'CLEANING') return false;
+
+        // Phí cắt khóa quá hạn (OVERDUE_LOCK) chỉ thuộc Flow 6.2 Quá hạn
+        if (fee.code === 'OVERDUE_LOCK') return false;
+
+        // Sự cố Khóa / Mã PIN / Thẻ từ (LOCK_ACCESS, ACCESS_CODE, LOST_KEY)
+        if (targetCategory.includes('LOCK') || targetCategory.includes('ACCESS') || targetCategory.includes('KEY')) {
+          // Chỉ cho phép phụ phí nhóm ACCESS_KEY hoặc sửa chữa ổ khóa (DAMAGE_MINOR, DAMAGE_DOOR_SYSTEM)
+          return fee.category === 'ACCESS_KEY' || fee.code === 'DAMAGE_MINOR' || fee.code === 'DAMAGE_DOOR_SYSTEM';
+        }
+
+        // Sự cố Hư hại kho (UNIT_DAMAGE, DAMAGED_UNIT)
+        if (targetCategory.includes('DAMAGE')) {
+          // Chỉ cho phép phụ phí nhóm DAMAGE
+          return fee.category === 'DAMAGE';
+        }
+
+        // Các sự cố khác: cho phép DAMAGE hoặc VALUE_ADDED (tiện ích bốc xếp)
+        return fee.category === 'DAMAGE' || fee.category === 'VALUE_ADDED';
+      });
       setAllSurcharges(validFees);
     } catch (err) {
       console.warn('Lỗi nạp phụ phí BOM:', err);

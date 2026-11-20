@@ -154,6 +154,14 @@ public class StaffSupportServiceImpl implements StaffSupportService {
                     "Nhân viên hiện trường phải báo cần chuyển ô kho trước. Quản lý chỉ đổi ô khi đã có báo cáo.");
         }
 
+        if (required && ticket.getContractId() != null) {
+            RentalContract contract = rentalContractRepository.findById(ticket.getContractId()).orElse(null);
+            if (contract != null && contract.getStatus() != ContractStatus.ACTIVE) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                        "Chỉ có thể đề xuất đổi ô kho cho hợp đồng đang hoạt động (ACTIVE).");
+            }
+        }
+
         ticket.setRelocationRequired(required);
         ticket.setUpdatedAt(OffsetDateTime.now());
         supportRequestRepository.save(ticket);
@@ -180,6 +188,13 @@ public class StaffSupportServiceImpl implements StaffSupportService {
         }
 
         if (request.getRelocationRequired() != null) {
+            if (Boolean.TRUE.equals(request.getRelocationRequired()) && ticket.getContractId() != null) {
+                RentalContract contract = rentalContractRepository.findById(ticket.getContractId()).orElse(null);
+                if (contract != null && contract.getStatus() != ContractStatus.ACTIVE) {
+                    throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                            "Chỉ có thể đề xuất đổi ô kho cho hợp đồng đang hoạt động (ACTIVE).");
+                }
+            }
             ticket.setRelocationRequired(request.getRelocationRequired());
         }
 

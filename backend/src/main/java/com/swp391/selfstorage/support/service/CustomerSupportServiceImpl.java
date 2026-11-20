@@ -103,15 +103,16 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
                 throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không có quyền gửi yêu cầu hỗ trợ cho hợp đồng này");
             }
 
-            if (contract.getStatus() == ContractStatus.TERMINATED
-                    || contract.getStatus() == ContractStatus.CANCELLED
-                    || contract.getStatus() == ContractStatus.CLOSED
-                    || contract.getStatus() == ContractStatus.RETURNED) {
-                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Hợp đồng đã kết thúc hoặc không còn hiệu lực, không thể gửi yêu cầu hỗ trợ.");
+            if (contract.getStatus() != ContractStatus.ACTIVE) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Chỉ có thể gửi yêu cầu hỗ trợ cho hợp đồng đang hoạt động (ACTIVE).");
             }
 
             if (storageUnitId == null) {
                 storageUnitId = contract.getStorageUnitId();
+            }
+
+            if (storageUnitId == null) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Hợp đồng chưa được gán ô kho vật lý, không thể gửi yêu cầu hỗ trợ kỹ thuật.");
             }
         } else if (storageUnitId != null) {
             org.springframework.data.domain.Page<RentalContract> activePage = rentalContractRepository.findByCustomerIdAndStatus(

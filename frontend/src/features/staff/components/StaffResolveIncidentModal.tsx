@@ -102,16 +102,37 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
     setLoadingSurcharges(true);
     fetchSurcharges({ isActive: true })
       .then((list) => {
-        const validFees = list.filter(
-          (fee) =>
-            fee.isActive &&
-            (fee.facilityId == null || fee.facilityId === ticket?.facilityId),
-        );
+        const ticketCat = (ticket?.category || '').toUpperCase();
+        const validFees = list.filter((fee) => {
+          if (!fee.isActive) return false;
+          if (fee.facilityId != null && fee.facilityId !== ticket?.facilityId) return false;
+
+          // Phí Vệ sinh (CLEANING) chỉ thuộc Flow 3 Trả kho, loại bỏ 100% khỏi Flow 7 Xử lý sự cố
+          if (fee.category === 'CLEANING') return false;
+
+          // Phí cắt khóa quá hạn (OVERDUE_LOCK) chỉ thuộc Flow 6.2 Quá hạn
+          if (fee.code === 'OVERDUE_LOCK') return false;
+
+          // Sự cố Khóa / Mã PIN / Thẻ từ (LOCK_ACCESS, ACCESS_CODE, LOST_KEY)
+          if (ticketCat.includes('LOCK') || ticketCat.includes('ACCESS') || ticketCat.includes('KEY')) {
+            // Chỉ cho phép phụ phí nhóm ACCESS_KEY hoặc sửa chữa ổ khóa (DAMAGE_MINOR, DAMAGE_DOOR_SYSTEM)
+            return fee.category === 'ACCESS_KEY' || fee.code === 'DAMAGE_MINOR' || fee.code === 'DAMAGE_DOOR_SYSTEM';
+          }
+
+          // Sự cố Hư hại kho (UNIT_DAMAGE, DAMAGED_UNIT)
+          if (ticketCat.includes('DAMAGE')) {
+            // Chỉ cho phép phụ phí nhóm DAMAGE
+            return fee.category === 'DAMAGE';
+          }
+
+          // Các sự cố khác: cho phép DAMAGE hoặc VALUE_ADDED (tiện ích bốc xếp)
+          return fee.category === 'DAMAGE' || fee.category === 'VALUE_ADDED';
+        });
         setAllSurcharges(validFees);
       })
       .catch(() => setAllSurcharges([]))
       .finally(() => setLoadingSurcharges(false));
-  }, [isOpen, ticket?.facilityId]);
+  }, [isOpen, ticket?.facilityId, ticket?.category]);
 
   if (!isOpen || !ticket) return null;
 

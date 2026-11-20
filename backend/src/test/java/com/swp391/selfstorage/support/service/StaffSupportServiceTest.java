@@ -4,6 +4,7 @@ import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
@@ -98,6 +99,7 @@ class StaffSupportServiceTest {
         sampleContract.setId(501L);
         sampleContract.setCode("CTR-202610-001");
         sampleContract.setCustomerId(15L);
+        sampleContract.setStatus(ContractStatus.ACTIVE);
         sampleContract.setFacilityId(1L);
         sampleContract.setStorageUnitId(42L);
 
@@ -457,6 +459,27 @@ class StaffSupportServiceTest {
                 staffSupportService.markRelocationRequired(801L, true, managerUser));
 
         assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        verify(supportRequestRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Chặn đổi ô kho khi hợp đồng đang nghiệm thu trả kho (PENDING_RETURN)")
+    void staffCannotFlagRelocationOnPendingReturnContract() {
+        sampleTicket.setStatus(SupportStatus.IN_PROGRESS);
+        sampleTicket.setAssignedStaffId(8L);
+        when(supportRequestRepository.findById(801L)).thenReturn(Optional.of(sampleTicket));
+
+        RentalContract returningContract = new RentalContract();
+        returningContract.setId(501L);
+        returningContract.setFacilityId(1L);
+        returningContract.setStatus(ContractStatus.PENDING_RETURN);
+        when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(returningContract));
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                staffSupportService.markRelocationRequired(801L, true, staffUser));
+
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("Chỉ có thể đề xuất đổi ô kho cho hợp đồng đang hoạt động"));
         verify(supportRequestRepository, never()).save(any());
     }
 }

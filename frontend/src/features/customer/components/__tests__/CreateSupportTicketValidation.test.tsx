@@ -61,9 +61,40 @@ describe('CreateSupportTicketModal - Lọc hợp đồng hợp lệ', () => {
       depositHeld: 3000000,
       status: 'CLOSED',
     },
+    {
+      id: '4',
+      contractNumber: 'CTR-004',
+      facilityId: '1',
+      facilityName: 'Cơ sở Quận 7',
+      unitId: '104',
+      unitNumber: 'U-104',
+      unitTypeName: 'Kho Cỡ M',
+      sizeCategory: 'M',
+      storageType: 'STANDARD',
+      startDate: '2026-07-01',
+      endDate: '2026-08-01',
+      monthlyRent: 2000000,
+      depositHeld: 2000000,
+      status: 'PENDING_RETURN',
+    },
+    {
+      id: '5',
+      contractNumber: 'CTR-005',
+      facilityId: '1',
+      facilityName: 'Cơ sở Bắc Ninh',
+      unitNumber: 'Chưa gán ô',
+      unitTypeName: 'Kho Cỡ S',
+      sizeCategory: 'S',
+      storageType: 'STANDARD',
+      startDate: '2026-07-01',
+      endDate: '2026-08-01',
+      monthlyRent: 1000000,
+      depositHeld: 1000000,
+      status: 'PENDING_CHECK_IN',
+    },
   ];
 
-  it('chỉ hiển thị hợp đồng ACTIVE trong dropdown, loại bỏ TERMINATED và CLOSED', () => {
+  it('chỉ hiển thị hợp đồng ACTIVE đã có ô kho trong dropdown, loại bỏ TERMINATED, CLOSED, PENDING_RETURN và Chưa gán ô', () => {
     render(
       <BrowserRouter>
         <CreateSupportTicketModal
@@ -79,9 +110,11 @@ describe('CreateSupportTicketModal - Lọc hợp đồng hợp lệ', () => {
     // Hợp đồng ACTIVE phải có trong dropdown
     expect(screen.getByText(/Kho U-101 — Cơ sở Quận 7/i)).toBeInTheDocument();
 
-    // Hợp đồng TERMINATED và CLOSED không được xuất hiện
+    // Hợp đồng TERMINATED, CLOSED, PENDING_RETURN và Chưa gán ô không được xuất hiện
     expect(screen.queryByText(/Kho U-102/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Kho U-103/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Kho U-104/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Kho Chưa gán ô/i)).not.toBeInTheDocument();
   });
 
   it('hiển thị thông báo khi tất cả hợp đồng đều đã kết thúc', () => {
