@@ -655,7 +655,7 @@ class StaffDailyTaskServiceTest {
     @Test
     @DisplayName("Hợp đồng đã đóng (CLOSED) không bao giờ hiển thị thành nhiệm vụ check-in chờ xử lý")
     void shouldNotIncludeClosedContractInPendingCheckInTasks() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(StaffDailyTaskServiceImpl.VN_ZONE);
 
         when(userRepository.findById(8L)).thenReturn(Optional.of(sampleStaff));
         when(userFacilityAssignmentRepository.findFacilityIdsByUserId(8L)).thenReturn(List.of(1L));
