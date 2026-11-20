@@ -882,7 +882,8 @@ private void publishContractRenewalCompleted(PaymentTransaction payment) {
         String type = payment.getTransactionType() == null ? "" : payment.getTransactionType();
         if (!"REFUND".equalsIgnoreCase(type)
                 && !"RENT_REFUND".equalsIgnoreCase(type)
-                && !"DEPOSIT_REFUND".equalsIgnoreCase(type)) {
+                && !"DEPOSIT_REFUND".equalsIgnoreCase(type)
+                && !"COMPENSATION".equalsIgnoreCase(type)) {
             throw new CustomException(ErrorCode.VALIDATION_FAILED, "Giao dịch không phải khoản hoàn tiền");
         }
         if (!"PENDING_REFUND".equalsIgnoreCase(payment.getStatus())) {
