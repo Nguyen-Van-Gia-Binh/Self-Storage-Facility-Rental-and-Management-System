@@ -34,6 +34,7 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
 
   const totalRev = revenue?.totalRevenue ?? 0;
   const refundAmount = revenue?.totalRefundAmount ?? 0;
+  const netCashFlow = totalRev - refundAmount;
   const netMrr = revenue?.mrr ?? 0;
   const activeContracts = revenue?.activeContractCount ?? 0;
   const depositLiability = revenue?.totalDepositLiability ?? 0;
@@ -53,10 +54,10 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
           </div>
           <div className="mt-2 text-xs flex flex-wrap items-center gap-x-2 gap-y-0.5 text-slate-500">
             <span
-              className="text-emerald-700 font-semibold tabular-nums truncate max-w-full"
-              title={`Ròng: ${formatCurrency(Math.max(0, totalRev - refundAmount))}`}
+              className={`${netCashFlow >= 0 ? 'text-emerald-700' : 'text-rose-700'} font-semibold tabular-nums truncate max-w-full`}
+              title={`Ròng: ${netCashFlow < 0 ? '-' : ''}${formatCurrency(Math.abs(netCashFlow))}`}
             >
-              Ròng: {formatCurrency(Math.max(0, totalRev - refundAmount))}
+              Ròng: {netCashFlow < 0 ? '-' : ''}{formatCurrency(Math.abs(netCashFlow))}
             </span>
             {refundAmount > 0 && (
               <span
