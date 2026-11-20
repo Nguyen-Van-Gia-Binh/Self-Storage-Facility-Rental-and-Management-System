@@ -71,7 +71,7 @@ class SurchargeServiceTest {
     }
 
     @Test
-    @DisplayName("Sinh mã từ tên khi form không gửi code")
+    @DisplayName("Sinh mã chuẩn theo category prefix khi form không gửi code")
     void testCreateSurchargeGeneratesCodeFromName() {
         CreateSurchargeRequest request = CreateSurchargeRequest.builder()
                 .name("Phụ phí thang hàng")
@@ -80,7 +80,7 @@ class SurchargeServiceTest {
                 .type("FIXED")
                 .build();
 
-        when(extraFeeTypeRepository.existsByCode("PHU-PHI-THANG-HANG")).thenReturn(false);
+        when(extraFeeTypeRepository.existsByCode("VAL_001")).thenReturn(false);
         when(extraFeeTypeRepository.save(any(ExtraFeeType.class))).thenAnswer(invocation -> {
             ExtraFeeType entity = invocation.getArgument(0);
             entity.setId(2L);
@@ -89,7 +89,7 @@ class SurchargeServiceTest {
 
         SurchargeResponse response = surchargeService.createSurcharge(request);
 
-        assertEquals("PHU-PHI-THANG-HANG", response.getCode());
+        assertEquals("VAL_001", response.getCode());
         assertEquals("VALUE_ADDED", response.getCategory());
         assertEquals("FIXED", response.getType());
         assertEquals("Toàn hệ thống", response.getFacilityName());
