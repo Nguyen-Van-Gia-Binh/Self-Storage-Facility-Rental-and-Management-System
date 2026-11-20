@@ -82,7 +82,7 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
   const unpaidExtras = preview?.unpaidExtraCharges ?? 0;
   const overdueFee = preview?.overdueFee ?? contract.overdueFeeAccrued ?? 0;
   const totalRentalFee =
-    preview?.totalRentalFee ?? (contract.monthlyPrice || 0) * Math.max(1, contract.rentalMonths || 1);
+    preview?.totalRentalFee ?? contract.totalRentalFee ?? (contract.monthlyPrice || 0) * Math.max(1, contract.rentalMonths || 1);
   const depositForfeited = preview?.depositForfeited ?? 0;
 
   const extraCostValue = showExtraCostInput ? Math.max(0, Number(additionalCost) || 0) : 0;
@@ -138,7 +138,7 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
     } else if (settlementType === 'DOUBLE_DEPOSIT_COMPENSATION') {
       // BR-BMP-02 / Điều 328 BLDS: Hoàn 100% tiền thuê + Hoàn 100% cọc gốc + Phạt đền bù vi phạm (100% cọc)
       const penalty = contract.compensationAmount || preview?.compensationAmount || originalDeposit;
-      netRefund = preview.depositRefundAmount ?? (totalRentalFee + originalDeposit + penalty);
+      netRefund = totalRentalFee + originalDeposit + penalty;
       payableAmount = 0;
     }
   }

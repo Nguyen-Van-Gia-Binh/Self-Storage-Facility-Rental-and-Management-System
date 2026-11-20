@@ -1275,7 +1275,7 @@ public class ContractServiceImpl implements ContractService {
                                         .inspectedAt(now)
                                         .inspectedBy(managerId)
                                         .damageCost(0L)
-                                        .depositRefundAmount(depositRefundAmount + penaltyAmount)
+                                        .depositRefundAmount(totalPayoutAmount)
                                         .build());
                 }
 

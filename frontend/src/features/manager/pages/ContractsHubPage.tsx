@@ -745,7 +745,10 @@ export const ContractsHubPage: React.FC = () => {
                         )}
 
                         {/* Nút Quyết toán hoàn cọc (chỉ ở Tab Return) */}
-                        {activeTab === 'RETURN' && (contract.status === 'INSPECTED' || (contract.status as string) === 'CANCELLED') && (
+                        {activeTab === 'RETURN' &&
+                          !contract.isDoubleDepositCompensation &&
+                          !contract.closedAt &&
+                          (contract.status === 'INSPECTED' || (contract.status as string) === 'CANCELLED') && (
                           <button
                             type="button"
                             onClick={() => {
@@ -762,7 +765,9 @@ export const ContractsHubPage: React.FC = () => {
                         {/* Thao tác Tab 5: Đã chấm dứt / Hủy */}
                         {activeTab === 'TERMINATED' && (
                           <>
-                            {(contract.status === 'TERMINATED' || (contract.status as string) === 'CANCELLED') && (
+                            {!contract.isDoubleDepositCompensation &&
+                              !contract.closedAt &&
+                              (contract.status === 'TERMINATED' || (contract.status as string) === 'CANCELLED') && (
                               <>
                                 <button
                                   type="button"

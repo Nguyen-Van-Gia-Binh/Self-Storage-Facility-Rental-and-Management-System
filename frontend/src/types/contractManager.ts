@@ -105,6 +105,7 @@ export interface ManagerContractItem {
   compensationApprovedAt?: string;
   totalPayoutAmount?: number;
   disbursementDeadlineDays?: number;
+  closedAt?: string;
   createdAt?: string;
   returnRequestCreatedAt?: string;
   paymentTransactions?: ContractPaymentTransaction[];

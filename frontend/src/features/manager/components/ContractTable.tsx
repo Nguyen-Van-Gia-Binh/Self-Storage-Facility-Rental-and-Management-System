@@ -262,6 +262,8 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                   <td className="py-3.5 px-4 text-right whitespace-nowrap">
                     <div className="inline-flex items-center justify-end gap-2">
                       {onApproveSettlement &&
+                        !c.isDoubleDepositCompensation &&
+                        !c.closedAt &&
                         (c.status === 'INSPECTED' ||
                           c.status === 'TERMINATED' ||
                           c.status === 'CANCELLED') && (

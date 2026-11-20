@@ -405,6 +405,7 @@ export function mapBackendToManagerContractItem(c: any): ManagerContractItem {
     ...c,
     status: mappedStatus,
     storageUnitCode: displayStorageUnitCode,
+    isDoubleDepositCompensation: Boolean(c.isDoubleDepositCompensation ?? c.doubleDepositCompensation),
     relocationEligible: isAwaitingRelocation || Boolean(c.relocationEligible),
     isAwaitingRelocation,
     isInspected,
