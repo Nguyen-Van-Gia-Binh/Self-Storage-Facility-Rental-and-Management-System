@@ -28,6 +28,7 @@ import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.entity.RentalContract;
+import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
 import com.swp391.selfstorage.user.repository.UserRepository;
 import com.swp391.selfstorage.payment.dto.CheckoutRequest;
@@ -792,6 +793,12 @@ private void publishContractRenewalCompleted(PaymentTransaction payment) {
 
         return PageResponse.from(page.map(t -> {
             PaymentResponse res = paymentMapper.toResponse(t);
+            RentalContract c = contracts.get(t.getContractId());
+            if ("PENDING_REFUND".equalsIgnoreCase(res.getStatus()) && c != null) {
+                if (c.isDoubleDepositCompensation() || c.getClosedAt() != null || c.getStatus() == ContractStatus.CLOSED) {
+                    res.setStatus("SUCCESS");
+                }
+            }
             Long[] o = owner.get(t.getId());
             if (o != null) {
                 res.setFacilityName(facilityNames.get(o[0]));

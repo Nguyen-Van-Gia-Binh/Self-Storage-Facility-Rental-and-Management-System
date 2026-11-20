@@ -2272,6 +2272,22 @@ public class ContractServiceImpl implements ContractService {
                 contract.setAccessCode(null);
                 contractRepository.save(contract);
 
+                // Tự động chuyển tất cả các giao dịch PENDING_REFUND của HĐ sang SUCCESS khi FM duyệt quyết toán
+                if (paymentTransactionRepository != null && contract.getId() != null) {
+                        List<PaymentTransaction> txns = paymentTransactionRepository.findByContractId(contract.getId());
+                        if (txns != null) {
+                                for (PaymentTransaction txn : txns) {
+                                        if ("PENDING_REFUND".equalsIgnoreCase(txn.getStatus())) {
+                                                txn.setStatus("SUCCESS");
+                                                if (txn.getPaidAt() == null) {
+                                                        txn.setPaidAt(Instant.now());
+                                                }
+                                                paymentTransactionRepository.save(txn);
+                                        }
+                                }
+                        }
+                }
+
                 if (contract.getStorageUnitId() != null && storageUnitRepository != null) {
                         storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(unit -> {
                                 if (unit.getStatus() == StorageUnitStatus.OCCUPIED) {

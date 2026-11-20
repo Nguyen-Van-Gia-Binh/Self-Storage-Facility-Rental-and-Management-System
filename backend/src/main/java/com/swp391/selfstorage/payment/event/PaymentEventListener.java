@@ -75,9 +75,20 @@ public class PaymentEventListener {
         if (amount <= 0 || paymentTransactionRepository == null) {
             return false;
         }
-        boolean already = existing.stream().anyMatch(t -> type.equalsIgnoreCase(t.getTransactionType()));
-        if (already) {
-            log.info("Hợp đồng contractId={} đã có {}, bỏ qua tạo trùng", event.getContractId(), type);
+        PaymentTransaction matched = existing.stream()
+                .filter(t -> type.equalsIgnoreCase(t.getTransactionType()))
+                .findFirst().orElse(null);
+        if (matched != null) {
+            if ("PENDING_REFUND".equalsIgnoreCase(matched.getStatus())) {
+                matched.setStatus("SUCCESS");
+                if (matched.getPaidAt() == null) {
+                    matched.setPaidAt(event.getSettledAt() != null ? event.getSettledAt().toInstant() : Instant.now());
+                }
+                paymentTransactionRepository.save(matched);
+                log.info("Cập nhật giao dịch {} #{} sang SUCCESS cho contractId={}", type, matched.getId(), event.getContractId());
+            } else {
+                log.info("Hợp đồng contractId={} đã có {}, bỏ qua tạo trùng", event.getContractId(), type);
+            }
             return false;
         }
         Instant paidAt = event.getSettledAt() != null ? event.getSettledAt().toInstant() : Instant.now();
