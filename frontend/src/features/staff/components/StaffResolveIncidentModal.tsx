@@ -125,14 +125,26 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
             return fee.category === 'DAMAGE';
           }
 
-          // Các sự cố khác: cho phép DAMAGE hoặc VALUE_ADDED (tiện ích bốc xếp)
-          return fee.category === 'DAMAGE' || fee.category === 'VALUE_ADDED';
+          // Các sự cố khác: cho phép DAMAGE, VALUE_ADDED hoặc ACCESS_KEY
+          return fee.category === 'DAMAGE' || fee.category === 'VALUE_ADDED' || fee.category === 'ACCESS_KEY';
         });
         setAllSurcharges(validFees);
       })
       .catch(() => setAllSurcharges([]))
       .finally(() => setLoadingSurcharges(false));
   }, [isOpen, ticket?.facilityId, ticket?.category]);
+
+  // Nhãn phân loại phụ phí: Khi sự cố là Khóa/PIN nhưng khoản sửa chữa là khóa/cửa cuốn, hiển thị rõ "Sửa chữa hệ thống khóa / cửa"
+  const getFeeCategorySubLabel = (fee: SurchargeItem): string => {
+    const ticketCat = (ticket?.category || '').toUpperCase();
+    if (
+      (ticketCat.includes('LOCK') || ticketCat.includes('ACCESS') || ticketCat.includes('KEY')) &&
+      fee.category === 'DAMAGE'
+    ) {
+      return 'Sửa chữa hệ thống khóa / cửa';
+    }
+    return feeCategoryLabel(fee.category);
+  };
 
   if (!isOpen || !ticket) return null;
 
@@ -510,7 +522,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                                 {fee.name}
                               </span>
                               <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 inline-block font-medium">
-                                {feeCategoryLabel(fee.category)}
+                                {getFeeCategorySubLabel(fee)}
                               </span>
                             </div>
                           </div>
