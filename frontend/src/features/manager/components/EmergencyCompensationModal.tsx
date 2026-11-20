@@ -108,10 +108,10 @@ export const EmergencyCompensationModal: React.FC<EmergencyCompensationModalProp
                 </span>
               </div>
               <h3 className="font-bold text-gray-900 text-base sm:text-lg mt-1">
-                Kích hoạt Bồi thường Phạt cọc Gấp đôi
+                Duyệt Quyết toán &amp; Kích hoạt Bồi thường Phạt cọc Gấp đôi
               </h3>
               <p className="text-xs text-rose-800 mt-0.5 font-medium">
-                Căn cứ Điều 328 Bộ luật Dân sự 2015 về vi phạm nghĩa vụ bàn giao mặt bằng
+                Căn cứ Điều 328 Bộ luật Dân sự 2015 &amp; Chính sách BR-BMP-02 về vi phạm nghĩa vụ bàn giao mặt bằng
               </p>
             </div>
           </div>
@@ -244,7 +244,7 @@ export const EmergencyCompensationModal: React.FC<EmergencyCompensationModalProp
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Xác nhận Kích hoạt Bồi thường (Điều 328 BLDS)</span>
+                  <span>Xác nhận Duyệt Quyết toán &amp; Bồi thường (Điều 328 BLDS)</span>
                 </>
               )}
             </button>

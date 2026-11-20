@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { X, AlertCircle, Trash2, RefreshCw, Plus, Receipt } from 'lucide-react';
+import { X, AlertCircle, Trash2, RefreshCw, Plus, Receipt, Check, CheckCircle2 } from 'lucide-react';
 import type { ManagerContractItem } from '@/types/contractManager';
 import type { SettlementPreviewData } from '@/types';
 import { approveSettlementRefund, getSettlementPreview } from '@/api/contract';
@@ -60,17 +60,20 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
     | 'NORMAL'
     | 'OVERDUE_TERMINATED'
     | 'REJECTED_CHECKIN'
-    | 'CANCELLED_CHECKIN' =
-    preview?.settlementType ??
-    (contract.status === 'CANCELLED'
-      ? 'CANCELLED_CHECKIN'
-      : contract.status === 'TERMINATED'
-      ? contract.checkinDate == null
-        ? 'REJECTED_CHECKIN'
-        : 'OVERDUE_TERMINATED'
-      : preview?.earlyReturn || (preview?.earlyRentRefund ?? 0) > 0
-      ? 'EARLY_RETURN'
-      : 'NORMAL');
+    | 'CANCELLED_CHECKIN'
+    | 'DOUBLE_DEPOSIT_COMPENSATION' =
+    contract.isDoubleDepositCompensation || preview?.settlementType === 'DOUBLE_DEPOSIT_COMPENSATION'
+      ? 'DOUBLE_DEPOSIT_COMPENSATION'
+      : (preview?.settlementType ??
+        (contract.status === 'CANCELLED'
+          ? 'CANCELLED_CHECKIN'
+          : contract.status === 'TERMINATED'
+          ? contract.checkinDate == null
+            ? 'REJECTED_CHECKIN'
+            : 'OVERDUE_TERMINATED'
+          : preview?.earlyReturn || (preview?.earlyRentRefund ?? 0) > 0
+          ? 'EARLY_RETURN'
+          : 'NORMAL'));
 
   const originalDeposit = preview?.depositAmount ?? contract.depositAmount ?? 0;
   const earlyRentRefund = preview?.earlyRentRefund ?? 0;
@@ -132,6 +135,11 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
         netRefund = 0;
         payableAmount = extraCostValue - baseRefund;
       }
+    } else if (settlementType === 'DOUBLE_DEPOSIT_COMPENSATION') {
+      // BR-BMP-02 / Điều 328 BLDS: Hoàn 100% tiền thuê + Hoàn 100% cọc gốc + Phạt đền bù vi phạm (100% cọc)
+      const penalty = contract.compensationAmount || preview?.compensationAmount || originalDeposit;
+      netRefund = preview.depositRefundAmount ?? (totalRentalFee + originalDeposit + penalty);
+      payableAmount = 0;
     }
   }
 
@@ -206,6 +214,12 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
         return {
           title: 'Bảng quyết toán cưỡng chế & Kho Tổng (D+7)',
           tag: 'Cưỡng chế Kho Tổng',
+          color: 'bg-rose-50 text-rose-700 border-rose-200',
+        };
+      case 'DOUBLE_DEPOSIT_COMPENSATION':
+        return {
+          title: 'Bảng kê quyết toán bồi thường phạt cọc gấp đôi (Điều 328 BLDS)',
+          tag: 'Bồi thường Phạt cọc 2x (BR-BMP-02)',
           color: 'bg-rose-50 text-rose-700 border-rose-200',
         };
     }
@@ -368,6 +382,34 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
                       <p className="text-xs text-gray-500 italic pt-2">
                         Miễn trừ toàn bộ chi phí do từ chối bàn giao ở khâu Check-in.
                       </p>
+                    </>
+                  )}
+
+                  {settlementType === 'DOUBLE_DEPOSIT_COMPENSATION' && (
+                    <>
+                      <div className="flex items-baseline justify-between gap-4 py-2">
+                        <span className="text-gray-700">1. Hoàn 100% Tiền thuê đã đóng</span>
+                        <span className="font-semibold text-gray-900 tabular-nums text-right shrink-0 whitespace-nowrap">
+                          {formatMoney(totalRentalFee)}
+                        </span>
+                      </div>
+                      <div className="flex items-baseline justify-between gap-4 py-2">
+                        <span className="text-gray-700">2. Hoàn 100% Tiền cọc ban đầu</span>
+                        <span className="font-semibold text-gray-900 tabular-nums text-right shrink-0 whitespace-nowrap">
+                          {formatMoney(originalDeposit)}
+                        </span>
+                      </div>
+                      <div className="flex items-baseline justify-between gap-4 py-2 text-rose-700">
+                        <span className="font-semibold">3. Tiền phạt cọc vi phạm hợp đồng (100% cọc)</span>
+                        <span className="font-bold tabular-nums text-right shrink-0 whitespace-nowrap">
+                          + {formatMoney(contract.compensationAmount || preview?.compensationAmount || originalDeposit)}
+                        </span>
+                      </div>
+                      <div className="pt-2">
+                        <p className="text-xs text-rose-800 bg-rose-50 p-2.5 rounded-lg border border-rose-200 leading-relaxed font-medium">
+                          Căn cứ Điều 328 Bộ luật Dân sự 2015 &amp; BR-BMP-02: Cơ sở vi phạm nghĩa vụ bàn giao mặt bằng do cháy kho 100%. Quản lý đã duyệt quyết toán chi hoàn tiền thuê và đền gấp đôi tiền cọc cho khách hàng (Thời hạn giải ngân 3 ngày).
+                        </p>
+                      </div>
                     </>
                   )}
 
@@ -572,7 +614,9 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
                         ? 'Đã đối soát & thu đủ tiền mặt/chuyển khoản trước khi đóng HĐ'
                         : 'Hệ thống sẽ ghi nhận công nợ và mở cổng VietQR cho khách thanh toán online'
                       : netRefund > 0
-                      ? 'Hoàn trả về tài khoản gốc của khách hàng trong 7 ngày'
+                      ? settlementType === 'DOUBLE_DEPOSIT_COMPENSATION'
+                        ? 'Khoản tiền đang được Kế toán giải ngân trong 3 ngày làm việc (Điều 328 BLDS)'
+                        : 'Hoàn trả về tài khoản gốc của khách hàng trong 7 ngày'
                       : 'Công nợ cân bằng 0 đ, đủ điều kiện đóng hợp đồng ngay'}
                   </p>
                 </div>
@@ -580,66 +624,80 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
 
               {/* KHỐI 3: HÌNH THỨC THU & GHI CHÚ ĐỐI SOÁT */}
               <div className="space-y-3">
-                {payableAmount > 0 && (
-                  <div className="p-3.5 bg-white border border-gray-200 rounded-lg space-y-2">
-                    <span className="text-xs font-semibold text-gray-800 block">
-                      Hình thức thu khoản nộp bù ({formatMoney(payableAmount)}):
-                    </span>
-                    <div className="space-y-1.5 text-xs text-gray-700">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="collectionMethod"
-                          checked={isCashCollected}
-                          onChange={() => setIsCashCollected(true)}
-                          className="accent-brand-600 cursor-pointer"
-                        />
-                        <span>
-                          Đã thu tiền mặt / chuyển khoản trực tiếp tại quầy{' '}
-                          <strong>(Đóng HĐ ngay)</strong>
-                        </span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="collectionMethod"
-                          checked={!isCashCollected}
-                          onChange={() => setIsCashCollected(false)}
-                          className="accent-brand-600 cursor-pointer"
-                        />
-                        <span>
-                          Khách sẽ quét mã VietQR tự thanh toán online{' '}
-                          <strong>(Đóng HĐ sau khi thanh toán)</strong>
-                        </span>
-                      </label>
-                    </div>
+                {settlementType === 'DOUBLE_DEPOSIT_COMPENSATION' ? (
+                  <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 space-y-1">
+                    <p className="font-semibold flex items-center gap-1.5 text-emerald-900">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>Trạng thái: Đã hoàn tất duyệt quyết toán bồi thường phạt cọc gấp đôi.</span>
+                    </p>
+                    <p className="text-emerald-700 leading-relaxed">
+                      Hệ thống đã tự động ghi nhận 3 giao dịch chi hoàn (Thuê + Cọc gốc + Phạt đền bù) vào sổ cái thanh toán. Ban quản lý chỉ cần theo dõi tiến độ giải ngân của bộ phận Kế toán.
+                    </p>
                   </div>
-                )}
+                ) : (
+                  <>
+                    {payableAmount > 0 && (
+                      <div className="p-3.5 bg-white border border-gray-200 rounded-lg space-y-2">
+                        <span className="text-xs font-semibold text-gray-800 block">
+                          Hình thức thu khoản nộp bù ({formatMoney(payableAmount)}):
+                        </span>
+                        <div className="space-y-1.5 text-xs text-gray-700">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="collectionMethod"
+                              checked={isCashCollected}
+                              onChange={() => setIsCashCollected(true)}
+                              className="accent-brand-600 cursor-pointer"
+                            />
+                            <span>
+                              Đã thu tiền mặt / chuyển khoản trực tiếp tại quầy{' '}
+                              <strong>(Đóng HĐ ngay)</strong>
+                            </span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="collectionMethod"
+                              checked={!isCashCollected}
+                              onChange={() => setIsCashCollected(false)}
+                              className="accent-brand-600 cursor-pointer"
+                            />
+                            <span>
+                              Khách sẽ quét mã VietQR tự thanh toán online{' '}
+                              <strong>(Đóng HĐ sau khi thanh toán)</strong>
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    )}
 
-                <div>
-                  <label
-                    htmlFor="settlement-reconcile-note"
-                    className="block text-xs font-semibold text-gray-700 mb-1.5"
-                  >
-                    Ghi chú đối soát
-                  </label>
-                  <input
-                    id="settlement-reconcile-note"
-                    type="text"
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    placeholder={
-                      payableAmount > 0
-                        ? isCashCollected
-                          ? 'VD: Đã thu tiền mặt đủ tại quầy từ khách...'
-                          : 'VD: Khách chọn quét mã QR thanh toán nộp bù...'
-                        : netRefund > 0
-                        ? 'VD: Đã xác nhận STK hoàn tiền qua Vietcombank...'
-                        : 'VD: Đã đối soát tất toán hoàn tất...'
-                    }
-                    className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
-                  />
-                </div>
+                    <div>
+                      <label
+                        htmlFor="settlement-reconcile-note"
+                        className="block text-xs font-semibold text-gray-700 mb-1.5"
+                      >
+                        Ghi chú đối soát
+                      </label>
+                      <input
+                        id="settlement-reconcile-note"
+                        type="text"
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        placeholder={
+                          payableAmount > 0
+                            ? isCashCollected
+                              ? 'VD: Đã thu tiền mặt đủ tại quầy từ khách...'
+                              : 'VD: Khách chọn quét mã QR thanh toán nộp bù...'
+                            : netRefund > 0
+                            ? 'VD: Đã xác nhận STK hoàn tiền qua Vietcombank...'
+                            : 'VD: Đã đối soát tất toán hoàn tất...'
+                        }
+                        className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </>
           )}
@@ -647,51 +705,64 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
 
         {/* KHỐI 4: FOOTER CĂN PHẢI, NÚT NGẮN GỌN CHUẨN ACTION */}
         <div className="px-6 py-4 bg-white border-t border-gray-200 flex items-center justify-end gap-3 shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-lg border border-gray-300 transition-colors cursor-pointer disabled:opacity-50"
-          >
-            Hủy bỏ
-          </button>
+          {contract.isDoubleDepositCompensation ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+            >
+              <Check className="w-4 h-4" />
+              <span>Đã duyệt quyết toán bồi thường (Đóng)</span>
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-lg border border-gray-300 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Hủy bỏ
+              </button>
 
-          <button
-            type="button"
-            onClick={handleApprove}
-            disabled={loading || fetchingPreview || preview == null}
-            className={`px-5 py-2 text-sm font-semibold text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer ${
-              payableAmount > 0
-                ? isCashCollected
-                  ? 'bg-rose-600 hover:bg-rose-700'
-                  : 'bg-amber-600 hover:bg-amber-700'
-                : 'bg-brand-600 hover:bg-brand-700'
-            }`}
-          >
-            {loading ? (
-              <span className="flex items-center gap-1.5">
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                {payableAmount > 0 && !isCashCollected
-                  ? 'Đang mở cổng QR...'
-                  : 'Đang xử lý...'}
-              </span>
-            ) : fetchingPreview ? (
-              <span className="flex items-center gap-1.5">
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                Đang nạp bảng tính...
-              </span>
-            ) : payableAmount > 0 ? (
-              isCashCollected ? (
-                'Xác nhận thu tiền & Đóng HĐ'
-              ) : (
-                'Chốt công nợ & Mở cổng QR'
-              )
-            ) : netRefund > 0 ? (
-              'Xác nhận hoàn tiền'
-            ) : (
-              'Chốt tất toán & Đóng HĐ'
-            )}
-          </button>
+              <button
+                type="button"
+                onClick={handleApprove}
+                disabled={loading || fetchingPreview || preview == null}
+                className={`px-5 py-2 text-sm font-semibold text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer ${
+                  payableAmount > 0
+                    ? isCashCollected
+                      ? 'bg-rose-600 hover:bg-rose-700'
+                      : 'bg-amber-600 hover:bg-amber-700'
+                    : 'bg-brand-600 hover:bg-brand-700'
+                }`}
+              >
+                {loading ? (
+                  <span className="flex items-center gap-1.5">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    {payableAmount > 0 && !isCashCollected
+                      ? 'Đang mở cổng QR...'
+                      : 'Đang xử lý...'}
+                  </span>
+                ) : fetchingPreview ? (
+                  <span className="flex items-center gap-1.5">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Đang nạp bảng tính...
+                  </span>
+                ) : payableAmount > 0 ? (
+                  isCashCollected ? (
+                    'Xác nhận thu tiền & Đóng HĐ'
+                  ) : (
+                    'Chốt công nợ & Mở cổng QR'
+                  )
+                ) : netRefund > 0 ? (
+                  'Xác nhận hoàn tiền'
+                ) : (
+                  'Chốt tất toán & Đóng HĐ'
+                )}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>,

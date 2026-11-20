@@ -972,7 +972,7 @@ export const AllocationPage: React.FC = () => {
                                 title="Kích hoạt bồi thường phạt cọc gấp đôi do cơ sở cháy kho 100% (Điều 328 BLDS & BR-BMP-02)"
                               >
                                 <AlertTriangle className="w-4 h-4 text-white" />
-                                <span>Phạt cọc 2x (BR-BMP-02)</span>
+                                <span>Duyệt quyết toán &amp; Phạt cọc 2x (BR-BMP-02)</span>
                               </button>
                             ) : (
                               // CÒN Ô: HIỂN THỊ NÚT GÁN Ô KHO ĐỂ FM CHỌN Ô MỚI CHO KHÁCH

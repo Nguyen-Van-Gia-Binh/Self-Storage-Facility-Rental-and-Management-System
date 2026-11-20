@@ -1700,6 +1700,29 @@ public class ContractServiceImpl implements ContractService {
                 RentalContract contract = contractOpt
                                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
 
+                if (contract.isDoubleDepositCompensation()) {
+                        long rentAmount = contract.getTotalRentalFee() > 0
+                                        ? contract.getTotalRentalFee()
+                                        : contract.getMonthlyPrice() * Math.max(1, contract.getRentalMonths());
+                        long deposit = contract.getDepositAmount();
+                        long penalty = contract.getCompensationAmount() > 0 ? contract.getCompensationAmount() : deposit;
+                        long totalPayout = rentAmount + deposit + penalty;
+                        return SettlementPreviewResponse.builder()
+                                        .contractId(contract.getId())
+                                        .settlementType("DOUBLE_DEPOSIT_COMPENSATION")
+                                        .depositAmount(deposit)
+                                        .totalRentalFee(rentAmount)
+                                        .damageCost(0L)
+                                        .overdueFee(0L)
+                                        .unpaidExtraCharges(0L)
+                                        .depositRefundAmount(totalPayout)
+                                        .payableAmount(0L)
+                                        .earlyRentRefund(rentAmount)
+                                        .compensationAmount(penalty)
+                                        .doubleDepositCompensation(true)
+                                        .build();
+                }
+
                 if (isCustomerCancelledCheckIn(contract)) {
                         return computeCancelledCheckInPreview(contract);
                 }
@@ -1843,6 +1866,11 @@ public class ContractServiceImpl implements ContractService {
 
                 RentalContract contract = contractOpt
                                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+
+                if (contract.isDoubleDepositCompensation()) {
+                        throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
+                                        "Hợp đồng đã được duyệt quyết toán bồi thường phạt cọc gấp đôi (Điều 328 BLDS / BR-BMP-02) hoàn tất trước đó.");
+                }
 
                 if (contract.getStatus() != ContractStatus.PENDING_RETURN
                                 && contract.getStatus() != ContractStatus.OVERDUE
@@ -2289,6 +2317,11 @@ public class ContractServiceImpl implements ContractService {
 
                 RentalContract contract = contractOpt
                                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+
+                if (contract.isDoubleDepositCompensation()) {
+                        throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
+                                        "Hợp đồng đã được duyệt quyết toán bồi thường phạt cọc gấp đôi (Điều 328 BLDS / BR-BMP-02) hoàn tất trước đó.");
+                }
 
                 if (contract.getStatus() != ContractStatus.PENDING_RETURN) {
                         throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_RETURN);

@@ -226,11 +226,13 @@ export interface SettlementPreviewData {
   earlyRentRefund?: number;
   earlyReturn?: boolean;
   pendingSettlementOrderCode?: number;
-  settlementType?: 'EARLY_RETURN' | 'NORMAL' | 'OVERDUE_TERMINATED' | 'REJECTED_CHECKIN' | 'CANCELLED_CHECKIN';
+  settlementType?: 'EARLY_RETURN' | 'NORMAL' | 'OVERDUE_TERMINATED' | 'REJECTED_CHECKIN' | 'CANCELLED_CHECKIN' | 'DOUBLE_DEPOSIT_COMPENSATION';
   unusedDays?: number;
   dailyRent?: number;
   depositForfeited?: number;
   totalRentalFee?: number;
+  compensationAmount?: number;
+  doubleDepositCompensation?: boolean;
 }
 
 export interface ReturnContractDetail {

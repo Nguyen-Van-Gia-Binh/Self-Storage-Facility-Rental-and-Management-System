@@ -360,8 +360,11 @@ export const ContractDetailPage: React.FC = () => {
         (isPendingCheckIn && (!contract.storageUnitId || contract.storageUnitCode === 'Chưa gán')))
   );
   // Cho phép duyệt quyết toán khi nhân viên ĐÃ nghiệm thu hoặc hợp đồng ở trạng thái TERMINATED / CANCELLED
+  // (LOẠI TRỪ trường hợp hợp đồng đã duyệt bồi thường phạt cọc gấp đôi BR-BMP-02 vì bản chất đã được quyết toán xong)
   const isSettlementReady =
-    (isInspected || isTerminated || isCancelled) && contract.status !== 'CLOSED';
+    !contract.isDoubleDepositCompensation &&
+    (isInspected || isTerminated || isCancelled) &&
+    contract.status !== 'CLOSED';
 
   // Điều kiện Force Renewal (FM-01, BR-REN-01, BR-REN-10): Hợp đồng ACTIVE và còn < 20 ngày
   const daysRemaining = contract.endDateExclusive
@@ -512,10 +515,22 @@ export const ContractDetailPage: React.FC = () => {
               data-testid="btn-contract-emergency-compensation"
               onClick={() => setIsCompensationModalOpen(true)}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 border border-rose-300 text-rose-700 text-sm font-bold rounded-lg hover:bg-rose-100 transition-colors cursor-pointer shadow-2xs"
-              title="Kích hoạt bồi thường phạt cọc gấp đôi nếu cơ sở cháy kho 100% (Điều 328 BLDS & BR-BMP-02)"
+              title="Kích hoạt duyệt quyết toán & bồi thường phạt cọc gấp đôi nếu cơ sở cháy kho 100% (Điều 328 BLDS & BR-BMP-02)"
             >
               <AlertTriangle className="w-4 h-4 text-rose-600" />
-              <span>🚨 Phạt cọc 2x (BR-BMP-02)</span>
+              <span>🚨 Duyệt quyết toán &amp; Phạt cọc 2x (BR-BMP-02)</span>
+            </button>
+          )}
+
+          {contract.isDoubleDepositCompensation && (
+            <button
+              type="button"
+              onClick={() => setSettlementModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 border border-emerald-300 text-emerald-800 text-sm font-semibold rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer shadow-2xs"
+              title="Xem chi tiết bảng kê quyết toán chi hoàn & phạt cọc gấp đôi (BR-BMP-02)"
+            >
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>Đã duyệt quyết toán bồi thường 2x</span>
             </button>
           )}
 
@@ -653,10 +668,10 @@ export const ContractDetailPage: React.FC = () => {
               type="button"
               onClick={() => setIsCompensationModalOpen(true)}
               className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition-colors shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
-              title="Kích hoạt bồi thường phạt cọc gấp đôi nếu cơ sở cháy kho 100% (Điều 328 BLDS)"
+              title="Kích hoạt duyệt quyết toán & bồi thường phạt cọc gấp đôi nếu cơ sở cháy kho 100% (Điều 328 BLDS & BR-BMP-02)"
             >
               <AlertTriangle className="w-3.5 h-3.5 text-white" />
-              <span>🚨 Phạt cọc 2x (BR-BMP-02)</span>
+              <span>🚨 Duyệt quyết toán &amp; Phạt cọc 2x (BR-BMP-02)</span>
             </button>
             <button
               type="button"
@@ -695,11 +710,22 @@ export const ContractDetailPage: React.FC = () => {
                   </span>
                 )}
               </p>
-              <div className="pt-2 flex flex-wrap gap-4 text-xs font-mono text-rose-900 border-t border-rose-200/80">
-                <span>Hoàn tiền thuê: <strong>{fmt(contract.totalRentalFee || (contract.monthlyPrice * contract.rentalMonths) || 0)}</strong></span>
-                <span>Hoàn cọc gốc: <strong>{fmt(contract.depositAmount || 0)}</strong></span>
-                <span>Tiền phạt đền bù: <strong>+{fmt(contract.compensationAmount || contract.depositAmount || 0)}</strong></span>
-                <span className="font-bold text-rose-700 text-sm">Tổng tiền hoàn trả: <strong>{fmt(contract.totalPayoutAmount || ((contract.totalRentalFee || 0) + (contract.depositAmount || 0) * 2))}</strong></span>
+              <div className="pt-2 flex flex-wrap gap-4 text-xs font-mono text-rose-900 border-t border-rose-200/80 items-center justify-between">
+                <div className="flex flex-wrap gap-4 items-center">
+                  <span>Hoàn tiền thuê: <strong>{fmt(contract.totalRentalFee || (contract.monthlyPrice * contract.rentalMonths) || 0)}</strong></span>
+                  <span>Hoàn cọc gốc: <strong>{fmt(contract.depositAmount || 0)}</strong></span>
+                  <span>Tiền phạt đền bù: <strong>+{fmt(contract.compensationAmount || contract.depositAmount || 0)}</strong></span>
+                  <span className="font-bold text-rose-700 text-sm">Tổng tiền hoàn trả: <strong>{fmt(contract.totalPayoutAmount || ((contract.totalRentalFee || 0) + (contract.depositAmount || 0) * 2))}</strong></span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSettlementModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-rose-300 text-rose-800 text-xs font-semibold rounded-lg hover:bg-rose-100/60 transition-colors cursor-pointer shadow-2xs"
+                  title="Xem bảng kê quyết toán chi hoàn & phạt cọc gấp đôi"
+                >
+                  <Receipt className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Xem bảng kê quyết toán bồi thường</span>
+                </button>
               </div>
             </div>
           </div>
@@ -748,8 +774,8 @@ export const ContractDetailPage: React.FC = () => {
         </div>
       )}
 
-      {/* Banner Hợp đồng Chấm dứt (do Cưỡng chế quá hạn D+7 hoặc do Sự cố bàn giao) */}
-      {isTerminated && !isCancelled && (
+      {/* Banner Hợp đồng Chấm dứt (do Cưỡng chế quá hạn D+7 hoặc do Sự cố bàn giao thường - LOẠI TRỪ HĐ đã bồi thường phạt cọc 2x) */}
+      {isTerminated && !isCancelled && !contract.isDoubleDepositCompensation && (
         <div className="bg-rose-50 border border-rose-200 text-rose-950 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 flex-wrap">

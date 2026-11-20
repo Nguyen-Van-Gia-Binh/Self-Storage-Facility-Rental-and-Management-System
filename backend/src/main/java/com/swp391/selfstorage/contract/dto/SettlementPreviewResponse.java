@@ -21,4 +21,6 @@ public class SettlementPreviewResponse {
     private long dailyRent;           // Giá thuê 1 ngày
     private long depositForfeited;    // Tiền cọc bị phạt giữ lại do trả sớm (BR-RET-06)
     private long totalRentalFee;      // Tổng tiền thuê ban đầu (dùng cho REJECTED_CHECKIN)
+    private long compensationAmount;  // Tiền phạt đền bù cọc 2x theo Điều 328 BLDS / BR-BMP-02
+    private boolean doubleDepositCompensation; // Đánh dấu hợp đồng đã quyết toán bồi thường phạt cọc gấp đôi
 }
