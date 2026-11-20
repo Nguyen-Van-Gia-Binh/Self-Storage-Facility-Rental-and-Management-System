@@ -1002,7 +1002,7 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
                     {settlementDamage > 0 && (
                       <tr className="text-rose-800">
                         <td className="border border-slate-300 px-2 py-1 text-center font-mono">4</td>
-                        <td className="border border-slate-300 px-2 py-1">Khấu trừ chi phí bồi thường hư hại ô kho (Biên bản nghiệm thu)</td>
+                        <td className="border border-slate-300 px-2 py-1">Khấu trừ chi phí bồi thường hư hại ô kho &amp; chi phí phát sinh (Biên bản nghiệm thu)</td>
                         <td className="border border-slate-300 px-2 py-1 text-right font-mono font-semibold">-{formatCurrencyVND(settlementDamage)}</td>
                       </tr>
                     )}
@@ -1025,7 +1025,14 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
                         {settlementPayable > 0 ? 'Tổng số tiền Bên B nộp bù cho Bên A:' : 'Tổng số tiền Bên A hoàn trả cho Bên B:'}
                       </td>
                       <td className="border border-slate-300 px-2 py-1.5 text-right font-mono text-[12px] text-emerald-900">
-                        {settlementPayable > 0 ? formatCurrencyVND(settlementPayable) : `+${formatCurrencyVND(settlementRefund)}`}
+                        {settlementPayable > 0 ? (
+                          <>
+                            {formatCurrencyVND(settlementPayable)}{' '}
+                            <span className="text-[10px] font-normal text-slate-500">
+                              ({isClosed ? 'Đã thu' : 'Chờ thanh toán'})
+                            </span>
+                          </>
+                        ) : `+${formatCurrencyVND(settlementRefund)}`}
                       </td>
                     </tr>
                   </tbody>

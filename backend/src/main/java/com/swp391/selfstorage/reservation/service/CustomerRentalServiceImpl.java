@@ -4,6 +4,8 @@ import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.contract.entity.ContractExtraCharge;
+import com.swp391.selfstorage.contract.repository.ContractExtraChargeRepository;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.entity.ReturnRequest;
@@ -82,6 +84,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
     private final SupportRequestRepository supportRequestRepository;
     private final AuditLogRepository auditLogRepository;
     private final ContractService contractService;
+    private final ContractExtraChargeRepository contractExtraChargeRepository;
 
     public CustomerRentalServiceImpl(
             RentalContractRepository rentalContractRepository,
@@ -97,7 +100,8 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             @org.springframework.beans.factory.annotation.Autowired(required = false) HandoverRecordRepository handoverRecordRepository,
             @org.springframework.beans.factory.annotation.Autowired(required = false) SupportRequestRepository supportRequestRepository,
             @org.springframework.beans.factory.annotation.Autowired(required = false) AuditLogRepository auditLogRepository,
-            ContractService contractService
+            ContractService contractService,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) ContractExtraChargeRepository contractExtraChargeRepository
     ) {
         this.rentalContractRepository = rentalContractRepository;
         this.reservationRepository = reservationRepository;
@@ -113,6 +117,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         this.supportRequestRepository = supportRequestRepository;
         this.auditLogRepository = auditLogRepository;
         this.contractService = contractService;
+        this.contractExtraChargeRepository = contractExtraChargeRepository;
     }
 
     private int activeHoldHours() {
@@ -317,8 +322,19 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
                 if (returnReq.getDepositRefundAmount() != null) {
                     detail.setSettlementRefundAmount(returnReq.getDepositRefundAmount());
                 }
-                detail.setSettlementDamageCost(returnReq.getDamageCost());
                 detail.setSettlementNote(returnReq.getConditionNote());
+            }
+
+            long totalDamageAndExtras = (returnReq != null && returnReq.getDamageCost() > 0) ? returnReq.getDamageCost() : 0L;
+            if (contractExtraChargeRepository != null && contract.getId() != null) {
+                List<ContractExtraCharge> charges = contractExtraChargeRepository.findByContractId(contract.getId());
+                if (charges != null && !charges.isEmpty()) {
+                    long extraSum = charges.stream()
+                            .filter(c -> c.getReason() == null || !c.getReason().startsWith("LEGACY_DAMAGE:"))
+                            .mapToLong(ContractExtraCharge::getAmount)
+                            .sum();
+                    totalDamageAndExtras += extraSum;
+                }
             }
 
             if (contractService != null && contract.getId() != null) {
@@ -335,8 +351,13 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
                         if (detail.getSettlementRefundAmount() == null) {
                             detail.setSettlementRefundAmount(preview.getDepositRefundAmount());
                         }
-                        if (detail.getSettlementDamageCost() == null) {
-                            detail.setSettlementDamageCost(preview.getDamageCost());
+                        if (totalDamageAndExtras == 0L) {
+                            if (preview.getDamageCost() > 0) {
+                                totalDamageAndExtras += preview.getDamageCost();
+                            }
+                            if (preview.getUnpaidExtraCharges() > 0) {
+                                totalDamageAndExtras += preview.getUnpaidExtraCharges();
+                            }
                         }
                         detail.setSettlementPayableAmount(preview.getPayableAmount());
                         if ("OVERDUE_TERMINATED".equals(preview.getSettlementType())) {
@@ -348,6 +369,8 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
                     log.warn("Không thể lấy trước bảng quyết toán cho hợp đồng {}: {}", contract.getId(), e.getMessage());
                 }
             }
+
+            detail.setSettlementDamageCost(totalDamageAndExtras);
         }
 
         // Hướng dẫn mở cửa kho
@@ -601,6 +624,17 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             res.setOverdueDays(0);
             res.setOverdueFeeAccrued(0);
             res.setTotalOutstandingDebt(0);
+        }
+
+        // Nếu hợp đồng PENDING_RETURN hoặc TERMINATED có đơn nợ quyết toán SETTLEMENT (chờ thanh toán nộp bù)
+        if (paymentTransactionRepository != null && contract.getId() != null
+                && (contract.getStatus() == ContractStatus.PENDING_RETURN || contract.getStatus() == ContractStatus.TERMINATED)) {
+            paymentTransactionRepository.findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(contract.getId(), "SETTLEMENT")
+                    .ifPresent(tx -> {
+                        if ("PENDING".equalsIgnoreCase(tx.getStatus()) && tx.getAmount() != null && tx.getAmount() > 0) {
+                            res.setTotalOutstandingDebt(tx.getAmount());
+                        }
+                    });
         }
 
         // Khởi tạo mặc định

@@ -26,7 +26,7 @@ import type { StorageUnitResponse } from '@/types/unit';
 import type { ManagerContractItem } from '@/types/contractManager';
 import type { ManagementSupportTicket } from '../types/staffAssignment';
 
-type ContractQuickFilter = 'ALL' | 'ACTIVE' | 'EXPIRING' | 'OVERDUE' | 'PENDING_CHECK_IN';
+type ContractQuickFilter = 'ALL' | 'ACTIVE' | 'PENDING_RETURN' | 'EXPIRING' | 'OVERDUE' | 'PENDING_CHECK_IN';
 
 const fmtVnd = (n: number) => new Intl.NumberFormat('vi-VN').format(Math.round(n)) + ' đ';
 
@@ -97,7 +97,7 @@ export const ManagerDashboardPage: React.FC = () => {
           Promise.allSettled(
             assignedFacilities.map((f) => fetchStorageUnits(f.id, { size: 500 }))
           ),
-          listReservations({ status: 'PAID', size: 100 }),
+          listReservations({ status: 'CONFIRMED', size: 100 }),
           getManagerContracts({ status: 'ALL' }),
           getManagementSupportRequests({}),
         ]);
@@ -255,6 +255,12 @@ export const ManagerDashboardPage: React.FC = () => {
     const list = scopedContracts.filter((c) => {
       if (contractFilter === 'ACTIVE' && c.status !== 'ACTIVE') return false;
       if (contractFilter === 'OVERDUE' && c.status !== 'OVERDUE') return false;
+      if (contractFilter === 'PENDING_RETURN') {
+        const st = String(c.status || '').toUpperCase();
+        if (st !== 'PENDING_RETURN' && st !== 'INSPECTED' && st !== 'TERMINATED') {
+          return false;
+        }
+      }
       if (
         contractFilter === 'PENDING_CHECK_IN' &&
         c.status !== 'PENDING_CHECK_IN' &&
@@ -274,13 +280,13 @@ export const ManagerDashboardPage: React.FC = () => {
       );
     });
 
-    // Ưu tiên hiển thị các hợp đồng cần chú ý trước (Quá hạn -> Sắp hết hạn -> Chờ nhận -> Đang hiệu lực)
+    // Ưu tiên hiển thị các hợp đồng cần chú ý trước (Quá hạn -> Chờ quyết toán -> Sắp hết hạn -> Chờ nhận -> Đang hiệu lực)
     const priority = (c: ManagerContractItem) => {
       if (c.status === 'OVERDUE') return 0;
+      if (c.status === 'PENDING_RETURN' || (c.status as string) === 'INSPECTED' || c.status === 'TERMINATED') return 1;
       const d = daysUntilDate(c.endDateExclusive);
-      if (c.status === 'ACTIVE' && d !== null && d >= 0 && d <= 7) return 1;
-      if (c.status === 'PENDING_CHECK_IN' || (c.status as string) === 'PENDING_CHECKIN') return 2;
-      if (c.status === 'PENDING_RETURN' || (c.status as string) === 'INSPECTED') return 3;
+      if (c.status === 'ACTIVE' && d !== null && d >= 0 && d <= 7) return 2;
+      if (c.status === 'PENDING_CHECK_IN' || (c.status as string) === 'PENDING_CHECKIN') return 3;
       if (c.status === 'ACTIVE') return 4;
       return 5;
     };
@@ -731,6 +737,7 @@ export const ManagerDashboardPage: React.FC = () => {
               {(
                 [
                   { key: 'ALL', label: 'Tất cả' },
+                  { key: 'PENDING_RETURN', label: 'Chờ quyết toán' },
                   { key: 'OVERDUE', label: 'Quá hạn' },
                   { key: 'EXPIRING', label: 'Sắp hết hạn' },
                   { key: 'PENDING_CHECK_IN', label: 'Chờ nhận' },

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { ArrowRight, Plus, Minus, RotateCcw } from 'lucide-react';
 import type { UnitTypeResponse } from '@/types/unit';
-import heroCofounderImg from '@/assets/images/hero-cofounder-realistic.jpg';
+import heroCofounderImg from '@/assets/images/hero-cofounder-clean.webp';
 import { resolveSizeCategory } from '../utils/unitPickerHelpers';
 import { StorageUnit3DPreview, type UnitSpec3D } from './StorageUnit3DPreview';
 import {
