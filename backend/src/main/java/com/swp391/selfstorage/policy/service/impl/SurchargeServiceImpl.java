@@ -1,6 +1,5 @@
 package com.swp391.selfstorage.policy.service.impl;
 
-import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.Set;
 
@@ -76,7 +75,7 @@ public class SurchargeServiceImpl implements SurchargeService {
                     "Tên phụ phí '" + request.getName().trim() + "' đã tồn tại trong hệ thống");
         }
 
-        String normalizedCode = resolveCode(request.getCode(), request.getName());
+        String normalizedCode = resolveCode(request.getCode(), request.getCategory());
 
         ExtraFeeType entity = surchargeMapper.toEntity(request);
         entity.setCode(normalizedCode);
@@ -171,40 +170,33 @@ public class SurchargeServiceImpl implements SurchargeService {
         return principal.getId();
     }
 
-    private String resolveCode(String rawCode, String name) {
-        boolean generated = rawCode == null || rawCode.isBlank();
-        String normalized = generated ? codeFromName(name) : rawCode.trim().toUpperCase();
-        if (normalized.length() > 30) {
-            normalized = normalized.substring(0, 30);
-        }
-        if (!extraFeeTypeRepository.existsByCode(normalized)) {
-            return normalized;
-        }
-        if (!generated) {
-            throw new CustomException(ErrorCode.SURCHARGE_CODE_ALREADY_EXISTS);
-        }
-        for (int n = 2; n <= 50; n++) {
-            String suffix = "-" + n;
-            int keep = Math.min(normalized.length(), 30 - suffix.length());
-            String candidate = normalized.substring(0, Math.max(keep, 1)) + suffix;
-            if (candidate.length() > 30) {
-                candidate = candidate.substring(0, 30);
+    private String resolveCode(String rawCode, String category) {
+        if (rawCode != null && !rawCode.isBlank()) {
+            String code = rawCode.trim().toUpperCase();
+            if (code.length() > 30) {
+                code = code.substring(0, 30);
             }
+            if (extraFeeTypeRepository.existsByCode(code)) {
+                throw new CustomException(ErrorCode.SURCHARGE_CODE_ALREADY_EXISTS);
+            }
+            return code;
+        }
+
+        String prefix = switch (category == null ? "" : category.trim().toUpperCase()) {
+            case "ACCESS_KEY" -> "ACC";
+            case "CLEANING" -> "CLN";
+            case "DAMAGE" -> "DMG";
+            case "VALUE_ADDED" -> "VAL";
+            default -> "FEE";
+        };
+
+        for (int i = 1; i <= 999; i++) {
+            String candidate = String.format("%s_%03d", prefix, i);
             if (!extraFeeTypeRepository.existsByCode(candidate)) {
                 return candidate;
             }
         }
         throw new CustomException(ErrorCode.SURCHARGE_CODE_ALREADY_EXISTS);
-    }
-
-    private static String codeFromName(String name) {
-        String source = name == null ? "" : name;
-        String folded = Normalizer.normalize(source, Normalizer.Form.NFD)
-                .replace("đ", "d")
-                .replace("Đ", "D")
-                .replaceAll("\\p{M}", "");
-        String code = folded.toUpperCase().replaceAll("[^A-Z0-9]+", "-").replaceAll("^-|-$", "");
-        return code.isBlank() ? "FEE" : code;
     }
 
     private SurchargeResponse withFacilityName(SurchargeResponse response) {

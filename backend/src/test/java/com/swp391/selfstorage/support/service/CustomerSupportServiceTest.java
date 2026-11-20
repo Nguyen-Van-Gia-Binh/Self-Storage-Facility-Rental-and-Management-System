@@ -111,6 +111,7 @@ class CustomerSupportServiceTest {
         contract.setCustomerId(15L);
         contract.setFacilityId(1L);
         contract.setStorageUnitId(42L);
+        contract.setStatus(ContractStatus.ACTIVE);
 
         when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(contract));
         when(supportRequestRepository.countByCodeStartingWith(anyString())).thenReturn(0L);
@@ -371,6 +372,60 @@ class CustomerSupportServiceTest {
         );
 
         assertEquals(ErrorCode.ACCESS_DENIED, ex.getErrorCode());
+        verify(supportRequestRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Chặn tạo ticket hỗ trợ khi hợp đồng đang nghiệm thu trả kho (PENDING_RETURN)")
+    void shouldRejectCreate_whenContractIsPendingReturn() {
+        CreateSupportRequest request = CreateSupportRequest.builder()
+                .contractId(501L)
+                .category(SupportCategory.UNIT_DAMAGE)
+                .description("Báo sự cố khi đang trả kho")
+                .isUrgent(false)
+                .build();
+
+        RentalContract returningContract = new RentalContract();
+        returningContract.setId(501L);
+        returningContract.setCustomerId(15L);
+        returningContract.setStatus(ContractStatus.PENDING_RETURN);
+        returningContract.setStorageUnitId(42L);
+
+        when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(returningContract));
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                customerSupportService.createSupportRequest(request, customerUser)
+        );
+
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("Chỉ có thể gửi yêu cầu hỗ trợ cho hợp đồng đang hoạt động"));
+        verify(supportRequestRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Chặn tạo ticket hỗ trợ khi hợp đồng ACTIVE nhưng chưa gán ô kho vật lý")
+    void shouldRejectCreate_whenContractHasNoStorageUnit() {
+        CreateSupportRequest request = CreateSupportRequest.builder()
+                .contractId(501L)
+                .category(SupportCategory.LOCK_ACCESS)
+                .description("Báo sự cố khi chưa gán ô")
+                .isUrgent(false)
+                .build();
+
+        RentalContract unassignedContract = new RentalContract();
+        unassignedContract.setId(501L);
+        unassignedContract.setCustomerId(15L);
+        unassignedContract.setStatus(ContractStatus.ACTIVE);
+        unassignedContract.setStorageUnitId(null);
+
+        when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(unassignedContract));
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                customerSupportService.createSupportRequest(request, customerUser)
+        );
+
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("Hợp đồng chưa được gán ô kho vật lý"));
         verify(supportRequestRepository, never()).save(any());
     }
 }

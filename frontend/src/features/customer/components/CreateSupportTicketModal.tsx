@@ -44,11 +44,12 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
   preselectedUnitId,
   onSubmit,
 }) => {
-  // Lọc chỉ những hợp đồng đang hoạt động hoặc chưa kết thúc
+  // Lọc chỉ những hợp đồng đang hoạt động (ACTIVE) và đã có ô kho vật lý cụ thể
   const activeRentals = rentals.filter((r) => {
     const s = (r.status as string) || '';
-    if (!s) return true;
-    return !['CLOSED', 'TERMINATED', 'CANCELLED', 'RETURNED'].includes(s);
+    const unitNumber = (r.unitNumber as string) || '';
+    const hasValidUnit = Boolean(r.unitId) && unitNumber !== 'Chưa gán ô';
+    return s === 'ACTIVE' && hasValidUnit;
   });
 
   const getInitialContractId = (): string => {
