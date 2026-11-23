@@ -646,7 +646,11 @@ VALUES
   (2, 1, 'Q7-S102', 1, 'Khu A', 'Tầng 1 - Khu A - Kho tiêu chuẩn 3m² cạnh thang bộ', 'AVAILABLE'),
   (2, 1, 'Q7-S103', 1, 'Khu A', 'Tầng 1 - Khu A - Kho tiêu chuẩn 3m² dãy trong', 'AVAILABLE'),
   (2, 1, 'Q7-S104', 1, 'Khu A', 'Tầng 1 - Khu A - Kho tiêu chuẩn 3m² góc hành lang', 'AVAILABLE'),
-  (2, 2, 'Q7-M101', 1, 'Khu B', 'Tầng 1 - Khu B - Kho tiêu chuẩn lớn 6m² (Ô đền bù nâng hạng Bumping)', 'AVAILABLE')
+  (2, 2, 'Q7-M101', 1, 'Khu B', 'Tầng 1 - Khu B - Kho tiêu chuẩn lớn 6m² (Ô đền bù nâng hạng Bumping)', 'AVAILABLE'),
+  (2, 3, 'Q7-L101', 1, 'Khu C', 'Tầng 1 - Khu C - Kho hàng lớn 1', 'AVAILABLE'),
+  (2, 3, 'Q7-L102', 1, 'Khu C', 'Tầng 1 - Khu C - Kho hàng lớn 2', 'AVAILABLE'),
+  (2, 3, 'Q7-FRZ-301', 1, 'Zone C', 'Tầng 1 - Khu C - Kho hải sản cấp đông', 'AVAILABLE'),
+  (2, 3, 'Q7-M102', 1, 'Khu C', 'Tầng 1 - Khu C - Kho mát trái cây', 'AVAILABLE')
 ON CONFLICT (facility_id, code) DO UPDATE
 SET status = 'AVAILABLE',
     unit_type_id = EXCLUDED.unit_type_id,
@@ -660,6 +664,13 @@ SET status = 'MAINTENANCE'
 WHERE facility_id = 2
   AND unit_type_id = 1
   AND code NOT IN ('Q7-S101', 'Q7-S102', 'Q7-S103', 'Q7-S104');
+
+-- Khóa các ô size L dôi dư khác tại Quận 7 về MAINTENANCE để đảm bảo chỉ có đúng 4 ô trống size L
+UPDATE storage_unit
+SET status = 'MAINTENANCE'
+WHERE facility_id = 2
+  AND unit_type_id = 3
+  AND code NOT IN ('Q7-L101', 'Q7-L102', 'Q7-FRZ-301', 'Q7-M102');
 
 -- Đồng bộ sequence id cho bảng storage_unit
 SELECT setval(pg_get_serial_sequence('storage_unit', 'id'), COALESCE((SELECT MAX(id) FROM storage_unit), 1));

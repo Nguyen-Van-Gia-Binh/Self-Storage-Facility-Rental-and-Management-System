@@ -13,7 +13,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:codegen": "playwright codegen http://localhost:5173",
     "test:e2e:report": "playwright show-report",
-    "db:seed": "mvn -f ../backend/pom.xml -Dfile.encoding=UTF-8 test -Dtest=DatabaseSeedRunner"
+    "db:seed": "mvn -f ../backend/pom.xml -Dfile.encoding=UTF-8 test -Dtest=DatabaseSeedRunner",
+    "seed:db": "npm run db:seed"
   },
   "dependencies": {
     "lucide-react": "^1.46.0",
