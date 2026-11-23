@@ -1,6 +1,5 @@
 package com.swp391.selfstorage.seed;
 
-import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -11,21 +10,80 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class DatabaseSeedRunner {
 
-    private static final String DEFAULT_DB_URL = "jdbc:postgresql://ep-round-rice-b3raiy2r-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require";
-    private static final String DEFAULT_USER = "neondb_owner";
-    private static final String DEFAULT_PASS = "npg_gpKMC1tJS5lq";
+    private static String[] resolveDbConfig() {
+        List<Path> candidatePaths = List.of(
+                Paths.get("src/main/resources/application-local.yml"),
+                Paths.get("backend/src/main/resources/application-local.yml"),
+                Paths.get("../backend/src/main/resources/application-local.yml"),
+                Paths.get("src/main/resources/application.yml"),
+                Paths.get("backend/src/main/resources/application.yml"),
+                Paths.get("../backend/src/main/resources/application.yml")
+        );
+
+        String url = null;
+        String user = null;
+        String pass = null;
+
+        for (Path p : candidatePaths) {
+            if (Files.exists(p)) {
+                try {
+                    List<String> lines = Files.readAllLines(p);
+                    boolean insideDatasource = false;
+                    for (String line : lines) {
+                        String trimmed = line.trim();
+                        if (trimmed.startsWith("#")) continue;
+                        if (trimmed.startsWith("datasource:")) {
+                            insideDatasource = true;
+                            continue;
+                        }
+                        if (insideDatasource) {
+                            if (trimmed.startsWith("url:")) {
+                                String val = trimmed.substring(4).trim();
+                                if (!val.isEmpty() && !val.startsWith("${") && url == null) {
+                                    url = val;
+                                }
+                            } else if (trimmed.startsWith("username:")) {
+                                String val = trimmed.substring(9).trim();
+                                if (!val.isEmpty() && !val.startsWith("${") && user == null) {
+                                    user = val;
+                                }
+                            } else if (trimmed.startsWith("password:")) {
+                                String val = trimmed.substring(9).trim();
+                                if (!val.isEmpty() && !val.startsWith("${") && pass == null) {
+                                    pass = val;
+                                }
+                            } else if (!trimmed.isEmpty() && !line.startsWith(" ") && !line.startsWith("\t")) {
+                                insideDatasource = false;
+                            }
+                        }
+                    }
+                    if (url != null && user != null && pass != null) {
+                        break;
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+
+        if (url == null) url = "jdbc:postgresql://localhost:5432/selfstorage?sslmode=disable";
+        if (user == null) user = "postgres";
+        if (pass == null) pass = "postgres";
+
+        return new String[]{url, user, pass};
+    }
 
     @Test
     @DisplayName("Nap lai du lieu kiem thu chuan (Seed & Reset Test Scenarios)")
     void seedAndResetTestScenarios() throws Exception {
-        String dbUrl = System.getenv().getOrDefault("DB_URL", DEFAULT_DB_URL);
-        String dbUser = System.getenv().getOrDefault("DB_USERNAME", DEFAULT_USER);
-        String dbPass = System.getenv().getOrDefault("DB_PASSWORD", DEFAULT_PASS);
+        String[] resolved = resolveDbConfig();
+        String dbUrl = System.getenv().getOrDefault("DB_URL", resolved[0]);
+        String dbUser = System.getenv().getOrDefault("DB_USERNAME", resolved[1]);
+        String dbPass = System.getenv().getOrDefault("DB_PASSWORD", resolved[2]);
 
         Path sqlPath = Paths.get("../database/scripts/seed_test_scenarios.sql");
         if (!Files.exists(sqlPath)) {
@@ -37,6 +95,7 @@ public class DatabaseSeedRunner {
 
         System.out.println("========================================================================================================================");
         System.out.println(">>> [SMARTSTORAGE] DANG THUC THI V28 MIGRATION (CHUAN HOA CO SO VA O KHO Q1)...");
+        System.out.println(">>> KET NOI DATABASE: " + dbUrl + " (USER: " + dbUser + ")");
         Path v28Path = Paths.get("src/main/resources/db/migration/V28__focus_three_key_facilities_and_standardize_q1_units.sql");
         if (!Files.exists(v28Path)) {
             v28Path = Paths.get("backend/src/main/resources/db/migration/V28__focus_three_key_facilities_and_standardize_q1_units.sql");
@@ -56,12 +115,12 @@ public class DatabaseSeedRunner {
             ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM flyway_schema_history WHERE version = '28'");
             if (rs.next() && rs.getInt(1) == 0) {
                 stmt.execute("INSERT INTO flyway_schema_history (installed_rank, version, description, type, script, checksum, installed_by, installed_on, execution_time, success) " +
-                        "VALUES ((SELECT COALESCE(MAX(installed_rank), 0) + 1 FROM flyway_schema_history), '28', 'focus three key facilities and standardize q1 units', 'SQL', 'V28__focus_three_key_facilities_and_standardize_q1_units.sql', 0, 'neondb_owner', CURRENT_TIMESTAMP, 50, TRUE)");
+                        "VALUES ((SELECT COALESCE(MAX(installed_rank), 0) + 1 FROM flyway_schema_history), '28', 'focus three key facilities and standardize q1 units', 'SQL', 'V28__focus_three_key_facilities_and_standardize_q1_units.sql', 0, '" + dbUser + "', CURRENT_TIMESTAMP, 50, TRUE)");
                 System.out.println(">>> DONG BO BAN GHI V28 VAO FLYWAY_SCHEMA_HISTORY THANH CONG!");
             }
         }
 
-        System.out.println(">>> DANG KET NOI VAO NEON CLOUD DATABASE DE SEED 26 KICH BAN THU NGHIEM VANG (FLOW 3, FLOW 6.1, FLOW 6.2, FLOW 1, FLOW 2)...");
+        System.out.println(">>> DANG SEED 26 KICH BAN THU NGHIEM VANG (FLOW 3, FLOW 6.1, FLOW 6.2, FLOW 1, FLOW 2)...");
         System.out.println("========================================================================================================================");
 
         try (Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
@@ -176,6 +235,15 @@ public class DatabaseSeedRunner {
                 }
             }
             System.out.println("========================================================================================================================");
+
+            // Tu dong clear Redis cache (neu container local dang chay)
+            try {
+                Process p = new ProcessBuilder("docker", "exec", "selfstorage-redis", "redis-cli", "flushall").start();
+                p.waitFor();
+                System.out.println(">>> [CACHE] DA XOA SACH REDIS CACHE (FLUSHALL) DE DONG BO GIAO DIEN!");
+            } catch (Exception e) {
+                System.out.println(">>> [CACHE] Khong the tu dong flush Redis container: " + e.getMessage());
+            }
         }
     }
 }

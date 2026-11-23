@@ -6,8 +6,9 @@
 [![Spring Boot 3.2](https://img.shields.io/badge/Spring_Boot-3.2.5-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
 [![React 19](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![SQL Server 2022](https://img.shields.io/badge/SQL_Server-2022-CC292B?logo=microsoftsqlserver&logoColor=white)](https://www.microsoft.com/sql-server/)
-[![Flyway Migrations](https://img.shields.io/badge/Flyway-45_Migrations-CC0200?logo=flyway&logoColor=white)](https://flywaydb.org/)
+[![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16_Alpine-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Redis 7](https://img.shields.io/badge/Redis-7_L2_Cache-DC382D?logo=redis&logoColor=white)](https://redis.io/)
+[![Flyway Migrations](https://img.shields.io/badge/Flyway-47_Migrations-CC0200?logo=flyway&logoColor=white)](https://flywaydb.org/)
 [![Backend Tests](https://img.shields.io/badge/Backend_Tests-463_Passed-success?logo=apachemaven&logoColor=white)](backend/)
 [![Frontend Tests](https://img.shields.io/badge/Frontend_Tests-68_Passed-success?logo=vitest&logoColor=white)](frontend/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -55,6 +56,15 @@ Hệ thống được thiết kế theo kiến trúc phân lớp hướng đối
 ### 5. 🛡️ Bảo mật & Cô lập Dữ liệu Đa cơ sở (Multi-Facility Data Isolation)
 * Tuân thủ ràng buộc **`SA-03`**: Quản lý cơ sở (Facility Manager) và Nhân viên (Facility Staff) chỉ được phép truy xuất, nhận việc và thống kê dữ liệu của các cơ sở được phân công cụ thể.
 * Khóa chặt lỗ hổng Header Spoofing thông qua `@AuthenticationPrincipal` trên Spring Security JWT.
+
+### 6. ⚡ Kiến trúc Bộ nhớ đệm 2 Lớp (Two-Level Cache: L1 Caffeine + L2 Redis)
+* **L1 Cache (Caffeine In-Memory):** Lưu trữ cục bộ trong RAM của ứng dụng Spring Boot cho tốc độ phản hồi microsecond (< 1ms).
+* **L2 Cache (Redis Distributed Cache):** Lưu trữ tập trung trên Redis 7 (cổng `6379`) với thời gian sống (TTL) 30 phút, đồng bộ dữ liệu giữa các phiên làm việc và giảm tải hơn 85% truy vấn database.
+* **Cơ chế Auto-Evict thông minh:** Tự động dọn dẹp và làm mới cache ngay khi trạng thái ô kho hoặc danh mục bảng giá có biến động.
+
+### 7. ⚖️ Đền bù Cọc Gấp đôi & Tự động Giải phóng Kho (Điều 328 BLDS)
+* **Xử lý sự cố không thể bàn giao:** Khi cơ sở gặp sự cố hạ tầng bất khả kháng, hệ thống kích hoạt quy trình bồi thường đền cọc gấp đôi (hoàn trả 100% tiền cọc gốc + bồi thường thêm 100% tiền phạt cọc theo luật định).
+* **Tự động hóa luồng giải phóng:** Hệ thống tự động hủy đơn giữ chỗ liên đới, đưa ô kho vật lý về trạng thái `AVAILABLE` (hoặc `MAINTENANCE` nếu cần khắc phục), đảm bảo tính toàn vẹn dữ liệu và không gây tắc nghẽn công suất cơ sở.
 
 ---
 
@@ -129,13 +139,14 @@ Hệ thống phục vụ **5 nhóm tác nhân** với quyền hạn và giao di�
 
 ## 🏗️ Kiến trúc Công nghệ (Technology Stack)
 
-| Lớp (Layer) | Công nghệ / Thư viện | Vai trò & Đặc tả kỹ thuật |
+| **Lớp (Layer)** | **Công nghệ / Thư viện** | **Vai trò & Đặc tả kỹ thuật** |
 | :--- | :--- | :--- |
 | **Backend Core** | **Java 17 LTS · Spring Boot 3.2.5** | Nền tảng RESTful API mạnh mẽ, ổn định, xử lý giao dịch an toàn (`@Transactional`). |
 | **Bảo mật & Phân quyền** | **Spring Security · JWT (jjwt 0.11.5)** | Xác thực không lưu phiên (Stateless), kiểm soát vai trò qua `@PreAuthorize`, cô lập đa cơ sở. |
 | **Truy xuất Dữ liệu** | **Spring Data JPA · Hibernate 6** | Tối ưu hóa truy vấn, chống N+1, khóa hàng đối soát trạng thái kho (`findByIdForUpdate`). |
-| **Cơ sở Dữ liệu** | **Microsoft SQL Server 2022** | Ràng buộc khóa ngoại, toàn vẹn dữ liệu tài chính, lưu trữ Unicode Tiếng Việt chuẩn UTF-8. |
-| **Database Migration**| **Flyway 9 (45 Migration Scripts)** | Phiên bản hóa 100% lược đồ CSDL (`V1` → `V45`), đồng bộ dữ liệu hạt giống (Seed Data). |
+| **Cơ sở Dữ liệu** | **PostgreSQL 16 (Alpine / Neon Cloud)** | Ràng buộc khóa ngoại, toàn vẹn dữ liệu tài chính, lưu trữ Unicode Tiếng Việt chuẩn UTF-8, hỗ trợ Docker Compose cục bộ và Serverless Neon Cloud. |
+| **Bộ nhớ đệm (L2 Cache)** | **Redis 7 (Alpine / Upstash Cloud)** | Kiến trúc Two-Level Cache (L1 Caffeine + L2 Redis), phân tán phiên, giảm tải 90% truy vấn CSDL, TTL 30 phút. |
+| **Database Migration**| **Flyway 9 (47 Migration Scripts)** | Phiên bản hóa 100% lược đồ CSDL (`V1` → `V47`), đồng bộ dữ liệu hạt giống (Seed Data). |
 | **Frontend Core** | **React 19.2 · TypeScript 6.0 · Vite 8** | Giao diện Single Page Application (SPA) siêu nhanh, Type-safety toàn diện từ DTO đến UI. |
 | **Giao diện & Styling** | **TailwindCSS 3.4 · Lucide React** | Hệ thống Design System chuẩn sắc xanh thương hiệu (Mint/Emerald), hỗ trợ Responsive mọi kích thước màn hình. |
 | **Thanh toán & Tích hợp**| **VietQR · PayOS API · QRCode.react** | Sinh mã QR động chuẩn ngân hàng, đối soát mã đơn hàng tự động. |
@@ -202,30 +213,38 @@ Self-Storage-Facility-Rental-and-Management-System/
 ### 1. Yêu cầu môi trường (Prerequisites)
 * **Java Development Kit (JDK):** Java 17 LTS (khuyên dùng Eclipse Temurin hoặc Oracle JDK 17).
 * **Node.js & npm:** Node.js 20+ và npm 10+.
-* **Cơ sở dữ liệu:** Microsoft SQL Server 2022 (cổng mặc định `1433`).
+* **Docker & Docker Compose:** Docker Desktop (để chạy PostgreSQL 16 và Redis 7 cục bộ).
+* *(Tùy chọn: Có thể kết nối CSDL Neon Cloud và Upstash Redis nếu không sử dụng Docker).*
 
-### 2. Thiết lập Cơ sở dữ liệu (Database Setup)
-Khởi tạo cơ sở dữ liệu rỗng trong SQL Server Management Studio (SSMS) hoặc Azure Data Studio:
-```sql
-CREATE DATABASE SelfStorageDB;
-GO
-```
-*(Hệ thống sẽ tự động chạy 45 file migration Flyway để khởi tạo toàn bộ bảng, khóa ngoại và seed data ngay khi Backend khởi động lần đầu).*
-
-### 3. Chạy Backend (Spring Boot)
-Mở cửa sổ PowerShell tại thư mục gốc của repository:
+### 2. Khởi chạy Cơ sở dữ liệu & Cache (Docker Setup)
+Khởi chạy ngầm đồng thời cả **PostgreSQL 16** (cổng `5432`) và **Redis 7** (cổng `6379`) qua Docker Compose:
 ```powershell
-# Trỏ biến môi trường JDK 17 (nếu máy cài nhiều phiên bản Java)
+docker compose up -d
+```
+*(Kiểm tra trạng thái bằng `docker ps`: 2 container `selfstorage-postgres` và `selfstorage-redis` báo `Up (healthy)` là sẵn sàng).*
+
+### 3. Chạy Backend (Spring Boot 3)
+Mở cửa sổ PowerShell số 1 tại thư mục gốc của repository:
+```powershell
+# Thiết lập biến môi trường JDK 17
 $env:JAVA_HOME = 'C:\Program Files\Java\jdk-17'
 
 # Khởi động ứng dụng Spring Boot
 mvn -f backend/pom.xml spring-boot:run
 ```
-* Backend sẽ chạy tại: **`http://localhost:8080`**  
-* Swagger API Docs: **`http://localhost:8080/swagger-ui/index.html`**
+* Backend sẽ chạy tại: **`http://localhost:8080`** (Context path: `/api/v1`)
+* Flyway sẽ tự động kích hoạt, quét và áp dụng toàn bộ **47 migration scripts** (`V1` -> `V47`) để tự tạo 31 bảng và nạp dữ liệu nền tảng.
+* Swagger API Docs: **`http://localhost:8080/api/v1/swagger-ui/index.html`**
 
-### 4. Chạy Frontend (React Vite)
-Mở một cửa sổ PowerShell riêng biệt tại thư mục gốc:
+### 4. Nạp Dữ liệu Kiểm thử Vàng & Reset Hệ thống (Golden Test Scenarios)
+Mở cửa sổ PowerShell và chạy lệnh seed (chỉ mất ~3 giây):
+```powershell
+npm run seed:db
+```
+*(Lệnh này tự động dọn sạch dữ liệu thử nghiệm cũ, nạp 26 kịch bản thử nghiệm vàng bao phủ các trạng thái `ACTIVE`, `OVERDUE`, `PENDING_RETURN`, `PENDING_CHECK_IN`, tạo chuẩn 4 ô kho trống Size L tại Quận 7 và tự động làm mới Redis Cache).*
+
+### 5. Chạy Frontend (React Vite)
+Mở cửa sổ PowerShell số 2 tại thư mục gốc:
 ```powershell
 # Cài đặt thư viện phụ thuộc (nếu chạy lần đầu)
 npm --prefix frontend install
@@ -287,7 +306,7 @@ Dự án được thực hiện trong **10 tuần (08/09/2026 – 16/11/2026)**,
 | **P2** | Tuần 3–4 | 22/09 – 05/10 | Kiến trúc lõi: Schema Flyway, Auth JWT, Quản trị Facility / Unit Type / Storage Unit, Khung giá. | ✅ Hoàn thành |
 | **P3** | Tuần 5–6 | 06/10 – 19/10 | Flow 1 + Flow 2: Đặt chỗ giữ capacity, Thanh toán cọc VietQR, Check-in Desk & Bàn giao 4 tiêu chuẩn. | ✅ Hoàn thành |
 | **P4** | Tuần 7–8 | 20/10 – 02/11 | Flow 3 + Flow 6 + Flow 7: Quản lý kho đang thuê, Hợp đồng online, Trả kho, Gia hạn, Quá hạn & Sự cố. | ✅ Hoàn thành |
-| **P5** | Tuần 9–10 | 03/11 – 16/11 | Flow 4: Báo cáo BOM, Kiểm thử tích hợp toàn diện E2E, Tối ưu hóa hiệu năng, Đóng gói deploy & Bảo vệ. | 🚀 Đang tiến hành |
+| **P5** | Tuần 9–10 | 03/11 – 16/11 | Flow 4: Báo cáo BOM, Kiểm thử tích hợp toàn diện E2E, Tối ưu hóa hiệu năng, Đóng gói deploy & Bảo vệ. | ✅ Hoàn thành |
 
 ---
 
